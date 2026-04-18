@@ -1,0 +1,24 @@
+<!DOCTYPE html>                                                                                             
+<html>                                                                                                      
+<body>                                                                                                      
+  <div id="g_id_onload"                                                                                     
+       data-client_id="410111678743-3hogsp0uouv1ouc62rcsk2eln0llp6qq.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse">                                                            
+  </div>
+  <div class="g_id_signin" data-type="standard"></div>                                                      
+                                                                                                            
+  <script src="https://accounts.google.com/gsi/client" async defer></script>                              
+  <script>                                                                                                  
+    function handleCredentialResponse(response) {                   
+      console.log("id_token:", response.credential);                                                      
+      fetch("http://localhost:4000/auth/google/mobile", {                                                   
+        method: "POST",
+        headers: { "Content-Type": "application/json" },                                                    
+        body: JSON.stringify({ id_token: response.credential }),    
+      })                                                                                                    
+        .then(r => r.json())
+        .then(data => console.log("Backend:", data));                                                       
+    }                                                                                                       
+  </script>                                                                                               
+</body>                                                                                                     
+</html>      

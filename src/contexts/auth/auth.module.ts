@@ -16,11 +16,13 @@ import { AuthGuard } from "./guards/auth.guard";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { MeService } from "./services/me.service";
 import { MeController } from "./api/me.controller";
+import { PasswordRecoveryController } from "./api/password-recovery.controller";
+import { PasswordRecoveryService } from "./services/password-recovery.service";
 import { ProfileModule } from "../profiles/profile.module";
 // import { AppleAuthGuard } from "./guards/apple-auth.guard";
 
 @Module({
-  controllers: [AuthController,MeController],
+  controllers: [AuthController, MeController, PasswordRecoveryController],
   providers: [
     AuthService,
     PasswordService,
@@ -33,7 +35,8 @@ import { ProfileModule } from "../profiles/profile.module";
     GoogleAuthGuard,
     // AppleAuthGuard,
 
-    MeService
+    MeService,
+    PasswordRecoveryService,
   ],
   imports: [
     PassportModule.register({ defaultStrategy: "jwt", session: true }),
@@ -46,6 +49,6 @@ import { ProfileModule } from "../profiles/profile.module";
     UserModule,
     ProfileModule
   ],
-  exports: [AuthGuard, GoogleAuthGuard /*, AppleAuthGuard*/],
+  exports: [AuthGuard, GoogleAuthGuard, AuthService /*, AppleAuthGuard*/],
 })
 export class AuthModule {}

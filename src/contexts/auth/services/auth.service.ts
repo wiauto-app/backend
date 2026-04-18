@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { Injectable,  UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { UserService } from "../../users/services/user.service";
@@ -6,7 +6,7 @@ import { PasswordService } from "./password.service";
 import { LoginDto } from "../dto/login.dto";
 import { User } from "../../users/entities/user.entity";
 import { OAuthProfile } from "../strategies/google.strategy";
-import { SessionPayload } from "../types/auth.types";
+import { SessionPayload, SignInResult } from "../types/auth.types";
 
 @Injectable()
 export class AuthService {
@@ -14,14 +14,12 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
-  async signIn(loginDto: LoginDto) {
+  async signIn(loginDto: LoginDto): Promise<SignInResult> {
     const user = await this.userService.getUserByEmail({ email: loginDto.email });
 
-    if (!user) {
-      throw new NotFoundException("No se ha encontrado el usuario");
-    }
+
 
     if (user.provider !== "local" || !user.password) {
       throw new UnauthorizedException(
@@ -35,11 +33,12 @@ export class AuthService {
       throw new UnauthorizedException("El email o la contraseña son incorrectos");
     }
 
-    await this.userService.updateUser(user.id, {
+    await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
 
-    return this.createToken(user);
+    return user.two_factor_enabled ? { type: "2fa_required", challenge_token: this.createToken(user, "300s") } : { type: "session", token: this.createToken(user, "30d" ) }
+
   }
 
   async signInWithOAuthProfile(profile: OAuthProfile) {
@@ -48,18 +47,21 @@ export class AuthService {
     }
 
     const user = await this.userService.findOrCreateOAuthUser(profile);
-    await this.userService.updateUser(user.id, {
+    await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
 
     return this.createToken(user);
   }
 
-  private createToken(user: User) {
-    const payload:SessionPayload = {
+   createToken(user: User, expiresIn: "30d" | "300s" = "30d") {
+    const payload: SessionPayload = {
       id: user.id,
       email: user.email,
+      scope: user.two_factor_enabled ? "2fa_challenge" : "session"
     };
-    return this.jwtService.sign(payload);
+    return this.jwtService.sign(payload,
+      { expiresIn },
+    );
   }
 }

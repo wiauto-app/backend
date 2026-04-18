@@ -92,7 +92,7 @@ export class UserService {
     return saved;
   }
 
-  async getUserByEmail(getUserByEmailDto: GetUserByEmailDto): Promise<User | null> {
+  async getUserByEmail(getUserByEmailDto: GetUserByEmailDto): Promise<User> {
     const user = await this.userRepository.findOne({
       where: {
         email: getUserByEmailDto.email
@@ -100,13 +100,13 @@ export class UserService {
     })
 
     if (!user) {
-      return null
+      throw new NotFoundException("No se encontró el usuario")
     }
 
     return user
   }
 
-  async findOne(id: string): Promise<User | null> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: {
         id
@@ -114,14 +114,14 @@ export class UserService {
     })
 
     if (!user) {
-      return null
+      throw new NotFoundException("No se encontró el usuario")
     }
 
     return user
 
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<ApiResponse<User>> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<ApiResponse<User>> {
     const user = await this.userRepository.preload({
       id,
       ...updateUserDto
@@ -154,6 +154,23 @@ export class UserService {
       message: "Email actualizado correctamente",
       data: null
     }
+  }
+
+  async resetPassword(id: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException("No se ha encontrado el usuario");
+    }
+
+    if (user.provider !== "local") {
+      throw new UnauthorizedException(
+        "Este usuario se autentica con un proveedor externo y no tiene contraseña que restablecer"
+      );
+    }
+
+    const hashedPassword = await this.passwordService.hashPassword(newPassword);
+    await this.userRepository.update(id, { password: hashedPassword });
   }
 
   async updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): Promise<ApiResponse<null>> {

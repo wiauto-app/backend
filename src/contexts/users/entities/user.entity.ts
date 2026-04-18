@@ -8,7 +8,7 @@ export class User {
   id: string;
 
   @Index({ unique: true })
-  @Column({unique:true})
+  @Column({ unique: true })
   email: string;
 
   @Column({ type: "varchar", nullable: true })
@@ -22,6 +22,16 @@ export class User {
 
   @Column("timestamp", { nullable: true })
   last_sign_in: Date;
+
+
+  @Column({ type: "boolean", default: false })
+  two_factor_enabled: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  two_factor_secret: string | null; // cifrado AES-256-GCM, guardado en formato "iv:tag:ciphertext" en base64
+
+  @Column({ type: "simple-array", nullable: true })
+  two_factor_backup_codes: string[] | null; // bcrypt hashes, se consumen al usarse
 
   @CreateDateColumn()
   created_at: string;

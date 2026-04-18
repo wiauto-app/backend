@@ -10,6 +10,8 @@ import { typeOrmConfig } from "../database/data-source";
 import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
 import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
+import { MailModule } from "../contexts/shared/mail/mail.module";
+import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 
 @Module({
   imports: [
@@ -21,7 +23,8 @@ import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
     AuthModule,
     ProfileModule,
     VehiclesModule,
+    MailModule,
+    TwoFactorAuthModule,
   ],
-  
 })
-export class AppModule {}
+export class AppModule { }

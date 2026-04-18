@@ -1,6 +1,5 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
 
-import { User } from "../../users/entities/user.entity";
 import { GetUser } from "../decorators/GetUser.decorator";
 import { MeResponseDto } from "../dto/me-response.dto";
 import { AuthGuard } from "../guards/auth.guard";

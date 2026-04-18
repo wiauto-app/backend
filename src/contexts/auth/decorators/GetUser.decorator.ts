@@ -1,14 +1,13 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import { Request } from "express";
-import { User } from "../../users/entities/user.entity";
 
+import { UserResponse } from "../types/auth.types";
+
+type RequestWithSession = Request & { user?: UserResponse };
 
 export const GetUser = createParamDecorator(
-  (data: string, ctx: ExecutionContext): User | undefined => {
-    const req = ctx.switchToHttp().getRequest<Request>()
-    if (!req.user) {
-      return undefined
-    }
-    return req.user
-  }
-)
+  (_data: unknown, ctx: ExecutionContext): UserResponse | undefined => {
+    const req = ctx.switchToHttp().getRequest<RequestWithSession>();
+    return req.user;
+  },
+);

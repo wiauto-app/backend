@@ -25,7 +25,7 @@
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unsafe-call": "off",
-
+    "@typescript-eslint/no-unsafe-assignment": "off",
     "t@typescript-eslint/no-unsafe-assignment": "off",
     "prettier/prettier": 0,
     "unicorn/filename-case": "off",
