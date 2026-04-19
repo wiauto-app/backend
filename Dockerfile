@@ -25,6 +25,28 @@ COPY src src
 EXPOSE $PORT
 CMD ["node", "--run", "dev"]
 
+FROM base AS dev
+
+ENV NODE_ENV=development
+ENV CI=true
+
+RUN npm install -g pnpm@9.14.2
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
+    pnpm install --frozen-lockfile && \
+    rm -f .npmrc
+
+COPY tsconfig*.json .
+COPY .swcrc .
+COPY nest-cli.json .
+COPY src src
+
+EXPOSE $PORT
+# En dev: sincroniza node_modules con package.json/lock montados desde el host (docker-compose).
+CMD ["sh", "-c", "pnpm install && node --run dev"]
+
 FROM base AS build
 
 ENV CI=true

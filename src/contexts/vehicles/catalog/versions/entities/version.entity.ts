@@ -1,9 +1,10 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm";
 import { Make } from "../../makes/entities/make.entity";
 import { Model } from "../../models/entities/model.entity";
 import { BodyType } from "../../body_types/entities/body_type.entity";
 import { FuelType } from "../../fuel_types/entities/fuel_type.entity";
 import { Year } from "../../years/entities/year.entity";
+import { VehicleEntity } from "../../../infrastructure/persistence/vehicle.entity";
 
 @Entity()
 export class Version {
@@ -50,4 +51,7 @@ export class Version {
 
   @CreateDateColumn()
   created_at: Date;
+
+  @OneToMany(() => VehicleEntity, (vehicle) => vehicle.version)
+  vehicles: Relation<VehicleEntity[]>;
 }

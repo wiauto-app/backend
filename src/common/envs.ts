@@ -24,14 +24,22 @@ const envsSchema = z.object({
 
   SESSION_SECRET: z.string().default("change-me-session-secret-32bytes-min"),
 
-  MAIL_HOST: z.string().default("smtp.gmail.com"),
+  MAIL_HOST: z.string(),
   MAIL_PORT: z.coerce.number().default(587),
-  MAIL_USER: z.string().default(""),
-  MAIL_PASSWORD: z.string().default(""),
+  MAIL_USER: z.string(),
+  MAIL_PASSWORD: z.string(),
   MAIL_FROM: z.string().default('"No Reply" <noreply@example.com>'),
 
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),
   PASSWORD_RESET_TOKEN_EXPIRES_IN: z.string().default("15m"),
+
+  /** URL del front (ej. https://app.tudominio.com/verify-email) — se añade ?token= */
+  FRONTEND_EMAIL_VERIFICATION_URL: z.string(),
+  /** Segundos hasta expirar el enlace de verificación (por defecto 48 h) */
+  EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC: z.coerce.number().default(172_800),
+
+  REDIS_URL: z.string().default("redis://redis:6379"),
+  
 });
 
 export const envs = envsSchema.parse(process.env);

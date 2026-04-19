@@ -33,6 +33,12 @@ export class AuthService {
       throw new UnauthorizedException("El email o la contraseña son incorrectos");
     }
 
+    if (!user.is_email_verified) {
+      throw new UnauthorizedException(
+        "Debés verificar tu correo antes de iniciar sesión. Revisá tu bandeja de entrada o solicitá un nuevo enlace desde la app.",
+      );
+    }
+
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });

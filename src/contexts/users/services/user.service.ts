@@ -1,4 +1,12 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { Repository } from "typeorm";
@@ -12,15 +20,19 @@ import { UpdatePasswordDto } from "../dto/update-password.dto";
 import { GetUserByEmailDto } from "../dto/get-user-by-email.dto";
 import { ProfileService } from "../../profiles/services/profile.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
+import { EmailVerificationService } from "../../auth/services/email-verification.service";
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
 
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly passwordService: PasswordService,
-    private readonly profileService: ProfileService
+    private readonly profileService: ProfileService,
+    @Inject(forwardRef(() => EmailVerificationService))
+    private readonly emailVerificationService: EmailVerificationService,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<ApiResponse<User>> {
@@ -46,12 +58,22 @@ export class UserService {
       id: user.id,
       name: createUserDto.name,
       last_name: createUserDto.last_name,
-    })
+    });
+
+    void this.emailVerificationService
+      .enqueueSendVerificationForUser(user.id, user.email)
+      .catch((error: unknown) => {
+        this.logger.error(
+          `No se pudo enviar el correo de verificación a ${user.email}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
+
+    user.password = null;
     return {
       message: "Usuario creado correctamente",
-      data: user
+      data: user,
     };
-
   }
 
   async findOrCreateOAuthUser(profile: {
@@ -82,6 +104,7 @@ export class UserService {
       password: null,
       provider: profile.provider,
       provider_id: profile.provider_id,
+      is_email_verified: true,
     });
     const saved = await this.userRepository.save(created);
     await this.profileService.createProfile({
@@ -89,6 +112,7 @@ export class UserService {
       name: profile.first_name ?? undefined,
       last_name: profile.last_name ?? undefined,
     });
+    saved.password = null;
     return saved;
   }
 
@@ -116,6 +140,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException("No se encontró el usuario")
     }
+    user.password = null;
 
     return user
 
@@ -131,6 +156,8 @@ export class UserService {
     }
 
     await this.userRepository.save(user)
+    user.password = null;
+
     return {
       message: "Usuario actualizado correctamente",
       data: user
@@ -147,8 +174,10 @@ export class UserService {
     }
 
     await this.userRepository.update(id, {
-      email: updateEmailDto.email
-    })
+      email: updateEmailDto.email,
+      is_email_verified: false,
+    });
+    user.password = null;
 
     return {
       message: "Email actualizado correctamente",

@@ -8,5 +8,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   two_factor_secret?:string | null;
 
-  two_factor_backup_codes?:string[] | null
+  two_factor_backup_codes?:string[] | null;
+
+  is_email_verified?: boolean;
 }

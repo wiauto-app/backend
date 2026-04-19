@@ -23,6 +23,8 @@ export class User {
   @Column("timestamp", { nullable: true })
   last_sign_in: Date;
 
+  @Column({ type: "boolean", default: false })
+  is_email_verified: boolean;
 
   @Column({ type: "boolean", default: false })
   two_factor_enabled: boolean;

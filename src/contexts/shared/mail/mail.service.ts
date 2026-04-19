@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+
 import { Injectable, Logger } from "@nestjs/common";
 import { MailerService } from "@nestjs-modules/mailer";
 
@@ -6,6 +9,25 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   constructor(private readonly mailerService: MailerService) {}
+
+  async sendEmailVerificationEmail(
+    to: string,
+    verificationLink: string,
+    displayEmail: string,
+  ): Promise<void> {
+    const html = this.buildEmailVerificationTemplate(verificationLink, displayEmail);
+
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject: "Verificá tu correo en WiAuto",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(`No se pudo enviar el correo de verificación a ${to}`, error as Error);
+      throw error;
+    }
+  }
 
   async sendPasswordRecoveryEmail(to: string, recoveryLink: string): Promise<void> {
     const html = this.buildPasswordRecoveryTemplate(recoveryLink);
@@ -20,6 +42,37 @@ export class MailService {
       this.logger.error(`No se pudo enviar el correo de recuperación a ${to}`, error as Error);
       throw error;
     }
+  }
+
+  private loadVerificationEmailTemplate(): string {
+    const candidates = [
+      join(__dirname, "../../users/user-templates/verification-email.html"),
+      join(process.cwd(), "src/contexts/users/user-templates/verification-email.html"),
+    ];
+    for (const filePath of candidates) {
+      if (existsSync(filePath)) {
+        return readFileSync(filePath, "utf-8");
+      }
+    }
+    this.logger.error("No se encontró verification-email.html en dist ni en src");
+    throw new Error("Plantilla de verificación de correo no disponible");
+  }
+
+  private buildEmailVerificationTemplate(link: string, email: string): string {
+    const year = String(new Date().getFullYear());
+    const safeEmail = this.escapeHtml(email);
+    return this.loadVerificationEmailTemplate()
+      .replaceAll("{{VERIFICATION_LINK}}", link)
+      .replaceAll("{{EMAIL}}", safeEmail)
+      .replaceAll("{{YEAR}}", year);
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
   }
 
   private buildPasswordRecoveryTemplate(recoveryLink: string): string {

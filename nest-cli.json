@@ -5,6 +5,12 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "builder": "swc",
-    "typeCheck": true
+    "typeCheck": true,
+    "assets": [
+      {
+        "include": "contexts/users/user-templates/**/*.html",
+        "watchAssets": true
+      }
+    ]
   }
 }

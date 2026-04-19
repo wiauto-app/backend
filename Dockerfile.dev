@@ -1,0 +1,34 @@
+# Desarrollo local (watch, debugger). Producción: Dockerfile → target production.
+# docker compose debe usar: dockerfile: Dockerfile.dev
+
+FROM node:22-alpine3.20
+
+ARG NPM_TOKEN
+ARG PORT=3000
+
+ENV NODE_ENV=development \
+    CI=true \
+    DIR=/app \
+    PORT=${PORT}
+
+WORKDIR $DIR
+
+# libc6-compat: algunos binarios precompilados (SWC, etc.) en musl
+RUN apk add --no-cache libc6-compat \
+  && npm install -g pnpm@9.14.2
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc \
+  && pnpm install --frozen-lockfile \
+  && rm -f .npmrc
+
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+COPY .swcrc ./
+COPY src ./src
+
+EXPOSE ${PORT} 9229
+
+# package.json y pnpm-lock.yaml suelen montarse desde el host: pnpm install al inicio sincroniza node_modules.
+CMD ["sh", "-c", "pnpm install && node --run dev"]
