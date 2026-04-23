@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export interface PrimitiveVehicle {
   id: string;
@@ -18,9 +18,17 @@ export interface PrimitiveVehicle {
   updated_at?: Date;
 }
 
-export class Vehicle {
+export type VehicleUpdateFields = Pick<
+  PrimitiveVehicle,
+  "price" | "mileage" | "lat" | "lng" | "condition" | "title"
+>;
 
-  constructor(private readonly primitiveVehicle: PrimitiveVehicle) { }
+export class Vehicle {
+  constructor(private readonly primitiveVehicle: PrimitiveVehicle) {}
+
+  static fromPrimitives(primitive: PrimitiveVehicle): Vehicle {
+    return new Vehicle(primitive);
+  }
 
   static create(createVehicle: {
     price: number;
@@ -32,14 +40,19 @@ export class Vehicle {
     description: string;
     version_id: number;
   }): Vehicle {
-    return new Vehicle(
-      {
-        ...createVehicle,
-        id: uuidv4(),
-        //90 days
-        expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90)
-      }
-    );
+    return new Vehicle({
+      ...createVehicle,
+      id: uuidv4(),
+      expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
+    });
+  }
+
+  applyUpdates(fields: VehicleUpdateFields): Vehicle {
+    return new Vehicle({
+      ...this.primitiveVehicle,
+      ...fields,
+      updated_at: new Date(),
+    });
   }
 
   toPrimitives(): PrimitiveVehicle {
@@ -52,6 +65,7 @@ export class Vehicle {
       lng: this.primitiveVehicle.lng,
       condition: this.primitiveVehicle.condition,
       title: this.primitiveVehicle.title,
+      description: this.primitiveVehicle.description,
       version_id: this.primitiveVehicle.version_id,
     };
   }

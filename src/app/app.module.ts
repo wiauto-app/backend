@@ -16,6 +16,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
+import { FileModule } from "../contexts/shared/file/file.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { APP_GUARD } from "@nestjs/core";
     VehiclesModule,
     MailModule,
     TwoFactorAuthModule,
+    FileModule,
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,

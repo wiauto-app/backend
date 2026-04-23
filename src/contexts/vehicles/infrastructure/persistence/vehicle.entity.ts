@@ -1,5 +1,7 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 import { Version } from "../../catalog/versions/entities/version.entity";
+import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
+import { get_vehicle_images_entity } from "./vehicle-images-entity.relation-type";
 
 
 export const STATUS_VEHICLE = {
@@ -10,7 +12,7 @@ export const STATUS_VEHICLE = {
   ARCHIVED: "archived",
 } as const;
 
-@Entity()
+@Entity({ name: "vehicles" })
 export class VehicleEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -60,4 +62,10 @@ export class VehicleEntity {
   @ManyToOne(() => Version, (version) => version.vehicles)
   @JoinColumn({ name: "version_id" })
   version: Relation<Version>;
+
+  @OneToMany(
+    () => get_vehicle_images_entity(),
+    (vehicle_image: VehicleImagesEntity) => vehicle_image.vehicle,
+  )
+  images: Relation<VehicleImagesEntity[]>;
 }

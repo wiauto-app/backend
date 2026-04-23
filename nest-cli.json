@@ -6,6 +6,9 @@
     "deleteOutDir": true,
     "builder": "swc",
     "typeCheck": true,
+    "options": {
+      "swcrcPath": ".swcrc"
+    },
     "assets": [
       {
         "include": "contexts/users/user-templates/**/*.html",

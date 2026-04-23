@@ -40,6 +40,15 @@ const envsSchema = z.object({
 
   REDIS_URL: z.string().default("redis://redis:6379"),
   
+  /** Base URL pública (navegador, presigned). Ej: http://localhost:9000 */
+  MINIO_ENDPOINT: z.string(),
+  /** API S3 del backend (mismo servicio, host interno en Docker: http://minio:9000) */
+  MINIO_S3_URL: z.string(),
+  MINIO_ACCESS_KEY: z.string(),
+  MINIO_SECRET_KEY: z.string(),
+
+  MINIO_BUCKET_NAME: z.string(),
+  MINIO_VIDEO_BUCKET_NAME: z.string(),
 });
 
 export const envs = envsSchema.parse(process.env);
