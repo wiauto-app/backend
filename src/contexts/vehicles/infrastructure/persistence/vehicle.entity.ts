@@ -14,7 +14,7 @@ import {
 import { VersionEntity } from "../../catalog/versions/infrastructure/persistence/version.entity";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
 import { get_vehicle_images_entity } from "./vehicle-images-entity.relation-type";
-import { PUBLISHER_TYPE, PublisherType, TRANSMISSION_TYPE, TransmissionType } from "../../domain/entities/vehicle";
+import { CONDITION_VEHICLE, ConditionVehicle, PUBLISHER_TYPE, PublisherType, STATUS_VEHICLE, StatusVehicle, TRANSMISSION_TYPE, TransmissionType } from "../../domain/entities/vehicle";
 import { VideosEntity } from "./videos.entity";
 import { FeaturesEntity } from "./features.entity";
 import { VehicleTypeEntity } from "./vehicle-type.entity";
@@ -24,13 +24,8 @@ import { DgtLabelEntity } from "./dgt-label.entity";
 import { WarrantyTypeEntity } from "./warranty-type.entity";
 import { TractionEntity } from "./traction.entity";
 
-export const STATUS_VEHICLE = {
-  ACTIVE: "active",
-  PENDING: "pending",
-  INACTIVE: "inactive",
-  SOLD: "sold",
-  ARCHIVED: "archived",
-} as const;
+
+
 
 @Entity({ name: "vehicles" })
 export class VehicleEntity {
@@ -50,12 +45,12 @@ export class VehicleEntity {
   @Column()
   mileage: number;
 
-  @Column()
-  condition: string;
+  @Column({ type: "enum", enum: CONDITION_VEHICLE, default: CONDITION_VEHICLE.NEW })
+  condition: ConditionVehicle;
 
   // --- Estado y visibilidad ---
   @Column({ type: "enum", enum: STATUS_VEHICLE, default: STATUS_VEHICLE.PENDING })
-  status: string;
+  status: StatusVehicle;
 
   @Column({ default: false })
   is_featured: boolean;

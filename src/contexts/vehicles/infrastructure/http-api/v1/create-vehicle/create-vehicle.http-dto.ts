@@ -1,8 +1,10 @@
 import {
   PUBLISHER_TYPE,
   PublisherType,
+  CONDITION_VEHICLE,
   TRANSMISSION_TYPE,
   TransmissionType,
+  ConditionVehicle,
 } from "@/src/contexts/vehicles/domain/entities/vehicle";
 import {
   IsArray,
@@ -37,9 +39,9 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   lng: number;
 
-  @IsString()
+  @IsEnum(CONDITION_VEHICLE)
   @IsNotEmpty()
-  condition: string;
+  condition: ConditionVehicle;
 
   @IsString()
   @IsNotEmpty()
@@ -88,6 +90,10 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   @Min(0)
   displacement: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  fuel_type_id: number;
 
   @IsNumber()
   @IsNotEmpty()

@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import {
   PrimitiveVehicle,
-  VehicleUpdateFields,
 } from "../../domain/entities/vehicle";
 import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
@@ -20,7 +19,7 @@ export class UpdateVehicleUseCase {
     }
 
     const prev = existing.toPrimitives();
-    const patch: VehicleUpdateFields = {
+    const patch= {
       price: updateVehicleDto.price,
       mileage: updateVehicleDto.mileage,
       lat: updateVehicleDto.lat,
@@ -39,24 +38,6 @@ export class UpdateVehicleUseCase {
       time_to_charge: updateVehicleDto.time_to_charge ?? prev.time_to_charge,
       license_plate: updateVehicleDto.license_plate ?? prev.license_plate,
     };
-    if (updateVehicleDto.features_ids !== undefined) {
-      patch.features_ids = updateVehicleDto.features_ids;
-    }
-    if (updateVehicleDto.services_ids !== undefined) {
-      patch.services_ids = updateVehicleDto.services_ids;
-    }
-    if (updateVehicleDto.vehicle_type_id !== undefined) {
-      patch.vehicle_type_id = updateVehicleDto.vehicle_type_id;
-    }
-    if (updateVehicleDto.color_id !== undefined) {
-      patch.color_id = updateVehicleDto.color_id;
-    }
-    if (updateVehicleDto.dgt_label_id !== undefined) {
-      patch.dgt_label_id = updateVehicleDto.dgt_label_id;
-    }
-    if (updateVehicleDto.warranty_type_id !== undefined) {
-      patch.warranty_type_id = updateVehicleDto.warranty_type_id;
-    }
 
     const updated = existing.applyUpdates(patch);
 

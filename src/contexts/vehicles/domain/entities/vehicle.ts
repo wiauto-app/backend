@@ -10,6 +10,22 @@ export const TRANSMISSION_TYPE = {
   MANUAL: "manual",
   AUTOMATIC: "automatic",
 } as const;
+
+export const STATUS_VEHICLE = {
+  ACTIVE: "active",
+  PENDING: "pending",
+  INACTIVE: "inactive",
+  SOLD: "sold",
+  ARCHIVED: "archived",
+} as const;
+
+export const CONDITION_VEHICLE = {
+  NEW: "new",
+  USED: "used",
+} as const;
+
+export type ConditionVehicle = (typeof CONDITION_VEHICLE)[keyof typeof CONDITION_VEHICLE];
+export type StatusVehicle = (typeof STATUS_VEHICLE)[keyof typeof STATUS_VEHICLE];
 export type TransmissionType =
   (typeof TRANSMISSION_TYPE)[keyof typeof TRANSMISSION_TYPE];
 
@@ -19,12 +35,12 @@ export interface PrimitiveVehicle {
   mileage: number;
   lat: number;
   lng: number;
-  condition: string;
+  condition: ConditionVehicle;
   title: string;
   description: string;
   publisher_type: PublisherType;
   version_id: number;
-  status?: string;
+  status?: StatusVehicle;
   is_featured?: boolean;
   expires_at?: Date;
   views?: number;
@@ -49,31 +65,7 @@ export interface PrimitiveVehicle {
   warranty_type_id: string | null;
 }
 
-export type VehicleUpdateFields = Pick<
-  PrimitiveVehicle,
-  | "price"
-  | "mileage"
-  | "lat"
-  | "lng"
-  | "condition"
-  | "title"
-  | "description"
-  | "transmission_type"
-  | "traction_id"
-  | "power"
-  | "displacement"
-  | "autonomy"
-  | "battery_capacity"
-  | "time_to_charge"
-  | "license_plate"
-> & {
-  features_ids?: string[];
-  services_ids?: string[];
-  vehicle_type_id?: string | null;
-  color_id?: string | null;
-  dgt_label_id?: string | null;
-  warranty_type_id?: string | null;
-};
+export type VehicleUpdateFields = Partial<PrimitiveVehicle>;
 
 export class Vehicle {
   constructor(private readonly primitiveVehicle: PrimitiveVehicle) {}
@@ -87,7 +79,7 @@ export class Vehicle {
     mileage: number;
     lat: number;
     lng: number;
-    condition: string;
+    condition: ConditionVehicle;
     title: string;
     description: string;
     publisher_type: PublisherType;

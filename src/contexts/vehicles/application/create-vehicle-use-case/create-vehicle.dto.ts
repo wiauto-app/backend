@@ -1,4 +1,5 @@
 import {
+  ConditionVehicle,
   PublisherType,
   TransmissionType,
 } from "../../domain/entities/vehicle";
@@ -8,7 +9,7 @@ export class CreateVehicleDto {
   mileage: number;
   lat: number;
   lng: number;
-  condition: string;
+  condition: ConditionVehicle;
   title: string;
   description: string;
   version_id: number;

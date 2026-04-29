@@ -17,6 +17,6 @@ import { CatalogFuelTypesUseCase } from "../application/catalog-fuel-types-use-c
       useExisting: TypeormCatalogFuelTypeRepository,
     },
   ],
-  exports: [CatalogFuelTypesRepository],
+  exports: [CatalogFuelTypesRepository, CatalogFuelTypesUseCase],
 })
 export class CatalogFuelTypesModule {}
