@@ -1,8 +1,9 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { MinioService } from "@/src/contexts/shared/minio-provider/minio.service";
+import { envs } from "@/src/common/envs";
 import { firstValueFrom } from "rxjs";
 
-import { FileStoragePort } from "../../domain/ports/file-storage.port";
+import { ContentType, FileStoragePort } from "../../domain/ports/file-storage.port";
 import { normalize_image_filename_for_storage } from "../utils/normalize-image-filename-for-storage";
 
 @Injectable()
@@ -47,4 +48,35 @@ export class MinioAdapter extends FileStoragePort {
   async generateSignedUrl(bucketName: string, fileKey: string, contentType: string): Promise<string> {
     return await this.minioService.generateUploadUrl(bucketName, fileKey, contentType);
   }
+
+  async downloadFile(fileKey: string): Promise<Buffer | null> {
+    const url = await firstValueFrom(this.minioService.getPublicUrl(fileKey));
+    const response = await fetch(url);
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  async downloadVideoFile(file_key: string): Promise<Buffer | null> {
+    return this.minioService.getObjectBuffer(envs.MINIO_VIDEO_BUCKET_NAME, file_key);
+  }
+
+  async replaceVideoObject(
+    file_key: string,
+    body: Buffer,
+    content_type: ContentType,
+  ): Promise<void> {
+    await this.minioService.putObjectToBucket(
+      envs.MINIO_VIDEO_BUCKET_NAME,
+      file_key,
+      body,
+      content_type,
+    );
+  }
+
+  async deleteVideoObject(file_key: string): Promise<void> {
+    await this.minioService.deleteObjectFromBucket(
+      envs.MINIO_VIDEO_BUCKET_NAME,
+      file_key,
+    );
+  }
+
 }

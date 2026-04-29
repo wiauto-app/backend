@@ -16,7 +16,15 @@ export class GenerateSignedUrlUseCase {
   }
 
   async execute( generateVideoSignedUrlHttpDto: GenerateVideoSignedUrlHttpDto ): Promise<string> {
-    
-    return await this.fileStoragePort.generateSignedUrl(this.bucketName, this.path + generateVideoSignedUrlHttpDto.file_key, generateVideoSignedUrlHttpDto.content_type);
+    const file_key = generateVideoSignedUrlHttpDto.file_key.replace(/^\/+/, "");
+    const key_with_prefix = file_key.startsWith(`${this.path}/`)
+      ? file_key
+      : `${this.path}/${file_key}`;
+
+    return await this.fileStoragePort.generateSignedUrl(
+      this.bucketName,
+      key_with_prefix,
+      generateVideoSignedUrlHttpDto.content_type,
+    );
   }
 }

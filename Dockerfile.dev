@@ -1,8 +1,7 @@
 # Desarrollo local (watch, debugger). Producción: Dockerfile → target production.
 # docker compose debe usar: dockerfile: Dockerfile.dev
 
-FROM node:22-alpine3.20
-
+FROM node:22
 ARG NPM_TOKEN
 ARG PORT=3000
 
@@ -13,8 +12,10 @@ ENV NODE_ENV=development \
 
 WORKDIR $DIR
 
-# libc6-compat: algunos binarios precompilados (SWC, etc.) en musl
-RUN apk add --no-cache libc6-compat \
+# ffmpeg vía apt (imagen node:22 = Debian, no usar apk; libc6-compat es solo Alpine).
+# glibc de Debian ya cubre binarios precompilados (SWC, etc.).
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+  && rm -rf /var/lib/apt/lists/* \
   && npm install -g pnpm@9.14.2
 
 COPY package.json pnpm-lock.yaml ./

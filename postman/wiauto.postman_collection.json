@@ -1,0 +1,760 @@
+{
+  "info": {
+    "_postman_id": "wiauto-api-collection",
+    "name": "wiauto",
+    "description": "Estructura: `wiauto` → `auth` | `vehicle`.\n\nVariables: `base_url`, `access_token` (JWT tras login), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas revisadas contra Nest (`auth`, `auth/me`, `2fa`, `users`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "access_token", "value": "" },
+    { "key": "vehicle_id", "value": "" },
+    { "key": "feature_id", "value": "" },
+    { "key": "vehicle_type_id", "value": "" },
+    { "key": "color_id", "value": "" },
+    { "key": "service_id", "value": "" },
+    { "key": "dgt_label_id", "value": "" },
+    { "key": "warranty_type_id", "value": "" },
+    { "key": "traction_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "wiauto",
+      "item": [
+        {
+          "name": "auth",
+          "item": [
+            {
+              "name": "Obtener sesión del usuario",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/auth/me",
+                "description": "`AuthGuard` (JWT)."
+              }
+            },
+            {
+              "name": "Iniciar sesión con google",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/auth/google",
+                "description": "OAuth web: redirect. Callback: `GET /auth/google/callback`."
+              }
+            },
+            {
+              "name": "iniciar sesión con credenciales",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password12\"\n}"
+                },
+                "url": "{{base_url}}/auth/login",
+                "description": "Respuesta: guarda el token en `access_token` (variable de colección)."
+              }
+            },
+            {
+              "name": "iniciar sesión google en mobile",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_token\": \"<google_id_token>\"\n}"
+                },
+                "url": "{{base_url}}/auth/google/mobile"
+              }
+            },
+            {
+              "name": "Inicializar 2fa",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/2fa/setup",
+                "description": "Devuelve QR / otpauth. `AuthGuard`."
+              }
+            },
+            {
+              "name": "Activar por primera vez 2fa",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"123456\"\n}"
+                },
+                "url": "{{base_url}}/2fa/activate",
+                "description": "`AuthGuard` + `TwoFactorGuard`: `code` = TOTP actual (6 dígitos). Habilita 2FA y puede devolver backup codes."
+              }
+            },
+            {
+              "name": "disable 2fa",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"123456\"\n}"
+                },
+                "url": "{{base_url}}/2fa/disable",
+                "description": "`AuthGuard` + `TwoFactorGuard`."
+              }
+            },
+            {
+              "name": "eliminar dispositivo",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"123456\"\n}"
+                },
+                "url": "{{base_url}}/2fa/delete",
+                "description": "`AuthGuard` + `TwoFactorGuard`. El guard lee `body.code`."
+              }
+            },
+            {
+              "name": "Activar 2fa",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": "{{base_url}}/2fa/enable",
+                "description": "En código no tiene `AuthGuard` (usa `@GetUser()`): si falla, revisa el controlador. Habilita 2FA sin paso TOTP previo en servicio."
+              }
+            },
+            {
+              "name": "Validar código de verificación",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"code\": \"codigo-respaldo\"\n}"
+                },
+                "url": "{{base_url}}/2fa/validate-backup-code",
+                "description": "Público (sin Bearer en el controlador). Código de recuperación + email."
+              }
+            },
+            {
+              "name": "Regenerar codigos de recuperacion",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/2fa/regenerate-backup-codes",
+                "description": "`AuthGuard`."
+              }
+            },
+            {
+              "name": "Crear Usuario",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"nuevo@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\"\n}"
+                },
+                "url": "{{base_url}}/users",
+                "description": "`UserController` — registro. `name` / `last_name` opcionales."
+              }
+            },
+            {
+              "name": "cuenta — verificación y recuperación (referencia)",
+              "item": [
+                {
+                  "name": "confirmar email (token del correo)",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"token\": \"<token_del_link>\"\n}"
+                    },
+                    "url": "{{base_url}}/auth/email-verification/confirm"
+                  }
+                },
+                {
+                  "name": "reenviar correo de verificación",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "url": "{{base_url}}/auth/email-verification/resend",
+                    "description": "Solo cuentas `local` no verificadas."
+                  }
+                },
+                {
+                  "name": "solicitar recuperación de contraseña",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
+                    },
+                    "url": "{{base_url}}/auth/password-recovery/request"
+                  }
+                },
+                {
+                  "name": "cambiar contraseña (token del correo)",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"token\": \"<token>\",\n  \"password\": \"nuevaPass12\"\n}"
+                    },
+                    "url": "{{base_url}}/auth/password-recovery/change"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "vehicle",
+          "item": [
+            {
+              "name": "v1",
+              "item": [
+                {
+                  "name": "crear vehículo",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "price", "value": "25000", "type": "text" },
+                        { "key": "mileage", "value": "45000", "type": "text" },
+                        { "key": "lat", "value": "-12.0464", "type": "text" },
+                        { "key": "lng", "value": "-77.0428", "type": "text" },
+                        { "key": "condition", "value": "usado", "type": "text" },
+                        { "key": "title", "value": "Toyota ejemplo venta", "type": "text" },
+                        { "key": "description", "value": "Descripción mínima de cinco caracteres o más.", "type": "text" },
+                        { "key": "version_id", "value": "1", "type": "text" },
+                        { "key": "phone_code", "value": "+51", "type": "text" },
+                        { "key": "phone", "value": "999999999", "type": "text" },
+                        { "key": "email", "value": "vendedor@ejemplo.com", "type": "text" },
+                        { "key": "publisher_type", "value": "professional", "type": "text", "description": "professional | particular" },
+                        { "key": "transmission_type", "value": "automatic", "type": "text", "description": "manual | automatic" },
+                        { "key": "traction_id", "value": "{{traction_id}}", "type": "text", "description": "UUID de catálogo tractions" },
+                        { "key": "power", "value": "150", "type": "text" },
+                        { "key": "displacement", "value": "2000", "type": "text" },
+                        { "key": "autonomy", "value": "0", "type": "text" },
+                        { "key": "battery_capacity", "value": "0", "type": "text" },
+                        { "key": "time_to_charge", "value": "0", "type": "text" },
+                        { "key": "license_plate", "value": "ABC123", "type": "text" },
+                        { "key": "features_ids", "value": "[]", "type": "text", "disabled": true },
+                        { "key": "services_ids", "value": "[]", "type": "text", "disabled": true, "description": "JSON array de UUIDs de servicios" },
+                        { "key": "vehicle_type_id", "value": "", "type": "text", "disabled": true },
+                        { "key": "color_id", "value": "", "type": "text", "disabled": true },
+                        { "key": "dgt_label_id", "value": "", "type": "text", "disabled": true },
+                        { "key": "warranty_type_id", "value": "", "type": "text", "disabled": true },
+                        { "key": "files", "type": "file", "src": [] }
+                      ]
+                    },
+                    "url": "{{base_url}}/v1/vehicles",
+                    "description": "Multipart: `files` (imágenes). Requiere: transmission_type (manual|automatic), traction_id (UUID), power, displacement, autonomy, battery_capacity, time_to_charge, license_plate. Opcionales: features_ids, services_ids (JSON array), IDs de catálogo."
+                  }
+                },
+                {
+                  "name": "obtener todos los vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicles?page=1&limit=20"
+                  }
+                },
+                {
+                  "name": "obtener vehículo por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar vehículo",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"price\": 26000,\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"usado\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
+                    "description": "Incluye opcionales: `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
+                  }
+                }
+              ]
+            },
+            {
+              "name": "vehicle-images",
+              "item": [
+                {
+                  "name": "subir imagen (una)",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [{ "key": "file", "type": "file", "src": [] }]
+                    },
+                    "url": "{{base_url}}/v1/vehicle-images/upload/{{vehicle_id}}"
+                  }
+                },
+                {
+                  "name": "subir imágenes (bulk)",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [{ "key": "files", "type": "file", "src": [] }]
+                    },
+                    "url": "{{base_url}}/v1/vehicle-images/bulk/{{vehicle_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "vehicle-videos",
+              "item": [
+                {
+                  "name": "generar URL firmada (upload vídeo)",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"file_key\": \"videos/ejemplo/clave.mp4\",\n  \"content_type\": \"video/mp4\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/generate-video-signed-url",
+                    "description": "`content_type`: image/jpeg, video/mp4, etc. (ver CONTENT_TYPES en backend)."
+                  }
+                },
+                {
+                  "name": "confirmar subida de vídeo",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"file_key\": \"videos/ejemplo/clave.mp4\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/confirm-video-upload"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "caracteristicas",
+              "item": [
+                {
+                  "name": "crear característica",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Aire acondicionado\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/features",
+                    "description": "Respuesta incluye `slug` generado a partir de `name` (slugify: minúsculas, guiones)."
+                  }
+                },
+                {
+                  "name": "obtener todas las características",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/features?page=1&limit=20"
+                  }
+                },
+                {
+                  "name": "obtener característica por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/features/{{feature_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar característica",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"id\": \"{{feature_id}}\",\n  \"name\": \"Nombre actualizado\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/features",
+                    "description": "El id va en el body, no en la URL. Respuesta: `{ \"feature\": { \"id\", \"name\", \"slug\", ... } }`; el `slug` se recalcula al cambiar el nombre."
+                  }
+                },
+                {
+                  "name": "eliminar característica",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/features/{{feature_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "vehicle-types",
+              "item": [
+                {
+                  "name": "crear tipo de vehículo",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"SUV\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicle-types"
+                  }
+                },
+                {
+                  "name": "obtener todos los tipos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicle-types"
+                  }
+                },
+                {
+                  "name": "obtener tipo por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicle-types/{{vehicle_type_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar tipo de vehículo",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"SUV premium\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicle-types/{{vehicle_type_id}}"
+                  }
+                },
+                {
+                  "name": "eliminar tipo de vehículo",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicle-types/{{vehicle_type_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "servicios",
+              "item": [
+                {
+                  "name": "crear servicio",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Financiamiento\",\n  \"description\": \"Opciones de crédito y cuotas\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/services",
+                    "description": "Respuesta: `{ \"service\": { \"id\", \"name\", \"description\", \"slug\", ... } }`. El `slug` se genera desde `name`."
+                  }
+                },
+                {
+                  "name": "obtener todos los servicios",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/services"
+                  }
+                },
+                {
+                  "name": "obtener servicio por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/services/{{service_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar servicio",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Financiamiento premium\",\n  \"description\": \"Crédito directo y tasas preferentes\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/services/{{service_id}}",
+                    "description": "Campos opcionales. Si cambias `name`, se recalcula `slug`."
+                  }
+                },
+                {
+                  "name": "eliminar servicio",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/services/{{service_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "etiquetas DGT",
+              "item": [
+                {
+                  "name": "crear etiqueta DGT",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Etiqueta 0 emisiones\",\n  \"code\": \"0\",\n  \"description\": \"Vehículos de cero emisiones (eléctrico de batería, pila de combustible, etc.) según criterios DGT.\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/dgt-labels",
+                    "description": "Distintivo ambiental. `code`: 0, ECO, C o B (se guarda en mayúsculas). `slug` se genera desde `name`."
+                  }
+                },
+                {
+                  "name": "listar etiquetas DGT",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/dgt-labels"
+                  }
+                },
+                {
+                  "name": "obtener etiqueta DGT por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/dgt-labels/{{dgt_label_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar etiqueta DGT",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"description\": \"Texto actualizado de la etiqueta.\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/dgt-labels/{{dgt_label_id}}",
+                    "description": "Campos opcionales. Si cambias `name`, se recalcula `slug`; `code` se normaliza a mayúsculas."
+                  }
+                },
+                {
+                  "name": "eliminar etiqueta DGT",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/dgt-labels/{{dgt_label_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tipos de garantía",
+              "item": [
+                {
+                  "name": "crear tipo de garantía",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Garantía oficial fabricante\",\n  \"description\": \"Cobertura según condiciones del fabricante o concesionario autorizado.\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/warranty-types",
+                    "description": "Respuesta: `{ \"warranty_type\": { \"id\", \"name\", \"description\", \"slug\", ... } }`. El `slug` sale de `name` (útil junto a filtros `warranty_slugs` en listados)."
+                  }
+                },
+                {
+                  "name": "listar tipos de garantía",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/warranty-types"
+                  }
+                },
+                {
+                  "name": "obtener tipo de garantía por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/warranty-types/{{warranty_type_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar tipo de garantía",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"description\": \"Descripción actualizada del tipo de garantía.\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/warranty-types/{{warranty_type_id}}",
+                    "description": "Campos opcionales. Si cambias `name`, se recalcula `slug`."
+                  }
+                },
+                {
+                  "name": "eliminar tipo de garantía",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/warranty-types/{{warranty_type_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "colores",
+              "item": [
+                {
+                  "name": "crear color",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Rojo pasión\",\n  \"hex_code\": \"#E02020\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/colors"
+                  }
+                },
+                {
+                  "name": "obtener todos los colores",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/colors"
+                  }
+                },
+                {
+                  "name": "obtener color por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/colors/{{color_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar color",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Rojo actualizado\",\n  \"hex_code\": \"#CC0000\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/colors/{{color_id}}"
+                  }
+                },
+                {
+                  "name": "eliminar color",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/colors/{{color_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "traccion",
+              "item": [
+                {
+                  "name": "crear tracción",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"4x4\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/tractions"
+                  }
+                },
+                {
+                  "name": "obtener todas las tracciones",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/tractions"
+                  }
+                },
+                {
+                  "name": "obtener tracción por id",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/tractions/{{traction_id}}"
+                  }
+                },
+                {
+                  "name": "actualizar tracción",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"AWD\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/tractions/{{traction_id}}"
+                  }
+                },
+                {
+                  "name": "eliminar tracción",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/tractions/{{traction_id}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

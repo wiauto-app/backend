@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
 export interface PrimitiveVehicleImage {
   id: string;

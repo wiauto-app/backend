@@ -1,8 +1,8 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { VehicleRepository } from "../../domain/vehicle.repository";
+import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { GetVehicleDto } from "./get-vehicle.dto";
-import { PrimitiveVehicle } from "../../domain/vehicle";
-import { VehicleNotFoundException } from "../../domain/vehicle-not-found.exception";
+import { PrimitiveVehicle } from "../../domain/entities/vehicle";
+import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
 
 @Injectable()
 export class GetVehicleUseCase {

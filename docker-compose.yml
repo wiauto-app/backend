@@ -24,13 +24,22 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=wiautopassword
       - POSTGRES_DB=wiauto
+    networks:
+      - wiauto-network
     ports:
       - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wiauto"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis
+    networks:
+      - wiauto-network
     ports:
       - 6379:6379
     volumes:
@@ -51,10 +60,14 @@ services:
   #     - postgres
   #     - redis
 
-
-  my-service-dev:
-    container_name: my-service-dev
+  wiauto-dev:
+    container_name: wiauto-dev
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     env_file: .env
     build:
       dockerfile: Dockerfile.dev
@@ -68,6 +81,8 @@ services:
       - ./src:/app/src
       - ./package.json:/app/package.json
       - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+    networks:
+      - wiauto-network
     deploy:
       resources:
         limits:
@@ -100,6 +115,7 @@ services:
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
     env_file: .env
+
     volumes:
       - minio_data:/data
     environment:
@@ -108,14 +124,16 @@ services:
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
     command: server /data --console-address ":9001"
     ports:
-
       - 9000:9000
       - 9001:9001
-
-
+    networks:
+      - wiauto-network
 
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   # opensearch_data:
+networks:
+  wiauto-network:
+    driver: bridge

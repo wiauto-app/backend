@@ -3,6 +3,7 @@ import { switchMap, map, catchError } from 'rxjs/operators';
 import {
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -47,6 +48,47 @@ export class MinioService {
   }
 
   /**
+   * Lee un objeto (servidor) sin depender de bucket público.
+   */
+  async getObjectBuffer(bucket_name: string, object_key: string): Promise<Buffer | null> {
+    try {
+      const response = await s3.send(
+        new GetObjectCommand({ Bucket: bucket_name, Key: object_key }),
+      );
+      if (!response.Body) {
+        return null;
+      }
+      return Buffer.from(await response.Body.transformToByteArray());
+    } catch (e) {
+      const status = (e as { $metadata?: { httpStatusCode?: number } })?.$metadata
+        ?.httpStatusCode;
+      if (status === 404) {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Sube o reemplaza un objeto en un bucket concreto (p. ej. vídeos).
+   */
+  async putObjectToBucket(
+    bucket_name: string,
+    object_key: string,
+    body: Buffer,
+    content_type: string,
+  ): Promise<void> {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucket_name,
+        Key: object_key,
+        Body: body,
+        ContentType: content_type,
+      }),
+    );
+  }
+
+  /**
    * Genera la URL pública para leer un archivo
    * @param storagePath Ruta (key) dentro del bucket
    */
@@ -61,6 +103,15 @@ export class MinioService {
       catchError((error: Error) => {
         throw new Error(`Error generating public URL: ${error.message}`);
       }),
+    );
+  }
+
+  /**
+   * Elimina un objeto por `bucket` y `key` (p. ej. bucket de vídeos).
+   */
+  async deleteObjectFromBucket(bucket_name: string, object_key: string): Promise<void> {
+    await s3.send(
+      new DeleteObjectCommand({ Bucket: bucket_name, Key: object_key }),
     );
   }
 

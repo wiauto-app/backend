@@ -11,6 +11,13 @@ const base_s3_config = (endpoint: string): S3ClientConfig => ({
   forcePathStyle: true,
 });
 
+/** Evita x-amz-checksum-crc32 en URLs presignadas: MinIO suele fallar con SignatureDoesNotMatch. */
+const presign_s3_config = (endpoint: string): S3ClientConfig => ({
+  ...base_s3_config(endpoint),
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
+});
+
 /** Llamadas servidor → MinIO (p. ej. en Docker: http://minio:9000) */
 export const s3 = new S3Client(base_s3_config(envs.MINIO_S3_URL));
 
@@ -18,4 +25,4 @@ export const s3 = new S3Client(base_s3_config(envs.MINIO_S3_URL));
  * Presigned URLs: el `Host` forma parte de la firma. Debe ser la misma base URL
  * que el navegador o la app usarán al subir (normalmente `MINIO_ENDPOINT`, ej. http://localhost:9000).
  */
-export const s3_for_presign = new S3Client(base_s3_config(envs.MINIO_ENDPOINT));
+export const s3_for_presign = new S3Client(presign_s3_config(envs.MINIO_ENDPOINT));

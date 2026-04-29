@@ -1,0 +1,28 @@
+---
+description: Tras implementar o cambiar un endpoint HTTP, actualizar la colección Postman importable
+globs: "**/*.controller.ts,**/route.constants.ts"
+alwaysApply: false
+---
+
+# Colección Postman (`postman/wiauto.postman_collection.json`)
+
+Cuando **añadas, modifiques o elimines** rutas HTTP en Nest (método, path, auth, body o query), **actualiza en el mismo cambio** el archivo importable:
+
+`postman/wiauto.postman_collection.json`
+
+## Qué hacer
+
+1. **Ubicación en el JSON**: Mantén la jerarquía existente (`info` → `item` → carpetas como `wiauto` → subcarpetas `auth`, `vehicle`, etc.). Coloca el request donde encaje con el resto de la API.
+2. **Request**: Incluye `method`, `url` como `{{base_url}}/ruta/completa`, headers necesarios (`Authorization: Bearer {{access_token}}`, `Content-Type: application/json` si hay body).
+3. **Body**: Si el endpoint acepta JSON, usa `body.mode: "raw"` y un ejemplo alineado con el HTTP DTO / validación del controlador (nombres de campos en **snake_case** si así está el API).
+4. **Variables de colección**: Si aparecen nuevos IDs en la ruta (p. ej. `/colors/:id`), añade o reutiliza variables en el array `variable` (p. ej. `color_id`) y úsalas en la URL como `{{color_id}}`.
+5. **Descripción**: Una línea breve en español (guards, requisitos 2FA, etc.) si aplica, como en los items existentes.
+6. **Eliminación**: Si quitas un endpoint del código, elimina o marca el request correspondiente en la colección para no dejar rutas muertas.
+
+## Referencia rápida
+
+Inspecciona un item vecino en el mismo grupo (misma carpeta) y copia la forma del objeto `request` / `item` para mantener el esquema Postman v2.1 válido.
+
+## No omitir
+
+No cerrar la tarea de “nuevo endpoint” sin haber tocado la colección Postman cuando el cambio sea visible para clientes (Postman/frontend).

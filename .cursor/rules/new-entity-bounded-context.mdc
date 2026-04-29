@@ -1,0 +1,50 @@
+---
+description: Checklist al crear una entidad o recurso nuevo (capas dominio, aplicación, infra, BD, HTTP)
+globs: "src/contexts/**/domain/**/*.ts,src/contexts/**/application/**/*.ts,src/contexts/**/infrastructure/**/*.ts,src/contexts/**/modules/**/*.ts,src/database/migrations/**/*.ts"
+alwaysApply: false
+---
+
+# Nueva entidad / recurso en un bounded context
+
+Al **añadir una entidad de dominio expuesta por API** (o un CRUD nuevo), recorre estas capas en el **mismo cambio**. Toma como referencia un recurso ya hecho en `vehicles` (p. ej. `colors`, `vehicle-types`, `services`).
+
+## 1. Dominio (`domain/`)
+
+- **Entidad**: interfaz de primitivos (`Primitive…`) + clase con `create`, `update` (si aplica), `fromPrimitives`, `toPrimitives`. Si hay nombre “catálogo”, **`slug` con `slugify(name)`** y recalcular `slug` solo cuando cambie el nombre.
+- **Excepciones**: `*-not-found.exception.ts` si hay búsqueda por id.
+- **Puerto**: repositorio **abstracto** en `domain/repositories/` (contrato; sin TypeORM).
+
+## 2. Infraestructura — persistencia (`infrastructure/persistence/`)
+
+- **Entity TypeORM**: `@Entity({ name: "tabla_en_snake" })`, columnas alineadas con primitivos; `implements Primitive…` si encaja.
+- **Repositorio concreto** (`infrastructure/repositories/typeorm.*-repository.ts`): implementa el abstracto; mapea filas con `fromPrimitives` / `toPrimitives`.
+
+## 3. Actualizaciones con TypeORM
+
+- Para **modificar filas existentes**, usar **`preload` + `save`** (no `update()` suelto salvo patrón ya establecido en ese archivo).
+
+## 4. Base de datos
+
+- **Migración** en `src/database/migrations/` con timestamp coherente; evitar **duplicar** `CREATE TABLE` de la misma tabla. Si la tabla ya existe en BD, ajustar migración o esquema, no repetir creación.
+
+## 5. Aplicación (`application/`)
+
+- **Casos de uso** + **DTOs** de aplicación (sin `class-validator` aquí si el HTTP ya valida).
+- `@Injectable()` desde `@/src/contexts/shared/dependency-injectable/injectable` si es el patrón del proyecto.
+
+## 6. HTTP (`infrastructure/http-api/`)
+
+- **Constantes de ruta** en `route.constants.ts` del contexto (p. ej. `V1_RECURSO`).
+- **Controller** + **HTTP DTOs** con `class-validator` / `PartialType` para PATCH.
+- Registrar **controller** y **providers** en el **módulo** del contexto (`modules/*.module.ts`): `TypeOrmModule.forFeature([…Entity])`, token `provide` / `useExisting` del repositorio abstracto → implementación TypeORM.
+- Importar el módulo nuevo en el **módulo padre** del contexto si hace falta (`*.module.ts` raíz del bounded context).
+
+## 7. Postman
+
+- Cumple también la regla **`postman-collection-sync`**: actualizar `postman/wiauto.postman_collection.json` (carpeta, método, URL, body, variables `{{…_id}}`).
+
+## Convenciones del repo
+
+- Nombres en **snake_case** (variables, columnas, DTOs alineados con el API).
+- Mensajes de error al usuario en **español neutro**.
+- Mantén el estilo de imports y carpetas del contexto que estés tocando; no mezcles capas (dominio sin TypeORM, etc.).
