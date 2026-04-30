@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { CreateVehicleController } from "./infrastructure/http-api/v1/create-vehicle/create-vehicle.controller";
-import { CreateVehicleUseCase } from "./application/create-vehicle-use-case/create-vehicle.use-case";
+import { CreateVehicleUseCase } from "./application/vehicle/create-vehicle-use-case/create-vehicle.use-case";
 import { VehicleRepository } from "./domain/repositories/vehicle.repository";
 import { VehicleEntity } from "./infrastructure/persistence/vehicle.entity";
 import { VehicleTypeEntity } from "./infrastructure/persistence/vehicle-type.entity";
@@ -12,9 +12,9 @@ import { TractionEntity } from "./infrastructure/persistence/traction.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeOrmVehicleRepository } from "./infrastructure/repositories/typeorm.vehicle-repository";
 import { FindVehicleController } from "./infrastructure/http-api/v1/find-vehicle/find-vehicle.controller";
-import { GetVehicleUseCase } from "./application/get-vehicle-use-case/get-vehicle.use-case";
+import { GetVehicleUseCase } from "./application/vehicle/get-vehicle-use-case/get-vehicle.use-case";
 import { UpdateVehicleController } from "./infrastructure/http-api/v1/update-vehicle/update-vehicle.controller";
-import { UpdateVehicleUseCase } from "./application/update-vehicle-use-case/update-vehicle.use-case";
+
 import { FileModule } from "../shared/file/file.module";
 import { ImageValidationPipe } from "../shared/file/infrastructure/pipes/image-validation.pipe";
 import { VehicleImagesModule } from "./vehicle-images/vehicle-images.module";
@@ -31,7 +31,6 @@ import { FindFeatureController } from "./infrastructure/http-api/feature-v1/find
 import { FindFeaturesController } from "./infrastructure/http-api/feature-v1/find-features/find-features.controller";
 import { FindFeatureUseCase } from "./application/features/find-feature-use-case/find-feature.use-case";
 import { FindFeaturesUseCase } from "./application/features/find-features-use-case/find-features.use-case";
-import { FindAllVehiclesUseCase } from "./application/find-all-vehicles-use-case/find-all-vehicles.use-case";
 import { FindAllVehiclesController } from "./infrastructure/http-api/v1/find-all-vehicles/find-all-vehicles.controller";
 import { VehicleTypesModule } from "./modules/vehicle-types.module";
 import { ColorsModule } from "./modules/colors.module";
@@ -40,9 +39,14 @@ import { DgtLabelsModule } from "./modules/dgt-labels.module";
 import { WarrantyTypesModule } from "./modules/warranty-types.module";
 import { TractionsModule } from "./modules/tractions.module";
 import { CatalogModule } from "./catalog/catalog.module";
+import { UpdateVehicleUseCase } from "./application/vehicle/update-vehicle-use-case/update-vehicle.use-case";
+import { FindAllVehiclesUseCase } from "./application/vehicle/find-all-vehicles-use-case/find-all-vehicles.use-case";
+import { RemoveVehicleUseCase } from "./application/vehicle/remove-vehicle-use-case/remove-vehicle.use-case";
+import { ValidateVehicleUseCase } from "./application/vehicle/validate-vehicle-use-case/validate-vehicle.use-case";
+import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-vehicle/remove-vehicle.controller";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController],
+  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController],
   providers: [
     ImageValidationPipe,
     /* Use Cases */
@@ -50,6 +54,8 @@ import { CatalogModule } from "./catalog/catalog.module";
     GetVehicleUseCase,
     UpdateVehicleUseCase,
     FindAllVehiclesUseCase,
+    RemoveVehicleUseCase,
+    ValidateVehicleUseCase,
     CreateFeatureUseCase,
     RemoveFeatureUseCase,
     UpdateFeatureUseCase,

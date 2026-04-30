@@ -116,6 +116,70 @@ export class MinioService {
   }
 
   /**
+   * Obtiene la clave del objeto (Key) en el bucket por defecto a partir de:
+   * - URL absoluta `http(s)://.../bucket/key...`
+   * - Path guardado por el adaptador: `/bucket/key...` (sin host; fallaba con `new URL`)
+   * - Clave directa: `vehicles/uuid/archivo.jpg`
+   */
+  private extract_default_bucket_object_key(stored: string): string {
+    const trimmed = stored.trim();
+    if (!trimmed) {
+      throw new Error("Referencia de almacenamiento vacía");
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      if (trimmed.includes("storage.googleapis.com")) {
+        let urlObj: URL;
+        try {
+          urlObj = new URL(trimmed);
+        } catch {
+          throw new Error("URL inválida");
+        }
+        const gcsParts = urlObj.pathname.split("/").filter(Boolean);
+        const gcsBucketIndex = gcsParts.findIndex((part) =>
+          part.includes("bucket"),
+        );
+        return gcsBucketIndex !== -1
+          ? gcsParts.slice(gcsBucketIndex + 1).join("/")
+          : gcsParts.slice(1).join("/");
+      }
+      if (!trimmed.includes(this.bucketName)) {
+        const pathname = (() => {
+          try {
+            return new URL(trimmed).pathname;
+          } catch {
+            throw new Error("URL inválida");
+          }
+        })();
+        return this.extract_default_bucket_object_key(pathname);
+      }
+      let urlObj: URL;
+      try {
+        urlObj = new URL(trimmed);
+      } catch {
+        throw new Error("URL inválida");
+      }
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      const bucketIndex = pathParts.indexOf(this.bucketName);
+      if (bucketIndex === -1) {
+        throw new Error("No se pudo extraer la clave del archivo de la URL");
+      }
+      return pathParts.slice(bucketIndex + 1).join("/");
+    }
+
+    if (trimmed.startsWith("/")) {
+      const pathParts = trimmed.split("/").filter(Boolean);
+      const bucketIndex = pathParts.indexOf(this.bucketName);
+      if (bucketIndex !== -1) {
+        return pathParts.slice(bucketIndex + 1).join("/");
+      }
+      return pathParts.join("/");
+    }
+
+    return trimmed.replace(/^\//, "");
+  }
+
+  /**
    * Elimina un archivo del bucket
    * @param storagePath Ruta (key) dentro del bucket
    */
@@ -134,44 +198,10 @@ export class MinioService {
   }
 
   /**
-   * Elimina un archivo por su URL
-   * @param url URL del archivo
+   * Elimina objeto del bucket por defecto. Acepta URL pública, path tipo `/bucket/key` (lo que persiste el adaptador) o la key S3.
    */
   deleteFileByUrl(url: string): Observable<void> {
-    // Extraer la ruta del archivo de la URL
-    let filePath: string;
-
-    try {
-      // Si es una URL de MinIO, extraer la ruta después del bucket name
-      if (url.includes(this.bucketName)) {
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/').filter((p) => p);
-        const bucketIndex = pathParts.indexOf(this.bucketName);
-        if (bucketIndex !== -1) {
-          filePath = pathParts.slice(bucketIndex + 1).join('/');
-        } else {
-          throw new Error('No se pudo extraer la ruta del archivo de la URL');
-        }
-      }
-      // Si es una URL de GCS (para compatibilidad con URLs antiguas)
-      else if (url.includes('storage.googleapis.com')) {
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/').filter(Boolean);
-        // Buscar el bucket y tomar todo lo que viene después
-        const bucketIndex = pathParts.findIndex((part) =>
-          part.includes('bucket'),
-        );
-        filePath = bucketIndex !== -1 ? pathParts.slice(bucketIndex + 1).join('/') : pathParts.slice(1).join('/');
-        filePath = pathParts.slice(1).join('/');
-      }
-      // Si ya es una ruta directa, usarla tal como está
-      else {
-        filePath = url;
-      }
-    } catch (error) {
-      throw new Error(`URL inválida: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-
+    const filePath = this.extract_default_bucket_object_key(url);
     return this.deleteFile(filePath);
   }
 

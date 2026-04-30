@@ -157,4 +157,7 @@ export class VehicleEntity {
   @ManyToMany(() => ServiceEntity, (service) => service.vehicles)
   @JoinTable({ name: "vehicle_services" })
   services: Relation<ServiceEntity[]>;
+
+  @Column({ type: "jsonb", default: [] })
+  suggestions: string[];
 }

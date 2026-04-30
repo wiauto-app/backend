@@ -1,9 +1,9 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import {
   PrimitiveVehicle,
-} from "../../domain/entities/vehicle";
-import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
-import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
+} from "../../../domain/entities/vehicle";
+import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
+import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { UpdateVehicleDto } from "./update-vehicle.dto";
 
 @Injectable()

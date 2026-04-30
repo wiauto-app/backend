@@ -23,6 +23,10 @@ export class VehicleImage {
     });
   }
 
+  static fromPrimitives(p: PrimitiveVehicleImage): VehicleImage {
+    return new VehicleImage(p);
+  }
+
   toPrimitives(): PrimitiveVehicleImage {
     return {
       ...this.primitiveImage,

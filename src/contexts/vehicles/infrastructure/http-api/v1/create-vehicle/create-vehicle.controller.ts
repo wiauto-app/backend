@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
 
-import { CreateVehicleUseCase } from "@/src/contexts/vehicles/application/create-vehicle-use-case/create-vehicle.use-case";
+import { CreateVehicleUseCase } from "@/src/contexts/vehicles/application/vehicle/create-vehicle-use-case/create-vehicle.use-case";
 import { ImageValidationPipe } from "@/src/contexts/shared/file/infrastructure/pipes/image-validation.pipe";
 
 import { V1_VEHICLES } from "../../route.constants";

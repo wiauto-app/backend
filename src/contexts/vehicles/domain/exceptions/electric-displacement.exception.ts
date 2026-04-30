@@ -1,7 +1,8 @@
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 
 
-export class ElectricDisplacementException extends Error {
+export class ElectricDisplacementException extends ValidationException {
   constructor() {
-    super(`Electric vehicles cannot have a displacement greater than 0`);
+    super(`Los vehículos eléctricos no pueden tener cilindrada.`);
   }
 }

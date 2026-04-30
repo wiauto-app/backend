@@ -132,6 +132,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     color_id: entity.color?.id ?? null,
     dgt_label_id: entity.dgt_label?.id ?? null,
     warranty_type_id: entity.warranty_type?.id ?? null,
+    suggestions: entity.suggestions,
   };
 }
 
@@ -333,5 +334,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       throw new VehicleNotFoundException(p.id);
     }
     await this.vehicle_repository.save(preloaded);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.vehicle_repository.delete(id);
   }
 }

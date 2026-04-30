@@ -21,6 +21,9 @@ import {
 } from "class-validator";
 
 export class CreateVehicleHttpDto {
+  @IsUUID("4")
+  vehicle_type_id: string;
+
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
@@ -50,7 +53,7 @@ export class CreateVehicleHttpDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(5)
+  @MinLength(10)
   description: string;
 
   @IsNumber()
@@ -73,9 +76,10 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   publisher_type: PublisherType;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsEnum(TRANSMISSION_TYPE)
-  @IsNotEmpty()
-  transmission_type: TransmissionType;
+  transmission_type?: TransmissionType;
 
   @IsUUID("4")
   @IsNotEmpty()
@@ -86,33 +90,36 @@ export class CreateVehicleHttpDto {
   @Min(0)
   power: number;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
-  displacement: number;
+  displacement?: number;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
-  @IsNotEmpty()
-  fuel_type_id: number;
-
-  @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  autonomy: number;
+  autonomy?: number;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  battery_capacity: number;
+  battery_capacity?: number;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  time_to_charge: number;
+  time_to_charge?: number;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsString()
-  @IsNotEmpty()
-  license_plate: string;
+  @MinLength(5)
+  license_plate?: string;
 
   @IsOptional()
   @IsArray()
@@ -123,11 +130,6 @@ export class CreateVehicleHttpDto {
   @IsArray()
   @IsUUID("4", { each: true })
   services_ids?: string[];
-
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== undefined)
-  @IsUUID("4")
-  vehicle_type_id?: string | null;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)

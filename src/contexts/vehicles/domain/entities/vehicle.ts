@@ -63,6 +63,7 @@ export interface PrimitiveVehicle {
   color_id: string | null;
   dgt_label_id: string | null;
   warranty_type_id: string | null;
+  suggestions: string[];
 }
 
 export type VehicleUpdateFields = Partial<PrimitiveVehicle>;
@@ -101,6 +102,7 @@ export class Vehicle {
     battery_capacity: number;
     time_to_charge: number;
     license_plate: string;
+    suggestions: string[];
   }): Vehicle {
     return new Vehicle({
       ...createVehicle,
@@ -152,6 +154,7 @@ export class Vehicle {
       color_id: this.primitiveVehicle.color_id,
       dgt_label_id: this.primitiveVehicle.dgt_label_id,
       warranty_type_id: this.primitiveVehicle.warranty_type_id,
+      suggestions: this.primitiveVehicle.suggestions,
     };
   }
 }

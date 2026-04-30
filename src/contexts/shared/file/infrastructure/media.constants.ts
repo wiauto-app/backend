@@ -3,6 +3,7 @@
 export const ONE_KB = 1024;
 export const ONE_MB = 1024 * 1024;
 export const SIX_MB = 6 * ONE_MB;
+export const TEN_MB = 10 * ONE_MB;
 export const ALLOWED_IMAGES_COUNT = 10;
 export const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
 

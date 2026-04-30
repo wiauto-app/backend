@@ -10,4 +10,5 @@ export abstract class VehicleRepository {
   }>;
   abstract findOne(id: string): Promise<Vehicle | null>;
   abstract update(vehicle: Vehicle): Promise<void>;
+  abstract remove(id: string): Promise<void>;
 }

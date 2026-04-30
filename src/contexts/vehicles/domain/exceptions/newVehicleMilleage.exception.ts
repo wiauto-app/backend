@@ -1,7 +1,8 @@
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 
 
-export class NewVehicleMileageException extends Error {
+export class NewVehicleMileageException extends ValidationException {
   constructor() {
-    super(`New vehicles cannot have a mileage greater than 100000`);
+    super(`Los vehículos nuevos no pueden tener más de 1000 km`);
   }
 }

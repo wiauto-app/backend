@@ -250,37 +250,37 @@
                     "body": {
                       "mode": "formdata",
                       "formdata": [
+                        { "key": "vehicle_type_id", "value": "{{vehicle_type_id}}", "type": "text", "description": "Obligatorio. UUID de tipo de vehículo (`v1/vehicle-types`)." },
                         { "key": "price", "value": "25000", "type": "text" },
                         { "key": "mileage", "value": "45000", "type": "text" },
                         { "key": "lat", "value": "-12.0464", "type": "text" },
                         { "key": "lng", "value": "-77.0428", "type": "text" },
-                        { "key": "condition", "value": "usado", "type": "text" },
+                        { "key": "condition", "value": "used", "type": "text", "description": "new | used" },
                         { "key": "title", "value": "Toyota ejemplo venta", "type": "text" },
-                        { "key": "description", "value": "Descripción mínima de cinco caracteres o más.", "type": "text" },
-                        { "key": "version_id", "value": "1", "type": "text" },
+                        { "key": "description", "value": "Descripción del anuncio con al menos diez caracteres para pasar validación.", "type": "text" },
+                        { "key": "version_id", "value": "1", "type": "text", "description": "ID numérico de versión del catálogo (`v1/catalog/...`)." },
                         { "key": "phone_code", "value": "+51", "type": "text" },
                         { "key": "phone", "value": "999999999", "type": "text" },
                         { "key": "email", "value": "vendedor@ejemplo.com", "type": "text" },
                         { "key": "publisher_type", "value": "professional", "type": "text", "description": "professional | particular" },
-                        { "key": "transmission_type", "value": "automatic", "type": "text", "description": "manual | automatic" },
-                        { "key": "traction_id", "value": "{{traction_id}}", "type": "text", "description": "UUID de catálogo tractions" },
+                        { "key": "transmission_type", "value": "automatic", "type": "text", "description": "Opcional. manual | automatic. Si no envías el campo, el backend usa manual." },
+                        { "key": "traction_id", "value": "{{traction_id}}", "type": "text", "description": "Obligatorio. UUID de catálogo tractions." },
                         { "key": "power", "value": "150", "type": "text" },
-                        { "key": "displacement", "value": "2000", "type": "text" },
-                        { "key": "autonomy", "value": "0", "type": "text" },
-                        { "key": "battery_capacity", "value": "0", "type": "text" },
-                        { "key": "time_to_charge", "value": "0", "type": "text" },
-                        { "key": "license_plate", "value": "ABC123", "type": "text" },
-                        { "key": "features_ids", "value": "[]", "type": "text", "disabled": true },
-                        { "key": "services_ids", "value": "[]", "type": "text", "disabled": true, "description": "JSON array de UUIDs de servicios" },
-                        { "key": "vehicle_type_id", "value": "", "type": "text", "disabled": true },
-                        { "key": "color_id", "value": "", "type": "text", "disabled": true },
-                        { "key": "dgt_label_id", "value": "", "type": "text", "disabled": true },
-                        { "key": "warranty_type_id", "value": "", "type": "text", "disabled": true },
+                        { "key": "displacement", "value": "2000", "type": "text", "description": "Opcional en el DTO; térmico suele exigir cilindrada > 0 por reglas de negocio." },
+                        { "key": "autonomy", "value": "0", "type": "text", "disabled": true, "description": "Opcional. Relevante si el combustible del catálogo admite carga (eléctrico/híbrido enchufable)." },
+                        { "key": "battery_capacity", "value": "0", "type": "text", "disabled": true, "description": "Opcional. Mismo criterio que autonomy." },
+                        { "key": "time_to_charge", "value": "0", "type": "text", "disabled": true, "description": "Opcional. Mismo criterio que autonomy." },
+                        { "key": "license_plate", "value": "ABC12", "type": "text", "disabled": true, "description": "Opcional. Mín. 5 caracteres si se envía." },
+                        { "key": "features_ids", "value": "[]", "type": "text", "disabled": true, "description": "Opcional. Array JSON de UUIDs si tu pipe lo transforma; si no, envía repetidos features_ids o revisa transform en Nest." },
+                        { "key": "services_ids", "value": "[]", "type": "text", "disabled": true, "description": "Opcional. JSON array de UUIDs de servicios." },
+                        { "key": "color_id", "value": "{{color_id}}", "type": "text", "disabled": true, "description": "Opcional. UUID o vacío para no enviar." },
+                        { "key": "dgt_label_id", "value": "{{dgt_label_id}}", "type": "text", "disabled": true },
+                        { "key": "warranty_type_id", "value": "{{warranty_type_id}}", "type": "text", "disabled": true },
                         { "key": "files", "type": "file", "src": [] }
                       ]
                     },
                     "url": "{{base_url}}/v1/vehicles",
-                    "description": "Multipart: `files` (imágenes). Requiere: transmission_type (manual|automatic), traction_id (UUID), power, displacement, autonomy, battery_capacity, time_to_charge, license_plate. Opcionales: features_ids, services_ids (JSON array), IDs de catálogo."
+                    "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id. Incluye `files` (imágenes)."
                   }
                 },
                 {
@@ -306,10 +306,19 @@
                     "header": [{ "key": "Content-Type", "value": "application/json" }],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"price\": 26000,\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"usado\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
+                      "raw": "{\n  \"price\": 26000,\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
                     },
                     "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
                     "description": "Incluye opcionales: `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
+                  }
+                },
+                {
+                  "name": "eliminar vehículo",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
+                    "description": "Borra el vehículo; antes elimina los objetos de imágenes en MinIO asociados a `vehicle_images`. Variable de colección: `vehicle_id` (UUID)."
                   }
                 }
               ]

@@ -1,7 +1,8 @@
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 
 
-export class FuelIncompatibilitiesException extends Error {
+export class FuelIncompatibilitiesException extends ValidationException {
   constructor() {
-    super(`Fuel type is not compatible with the given parameters`);
+    super(`El tipo de combustible no admite carga y no puede indicarse batería, autonomía o tiempo de carga.`); 
   }
 }
