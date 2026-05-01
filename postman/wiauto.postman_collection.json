@@ -702,16 +702,16 @@
                 "method": "POST",
                 "header": [
                   {
-                    "key": "Authorization",
-                    "value": "Bearer {{access_token}}"
-                  },
-                  {
                     "key": "Content-Type",
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
+                },
                 "url": "{{base_url}}/auth/email-verification/resend",
-                "description": "Solo cuentas `local` no verificadas."
+                "description": "Body: `email`. No requiere sesión; respuesta neutra como recuperación de contraseña."
               },
               "response": [
                 {
@@ -720,16 +720,16 @@
                     "method": "POST",
                     "header": [
                       {
-                        "key": "Authorization",
-                        "value": "Bearer {{access_token}}"
-                      },
-                      {
                         "key": "Content-Type",
                         "value": "application/json"
                       }
                     ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
+                    },
                     "url": "{{base_url}}/auth/email-verification/resend",
-                    "description": "Solo cuentas `local` no verificadas."
+                    "description": "Body: `email`. No requiere sesión; respuesta neutra."
                   },
                   "status": "OK",
                   "code": 200,
@@ -740,7 +740,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"message\": \"Te enviamos un nuevo correo con el enlace de verificación.\"\n}"
+                  "body": "{\n  \"message\": \"Si ese correo tiene una cuenta local pendiente de verificación, te enviamos un nuevo enlace.\"\n}"
                 }
               ]
             },

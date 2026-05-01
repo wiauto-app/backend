@@ -41,6 +41,26 @@ export class EmailVerificationService {
     });
   }
 
+  /** No revela si el correo existe; solo encola cuando aplica cuenta local pendiente de verificación. */
+  async enqueueResendVerificationIfEligible(email_raw: string): Promise<void> {
+    const email = email_raw.trim();
+    if (!email) {
+      return;
+    }
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user || user.provider !== "local" || user.is_email_verified) {
+      this.logger.debug(
+        user
+          ? `Reenvío de verificación no aplicable (provider=${user.provider}, verificado=${user.is_email_verified})`
+          : `Reenvío de verificación solicitado para correo no registrado`,
+      );
+      return;
+    }
+
+    await this.enqueueSendVerificationForUser(user.id, user.email);
+  }
+
   async sendVerificationForUser(userId: string, email: string): Promise<void> {
     const base = envs.FRONTEND_EMAIL_VERIFICATION_URL.trim();
     if (!base) {
