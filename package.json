@@ -44,7 +44,8 @@
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run -d src/database/migrations-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/migrations-source.ts",
-    "migration:show": "npm run typeorm -- migration:show -d src/database/migrations-source.ts"
+    "migration:show": "npm run typeorm -- migration:show -d src/database/migrations-source.ts",
+    "seed:spain-demos": "tsx scripts/seed-spain-demo-vehicles.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",
@@ -115,6 +116,7 @@
     "@types/passport-apple": "^2.0.3",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
+    "@types/pg": "^8.20.0",
     "@types/qrcode": "^1.5.6",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",

@@ -31,4 +31,5 @@ export class CreateVehicleDto {
   color_id?: string | null;
   dgt_label_id?: string | null;
   warranty_type_id?: string | null;
+  cuota_id?: string | null;
 }

@@ -35,8 +35,9 @@ const envsSchema = z.object({
 
   /** URL del front (ej. https://app.tudominio.com/verify-email) — se añade ?token= */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string(),
+  FRONTEND_URL: z.string().default("http://localhost:3000"),
   /** Segundos hasta expirar el enlace de verificación (por defecto 48 h) */
-  EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC: z.coerce.number().default(172_800),
+  EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC: z.coerce.number().default(86_400),
 
   REDIS_URL: z.string().default("redis://redis:6379"),
   

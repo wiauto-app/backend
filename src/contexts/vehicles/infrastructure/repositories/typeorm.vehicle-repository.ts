@@ -8,7 +8,6 @@ import { InvalidVehicleServiceIdsException } from "../../domain/exceptions/inval
 import { InvalidVehicleCatalogIdException } from "../../domain/exceptions/invalid-vehicle-catalog-id.exception";
 import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
 import { getPaginationProps } from "@/src/contexts/shared/dto/getPaginationProps";
-import { PaginationDto } from "@/src/contexts/shared/dto/pagination.dto";
 import { VehicleListItem } from "../../domain/read-models/vehicle-list-item";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { ColorEntity } from "../persistence/color.entity";
@@ -19,6 +18,9 @@ import { VehicleEntity } from "../persistence/vehicle.entity";
 import { VehicleTypeEntity } from "../persistence/vehicle-type.entity";
 import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
 import { TractionEntity } from "../persistence/traction.entity";
+import { CuotaEntity } from "../persistence/cuota.entity";
+import { FindAllVehiclesDto } from "../../application/vehicle/find-all-vehicles-use-case/find-all-vehicles.dto";
+import { applyFilters } from "../validators/filters.applier";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -40,6 +42,7 @@ const vehicle_catalog_relations = {
   color: true,
   dgt_label: true,
   warranty_type: true,
+  cuota: true,
   services: true,
 } as const;
 
@@ -53,46 +56,54 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     condition: entity.condition,
     title: entity.title,
     created_at: entity.created_at,
-    images: (entity.images).map((image) => ({ id: image.id, url: image.url })),
-    features: (entity.features).map((feature) => ({
+    images: entity.images && entity.images.length > 0 ? (entity.images).map((image) => ({ id: image.id, url: image.url })) : [],
+    features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
       id: feature.id,
       name: feature.name,
       slug: feature.slug,
-    })),
-    services: (entity.services).map((service) => ({
+    })) : [],
+    services: entity.services && entity.services.length > 0 ? (entity.services).map((service) => ({
       id: service.id,
       name: service.name,
       slug: service.slug,
-    })),
+    })) : [],
     vehicle_type: entity.vehicle_type
       ? {
-          id: entity.vehicle_type.id,
-          name: entity.vehicle_type.name,
-          slug: entity.vehicle_type.slug,
-        }
+        id: entity.vehicle_type.id,
+        name: entity.vehicle_type.name,
+        slug: entity.vehicle_type.slug,
+      }
       : null,
     color: entity.color
       ? {
-          id: entity.color.id,
-          name: entity.color.name,
-          slug: entity.color.slug,
-          hex_code: entity.color.hex_code,
-        }
+        id: entity.color.id,
+        name: entity.color.name,
+        slug: entity.color.slug,
+        hex_code: entity.color.hex_code,
+      }
       : null,
     dgt_label: entity.dgt_label
       ? {
-          id: entity.dgt_label.id,
-          name: entity.dgt_label.name,
-          code: entity.dgt_label.code,
-          slug: entity.dgt_label.slug,
-        }
+        id: entity.dgt_label.id,
+        name: entity.dgt_label.name,
+        code: entity.dgt_label.code,
+        slug: entity.dgt_label.slug,
+      }
       : null,
     warranty_type: entity.warranty_type
       ? {
-          id: entity.warranty_type.id,
-          name: entity.warranty_type.name,
-          slug: entity.warranty_type.slug,
-        }
+        id: entity.warranty_type.id,
+        name: entity.warranty_type.name,
+        slug: entity.warranty_type.slug,
+      }
+      : null,
+    cuota: entity.cuota
+      ? {
+        id: entity.cuota.id,
+        name: entity.cuota.name,
+        slug: entity.cuota.slug,
+        value: entity.cuota.value,
+      }
       : null,
   };
 }
@@ -126,12 +137,13 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     battery_capacity: entity.battery_capacity,
     time_to_charge: entity.time_to_charge,
     license_plate: entity.license_plate,
-    features_ids: (entity.features).map((feature) => feature.id),
-    services_ids: (entity.services).map((service) => service.id),
+    features_ids: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => feature.id) : [],
+    services_ids: entity.services && entity.services.length > 0 ? (entity.services).map((service) => service.id) : [],
     vehicle_type_id: entity.vehicle_type?.id ?? null,
     color_id: entity.color?.id ?? null,
     dgt_label_id: entity.dgt_label?.id ?? null,
     warranty_type_id: entity.warranty_type?.id ?? null,
+    cuota_id: entity.cuota?.id ?? null,
     suggestions: entity.suggestions,
   };
 }
@@ -155,6 +167,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     private readonly warranty_type_repository: Repository<WarrantyTypeEntity>,
     @InjectRepository(TractionEntity)
     private readonly traction_repository: Repository<TractionEntity>,
+    @InjectRepository(CuotaEntity)
+    private readonly cuota_repository: Repository<CuotaEntity>,
   ) {
     super();
   }
@@ -221,6 +235,11 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       "warranty_type_id",
     );
     await this.assert_optional_fk(
+      this.cuota_repository,
+      p.cuota_id,
+      "cuota_id",
+    );
+    await this.assert_optional_fk(
       this.traction_repository,
       p.traction_id,
       "traction_id",
@@ -267,6 +286,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       warranty_type: p.warranty_type_id
         ? this.warranty_type_repository.create({ id: p.warranty_type_id })
         : null,
+      cuota: p.cuota_id
+        ? this.cuota_repository.create({ id: p.cuota_id })
+        : null,
     };
     if (p.status !== undefined) {
       payload.status = p.status;
@@ -308,17 +330,35 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
   }
 
   async findAll(
-    pagination: PaginationDto,
+    pagination: FindAllVehiclesDto,
   ): Promise<{ vehicles: VehicleListItem[]; total_count: number }> {
     const { skip, take, order_column, direction } = getPaginationProps(pagination);
     const order_key =
       list_order_columns.has(order_column) ? order_column : "created_at";
-    const [rows, total_count] = await this.vehicle_repository.findAndCount({
-      skip,
-      take,
-      order: { [order_key]: direction },
-      relations: vehicle_catalog_relations,
-    });
+    const qb = this.vehicle_repository.createQueryBuilder("vehicle")
+      .leftJoinAndSelect("vehicle.features", "features")
+      .leftJoinAndSelect("vehicle.services", "services")
+      .leftJoinAndSelect("vehicle.vehicle_type", "vehicle_type")
+      .leftJoinAndSelect("vehicle.color", "color")
+      .leftJoinAndSelect("vehicle.dgt_label", "dgt_label")
+      .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")
+      .leftJoinAndSelect("vehicle.cuota", "cuota")
+      .leftJoinAndSelect("vehicle.traction", "traction");
+
+    applyFilters(qb, pagination);
+
+    const count_qb = qb.clone();
+    (
+      count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
+    ).expressionMap.orderBys = [];
+    count_qb.select("COUNT(DISTINCT vehicle.id)", "cnt");
+    const count_row = await count_qb.getRawOne<{ cnt: string }>();
+    const total_count = Number(count_row?.cnt ?? 0);
+
+    qb.orderBy(`vehicle.${order_key}`, direction === "desc" ? "DESC" : "ASC");
+    qb.skip(skip).take(take);
+    const rows = await qb.getMany();
+
     return {
       vehicles: rows.map((row) => entity_to_list_item(row)),
       total_count,

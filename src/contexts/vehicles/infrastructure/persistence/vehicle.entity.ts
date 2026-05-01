@@ -23,6 +23,7 @@ import { ServiceEntity } from "./service.entity";
 import { DgtLabelEntity } from "./dgt-label.entity";
 import { WarrantyTypeEntity } from "./warranty-type.entity";
 import { TractionEntity } from "./traction.entity";
+import { CuotaEntity } from "./cuota.entity";
 
 
 
@@ -65,10 +66,10 @@ export class VehicleEntity {
   expires_at: Date;
 
   // --- Ubicación ---
-  @Column({ type: "decimal", precision: 10, scale: 8 })
+  @Column("decimal", { precision: 10, scale: 8 })
   lat: number;
 
-  @Column({ type: "decimal", precision: 11, scale: 8 })
+  @Column("decimal", { precision: 11, scale: 8 })
   lng: number;
 
   // --- Ficha técnica (motor / transmisión / identificación) ---
@@ -140,23 +141,27 @@ export class VehicleEntity {
   @JoinColumn({ name: "warranty_type_id" })
   warranty_type: Relation<WarrantyTypeEntity | null>;
 
+  @ManyToOne(() => CuotaEntity, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "cuota_id" })
+  cuota: Relation<CuotaEntity | null>;
+
   // --- Contenido asociado ---
   @OneToMany(
     () => get_vehicle_images_entity(),
     (vehicle_image: VehicleImagesEntity) => vehicle_image.vehicle,
   )
-  images: Relation<VehicleImagesEntity[]>;
+  images?: Relation<VehicleImagesEntity[]>;
 
   @OneToMany(() => VideosEntity, (video) => video.vehicle)
-  videos: Relation<VideosEntity[]>;
+  videos?: Relation<VideosEntity[]>;
 
   @ManyToMany(() => FeaturesEntity, (feature) => feature.vehicles)
   @JoinTable({ name: "vehicle_features" })
-  features: Relation<FeaturesEntity[]>;
+  features?: Relation<FeaturesEntity[]>;
 
   @ManyToMany(() => ServiceEntity, (service) => service.vehicles)
   @JoinTable({ name: "vehicle_services" })
-  services: Relation<ServiceEntity[]>;
+  services?: Relation<ServiceEntity[]>;
 
   @Column({ type: "jsonb", default: [] })
   suggestions: string[];

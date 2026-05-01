@@ -62,6 +62,7 @@ export class CreateVehicleUseCase {
       color_id: create_vehicle_dto.color_id ?? null,
       dgt_label_id: create_vehicle_dto.dgt_label_id ?? null,
       warranty_type_id: create_vehicle_dto.warranty_type_id ?? null,
+      cuota_id: create_vehicle_dto.cuota_id ?? null,
       suggestions,
     });
     await this.vehicle_repository.save(vehicle);

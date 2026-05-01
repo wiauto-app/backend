@@ -32,7 +32,7 @@ export class EmailVerificationService {
     private readonly jwtService: JwtService,
     @InjectQueue(EMAIL_VERIFICATION_QUEUE)
     private readonly emailVerificationQueue: Queue<EmailVerificationJobData>,
-  ) {}
+  ) { }
 
   async enqueueSendVerificationForUser(userId: string, email: string): Promise<void> {
     await this.emailVerificationQueue.add(EMAIL_VERIFICATION_JOB_SEND, {
@@ -55,9 +55,8 @@ export class EmailVerificationService {
       email,
       scope: "email_verification",
     };
-
     const signOptions: JwtSignOptions = {
-      expiresIn: envs.EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC,
+      expiresIn: `${envs.EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC}s`,
     };
     const token = this.jwtService.sign(payload, signOptions);
 
@@ -83,24 +82,38 @@ export class EmailVerificationService {
   }
 
   private verifyToken(token: string): EmailVerificationTokenPayload {
-    let decoded: EmailVerificationTokenPayload;
+    let decoded: unknown;
 
     try {
-      decoded = this.jwtService.verify<EmailVerificationTokenPayload>(token);
+      decoded = this.jwtService.verify(token);
     } catch {
       throw new UnauthorizedException("El enlace es inválido o ya expiró");
     }
 
-    if (!decoded || typeof decoded !== "object" || decoded.scope !== "email_verification" || !decoded.sub || !decoded.email) {
+    if (decoded === null || typeof decoded !== "object") {
       throw new UnauthorizedException("Token con alcance inválido");
     }
 
-    return decoded;
+    const o = decoded as Record<string, unknown>;
+    if (
+      o.scope !== "email_verification" ||
+      typeof o.sub !== "string" ||
+      !o.sub ||
+      typeof o.email !== "string" ||
+      !o.email
+    ) {
+      throw new UnauthorizedException("Token con alcance inválido");
+    }
+    return {
+      sub: o.sub,
+      email: o.email,
+      scope: "email_verification",
+    };
   }
 
   private buildVerificationLink(token: string): string {
     const base = envs.FRONTEND_EMAIL_VERIFICATION_URL.trim();
     const separator = base.includes("?") ? "&" : "?";
-    return `${base}${separator}token=${encodeURIComponent(token)}`;
+    return `${base}${separator}token=${encodeURIComponent(token)}&redirectUrl=${encodeURIComponent(envs.FRONTEND_URL)}`;
   }
 }

@@ -37,6 +37,10 @@ export class UpdateVehicleUseCase {
         updateVehicleDto.battery_capacity ?? prev.battery_capacity,
       time_to_charge: updateVehicleDto.time_to_charge ?? prev.time_to_charge,
       license_plate: updateVehicleDto.license_plate ?? prev.license_plate,
+      cuota_id:
+        updateVehicleDto.cuota_id !== undefined
+          ? updateVehicleDto.cuota_id
+          : prev.cuota_id,
     };
 
     const updated = existing.applyUpdates(patch);

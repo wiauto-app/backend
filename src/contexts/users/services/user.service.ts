@@ -70,8 +70,11 @@ export class UserService {
       });
 
     user.password = null;
+    user.two_factor_backup_codes = null;
+    user.two_factor_secret = null;
+    user.provider_id = null;
     return {
-      message: "Usuario creado correctamente",
+      message: "Te enviamos un correo con el enlace de verificación.",
       data: user,
     };
   }

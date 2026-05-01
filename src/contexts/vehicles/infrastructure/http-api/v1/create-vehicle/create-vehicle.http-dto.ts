@@ -144,5 +144,10 @@ export class CreateVehicleHttpDto {
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsUUID("4")
+  cuota_id?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @IsUUID("4")
   warranty_type_id?: string | null;
 }

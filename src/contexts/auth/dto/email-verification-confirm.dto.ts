@@ -4,4 +4,8 @@ export class EmailVerificationConfirmDto {
   @IsString()
   @IsNotEmpty()
   token!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  redirectUrl!: string;
 }

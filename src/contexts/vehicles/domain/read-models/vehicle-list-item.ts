@@ -17,4 +17,5 @@ export interface VehicleListItem {
   color: { id: string; name: string; slug: string; hex_code: string } | null;
   dgt_label: { id: string; name: string; code: string; slug: string } | null;
   warranty_type: { id: string; name: string; slug: string } | null;
+  cuota: { id: string; name: string; slug: string; value: number } | null;
 }
