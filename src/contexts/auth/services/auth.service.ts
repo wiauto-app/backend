@@ -41,7 +41,7 @@ export class AuthService {
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({ ...user, type }, "30d");
+    const token = this.createToken(user, "30d");
 
     return { type, token }
 
@@ -57,10 +57,10 @@ export class AuthService {
       last_sign_in: new Date(),
     });
 
-    return this.createToken({ ...user, type: "session" });
+    return this.createToken(user, "30d");
   }
 
-  createToken(user: User & { type: "session" | "2fa_challenge", password?: string | null }, expiresIn: "30d" | "300s" = "30d") {
+  createToken(user: User, expiresIn: "30d" | "300s" = "30d") {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,

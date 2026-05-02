@@ -22,7 +22,7 @@ export class TwoFactorAuthService {
   ) { }
 
   async setup(user_id: string) {
-    const user = await this.userService.findOne(user_id);
+    const user = await this.userService.findOne(user_id, true);
 
     if (user.two_factor_enabled) {
       if (user.two_factor_secret) {
@@ -59,7 +59,7 @@ export class TwoFactorAuthService {
   }
 
   async activate(id: string): Promise<TwoFactorEnableResponse> {
-    const user = await this.userService.findOne(id)
+    const user = await this.userService.findOne(id, true)
 
     if (user.two_factor_enabled) {
       throw new ConflictException("2FA ya está habilitado")
@@ -87,7 +87,7 @@ export class TwoFactorAuthService {
   }
 
   async enable(id: string): Promise<{ message: string }> {
-    const user = await this.userService.findOne(id)
+    const user = await this.userService.findOne(id, true)
 
     if (user.two_factor_enabled) {
       throw new ConflictException("2FA ya está habilitado")
@@ -103,7 +103,7 @@ export class TwoFactorAuthService {
   }
 
   async verify(id: string, twofaDto: TwofaDto): Promise<TwoFactorChallengeResponse> {
-    const user = await this.userService.findOne(id)
+    const user = await this.userService.findOne(id, true)
     if (!user.two_factor_secret) {
       throw new ConflictException("La verificación a dos pasos no ha sido activada")
     }
@@ -147,7 +147,7 @@ export class TwoFactorAuthService {
   }
 
   async validateBackupCode(dto: ValidateBackupCodeDto): Promise<{ message: string, token: string }> {
-    const user = await this.userService.getUserByEmail({ email: dto.email })
+    const user = await this.userService.getUserByEmail({ email: dto.email, selectPrivateFields: true })
 
     if (!user.two_factor_backup_codes || user.two_factor_backup_codes.length === 0) {
       throw new NotFoundException("No se encontraron códigos de respaldo")
@@ -173,7 +173,7 @@ export class TwoFactorAuthService {
 
     user.password = null
 
-    const token = this.authService.createToken({ ...user, type: "session" }, "30d")
+    const token = this.authService.createToken(user, "30d")
 
     return {
       message: "Código de respaldo validado correctamente",
@@ -182,7 +182,7 @@ export class TwoFactorAuthService {
   }
 
   async regenerateBackupCodes(id: string): Promise<{ message: string, backup_codes: string[] }> {
-    const user = await this.userService.findOne(id)
+    const user = await this.userService.findOne(id, true)
     const totalBackupCodes = 8
     const currentBackupCodes = user.two_factor_backup_codes?.length
     const backupCodesToGenerate = totalBackupCodes - (currentBackupCodes ?? 0)

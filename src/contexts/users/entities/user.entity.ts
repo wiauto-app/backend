@@ -29,10 +29,10 @@ export class User {
   @Column({ type: "boolean", default: false })
   two_factor_enabled: boolean;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "varchar", nullable: true, select: false })
   two_factor_secret: string | null; // cifrado AES-256-GCM, guardado en formato "iv:tag:ciphertext" en base64
 
-  @Column({ type: "simple-array", nullable: true })
+  @Column({ type: "simple-array", nullable: true, select: false })
   two_factor_backup_codes: string[] | null; // bcrypt hashes, se consumen al usarse
 
   @CreateDateColumn()

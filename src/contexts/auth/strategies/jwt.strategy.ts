@@ -43,9 +43,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       this.userService.findOne(payload.id),
       this.profileService.findOne(payload.id)
     ])
-    if (!user) {
-      throw new UnauthorizedException("No estás logueado")
-    }
     return {
       user,
       profile

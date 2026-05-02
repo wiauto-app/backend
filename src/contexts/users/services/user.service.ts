@@ -123,7 +123,8 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: {
         email: getUserByEmailDto.email
-      }
+      },
+      ...(getUserByEmailDto.selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] })
     })
 
     if (!user) {
@@ -146,11 +147,12 @@ export class UserService {
     return user
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string, selectPrivateFields = false): Promise<User> {
     const user = await this.userRepository.findOne({
       where: {
         id
-      }
+      },
+      ...(selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] })
     })
 
     if (!user) {
