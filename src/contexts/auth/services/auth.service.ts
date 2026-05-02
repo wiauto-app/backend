@@ -1,4 +1,4 @@
-import { Injectable,  UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { UserService } from "../../users/services/user.service";
@@ -17,10 +17,7 @@ export class AuthService {
   ) { }
 
   async signIn(loginDto: LoginDto): Promise<SignInResult> {
-    const user = await this.userService.getUserByEmail({ email: loginDto.email });
-
-
-
+    const user = await this.userService.findOneByEmailWithPassword(loginDto.email);
     if (user.provider !== "local" || !user.password) {
       throw new UnauthorizedException(
         `Este email está registrado con ${user.provider}. Iniciá sesión con ese proveedor.`,
@@ -43,7 +40,10 @@ export class AuthService {
       last_sign_in: new Date(),
     });
 
-    return user.two_factor_enabled ? { type: "2fa_required", challenge_token: this.createToken(user, "300s") } : { type: "session", token: this.createToken(user, "30d" ) }
+    const type = user.two_factor_enabled ? "2fa_challenge" : "session";
+    const token = this.createToken({ ...user, type }, "30d");
+
+    return { type, token }
 
   }
 
@@ -57,10 +57,10 @@ export class AuthService {
       last_sign_in: new Date(),
     });
 
-    return this.createToken(user);
+    return this.createToken({ ...user, type: "session" });
   }
 
-   createToken(user: User, expiresIn: "30d" | "300s" = "30d") {
+  createToken(user: User & { type: "session" | "2fa_challenge", password?: string | null }, expiresIn: "30d" | "300s" = "30d") {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,

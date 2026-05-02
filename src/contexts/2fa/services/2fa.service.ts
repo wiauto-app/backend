@@ -171,7 +171,9 @@ export class TwoFactorAuthService {
       two_factor_backup_codes: newValidationCodes
     })
 
-    const token = this.authService.createToken(user, "30d")
+    user.password = null
+
+    const token = this.authService.createToken({ ...user, type: "session" }, "30d")
 
     return {
       message: "Código de respaldo validado correctamente",
@@ -189,7 +191,7 @@ export class TwoFactorAuthService {
     await this.userService.update(id, {
       two_factor_backup_codes: await Promise.all(backup_codes.map(async (code) => await bcrypt.hash(code, SALT_ROUNDS)))
     })
-    
+
     return {
       message: "Códigos de respaldo regenerados correctamente",
       backup_codes: backup_codes

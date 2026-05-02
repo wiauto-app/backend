@@ -14,8 +14,7 @@ export interface UserResponse{
 }
 
 export type SignInResult =
-  | { type: "session"; token: string }
-  | { type: "2fa_required"; challenge_token: string };
+  | { type: "session" | "2fa_challenge"; token: string }
 
 export interface TwoFactorChallengeResponse{
   verified:boolean;

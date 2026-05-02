@@ -133,6 +133,19 @@ export class UserService {
     return user
   }
 
+  async findOneByEmailWithPassword(email: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email
+      },
+      select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"]
+    })
+    if (!user) {
+      throw new NotFoundException("No se encontró el usuario")
+    }
+    return user
+  }
+
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: {
@@ -144,9 +157,7 @@ export class UserService {
       throw new NotFoundException("No se encontró el usuario")
     }
     user.password = null;
-
     return user
-
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<ApiResponse<User>> {

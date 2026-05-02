@@ -10,6 +10,7 @@ export class MeResponseDto {
   avatar_url?: string;
   last_sign_in: Date | null;
   created_at: string;
+  type: "session" | "2fa_challenge";
 
   static fromUser(data: UserResponse): MeResponseDto {
     const { user, profile } = data
@@ -22,6 +23,7 @@ export class MeResponseDto {
     dto.name = profile.name;
     dto.last_name = profile.last_name
     dto.avatar_url = profile.avatar_url
+    dto.type = user.two_factor_enabled ? "2fa_challenge" : "session";
     return dto;
   }
 }
