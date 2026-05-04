@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { V1_DGT_LABELS } from "../route.constants";
 import { DgtLabelsUseCase } from "../../../application/dgt-labels-use-cases/dgt-labels.use-case";
@@ -30,8 +32,8 @@ export class DgtLabelsController {
   }
 
   @Get()
-  findAll() {
-    return this.dgt_labels_use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.dgt_labels_use_case.findAll(query);
   }
 
   @Get(":id")

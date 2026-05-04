@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { UserService } from "../../users/services/user.service";
+import { SuspensionService } from "../../users/services/suspension.service";
 import { PasswordService } from "./password.service";
 import { LoginDto } from "../dto/login.dto";
 import { User } from "../../users/entities/user.entity";
@@ -12,6 +13,7 @@ import { SessionPayload, SignInResult } from "../types/auth.types";
 export class AuthService {
   constructor(
     private readonly userService: UserService,
+    private readonly suspensionService: SuspensionService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
   ) { }
@@ -36,6 +38,8 @@ export class AuthService {
       );
     }
 
+    await this.suspensionService.assert_session_allowed_by_id(user.id);
+
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
@@ -53,6 +57,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findOrCreateOAuthUser(profile);
+    await this.suspensionService.assert_session_allowed_by_id(user.id);
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });

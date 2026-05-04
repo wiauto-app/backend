@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 
 import { CuotasUseCase } from "../../../application/cuotas-use-cases/cuotas.use-case";
@@ -28,8 +30,8 @@ export class CuotasController {
   }
 
   @Get()
-  findAll() {
-    return this.cuotas_use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.cuotas_use_case.findAll(query);
   }
 
   @Get(":id")

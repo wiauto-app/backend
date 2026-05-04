@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { WarrantyTypesRepository } from "../../domain/repositories/warranty-types.repository";
 import { CreateWarrantyTypeDto } from "./dto/create-warranty-type.dto";
 import { UpdateWarrantyTypeDto } from "./dto/update-warranty-type.dto";
@@ -41,11 +44,12 @@ export class WarrantyTypesUseCase {
     return { warranty_type: updated.toPrimitives() };
   }
 
-  async findAll(): Promise<{ warranty_types: PrimitiveWarrantyType[] }> {
-    const items = await this.warranty_types_repository.findAll();
-    return {
-      warranty_types: items.map((w) => w.toPrimitives()),
-    };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveWarrantyType>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.warranty_types_repository.find_all(filter);
+    return page.map((w) => w.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ warranty_type: PrimitiveWarrantyType }> {

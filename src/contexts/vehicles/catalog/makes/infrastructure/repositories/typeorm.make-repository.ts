@@ -1,9 +1,15 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { Make } from "../../domain/entities/make";
+import { MakeNotFoundException } from "../../domain/exceptions/make-not-found.exception";
 import { MakesRepository } from "../../domain/repositories/makes.repository";
 import { MakeEntity } from "../persistence/make.entity";
-import { MakeNotFoundException } from "../../domain/exceptions/make-not-found.exception";
+
+const MAKE_SORT_KEYS = new Set(["id", "name", "slug", "created_at"]);
 
 export class TypeormMakeRepository extends MakesRepository {
   constructor(
@@ -13,16 +19,20 @@ export class TypeormMakeRepository extends MakesRepository {
     super();
   }
 
-  async findAll(): Promise<Make[]> {
-    const rows = await this.make_repository.find({ order: { id: "ASC" } });
-    return rows.map((row) =>
-      Make.fromPrimitives({
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        created_at: row.created_at,
-      }),
-    );
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Make>> {
+    return run_paginated_typeorm_find({
+      repository: this.make_repository,
+      filter,
+      map_row: (row) =>
+        Make.fromPrimitives({
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          created_at: row.created_at,
+        }),
+      allowed_sort_keys: MAKE_SORT_KEYS,
+      default_sort_key: "id",
+    });
   }
 
   async findOne(id: number): Promise<Make | null> {

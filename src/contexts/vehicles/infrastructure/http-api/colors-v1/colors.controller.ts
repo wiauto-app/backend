@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { V1_COLORS } from "../route.constants";
 import { ColorsUseCase } from "../../../application/colors-use-cases/colors.use-case";
@@ -33,8 +35,8 @@ export class ColorsController {
   }
 
   @Get()
-  findAll() {
-    return this.colors_use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.colors_use_case.findAll(query);
   }
 
   @Get(":id")

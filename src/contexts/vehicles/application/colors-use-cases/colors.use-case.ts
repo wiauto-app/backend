@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { ColorsRepository } from "../../domain/repositories/colors.repository";
 import { CreateColorDto } from "./dto/create-color.dto";
 import { Color, PrimitiveColor } from "../../domain/entities/color";
@@ -43,9 +46,12 @@ export class ColorsUseCase {
     return { color: updated_color.toPrimitives() };
   }
 
-  async findAll(): Promise<{ colors: PrimitiveColor[] }> {
-    const colors = await this.colors_repository.findAll();
-    return { colors: colors.map((c) => c.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveColor>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.colors_repository.find_all(filter);
+    return page.map((c) => c.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ color: PrimitiveColor }> {

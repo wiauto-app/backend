@@ -10,6 +10,7 @@ import { typeOrmConfig } from "../database/data-source";
 import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
 import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
+import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
@@ -17,6 +18,8 @@ import { envs } from "../common/envs";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { FileModule } from "../contexts/shared/file/file.module";
+import { RolesModule } from "../contexts/roles/roles.module";
+import { PermissionModule } from "../contexts/users/permissions/permission.module";
 
 @Module({
   imports: [
@@ -28,9 +31,12 @@ import { FileModule } from "../contexts/shared/file/file.module";
     AuthModule,
     ProfileModule,
     VehiclesModule,
+    ReviewsModule,
     MailModule,
     TwoFactorAuthModule,
     FileModule,
+    RolesModule,
+    PermissionModule,
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,

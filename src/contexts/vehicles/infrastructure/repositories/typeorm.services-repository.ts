@@ -1,9 +1,22 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { Service } from "../../domain/entities/services";
+import { ServiceNotFoundException } from "../../domain/exceptions/service-not-found.exception";
 import { ServicesRepository } from "../../domain/repositories/services.repository";
 import { ServiceEntity } from "../persistence/service.entity";
-import { ServiceNotFoundException } from "../../domain/exceptions/service-not-found.exception";
+
+const SERVICE_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "description",
+  "slug",
+  "created_at",
+  "updated_at",
+]);
 
 export class TypeormServicesRepository extends ServicesRepository {
   constructor(
@@ -13,11 +26,14 @@ export class TypeormServicesRepository extends ServicesRepository {
     super();
   }
 
-  async findAll(): Promise<Service[]> {
-    const rows = await this.service_repository.find({
-      order: { created_at: "asc" },
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Service>> {
+    return run_paginated_typeorm_find({
+      repository: this.service_repository,
+      filter,
+      map_row: (row) => Service.fromPrimitives(row),
+      allowed_sort_keys: SERVICE_SORT_KEYS,
+      default_sort_key: "created_at",
     });
-    return rows.map((row) => Service.fromPrimitives(row));
   }
 
   async findOne(id: string): Promise<Service | null> {

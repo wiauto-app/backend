@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { V1_SERVICES } from "../route.constants";
 import { ServicesUseCase } from "../../../application/services-use-cases/services.use-case";
@@ -30,8 +32,8 @@ export class ServicesController {
   }
 
   @Get()
-  findAll() {
-    return this.services_use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.services_use_case.findAll(query);
   }
 
   @Get(":id")

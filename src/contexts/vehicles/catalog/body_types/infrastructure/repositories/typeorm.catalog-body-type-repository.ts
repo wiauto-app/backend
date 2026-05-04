@@ -1,9 +1,22 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { CatalogBodyType } from "../../domain/entities/catalog-body-type";
+import { CatalogBodyTypeNotFoundException } from "../../domain/exceptions/catalog-body-type-not-found.exception";
 import { CatalogBodyTypesRepository } from "../../domain/repositories/catalog-body-types.repository";
 import { CatalogBodyTypeEntity } from "../persistence/catalog-body-type.entity";
-import { CatalogBodyTypeNotFoundException } from "../../domain/exceptions/catalog-body-type-not-found.exception";
+
+const CATALOG_BODY_TYPE_SORT_KEYS = new Set([
+  "id",
+  "body_type_id",
+  "doors",
+  "name",
+  "slug",
+  "created_at",
+]);
 
 export class TypeormCatalogBodyTypeRepository extends CatalogBodyTypesRepository {
   constructor(
@@ -13,18 +26,22 @@ export class TypeormCatalogBodyTypeRepository extends CatalogBodyTypesRepository
     super();
   }
 
-  async findAll(): Promise<CatalogBodyType[]> {
-    const rows = await this.repo.find({ order: { id: "ASC" } });
-    return rows.map((row) =>
-      CatalogBodyType.fromPrimitives({
-        id: row.id,
-        body_type_id: row.body_type_id,
-        doors: row.doors,
-        name: row.name,
-        slug: row.slug,
-        created_at: row.created_at,
-      }),
-    );
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogBodyType>> {
+    return run_paginated_typeorm_find({
+      repository: this.repo,
+      filter,
+      map_row: (row) =>
+        CatalogBodyType.fromPrimitives({
+          id: row.id,
+          body_type_id: row.body_type_id,
+          doors: row.doors,
+          name: row.name,
+          slug: row.slug,
+          created_at: row.created_at,
+        }),
+      allowed_sort_keys: CATALOG_BODY_TYPE_SORT_KEYS,
+      default_sort_key: "id",
+    });
   }
 
   async findOne(id: number): Promise<CatalogBodyType | null> {

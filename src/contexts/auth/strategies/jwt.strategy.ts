@@ -5,16 +5,17 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import { envs } from "@/src/common/envs";
 import { SessionPayload } from "../types/auth.types";
 import { UserService } from "../../users/services/user.service";
+import { SuspensionService } from "../../users/services/suspension.service";
 import { User } from "../../users/entities/user.entity";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { ProfileService } from "../../profiles/services/profile.service";
-import { Profile } from "../../profiles/entities/profile.entity";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
   constructor(
     private readonly userService: UserService,
-    private readonly profileService: ProfileService
+    private readonly profileService: ProfileService,
+    private readonly suspensionService: SuspensionService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -35,17 +36,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     });
   }
 
-  async validate(payload: SessionPayload): Promise<{
-    user:User,
-    profile:Profile
-  }> {
-    const [ user,profile ]=await Promise.all([
+  async validate(payload: SessionPayload): Promise<User> {
+    await this.suspensionService.assert_session_allowed_by_id(payload.id);
+    const [user, profile] = await Promise.all([
       this.userService.findOne(payload.id),
-      this.profileService.findOne(payload.id)
-    ])
+      this.profileService.findOne(payload.id),
+    ]);
     return {
-      user,
-      profile
+      ...user,
+      profile,
     };
   }
 }

@@ -1,5 +1,8 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, Relation } from "typeorm";
 import { User } from "../../users/entities/user.entity";
+import { VehicleEntity } from "../../vehicles/infrastructure/persistence/vehicle.entity";
+import { Roles } from "../../roles/entities/roles.entity";
+import { ReviewEntity } from "../../vehicles/infrastructure/persistence/review.entity";
 
 @Entity()
 export class Profile {
@@ -25,5 +28,13 @@ export class Profile {
   @Column({ nullable: true })
   image_url: string
 
+  @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
+  vehicles: Relation<VehicleEntity[]>;
 
+  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true })
+  @JoinColumn({ name: "role_id" })
+  role: Relation<Roles | null>;
+
+  @OneToMany(() => ReviewEntity, (review) => review.profile)
+  reviews: Relation<ReviewEntity[]>;
 }

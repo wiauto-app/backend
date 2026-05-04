@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogModel,
   PrimitiveCatalogModel,
@@ -36,9 +39,12 @@ export class CatalogModelsUseCase {
     return { model: saved.toPrimitives() };
   }
 
-  async findAll(): Promise<{ models: PrimitiveCatalogModel[] }> {
-    const items = await this.repository.findAll();
-    return { models: items.map((x) => x.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveCatalogModel>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.repository.find_all(filter);
+    return page.map((x) => x.toPrimitives());
   }
 
   async findOne(id: number): Promise<{ model: PrimitiveCatalogModel }> {

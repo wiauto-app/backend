@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -7,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { V1_CATALOG_VERSIONS } from "../../../../route.constants";
 import { CatalogVersionsUseCase } from "../../../application/catalog-versions-use-cases/catalog-versions.use-case";
@@ -31,8 +33,8 @@ export class CatalogVersionsController {
   }
 
   @Get()
-  findAll() {
-    return this.use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.use_case.findAll(query);
   }
 
   @Get(":id")

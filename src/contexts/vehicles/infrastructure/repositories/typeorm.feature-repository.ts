@@ -1,11 +1,21 @@
-import { Repository } from "typeorm";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+
 import { Feature } from "../../domain/entities/features";
-import { FindFeaturesUseCaseDto } from "../../application/features/find-features-use-case/find-features.dto";
+import { FeatureNotFoundException } from "../../domain/exceptions/feature-not-found.exception";
 import { FeatureRepository } from "../../domain/repositories/feature.repository";
 import { FeaturesEntity } from "../persistence/features.entity";
-import { getPaginationProps } from "@/src/contexts/shared/dto/getPaginationProps";
-import { FeatureNotFoundException } from "../../domain/exceptions/feature-not-found.exception";
+
+const FEATURE_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "slug",
+  "created_at",
+  "updated_at",
+]);
 
 export class TypeOrmFeatureRepository extends FeatureRepository {
   constructor(
@@ -33,14 +43,14 @@ export class TypeOrmFeatureRepository extends FeatureRepository {
     return this.feature_row_to_domain(row);
   }
 
-  async findAll(find_features_dto: FindFeaturesUseCaseDto): Promise<Feature[]> {
-    const { skip, take, order_column, direction } = getPaginationProps(find_features_dto);
-    const rows = await this.featureRepository.find({
-      skip,
-      take,
-      order: { [order_column]: direction },
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Feature>> {
+    return run_paginated_typeorm_find({
+      repository: this.featureRepository,
+      filter,
+      map_row: (row) => this.feature_row_to_domain(row),
+      allowed_sort_keys: FEATURE_SORT_KEYS,
+      default_sort_key: "created_at",
     });
-    return rows.map((row) => this.feature_row_to_domain(row));
   }
 
   async save(feature: Feature): Promise<void> {

@@ -1,6 +1,6 @@
 import { SelectQueryBuilder } from "typeorm";
 
-import { FindAllVehiclesDto } from "../../application/vehicle/find-all-vehicles-use-case/find-all-vehicles.dto";
+import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleEntity } from "../persistence/vehicle.entity";
 
 const has_non_empty_string = (value: unknown): value is string =>
@@ -35,7 +35,7 @@ const sql_vehicle_point =
  */
 export const applyFilters = (
   qb: SelectQueryBuilder<VehicleEntity>,
-  filters: FindAllVehiclesDto,
+  filters: VehicleFilter,
 ): void => {
   if (has_non_empty_string(filters.type_slug)) {
     qb.andWhere("vehicle_type.slug = :type_slug", {
@@ -298,9 +298,14 @@ export const applyFilters = (
   }
 
   if (has_non_empty_string_array(filters.cuota_slugs)) {
-    qb.andWhere("cuota.slug IN (:...cuota_slugs)", {
-      cuota_slugs: filters.cuota_slugs,
-    });
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM vehicle_cuotas vc
+        INNER JOIN cuotas c ON c.id = vc.cuota_id
+        WHERE vc.vehicle_id = vehicle.id AND c.slug IN (:...cuota_slugs)
+      )`,
+      { cuota_slugs: filters.cuota_slugs },
+    );
   }
 
   if (has_non_empty_string(filters.query)) {

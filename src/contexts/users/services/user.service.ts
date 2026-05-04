@@ -11,6 +11,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 
 import { Repository } from "typeorm";
 
+import { VehicleEntity } from "../../vehicles/infrastructure/persistence/vehicle.entity";
 import { AuthProvider, User } from "../entities/user.entity";
 import { CreateUserDto } from '../dto/create-user.dto'
 import { PasswordService } from "../../auth/services/password.service";
@@ -29,11 +30,13 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehicleRepository: Repository<VehicleEntity>,
     private readonly passwordService: PasswordService,
     private readonly profileService: ProfileService,
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<ApiResponse<User>> {
 
@@ -58,6 +61,7 @@ export class UserService {
       id: user.id,
       name: createUserDto.name,
       last_name: createUserDto.last_name,
+      role_id: createUserDto.role_id,
     });
 
     void this.emailVerificationService
@@ -145,6 +149,33 @@ export class UserService {
       throw new NotFoundException("No se encontró el usuario")
     }
     return user
+  }
+
+  async findAll(): Promise<User[]> {
+    const users = await this.userRepository.find({
+      order: { created_at: "DESC" },
+    });
+    for (const user of users) {
+      user.password = null;
+      user.two_factor_secret = null;
+      user.two_factor_backup_codes = null;
+    }
+    return users;
+  }
+
+  async remove(id: string): Promise<void> {
+    const vehicle_count = await this.vehicleRepository.count({
+      where: { profile: { id } },
+    });
+    if (vehicle_count > 0) {
+      throw new ConflictException(
+        "No se puede eliminar el usuario: tiene anuncios de vehículos asociados.",
+      );
+    }
+    const result = await this.userRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException("No se encontró el usuario");
+    }
   }
 
   async findOne(id: string, selectPrivateFields = false): Promise<User> {

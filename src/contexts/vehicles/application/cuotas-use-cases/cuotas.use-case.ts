@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 
 import { Cuota, PrimitiveCuota } from "../../domain/entities/cuota";
 import { CuotaNotFoundException } from "../../domain/exceptions/cuota-not-found.exception";
@@ -33,9 +36,12 @@ export class CuotasUseCase {
     return { cuota: updated.toPrimitives() };
   }
 
-  async findAll(): Promise<{ cuotas: PrimitiveCuota[] }> {
-    const items = await this.cuotas_repository.findAll();
-    return { cuotas: items.map((c) => c.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveCuota>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.cuotas_repository.find_all(filter);
+    return page.map((c) => c.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ cuota: PrimitiveCuota }> {

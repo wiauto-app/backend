@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { DgtLabelsRepository } from "../../domain/repositories/dgt-labels.repository";
 import { CreateDgtLabelDto } from "./dto/create-dgt-label.dto";
 import { UpdateDgtLabelDto } from "./dto/update-dgt-label.dto";
@@ -38,9 +41,12 @@ export class DgtLabelsUseCase {
     return { dgt_label: updated.toPrimitives() };
   }
 
-  async findAll(): Promise<{ dgt_labels: PrimitiveDgtLabel[] }> {
-    const labels = await this.dgt_labels_repository.findAll();
-    return { dgt_labels: labels.map((l) => l.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveDgtLabel>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.dgt_labels_repository.find_all(filter);
+    return page.map((l) => l.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ dgt_label: PrimitiveDgtLabel }> {

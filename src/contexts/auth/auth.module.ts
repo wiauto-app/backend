@@ -13,7 +13,7 @@ import { GoogleTokenService } from "./services/google-token.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 // import { AppleStrategy } from "./strategies/apple.strategy";
-import { AuthGuard } from "./guards/auth.guard";
+import { JwtGuard } from "./guards/auth.guard";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { MeService } from "./services/me.service";
 import { MeController } from "./api/me.controller";
@@ -43,7 +43,7 @@ import { EMAIL_VERIFICATION_QUEUE } from "./queues/email-verification.queue.cons
     JwtStrategy,
     GoogleStrategy,
     // AppleStrategy,
-    AuthGuard,
+    JwtGuard,
     GoogleAuthGuard,
     // AppleAuthGuard,
 
@@ -74,7 +74,7 @@ import { EMAIL_VERIFICATION_QUEUE } from "./queues/email-verification.queue.cons
     }),
   ],
   exports: [
-    AuthGuard,
+    JwtGuard,
     GoogleAuthGuard,
     AuthService,
     EmailVerificationService /*, AppleAuthGuard*/,

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "wiauto-api-collection",
     "name": "wiauto",
-    "description": "Estructura de carpetas: `auth`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `users`, `v1/*`).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.",
+    "description": "Estructura de carpetas: `auth`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,6 +13,11 @@
     {
       "key": "access_token",
       "value": ""
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "description": "JWT para carpetas users (rutas protegidas), roles y permissions. Suele copiarse del login o igualar a access_token."
     },
     {
       "key": "vehicle_id",
@@ -49,6 +54,23 @@
     {
       "key": "traction_id",
       "value": ""
+    },
+    {
+      "key": "role_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "permission_id",
+      "value": ""
+    },
+    {
+      "key": "suspension_duration_type_id",
+      "value": "",
+      "description": "UUID de `suspension_duration_types` (GET /v1/users/suspensions/duration-types)."
     }
   ],
   "item": [
@@ -600,54 +622,6 @@
           ]
         },
         {
-          "name": "Crear Usuario",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\"\n}"
-            },
-            "url": "{{base_url}}/users",
-            "description": "`UserController` — registro. `name` / `last_name` opcionales."
-          },
-          "response": [
-            {
-              "name": "201 Created — usuario (ejemplo)",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": "{{base_url}}/users",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"nuevo@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\"\n}"
-                },
-                "description": "`UserController` — registro. `name` / `last_name` opcionales."
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "body": "{\n  \"message\": \"Usuario creado correctamente\",\n  \"data\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"email\": \"nuevo@ejemplo.com\",\n    \"provider\": \"local\",\n    \"provider_id\": null,\n    \"password\": null,\n    \"is_email_verified\": false,\n    \"two_factor_enabled\": false,\n    \"last_sign_in\": null,\n    \"created_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n}"
-            }
-          ]
-        },
-        {
           "name": "cuenta — verificación y recuperación (referencia)",
           "item": [
             {
@@ -841,6 +815,502 @@
       ]
     },
     {
+      "name": "users",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "crear usuario (registro)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"nuevo@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"role_id\": \"{{role_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/users",
+                "description": "Público (sin Bearer). `name`, `last_name`, `role_id` opcionales. Tras éxito, copia `data.id` a `user_id`."
+              },
+              "response": []
+            },
+            {
+              "name": "listar usuarios",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/users",
+                "description": "JWT. Lista sin contraseñas."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener usuario por id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/users/{{user_id}}",
+                "description": "JWT. Variable `user_id`."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar usuario",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"nuevo@ejemplo.com\"\n}"
+                },
+                "url": "{{base_url}}/v1/users/{{user_id}}",
+                "description": "JWT. `UpdateUserDto` (campos parciales; evita enviar `password` salvo que el servicio lo trate con hash)."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar usuario",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/users/{{user_id}}",
+                "description": "JWT. 204 si no tiene vehículos asociados al perfil; 409 si tiene anuncios."
+              },
+              "response": []
+            },
+            {
+              "name": "suspensions",
+              "item": [
+                {
+                  "name": "listar tipos de duración (staff)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/users/suspensions/duration-types",
+                    "description": "JWT + rol `is_admin` o `is_developer`. Catálogo para armar el body de suspender (IDs en BD, no constantes)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "suspender usuario (staff)",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Incumplimiento de términos de uso\",\n  \"suspension_duration_type_id\": \"{{suspension_duration_type_id}}\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/users/suspensions/{{user_id}}/suspend",
+                    "description": "JWT + staff. 204. `suspension_duration_type_id` desde el GET duration-types. No podés suspenderte a vos mismo."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "levantar suspensión (staff)",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/users/suspensions/{{user_id}}/unsuspend",
+                    "description": "JWT + staff. 204. Limpia flags de suspensión del usuario."
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "profiles",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "crear perfil (admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{user_id}}\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"role_id\": \"{{role_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/profiles",
+                "description": "JWT. `id` = mismo UUID que `users.id` (usuario ya creado). No duplicar si ya hay perfil."
+              },
+              "response": []
+            },
+            {
+              "name": "listar perfiles",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/profiles",
+                "description": "JWT. Incluye relación `role`."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener perfil por id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/profiles/{{user_id}}",
+                "description": "JWT. Mismo id que usuario (PK compartida)."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar perfil",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"role_id\": \"{{role_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/profiles/{{user_id}}",
+                "description": "JWT. Campos opcionales."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar perfil",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/profiles/{{user_id}}",
+                "description": "JWT. 204. Deja al usuario sin fila en `profile` (el usuario sigue existiendo)."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "roles",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "crear rol",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"custom_role\",\n  \"is_admin\": false,\n  \"is_developer\": false,\n  \"is_default\": false\n}"
+                },
+                "url": "{{base_url}}/v1/roles",
+                "description": "POST crea rol. `is_default` opcional (solo un rol debería ser default; la migración deja `buyer` como default). Guarda el `id` en `role_id` si lo necesitas."
+              },
+              "response": []
+            },
+            {
+              "name": "listar roles",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/roles",
+                "description": "Lista roles activos (soft-deleted excluidos por defecto en TypeORM si aplica)."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener rol por id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/roles/{{role_id}}",
+                "description": "GET por UUID. Usa `{{role_id}}`."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar rol",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"user_updated\"\n}"
+                },
+                "url": "{{base_url}}/v1/roles/{{role_id}}",
+                "description": "Body opcional: `name`, `is_admin`, `is_developer` (PartialType del create)."
+              },
+              "response": []
+            },
+            {
+              "name": "asignar permisos al rol",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"permission_ids\": [\n    \"{{permission_id}}\"\n  ]\n}"
+                },
+                "url": "{{base_url}}/v1/roles/{{role_id}}/permissions",
+                "description": "PUT sustituye todo el conjunto de permisos del rol. `permission_ids` vacío `[]` quita todos. IDs UUID de `v1/permissions`."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar rol (soft delete)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/roles/{{role_id}}",
+                "description": "Soft delete (`deleted_at`)."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "permissions",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "crear permiso",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  // Estructura de `key`: {nombre_recurso}.{accion}\n  // Acciones habituales (CRUD): create, update, list, delete; además manage; pueden sumarse más con el tiempo.\n  // `value`: entero positivo opcional (columna nullable; p. ej. bitmask, peso u orden).\n  \"name\": \"Listar vehículos\",\n  \"key\": \"vehicles.list\",\n  \"value\": 1\n}"
+                },
+                "url": "{{base_url}}/v1/permissions",
+                "description": "POST. `key` único. `name` obligatorio. `value` opcional (int > 0). Guarda el `id` en `permission_id`."
+              },
+              "response": []
+            },
+            {
+              "name": "listar permisos",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions",
+                "description": "Lista permisos activos (sin soft-deleted)."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener permiso por id",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions/{{permission_id}}",
+                "description": "Incluye relación `roles` asociados."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar permiso",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  // Misma convención que al crear: `key` = {nombre_recurso}.{accion}\n  // Acciones habituales: create, update, list, delete (CRUD), manage; pueden ampliarse.\n  // `value`: entero positivo opcional (misma semántica que al crear).\n  \"name\": \"Listar vehículos (editado)\",\n  \"key\": \"vehicles.list\",\n  \"value\": 2\n}"
+                },
+                "url": "{{base_url}}/v1/permissions/{{permission_id}}",
+                "description": "Body parcial: `name`, `key`, `value` (cualquiera opcional; int > 0 para `value`)."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar permiso (soft delete)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions/{{permission_id}}",
+                "description": "204. Soft delete (`deleted_at`)."
+              },
+              "response": []
+            },
+            {
+              "name": "sincronizar lib/available-permission.ts",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions/sync-available-keys-file",
+                "description": "JWT. Regenera `src/contexts/users/permissions/lib/available-permission.ts` con `PermissionKeys` desde las `key` en BD. Respuesta: `output_path`, `keys_written`."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "vehicle",
       "item": [
         {
@@ -850,7 +1320,12 @@
               "name": "crear vehículo",
               "request": {
                 "method": "POST",
-                "header": [],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1008,11 +1483,11 @@
                       "disabled": true
                     },
                     {
-                      "key": "cuota_id",
-                      "value": "{{cuota_id}}",
+                      "key": "cuota_ids",
+                      "value": "[\"{{cuota_id}}\"]",
                       "type": "text",
                       "disabled": true,
-                      "description": "Opcional. UUID de plan de cuotas (`v1/cuotas`)."
+                      "description": "Opcional. JSON array de UUIDs de planes (`v1/cuotas`); relación N:M `vehicle_cuotas`."
                     },
                     {
                       "key": "files",
@@ -1022,14 +1497,19 @@
                   ]
                 },
                 "url": "{{base_url}}/v1/vehicles",
-                "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_id (plan de cuotas). Incluye `files` (imágenes)."
+                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes)."
               },
               "response": [
                 {
                   "name": "201 Created — vehicle (ejemplo)",
                   "originalRequest": {
                     "method": "POST",
-                    "header": [],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      }
+                    ],
                     "url": "{{base_url}}/v1/vehicles",
                     "body": {
                       "mode": "formdata",
@@ -1188,11 +1668,11 @@
                           "disabled": true
                         },
                         {
-                          "key": "cuota_id",
-                          "value": "{{cuota_id}}",
+                          "key": "cuota_ids",
+                          "value": "[\"{{cuota_id}}\"]",
                           "type": "text",
                           "disabled": true,
-                          "description": "Opcional. UUID de plan de cuotas (`v1/cuotas`)."
+                          "description": "Opcional. JSON array de UUIDs (`v1/cuotas`); tabla puente `vehicle_cuotas`."
                         },
                         {
                           "key": "files",
@@ -1201,7 +1681,7 @@
                         }
                       ]
                     },
-                    "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_id (plan de cuotas). Incluye `files` (imágenes)."
+                    "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (JSON array de UUIDs). Incluye `files` (imágenes)."
                   },
                   "status": "Created",
                   "code": 201,
@@ -1212,7 +1692,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_id\": \"00000000-1111-2222-3333-444444444444\",\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -1224,8 +1704,8 @@
                 "url": {
                   "raw": "{{base_url}}/v1/vehicles?page=1&limit=20",
                   "query": [
-                    { "key": "page", "value": "1", "description": "Requerido por validación (min 1)." },
-                    { "key": "limit", "value": "20", "description": "Requerido por validación (min 1)." },
+                    { "key": "page", "value": "1", "description": "Opcional; default 1 (min 1)." },
+                    { "key": "limit", "value": "20", "description": "Opcional; default 10 (min 1, max 100 en HTTP)." },
                     { "key": "query", "value": "", "disabled": true, "description": "Texto en title/description (ILIKE)." },
                     { "key": "order_by", "value": "created_at", "disabled": true, "description": "id|price|mileage|title|condition|created_at|updated_at" },
                     { "key": "order_direction", "value": "desc", "disabled": true, "description": "asc|desc" },
@@ -1270,7 +1750,7 @@
                     { "key": "cuota_slugs", "value": "", "disabled": true }
                   ]
                 },
-                "description": "Parámetros en **Params** (todos los de `FindAllVehiclesHttpDto` + paginación): activa los que necesites. Arrays: repite la misma clave en la tabla. **Ubicación (PostGIS):** `provinces_slugs`, `comunities_slugs`, `municipalities_slugs` (intersectan `geom` con lat/lng del anuncio); opcional `lat`+`lng`+`radius` (metros). Si envías polígonos y radio, aplica **AND**. Requiere PostGIS y `slug` en tablas de localización. Respuesta: `{ \"vehicles\": [...], \"total_count\": number }`."
+                "description": "Parámetros en **Params** (todos los de `FindAllVehiclesHttpDto` + paginación): activa los que necesites. Arrays: repite la misma clave en la tabla. **Ubicación (PostGIS):** `provinces_slugs`, `comunities_slugs`, `municipalities_slugs` (intersectan `geom` con lat/lng del anuncio); opcional `lat`+`lng`+`radius` (metros). Si envías polígonos y radio, aplica **AND**. Requiere PostGIS y `slug` en tablas de localización. Respuesta (`PaginatedResult`): `{ \"data\": [ VehicleListItem... ], \"total\": number, \"page\": number, \"limit\": number }`."
               },
               "response": [
                 {
@@ -1289,7 +1769,7 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"vehicles\": [\n    {\n      \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n      \"price\": 25000,\n      \"mileage\": 45000,\n      \"lat\": -12.0464,\n      \"lng\": -77.0428,\n      \"condition\": \"used\",\n      \"title\": \"Toyota ejemplo venta\",\n      \"created_at\": \"2026-04-29T14:30:00.000Z\",\n      \"images\": [\n        { \"id\": \"11111111-2222-3333-4444-555555555555\", \"url\": \"https://storage.ejemplo/vehicles/imagen-principal.jpg\" }\n      ],\n      \"features\": [\n        { \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", \"name\": \"Aire acondicionado\", \"slug\": \"aire-acondicionado\" }\n      ],\n      \"services\": [\n        { \"id\": \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\", \"name\": \"Financiamiento\", \"slug\": \"financiamiento\" }\n      ],\n      \"vehicle_type\": { \"id\": \"cccccccc-dddd-eeee-ffff-000000000001\", \"name\": \"SUV\", \"slug\": \"suv\" },\n      \"color\": { \"id\": \"dddddddd-eeee-ffff-0000-111111111111\", \"name\": \"Rojo pasión\", \"slug\": \"rojo-pasion\", \"hex_code\": \"#E02020\" },\n      \"dgt_label\": { \"id\": \"eeeeeeee-ffff-0000-1111-222222222222\", \"name\": \"Etiqueta 0 emisiones\", \"code\": \"0\", \"slug\": \"etiqueta-0-emisiones\" },\n      \"warranty_type\": { \"id\": \"ffffffff-0000-1111-2222-333333333333\", \"name\": \"Garantía oficial fabricante\", \"slug\": \"garantia-oficial-fabricante\" },\n      \"cuota\": { \"id\": \"00000000-1111-2222-3333-444444444444\", \"name\": \"Financiación 48 meses\", \"slug\": \"financiacion-48-meses\", \"value\": 48 }\n    }\n  ],\n  \"total_count\": 1\n}"
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n      \"price\": 25000,\n      \"mileage\": 45000,\n      \"lat\": -12.0464,\n      \"lng\": -77.0428,\n      \"condition\": \"used\",\n      \"title\": \"Toyota ejemplo venta\",\n      \"created_at\": \"2026-04-29T14:30:00.000Z\",\n      \"images\": [\n        { \"id\": \"11111111-2222-3333-4444-555555555555\", \"url\": \"https://storage.ejemplo/vehicles/imagen-principal.jpg\" }\n      ],\n      \"features\": [\n        { \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", \"name\": \"Aire acondicionado\", \"slug\": \"aire-acondicionado\" }\n      ],\n      \"services\": [\n        { \"id\": \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\", \"name\": \"Financiamiento\", \"slug\": \"financiamiento\" }\n      ],\n      \"vehicle_type\": { \"id\": \"cccccccc-dddd-eeee-ffff-000000000001\", \"name\": \"SUV\", \"slug\": \"suv\" },\n      \"color\": { \"id\": \"dddddddd-eeee-ffff-0000-111111111111\", \"name\": \"Rojo pasión\", \"slug\": \"rojo-pasion\", \"hex_code\": \"#E02020\" },\n      \"dgt_label\": { \"id\": \"eeeeeeee-ffff-0000-1111-222222222222\", \"name\": \"Etiqueta 0 emisiones\", \"code\": \"0\", \"slug\": \"etiqueta-0-emisiones\" },\n      \"warranty_type\": { \"id\": \"ffffffff-0000-1111-2222-333333333333\", \"name\": \"Garantía oficial fabricante\", \"slug\": \"garantia-oficial-fabricante\" },\n      \"cuotas\": [ { \"id\": \"00000000-1111-2222-3333-444444444444\", \"name\": \"Financiación 48 meses\", \"slug\": \"financiacion-48-meses\", \"value\": 48 } ]\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 20\n}"
                 },
                 {
                   "name": "200 OK — ejemplo URL filtros ubicación (slugs + radio)",
@@ -1307,7 +1787,7 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"vehicles\": [],\n  \"total_count\": 0\n}"
+                  "body": "{\n  \"data\": [],\n  \"total\": 0,\n  \"page\": 1,\n  \"limit\": 20\n}"
                 }
               ]
             },
@@ -1336,7 +1816,7 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T15:00:00.000Z\",\n    \"features_ids\": [\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"],\n    \"services_ids\": [\"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_id\": \"00000000-1111-2222-3333-444444444444\",\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T15:00:00.000Z\",\n    \"features_ids\": [\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"],\n    \"services_ids\": [\"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -1384,7 +1864,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 26000,\n    \"mileage\": 46000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Título actualizado mínimo cinco chars\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_id\": \"00000000-1111-2222-3333-444444444444\",\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 26000,\n    \"mileage\": 46000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Título actualizado mínimo cinco chars\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -2152,6 +2632,44 @@
           ]
         },
         {
+          "name": "reviews",
+          "item": [
+            {
+              "name": "crear reseña",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vehicle_id\": \"{{vehicle_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Trato excelente y vehículo como en el anuncio.\"\n}"
+                },
+                "url": "{{base_url}}/v1/reviews",
+                "description": "JWT (`JwtGuard`). El autor es el usuario autenticado (`profile_id` implícito). Comprueba que el `vehicle_id` exista."
+              },
+              "response": []
+            },
+            {
+              "name": "listar reseñas por vehículo",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/reviews?vehicle_id={{vehicle_id}}&page=1&limit=10",
+                "description": "Público. Query obligatorio: `vehicle_id`. Opcional: `profile_id`, `created_since`, `created_until`, `page`, `limit`, `query`, `order_by`, `order_direction`."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "etiquetas DGT",
           "item": [
             {
@@ -2529,7 +3047,7 @@
                   "raw": "{\n  \"name\": \"Financiación 48 meses\",\n  \"value\": 48\n}"
                 },
                 "url": "{{base_url}}/v1/cuotas",
-                "description": "Administra planes de cuotas. El `slug` se genera desde `name`. `value` es entero (p. ej. número de meses del plan). Vincula al vehículo con `cuota_id` al crear/editar anuncio."
+                "description": "Administra planes de cuotas. El `slug` se genera desde `name`. `value` es entero (p. ej. número de meses del plan). Vincula al vehículo con el array `cuota_ids` al crear/editar anuncio (N:M `vehicle_cuotas`)."
               },
               "response": [
                 {
@@ -2547,7 +3065,7 @@
                       "mode": "raw",
                       "raw": "{\n  \"name\": \"Financiación 48 meses\",\n  \"value\": 48\n}"
                     },
-                    "description": "Administra planes de cuotas. El `slug` se genera desde `name`. `value` es entero (p. ej. número de meses del plan). Vincula al vehículo con `cuota_id` al crear/editar anuncio."
+                    "description": "Administra planes de cuotas. El `slug` se genera desde `name`. `value` es entero (p. ej. número de meses del plan). Vincula al vehículo con el array `cuota_ids` al crear/editar anuncio (N:M `vehicle_cuotas`)."
                   },
                   "status": "Created",
                   "code": 201,
@@ -2672,7 +3190,7 @@
                 "method": "DELETE",
                 "header": [],
                 "url": "{{base_url}}/v1/cuotas/{{cuota_id}}",
-                "description": "Al borrar, `vehicles.cuota_id` queda NULL (ON DELETE SET NULL)."
+                "description": "Al borrar, las filas en `vehicle_cuotas` con ese `cuota_id` se eliminan (ON DELETE CASCADE en la tabla puente)."
               },
               "response": [
                 {
@@ -2681,7 +3199,7 @@
                     "method": "DELETE",
                     "header": [],
                     "url": "{{base_url}}/v1/cuotas/{{cuota_id}}",
-                    "description": "Al borrar, `vehicles.cuota_id` queda NULL (ON DELETE SET NULL)."
+                    "description": "Al borrar, las filas en `vehicle_cuotas` con ese `cuota_id` se eliminan (ON DELETE CASCADE en la tabla puente)."
                   },
                   "status": "OK",
                   "code": 200,

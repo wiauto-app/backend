@@ -1,5 +1,8 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { VehicleFilter } from "@/src/contexts/vehicles/domain/filters/vehicle.filter";
 import { VehicleRepository } from "@/src/contexts/vehicles/domain/repositories/vehicle.repository";
+
 import { FindAllVehiclesUseCaseDto } from "./find-all-vehicles.dto";
 import { VehicleListItemDto } from "./vehicle-list-item.dto";
 
@@ -9,7 +12,9 @@ export class FindAllVehiclesUseCase {
 
   async execute(
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
-  ): Promise<{ vehicles: VehicleListItemDto[]; total_count: number }> {
-    return this.vehicle_repository.findAll(find_all_vehicles_dto);
+  ): Promise<PaginatedResult<VehicleListItemDto>> {
+    const filter = new VehicleFilter({ ...find_all_vehicles_dto });
+    const result = await this.vehicle_repository.find_all(filter);
+    return result;
   }
 }

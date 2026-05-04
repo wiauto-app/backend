@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -6,6 +9,15 @@ import { Cuota } from "../../domain/entities/cuota";
 import { CuotaNotFoundException } from "../../domain/exceptions/cuota-not-found.exception";
 import { CuotasRepository } from "../../domain/repositories/cuotas.repository";
 import { CuotaEntity } from "../persistence/cuota.entity";
+
+const CUOTA_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "slug",
+  "value",
+  "created_at",
+  "updated_at",
+]);
 
 @Injectable()
 export class TypeormCuotaRepository extends CuotasRepository {
@@ -16,18 +28,22 @@ export class TypeormCuotaRepository extends CuotasRepository {
     super();
   }
 
-  async findAll(): Promise<Cuota[]> {
-    const rows = await this.repo.find({ order: { value: "ASC" } });
-    return rows.map((row) =>
-      Cuota.fromPrimitives({
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        value: row.value,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      }),
-    );
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Cuota>> {
+    return run_paginated_typeorm_find({
+      repository: this.repo,
+      filter,
+      map_row: (row) =>
+        Cuota.fromPrimitives({
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          value: row.value,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        }),
+      allowed_sort_keys: CUOTA_SORT_KEYS,
+      default_sort_key: "value",
+    });
   }
 
   async findOne(id: string): Promise<Cuota | null> {

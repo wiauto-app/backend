@@ -63,8 +63,10 @@ export interface PrimitiveVehicle {
   color_id: string | null;
   dgt_label_id: string | null;
   warranty_type_id: string | null;
-  cuota_id: string | null;
+  cuota_ids: string[];
   suggestions: string[];
+  /** Dueño del anuncio (mismo UUID que `users.id` / `profiles.id`). */
+  profile_id?: string;
 }
 
 export type VehicleUpdateFields = Partial<PrimitiveVehicle>;
@@ -95,7 +97,8 @@ export class Vehicle {
     color_id?: string | null;
     dgt_label_id?: string | null;
     warranty_type_id?: string | null;
-    cuota_id?: string | null;
+    cuota_ids?: string[];
+    profile_id: string;
     traction_id: string;
     transmission_type: TransmissionType;
     power: number;
@@ -114,7 +117,8 @@ export class Vehicle {
       color_id: createVehicle.color_id ?? null,
       dgt_label_id: createVehicle.dgt_label_id ?? null,
       warranty_type_id: createVehicle.warranty_type_id ?? null,
-      cuota_id: createVehicle.cuota_id ?? null,
+      cuota_ids: createVehicle.cuota_ids ?? [],
+      profile_id: createVehicle.profile_id,
       expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
     });
   }
@@ -157,8 +161,9 @@ export class Vehicle {
       color_id: this.primitiveVehicle.color_id,
       dgt_label_id: this.primitiveVehicle.dgt_label_id,
       warranty_type_id: this.primitiveVehicle.warranty_type_id,
-      cuota_id: this.primitiveVehicle.cuota_id,
+      cuota_ids: this.primitiveVehicle.cuota_ids,
       suggestions: this.primitiveVehicle.suggestions,
+      profile_id: this.primitiveVehicle.profile_id,
     };
   }
 }

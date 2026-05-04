@@ -1,3 +1,4 @@
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { V1_WARRANTY_TYPES } from "../route.constants";
 import { WarrantyTypesUseCase } from "../../../application/warranty-types-use-cases/warranty-types.use-case";
@@ -32,8 +34,8 @@ export class WarrantyTypesController {
   }
 
   @Get()
-  findAll() {
-    return this.warranty_types_use_case.findAll();
+  findAll(@Query() query: PaginationHttpDto) {
+    return this.warranty_types_use_case.findAll(query);
   }
 
   @Get(":id")

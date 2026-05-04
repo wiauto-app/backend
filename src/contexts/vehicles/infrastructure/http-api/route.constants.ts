@@ -9,3 +9,4 @@ export const V1_DGT_LABELS = "v1/dgt-labels";
 export const V1_WARRANTY_TYPES = "v1/warranty-types";
 export const V1_TRACTIONS = "v1/tractions";
 export const V1_CUOTAS = "v1/cuotas";
+export const V1_REVIEWS = "v1/reviews";

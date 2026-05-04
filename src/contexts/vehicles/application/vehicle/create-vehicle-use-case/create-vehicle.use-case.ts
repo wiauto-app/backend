@@ -23,6 +23,7 @@ export class CreateVehicleUseCase {
   async execute(
     create_vehicle_dto: CreateVehicleDto,
     files: Express.Multer.File[],
+    publisher_profile_id: string,
   ): Promise<{ vehicle: PrimitiveVehicle }> {
     const { battery_capacity, time_to_charge, autonomy } = create_vehicle_dto;
     const { suggestions } = await this.validateVehicleUseCase.execute({
@@ -35,6 +36,7 @@ export class CreateVehicleUseCase {
       condition: create_vehicle_dto.condition,
     });
     const vehicle = Vehicle.create({
+      profile_id: publisher_profile_id,
       price: create_vehicle_dto.price,
       mileage: create_vehicle_dto.mileage,
       lat: create_vehicle_dto.lat,
@@ -62,7 +64,7 @@ export class CreateVehicleUseCase {
       color_id: create_vehicle_dto.color_id ?? null,
       dgt_label_id: create_vehicle_dto.dgt_label_id ?? null,
       warranty_type_id: create_vehicle_dto.warranty_type_id ?? null,
-      cuota_id: create_vehicle_dto.cuota_id ?? null,
+      cuota_ids: create_vehicle_dto.cuota_ids ?? [],
       suggestions,
     });
     await this.vehicle_repository.save(vehicle);

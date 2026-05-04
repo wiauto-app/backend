@@ -1,4 +1,4 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   PublisherType,
   PUBLISHER_TYPE,

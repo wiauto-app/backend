@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogFuelType,
   PrimitiveCatalogFuelType,
@@ -38,9 +41,12 @@ export class CatalogFuelTypesUseCase {
     return { fuel_type: saved.toPrimitives() };
   }
 
-  async findAll(): Promise<{ fuel_types: PrimitiveCatalogFuelType[] }> {
-    const items = await this.repository.findAll();
-    return { fuel_types: items.map((x) => x.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveCatalogFuelType>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.repository.find_all(filter);
+    return page.map((x) => x.toPrimitives());
   }
 
   async findOne(id: number): Promise<{ fuel_type: PrimitiveCatalogFuelType }> {

@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogYear,
   PrimitiveCatalogYear,
@@ -31,9 +34,12 @@ export class CatalogYearsUseCase {
     return { year: saved.toPrimitives() };
   }
 
-  async findAll(): Promise<{ years: PrimitiveCatalogYear[] }> {
-    const items = await this.repository.findAll();
-    return { years: items.map((y) => y.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveCatalogYear>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.repository.find_all(filter);
+    return page.map((y) => y.toPrimitives());
   }
 
   async findOne(id: number): Promise<{ year: PrimitiveCatalogYear }> {

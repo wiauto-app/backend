@@ -1,6 +1,6 @@
 
 import { Injectable } from '@nestjs/common';
-import { AuthGuard as NestAuthGuard } from '@nestjs/passport';
+import { AuthGuard  } from '@nestjs/passport';
 
 @Injectable()
-export class AuthGuard extends NestAuthGuard('jwt') {}
+export class JwtGuard extends AuthGuard('jwt') {}

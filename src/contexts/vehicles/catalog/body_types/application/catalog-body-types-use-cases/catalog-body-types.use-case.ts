@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogBodyType,
   PrimitiveCatalogBodyType,
@@ -38,9 +41,12 @@ export class CatalogBodyTypesUseCase {
     return { body_type: saved.toPrimitives() };
   }
 
-  async findAll(): Promise<{ body_types: PrimitiveCatalogBodyType[] }> {
-    const items = await this.repository.findAll();
-    return { body_types: items.map((x) => x.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveCatalogBodyType>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.repository.find_all(filter);
+    return page.map((x) => x.toPrimitives());
   }
 
   async findOne(id: number): Promise<{ body_type: PrimitiveCatalogBodyType }> {

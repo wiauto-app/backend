@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { ServicesRepository } from "../../domain/repositories/services.repository";
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { UpdateServiceDto } from "./dto/update-service.dto";
@@ -36,9 +39,12 @@ export class ServicesUseCase {
     return { service: updated.toPrimitives() };
   }
 
-  async findAll(): Promise<{ services: PrimitiveService[] }> {
-    const services = await this.services_repository.findAll();
-    return { services: services.map((s) => s.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveService>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.services_repository.find_all(filter);
+    return page.map((s) => s.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ service: PrimitiveService }> {

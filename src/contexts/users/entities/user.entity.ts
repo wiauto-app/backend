@@ -1,4 +1,16 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  Relation,
+} from "typeorm";
+import { Profile } from "../../profiles/entities/profile.entity";
+import { SuspensionDurationType } from "./suspension_duration_type.entity";
 
 export type AuthProvider = "local" | "google" | "apple";
 
@@ -35,6 +47,29 @@ export class User {
   @Column({ type: "simple-array", nullable: true, select: false })
   two_factor_backup_codes: string[] | null; // bcrypt hashes, se consumen al usarse
 
+
+  @Column({ type: "boolean", default: false })
+  is_suspended: boolean;
+
+  @Column({ type: "timestamp", nullable: true })
+  suspended_at: Date | null;
+
+  @Column({ type: "varchar", nullable: true })
+  suspension_reason: string | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  suspension_end_time: Date | null;
+
+  @ManyToOne(() => SuspensionDurationType, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "suspension_duration_type_id" })
+  suspension_duration_type: Relation<SuspensionDurationType | null>;
+
   @CreateDateColumn()
   created_at: string;
+
+  @OneToOne(() => Profile, (profile) => profile.user)
+  profile: Relation<Profile>;
 }

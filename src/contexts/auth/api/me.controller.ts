@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from "@nestjs/common";
 
 import { GetUser } from "../decorators/GetUser.decorator";
 import { MeResponseDto } from "../dto/me-response.dto";
-import { AuthGuard } from "../guards/auth.guard";
+import { JwtGuard } from "../guards/auth.guard";
 import { MeService } from "../services/me.service";
 import { UserResponse } from "../types/auth.types";
 
@@ -10,7 +10,7 @@ import { UserResponse } from "../types/auth.types";
 export class MeController {
   constructor(private readonly meService: MeService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtGuard)
   @Get()
   getMe(@GetUser() user: UserResponse): MeResponseDto {
     return this.meService.getMe(user);

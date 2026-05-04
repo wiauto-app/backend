@@ -145,7 +145,7 @@ const vehicle_primitive = {
   color_id: "dddddddd-eeee-ffff-0000-111111111111",
   dgt_label_id: "eeeeeeee-ffff-0000-1111-222222222222",
   warranty_type_id: "ffffffff-0000-1111-2222-333333333333",
-  cuota_id: "00000000-1111-2222-3333-444444444444",
+  cuota_ids: ["00000000-1111-2222-3333-444444444444"],
   suggestions: [],
 };
 
@@ -350,12 +350,14 @@ function resolveResponses(method, pathKey, req) {
                 name: "Garantía oficial fabricante",
                 slug: "garantia-oficial-fabricante",
               },
-              cuota: {
-                id: "00000000-1111-2222-3333-444444444444",
-                name: "Financiación 48 meses",
-                slug: "financiacion-48-meses",
-                value: 48,
-              },
+              cuotas: [
+                {
+                  id: "00000000-1111-2222-3333-444444444444",
+                  name: "Financiación 48 meses",
+                  slug: "financiacion-48-meses",
+                  value: 48,
+                },
+              ],
             },
           ],
           total_count: 1,
@@ -885,6 +887,43 @@ function resolveResponses(method, pathKey, req) {
 
     "DELETE|v1/tractions/:traction_id": () =>
       makeExample("200 OK — sin cuerpo (ejemplo)", req, { emptyBody: true }),
+
+    "POST|v1/reviews": () =>
+      makeExample("201 Created — reseña (ejemplo)", req, {
+        code: 201,
+        status: "Created",
+        body: {
+          review: {
+            id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            rating: 5,
+            comment: "Trato excelente y vehículo como en el anuncio.",
+            profile_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            vehicle_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            created_at: iso,
+            updated_at: iso,
+          },
+        },
+      }),
+
+    "GET|v1/reviews": () =>
+      makeExample("200 OK — reseñas paginadas (ejemplo)", req, {
+        body: {
+          data: [
+            {
+              id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              rating: 5,
+              comment: "Trato excelente y vehículo como en el anuncio.",
+              profile_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              vehicle_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              created_at: iso,
+              updated_at: iso,
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 10,
+        },
+      }),
   };
 
   function toPattern(p) {

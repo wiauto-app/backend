@@ -1,9 +1,21 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { WarrantyType } from "../../domain/entities/warranty-type";
+import { WarrantyTypeNotFoundException } from "../../domain/exceptions/warranty-type-not-found.exception";
 import { WarrantyTypesRepository } from "../../domain/repositories/warranty-types.repository";
 import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
-import { WarrantyTypeNotFoundException } from "../../domain/exceptions/warranty-type-not-found.exception";
+
+const WARRANTY_TYPE_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "slug",
+  "created_at",
+  "updated_at",
+]);
 
 export class TypeormWarrantyTypesRepository extends WarrantyTypesRepository {
   constructor(
@@ -13,11 +25,14 @@ export class TypeormWarrantyTypesRepository extends WarrantyTypesRepository {
     super();
   }
 
-  async findAll(): Promise<WarrantyType[]> {
-    const rows = await this.warranty_type_repository.find({
-      order: { created_at: "asc" },
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<WarrantyType>> {
+    return run_paginated_typeorm_find({
+      repository: this.warranty_type_repository,
+      filter,
+      map_row: (row) => WarrantyType.fromPrimitives(row),
+      allowed_sort_keys: WARRANTY_TYPE_SORT_KEYS,
+      default_sort_key: "created_at",
     });
-    return rows.map((row) => WarrantyType.fromPrimitives(row));
   }
 
   async findOne(id: string): Promise<WarrantyType | null> {

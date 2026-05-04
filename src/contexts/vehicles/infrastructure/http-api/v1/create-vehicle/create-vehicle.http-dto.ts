@@ -142,9 +142,9 @@ export class CreateVehicleHttpDto {
   dgt_label_id?: string | null;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== undefined)
-  @IsUUID("4")
-  cuota_id?: string | null;
+  @IsArray()
+  @IsUUID("4", { each: true })
+  cuota_ids?: string[];
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)

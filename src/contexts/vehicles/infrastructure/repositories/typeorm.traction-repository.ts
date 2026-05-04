@@ -1,9 +1,21 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { Traction } from "../../domain/entities/traction";
+import { TractionNotFoundException } from "../../domain/exceptions/traction-not-found.exception";
 import { TractionsRepository } from "../../domain/repositories/tractions.repository";
 import { TractionEntity } from "../persistence/traction.entity";
-import { TractionNotFoundException } from "../../domain/exceptions/traction-not-found.exception";
+
+const TRACTION_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "slug",
+  "created_at",
+  "updated_at",
+]);
 
 export class TypeormTractionRepository extends TractionsRepository {
   constructor(
@@ -13,11 +25,14 @@ export class TypeormTractionRepository extends TractionsRepository {
     super();
   }
 
-  async findAll(): Promise<Traction[]> {
-    const rows = await this.traction_repository.find({
-      order: { created_at: "asc" },
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Traction>> {
+    return run_paginated_typeorm_find({
+      repository: this.traction_repository,
+      filter,
+      map_row: (row) => Traction.fromPrimitives(row),
+      allowed_sort_keys: TRACTION_SORT_KEYS,
+      default_sort_key: "created_at",
     });
-    return rows.map((row) => Traction.fromPrimitives(row));
   }
 
   async findOne(id: string): Promise<Traction | null> {

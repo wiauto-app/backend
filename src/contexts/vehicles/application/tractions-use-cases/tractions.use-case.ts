@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { TractionsRepository } from "../../domain/repositories/tractions.repository";
 import { CreateTractionDto } from "./dto/create-traction.dto";
 import {
@@ -37,9 +40,12 @@ export class TractionsUseCase {
     return { traction: updated.toPrimitives() };
   }
 
-  async findAll(): Promise<{ tractions: PrimitiveTraction[] }> {
-    const items = await this.tractions_repository.findAll();
-    return { tractions: items.map((t) => t.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveTraction>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.tractions_repository.find_all(filter);
+    return page.map((t) => t.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ traction: PrimitiveTraction }> {

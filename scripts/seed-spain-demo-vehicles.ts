@@ -3,7 +3,7 @@
  * Usa `DATABASE_URL` del .env (misma que la app).
  *
  * Requisitos: al menos una fila en `version` con combustible no recargable (fuel_type.can_charge = false),
- * una en `tractions`, una en `vehicle_types`.
+ * una en `tractions`, una en `vehicle_types`, y el perfil `9cef3bfc-b15f-42ed-823c-fffca581ed7c` en `profile`.
  *
  * Uso:
  *   pnpm seed:spain-demos
@@ -54,6 +54,9 @@ interface catalog_ids {
 }
 
 const dataset_path = path.join(__dirname, "data", "spain-demo-vehicles.json");
+
+/** Perfil propietario de los anuncios demo (debe existir en `profiles`). */
+const demo_profile_id = "9cef3bfc-b15f-42ed-823c-fffca581ed7c";
 
 const wipe_demo = process.argv.includes("--wipe-demo");
 
@@ -186,11 +189,12 @@ async function main(): Promise<void> {
           id, title, description, price, mileage, lat, lng, condition, status, is_featured, views,
           publisher_type, expires_at, transmission_type, power, displacement, autonomy, battery_capacity,
           time_to_charge, license_plate, phone_code, phone, email, version_id, traction_id, vehicle_type_id,
+          profile_id,
           suggestions, created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8::vehicles_condition_enum, $9::vehicles_status_enum, false, 0,
           $10::vehicles_publisher_type_enum, $11, $12::vehicles_transmission_type_enum, $13, $14, $15, $16,
-          $17, $18, $19, $20, $21, $22::integer, $23::uuid, $24::uuid, '[]'::jsonb, now(), now()
+          $17, $18, $19, $20, $21, $22::integer, $23::uuid, $24::uuid, $25::uuid, '[]'::jsonb, now(), now()
         )`,
         [
           id,
@@ -217,6 +221,7 @@ async function main(): Promise<void> {
           version_id,
           catalog.traction_id,
           catalog.vehicle_type_id,
+          demo_profile_id,
         ],
       );
 

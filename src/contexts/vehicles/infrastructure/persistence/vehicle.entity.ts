@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -24,9 +25,8 @@ import { DgtLabelEntity } from "./dgt-label.entity";
 import { WarrantyTypeEntity } from "./warranty-type.entity";
 import { TractionEntity } from "./traction.entity";
 import { CuotaEntity } from "./cuota.entity";
-
-
-
+import { Profile } from "../../../profiles/entities/profile.entity";
+import { ReviewEntity } from "./review.entity";
 
 @Entity({ name: "vehicles" })
 export class VehicleEntity {
@@ -141,9 +141,13 @@ export class VehicleEntity {
   @JoinColumn({ name: "warranty_type_id" })
   warranty_type: Relation<WarrantyTypeEntity | null>;
 
-  @ManyToOne(() => CuotaEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "cuota_id" })
-  cuota: Relation<CuotaEntity | null>;
+  @ManyToMany(() => CuotaEntity)
+  @JoinTable({
+    name: "vehicle_cuotas",
+    joinColumn: { name: "vehicle_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "cuota_id", referencedColumnName: "id" },
+  })
+  cuotas: Relation<CuotaEntity[]>;
 
   // --- Contenido asociado ---
   @OneToMany(
@@ -165,4 +169,16 @@ export class VehicleEntity {
 
   @Column({ type: "jsonb", default: [] })
   suggestions: string[];
+
+
+
+  @ManyToOne(() => Profile, (profile) => profile.vehicles)
+  @JoinColumn({ name: "profile_id" })
+  profile: Relation<Profile>;
+
+  @OneToMany(() => ReviewEntity, (review) => review.vehicle)
+  reviews: Relation<ReviewEntity[]>;
+
+  @DeleteDateColumn()
+  deleted_at?: Date;
 }

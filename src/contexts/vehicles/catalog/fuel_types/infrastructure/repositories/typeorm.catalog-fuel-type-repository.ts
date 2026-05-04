@@ -1,9 +1,22 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { CatalogFuelType } from "../../domain/entities/catalog-fuel-type";
+import { CatalogFuelTypeNotFoundException } from "../../domain/exceptions/catalog-fuel-type-not-found.exception";
 import { CatalogFuelTypesRepository } from "../../domain/repositories/catalog-fuel-types.repository";
 import { CatalogFuelTypeEntity } from "../persistence/catalog-fuel-type.entity";
-import { CatalogFuelTypeNotFoundException } from "../../domain/exceptions/catalog-fuel-type-not-found.exception";
+
+const CATALOG_FUEL_TYPE_SORT_KEYS = new Set([
+  "id",
+  "fuel_id",
+  "name",
+  "slug",
+  "can_charge",
+  "created_at",
+]);
 
 export class TypeormCatalogFuelTypeRepository extends CatalogFuelTypesRepository {
   constructor(
@@ -13,18 +26,22 @@ export class TypeormCatalogFuelTypeRepository extends CatalogFuelTypesRepository
     super();
   }
 
-  async findAll(): Promise<CatalogFuelType[]> {
-    const rows = await this.repo.find({ order: { id: "ASC" } });
-    return rows.map((row) =>
-      CatalogFuelType.fromPrimitives({
-        id: row.id,
-        fuel_id: row.fuel_id,
-        name: row.name,
-        slug: row.slug,
-        can_charge: row.can_charge,
-        created_at: row.created_at,
-      }),
-    );
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogFuelType>> {
+    return run_paginated_typeorm_find({
+      repository: this.repo,
+      filter,
+      map_row: (row) =>
+        CatalogFuelType.fromPrimitives({
+          id: row.id,
+          fuel_id: row.fuel_id,
+          name: row.name,
+          slug: row.slug,
+          can_charge: row.can_charge,
+          created_at: row.created_at,
+        }),
+      allowed_sort_keys: CATALOG_FUEL_TYPE_SORT_KEYS,
+      default_sort_key: "id",
+    });
   }
 
   async findOne(id: number): Promise<CatalogFuelType | null> {

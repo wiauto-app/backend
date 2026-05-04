@@ -1,4 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { VehicleTypesRepository } from "../../domain/repositories/vehicle-types.repository";
 import { CreateVehicleTypeDto } from "./dto/create-vehicle-type.dto";
 import { PrimitiveVehicleType, VehicleType } from "../../domain/entities/vehicle-types";
@@ -27,9 +30,12 @@ export class VehicleTypesUseCase {
     return { vehicleType: updated_vehicle_type.toPrimitives() };
   }
 
-  async findAll(): Promise<{ vehicleTypes: PrimitiveVehicleType[] }> {
-    const vehicleTypes = await this.vehicleTypesRepository.findAll();
-    return { vehicleTypes: vehicleTypes.map(vehicleType => vehicleType.toPrimitives()) };
+  async findAll(
+    query: PaginationHttpDto,
+  ): Promise<PaginatedResult<PrimitiveVehicleType>> {
+    const filter = new CatalogPaginationFilter({ ...query });
+    const page = await this.vehicleTypesRepository.find_all(filter);
+    return page.map((vehicle_type) => vehicle_type.toPrimitives());
   }
 
   async findOne(id: string): Promise<{ vehicleType: PrimitiveVehicleType }> {

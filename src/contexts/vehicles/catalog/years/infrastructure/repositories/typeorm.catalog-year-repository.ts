@@ -1,9 +1,15 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+
 import { CatalogYear } from "../../domain/entities/catalog-year";
+import { CatalogYearNotFoundException } from "../../domain/exceptions/catalog-year-not-found.exception";
 import { CatalogYearsRepository } from "../../domain/repositories/catalog-years.repository";
 import { CatalogYearEntity } from "../persistence/catalog-year.entity";
-import { CatalogYearNotFoundException } from "../../domain/exceptions/catalog-year-not-found.exception";
+
+const CATALOG_YEAR_SORT_KEYS = new Set(["id", "year", "slug", "created_at"]);
 
 export class TypeormCatalogYearRepository extends CatalogYearsRepository {
   constructor(
@@ -13,16 +19,20 @@ export class TypeormCatalogYearRepository extends CatalogYearsRepository {
     super();
   }
 
-  async findAll(): Promise<CatalogYear[]> {
-    const rows = await this.repo.find({ order: { year: "ASC" } });
-    return rows.map((row) =>
-      CatalogYear.fromPrimitives({
-        id: row.id,
-        year: row.year,
-        slug: row.slug,
-        created_at: row.created_at,
-      }),
-    );
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogYear>> {
+    return run_paginated_typeorm_find({
+      repository: this.repo,
+      filter,
+      map_row: (row) =>
+        CatalogYear.fromPrimitives({
+          id: row.id,
+          year: row.year,
+          slug: row.slug,
+          created_at: row.created_at,
+        }),
+      allowed_sort_keys: CATALOG_YEAR_SORT_KEYS,
+      default_sort_key: "year",
+    });
   }
 
   async findOne(id: number): Promise<CatalogYear | null> {

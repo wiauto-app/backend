@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 import { Type } from "class-transformer";
 
 export class PaginationHttpDto {
@@ -7,17 +7,15 @@ export class PaginationHttpDto {
   @IsString()
   query: string;
 
-  @IsNumber()
+  @IsOptional()
   @Type(() => Number)
-  @IsNotEmpty()
-  @Min(1)
-  page = 1;
+  @IsInt() @Min(1)
+  page?: number = 1;
 
-  @IsNumber() 
+  @IsOptional()
   @Type(() => Number)
-  @IsNotEmpty()
-  @Min(1)
-  limit = 20;
+  @IsInt() @Min(1) @Max(100)
+  limit?: number = 10;
 
   @IsOptional()
   @IsString()

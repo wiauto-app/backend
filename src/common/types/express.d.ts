@@ -14,6 +14,10 @@ declare global {
       files?: Multer.File[];
       uploaded_files?: string[];
       uploaded_file: string;
+      /** Rellena `VehicleCreationGuard`: anuncios activos del perfil. */
+      vehicle_listings_used?: number;
+      /** Tope del plan (`value` de `vehicles.create`); undefined en admin/developer. */
+      vehicle_listings_max?: number;
     }
     
   }

@@ -1,3 +1,7 @@
+import { Roles } from "@/src/contexts/roles/entities/roles.entity";
+import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { PermissionModule } from "@/src/contexts/users/permissions/permission.module";
+import { VehicleCreationGuard } from "./infrastructure/guards/vehicleCreation.guard";
 import { Module } from "@nestjs/common";
 import { CreateVehicleController } from "./infrastructure/http-api/v1/create-vehicle/create-vehicle.controller";
 import { CreateVehicleUseCase } from "./application/vehicle/create-vehicle-use-case/create-vehicle.use-case";
@@ -50,6 +54,7 @@ import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-veh
 @Module({
   controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController],
   providers: [
+    VehicleCreationGuard,
     ImageValidationPipe,
     /* Use Cases */
     CreateVehicleUseCase,
@@ -87,6 +92,7 @@ import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-veh
       WarrantyTypeEntity,
       TractionEntity,
       CuotaEntity,
+      Roles,
     ]),
     VehicleImagesModule,
     FileModule,
@@ -98,7 +104,9 @@ import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-veh
     TractionsModule,
     CuotasModule,
     CatalogModule,
+    AuthModule,
+    PermissionModule,
   ],
-  exports: [CreateVehicleUseCase],
+  exports: [CreateVehicleUseCase, VehicleRepository],
 })
 export class VehiclesModule { }

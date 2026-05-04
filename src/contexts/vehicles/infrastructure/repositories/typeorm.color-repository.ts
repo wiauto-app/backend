@@ -1,8 +1,21 @@
+import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+
+import { Color } from "../../domain/entities/color";
 import { ColorsRepository } from "../../domain/repositories/colors.repository";
 import { ColorEntity } from "../persistence/color.entity";
-import { Repository } from "typeorm";
-import { Color } from "../../domain/entities/color";
+
+const COLOR_SORT_KEYS = new Set([
+  "id",
+  "name",
+  "hex_code",
+  "slug",
+  "created_at",
+  "updated_at",
+]);
 
 export class TypeormColorRepository extends ColorsRepository {
   constructor(
@@ -12,9 +25,14 @@ export class TypeormColorRepository extends ColorsRepository {
     super();
   }
 
-  async findAll(): Promise<Color[]> {
-    const rows = await this.color_repository.find();
-    return rows.map((row) => Color.fromPrimitives(row));
+  async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Color>> {
+    return run_paginated_typeorm_find({
+      repository: this.color_repository,
+      filter,
+      map_row: (row) => Color.fromPrimitives(row),
+      allowed_sort_keys: COLOR_SORT_KEYS,
+      default_sort_key: "created_at",
+    });
   }
 
   async findOne(id: string): Promise<Color | null> {
