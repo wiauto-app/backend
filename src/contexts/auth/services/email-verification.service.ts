@@ -84,7 +84,7 @@ export class EmailVerificationService {
     await this.userMailService.sendEmailVerification(email, link);
   }
 
-  async confirm(token: string): Promise<void> {
+  async confirm(token: string): Promise<{ message: string }> {
     const payload = this.verifyToken(token);
     const user = await this.userRepository.findOne({ where: { id: payload.sub } });
 
@@ -95,11 +95,23 @@ export class EmailVerificationService {
     }
 
     if (user.is_email_verified) {
-      return;
+      return {
+        message: "El correo ya está verificado",
+      }
     }
+    
+    await this.userRepository.update(user.id, {
+      is_email_verified: true,
+      last_sign_in: new Date(),
+    });
 
-    await this.userRepository.update(user.id, { is_email_verified: true });
+
+    return {
+      message: "El correo se ha verificado correctamente",
+    }
   }
+
+
 
   private verifyToken(token: string): EmailVerificationTokenPayload {
     let decoded: unknown;

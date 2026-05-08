@@ -4,14 +4,18 @@
  * o POST /v1/permissions/sync-available-keys-file (JWT).
  *
  * Uso en endpoints: JwtGuard + PermissionGuard + @RequirePermissions(PermissionKeys.XXX).
- * Generado: 2026-05-03T04:59:45.003Z
+ * Generado: 2026-05-08T02:21:48.526Z
  */
 
 export const PermissionKeys = {
+  DEALERSHIPINVITATIONS_CREATE: "dealership_invitations.create",
+  DEALERSHIPINVITATIONS_DELETE: "dealership_invitations.delete",
+  DEALERSHIP_CREATE: "dealership.create",
+  DEALERSHIP_DELETE: "dealership.delete",
+  DEALERSHIP_UPDATE: "dealership.update",
   PERMISSIONS_MANAGE: "permissions.manage",
   ROLES_MANAGE: "roles.manage",
   USERS_CREATE: "users.create",
-  /** Crear anuncio; el campo `value` en BD define la cuota máxima de vehículos activos por perfil (planes). */
   VEHICLES_CREATE: "vehicles.create",
 } as const;
 

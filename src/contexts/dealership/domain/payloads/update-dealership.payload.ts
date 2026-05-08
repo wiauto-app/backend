@@ -1,0 +1,3 @@
+import { CreateDealershipPayload } from "./create-dealership.payload";
+
+export type UpdateDealershipPayload = Partial<CreateDealershipPayload>;

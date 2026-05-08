@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { JwtGuard } from "../../auth/guards/auth.guard";
 import { TwoFactorAuthService } from "../services/2fa.service";
 import { GetUser } from "../../auth/decorators/GetUser.decorator";
 import { UserResponse } from "../../auth/types/auth.types";
 import { ValidateBackupCodeDto } from "../dto/validate-backup-code.dto";
 import { AuthFactor } from "../decorators/authFactor.decorator";
+import { Request } from "express";
 
 @Controller("2fa")
 export class TwoFactorAuthController {
@@ -43,8 +44,8 @@ export class TwoFactorAuthController {
   }
 
   @Post("validate-backup-code")
-  validateBackupCode(@Body() dto: ValidateBackupCodeDto) {
-    return this.twoFactorAuthService.validateBackupCode(dto)
+  validateBackupCode(@Body() dto: ValidateBackupCodeDto, @Req() req: Request) {
+    return this.twoFactorAuthService.validateBackupCode(dto, req)
   }
 
   @UseGuards(JwtGuard)

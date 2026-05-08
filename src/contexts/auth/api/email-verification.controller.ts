@@ -21,8 +21,8 @@ export class EmailVerificationController {
   @Get("confirm")
   @HttpCode(HttpStatus.OK)
   async confirm(@Query() dto: EmailVerificationConfirmDto, @Res() res: Response) {
-    await this.emailVerificationService.confirm(dto.token);
-    res.redirect(HttpStatus.FOUND, dto.redirectUrl);
+    const { message } = await this.emailVerificationService.confirm(dto.token);
+    res.redirect(HttpStatus.FOUND, dto.redirectUrl + `?message=${message}`);
   }
 
   @Post("resend")

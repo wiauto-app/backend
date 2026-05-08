@@ -20,6 +20,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { FileModule } from "../contexts/shared/file/file.module";
 import { RolesModule } from "../contexts/roles/roles.module";
 import { PermissionModule } from "../contexts/users/permissions/permission.module";
+import { DealershipModule } from "../contexts/dealership/dealership.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { PermissionModule } from "../contexts/users/permissions/permission.modul
     FileModule,
     RolesModule,
     PermissionModule,
+    DealershipModule,
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,

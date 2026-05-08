@@ -1,6 +1,6 @@
 import { DataSource, DataSourceOptions } from "typeorm"
 
-import {config} from "dotenv"
+import { config } from "dotenv"
 // import { fileURLToPath } from 'node:url';
 // import path from 'node:path';
 
@@ -14,8 +14,8 @@ export const typeOrmConfig: DataSourceOptions = {
   url: process.env.DATABASE_URL,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../database/migrations/**/*{.ts,.js}'],
-  synchronize:false,
-  logging:false
+  synchronize: false,
+  logging: false
 }
 
 export const AppDataSource = new DataSource(typeOrmConfig)

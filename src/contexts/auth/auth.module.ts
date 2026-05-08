@@ -27,6 +27,10 @@ import { User } from "../users/entities/user.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { EmailVerificationQueue } from "./queues/email-verification.queue";
 import { EMAIL_VERIFICATION_QUEUE } from "./queues/email-verification.queue.constants";
+import { RefreshTokenEntity } from "./entities/refresh-token.entity";
+import { SessionEntity } from "./entities/session.entity";
+import { RefreshTokenService } from "./services/refresh-token.service";
+import { SessionService } from "./services/session.service";
 
 @Module({
   controllers: [
@@ -51,6 +55,8 @@ import { EMAIL_VERIFICATION_QUEUE } from "./queues/email-verification.queue.cons
     PasswordRecoveryService,
     EmailVerificationService,
     EmailVerificationQueue,
+    SessionService,
+    RefreshTokenService,
   ],
   imports: [
     PassportModule.register({ defaultStrategy: "jwt", session: true }),
@@ -62,7 +68,7 @@ import { EMAIL_VERIFICATION_QUEUE } from "./queues/email-verification.queue.cons
     }),
     forwardRef(() => UserModule),
     ProfileModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
     ThrottlerModule.forRoot({
       throttlers: [

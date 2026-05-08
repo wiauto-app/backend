@@ -6,9 +6,9 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Request } from "express";
-import { Repository } from "typeorm";
+import { DataSource } from "typeorm";
+
 import { Roles } from "../../../roles/entities/roles.entity";
 import { REQUIRED_PERMISSIONS_METADATA_KEY } from "../constants/permission-metadata.constant";
 
@@ -16,8 +16,7 @@ import { REQUIRED_PERMISSIONS_METADATA_KEY } from "../constants/permission-metad
 export class PermissionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @InjectRepository(Roles)
-    private readonly roles_repository: Repository<Roles>,
+    private readonly data_source: DataSource,
   ) {}
 
   private has_permissions(role: Roles, required_permission_keys: string[]): boolean {
@@ -30,7 +29,7 @@ export class PermissionGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const required_permission_keys =
-      this.reflector.getAllAndOverride<string[]>(
+      this.reflector.getAllAndOverride<string[] | undefined>(
         REQUIRED_PERMISSIONS_METADATA_KEY,
         [context.getHandler(), context.getClass()],
       ) ?? [];
@@ -54,7 +53,7 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const role_with_permissions = await this.roles_repository.findOne({
+    const role_with_permissions = await this.data_source.getRepository(Roles).findOne({
       where: { id: user_role.id },
       relations: { permissions: true },
     });

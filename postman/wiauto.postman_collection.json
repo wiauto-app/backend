@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "wiauto-api-collection",
     "name": "wiauto",
-    "description": "Estructura de carpetas: `auth`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.",
+    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -66,6 +66,11 @@
     {
       "key": "permission_id",
       "value": ""
+    },
+    {
+      "key": "dealership_id",
+      "value": "",
+      "description": "UUID de concesionario (`GET|PATCH|DELETE /v1/dealerships/:id`)."
     },
     {
       "key": "suspension_duration_type_id",
@@ -1307,6 +1312,198 @@
               "response": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "dealership",
+      "item": [
+        {
+          "name": "listar concesionarios (v1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/dealerships?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1", "description": "Opcional; default 1." },
+                { "key": "limit", "value": "10", "description": "Opcional; default 10 (max 100 en PaginationHttpDto)." },
+                { "key": "query", "value": "", "disabled": true, "description": "Busca en name, slug, email, description (ILIKE)." },
+                { "key": "order_by", "value": "created_at", "disabled": true, "description": "id|name|slug|email|created_at|updated_at (whitelist backend)." },
+                { "key": "order_direction", "value": "desc", "disabled": true, "description": "asc|desc" },
+                { "key": "name", "value": "", "disabled": true },
+                { "key": "slug", "value": "", "disabled": true },
+                { "key": "email", "value": "", "disabled": true }
+              ]
+            },
+            "description": "`FindAllDealershipsHttpDto`. Sin `AuthGuard` en el código actual. Respuesta: `PaginatedResult` con `data` = primitivos de agregado."
+          },
+          "response": [
+            {
+              "name": "200 OK — listado (ejemplo)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/dealerships?page=1&limit=10"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"data\": [],\n  \"total\": 0,\n  \"page\": 1,\n  \"limit\": 10,\n  \"totalPages\": 0,\n  \"hasNextPage\": false\n}"
+            }
+          ]
+        },
+        {
+          "name": "obtener concesionario por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}",
+            "description": "Respuesta: `{ \"dealership\": PrimitiveDealership }`. Variable `dealership_id` (UUID v4)."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/dealerships/{{dealership_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"dealership\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"name\": \"Concesionario ejemplo\",\n    \"slug\": \"concesionario-ejemplo\",\n    \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n    \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n    \"description\": \"Descripción del concesionario.\",\n    \"website_url\": \"https://ejemplo.com\",\n    \"email\": \"contacto@ejemplo.com\",\n    \"phone_code\": \"+34\",\n    \"phone\": \"912345678\",\n    \"address\": \"Calle Ejemplo 1\",\n    \"lat\": 40.4168,\n    \"lng\": -3.7038,\n    \"created_at\": \"2026-05-05T12:00:00.000Z\",\n    \"updated_at\": \"2026-05-05T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "crear concesionario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Concesionario ejemplo\",\n  \"slug\": \"concesionario-ejemplo\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n  \"description\": \"Descripción del concesionario.\",\n  \"website_url\": \"https://ejemplo.com\",\n  \"email\": \"contacto@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"912345678\",\n  \"address\": \"Calle Ejemplo 1, Madrid\",\n  \"lat\": 40.4168,\n  \"lng\": -3.7038\n}"
+            },
+            "url": "{{base_url}}/v1/dealerships",
+            "description": "Body alineado con `CreateDealershipHttpDto` (snake_case). Sin auth en el código actual."
+          },
+          "response": [
+            {
+              "name": "200 OK — creado (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Concesionario ejemplo\",\n  \"slug\": \"concesionario-ejemplo\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n  \"description\": \"Descripción del concesionario.\",\n  \"website_url\": \"https://ejemplo.com\",\n  \"email\": \"contacto@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"912345678\",\n  \"address\": \"Calle Ejemplo 1, Madrid\",\n  \"lat\": 40.4168,\n  \"lng\": -3.7038\n}"
+                },
+                "url": "{{base_url}}/v1/dealerships"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"name\": \"Concesionario ejemplo\",\n  \"slug\": \"concesionario-ejemplo\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n  \"description\": \"Descripción del concesionario.\",\n  \"website_url\": \"https://ejemplo.com\",\n  \"email\": \"contacto@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"912345678\",\n  \"address\": \"Calle Ejemplo 1, Madrid\",\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"created_at\": \"2026-05-05T12:00:00.000Z\",\n  \"updated_at\": \"2026-05-05T12:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "actualizar concesionario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nombre actualizado\",\n  \"description\": \"Nueva descripción.\"\n}"
+            },
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}",
+            "description": "`UpdateDealershipHttpDto` = campos opcionales (PartialType del create). UUID en ruta."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nombre actualizado\",\n  \"description\": \"Nueva descripción.\"\n}"
+                },
+                "url": "{{base_url}}/v1/dealerships/{{dealership_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"name\": \"Nombre actualizado\",\n  \"slug\": \"concesionario-ejemplo\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n  \"description\": \"Nueva descripción.\",\n  \"website_url\": \"https://ejemplo.com\",\n  \"email\": \"contacto@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"912345678\",\n  \"address\": \"Calle Ejemplo 1, Madrid\",\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"created_at\": \"2026-05-05T12:00:00.000Z\",\n  \"updated_at\": \"2026-05-05T13:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "eliminar concesionario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}",
+            "description": "204 No Content. Sin cuerpo de respuesta."
+          },
+          "response": [
+            {
+              "name": "204 No Content (ejemplo)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/v1/dealerships/{{dealership_id}}"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "crear invitación de concesionario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"vendedor@ejemplo.com\",\n  \"role\": \"seller\",\n  \"dealership_id\": \"{{dealership_id}}\"\n}"
+            },
+            "url": "{{base_url}}/v1/dealership-invitations",
+            "description": "JWT + permiso `dealership_invitations.create`. `invited_by_id` se toma del usuario autenticado, no va en el body."
+          },
+          "response": []
         }
       ]
     },

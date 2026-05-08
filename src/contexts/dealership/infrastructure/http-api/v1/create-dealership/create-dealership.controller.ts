@@ -1,0 +1,21 @@
+import { Body, Controller, Post } from "@nestjs/common";
+
+import { CreateDealershipDto } from "../../../../application/dealership/create-dealership-use-case/create-dealership.dto";
+import { CreateDealershipUseCase } from "../../../../application/dealership/create-dealership-use-case/create-dealership.use-case";
+import { V1_DEALERSHIPS } from "../../../route.constants";
+
+import { CreateDealershipHttpDto } from "./create-dealership.http-dto";
+
+@Controller(V1_DEALERSHIPS)
+export class CreateDealershipController {
+  constructor(private readonly create_dealership_use_case: CreateDealershipUseCase) {}
+
+  @Post()
+  run(@Body() create_dealership_http_dto: CreateDealershipHttpDto) {
+    const create_dealership_dto = Object.assign(
+      new CreateDealershipDto(),
+      create_dealership_http_dto,
+    );
+    return this.create_dealership_use_case.execute(create_dealership_dto);
+  }
+}

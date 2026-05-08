@@ -11,6 +11,8 @@ import { GoogleTokenService } from "../services/google-token.service";
 // import { AppleTokenService } from "../services/apple-token.service";
 import { OAuthProfile } from "../strategies/google.strategy";
 import { envs } from "@/src/common/envs";
+import { JwtGuard } from "../guards/auth.guard";
+import { RefreshTokenDto } from "../../2fa/dto/refresh-token.dto";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -25,8 +27,8 @@ export class AuthController {
   
 
   @Post("login")
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.signIn(loginDto);
+  login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    return this.authService.signIn({ loginDto, request: req });
   }
 
   @Get("google")
@@ -38,15 +40,15 @@ export class AuthController {
   @Get("google/callback")
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-    const token = await this.authService.signInWithOAuthProfile(req.user);
+    const token = await this.authService.signInWithOAuthProfile(req.user, req);
     res.redirect(`${envs.FRONTEND_REDIRECT_URL}?token=${token}`);
     return
   }
 
   @Post("google/mobile")
-  async googleMobile(@Body() dto: GoogleMobileDto) {
+  async googleMobile(@Body() dto: GoogleMobileDto, @Req() req: Request) {
     const profile = await this.googleTokenService.verifyIdToken(dto.id_token);
-    const token = await this.authService.signInWithOAuthProfile(profile);
+    const token = await this.authService.signInWithOAuthProfile(profile, req);
     return { token };
   }
 
@@ -70,4 +72,16 @@ export class AuthController {
   //   const token = await this.authService.signInWithOAuthProfile(profile);
   //   return { token };
   // }
+
+  @Post("refresh-token")
+  @UseGuards(JwtGuard)
+  refreshToken(@Body() dto: RefreshTokenDto, @Req() req: Request) {
+    return this.authService.refreshToken(dto, req);
+  }
+
+  @Get("logout")
+  @UseGuards(JwtGuard)
+  logout(@Req() req: Request) {
+    return this.authService.logout(req);
+  }
 }

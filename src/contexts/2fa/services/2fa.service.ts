@@ -12,6 +12,7 @@ import { BackupCodeService } from "./backup-code.service";
 import { SALT_ROUNDS } from "@/src/common/constants";
 import { ValidateBackupCodeDto } from "../dto/validate-backup-code.dto";
 import { AuthService } from "../../auth/services/auth.service";
+import { Request } from "express";
 @Injectable()
 export class TwoFactorAuthService {
   constructor(
@@ -146,7 +147,7 @@ export class TwoFactorAuthService {
     }
   }
 
-  async validateBackupCode(dto: ValidateBackupCodeDto): Promise<{ message: string, token: string }> {
+  async validateBackupCode(dto: ValidateBackupCodeDto, req: Request): Promise<{ message: string, token: string }> {
     const user = await this.userService.getUserByEmail({ email: dto.email, selectPrivateFields: true })
 
     if (!user.two_factor_backup_codes || user.two_factor_backup_codes.length === 0) {
@@ -173,7 +174,8 @@ export class TwoFactorAuthService {
 
     user.password = null
 
-    const token = this.authService.createToken(user, "30d")
+    const { session_id, refreshToken_hash } = await this.authService.createSession(user,req);
+    const token = this.authService.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" })
 
     return {
       message: "Código de respaldo validado correctamente",
