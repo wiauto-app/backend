@@ -1,11 +1,10 @@
 import { Body, Controller, Delete, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { JwtGuard } from "../../auth/guards/auth.guard";
 import { TwoFactorAuthService } from "../services/2fa.service";
-import { GetUser } from "../../auth/decorators/GetUser.decorator";
-import { UserResponse } from "../../auth/types/auth.types";
 import { ValidateBackupCodeDto } from "../dto/validate-backup-code.dto";
 import { AuthFactor } from "../decorators/authFactor.decorator";
 import { Request } from "express";
+import { GetUserId } from "../../auth/decorators/GetUserId.decorator";
 
 @Controller("2fa")
 export class TwoFactorAuthController {
@@ -16,30 +15,30 @@ export class TwoFactorAuthController {
 
   @UseGuards(JwtGuard)
   @Get("setup")
-  setup(@GetUser() { user: { id } }: UserResponse) {
+  setup(@GetUserId() id: string) {
     return this.twoFactorAuthService.setup(id);
   }
 
   @AuthFactor()
   @Post("activate")
-  activate(@GetUser() { user: { id } }: UserResponse) {
+  activate(@GetUserId() id: string) {
     return this.twoFactorAuthService.activate(id)
   }
 
   @Post("enable")
-  enable(@GetUser() { user: { id } }: UserResponse) {
+  enable(@GetUserId() id: string) {
     return this.twoFactorAuthService.enable(id)
   }
 
   @AuthFactor()
   @Post("disable")
-  disable(@GetUser() { user: { id } }: UserResponse) {
+  disable(@GetUserId() id: string) {
     return this.twoFactorAuthService.disable(id)
   }
 
   @AuthFactor()
   @Delete("delete")
-  delete(@GetUser() { user: { id } }: UserResponse) {
+  delete(@GetUserId() id: string) {
     return this.twoFactorAuthService.delete(id)
   }
 
@@ -50,7 +49,7 @@ export class TwoFactorAuthController {
 
   @UseGuards(JwtGuard)
   @Get("regenerate-backup-codes")
-  regenerateBackupCodes(@GetUser() { user: { id } }: UserResponse) {
+  regenerateBackupCodes(@GetUserId() id: string) {
     return this.twoFactorAuthService.regenerateBackupCodes(id)
   }
 }

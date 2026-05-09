@@ -11,7 +11,7 @@ import { SessionPayload, SignInResult } from "../types/auth.types";
 import { PasswordService } from "./password.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { SessionService } from "./session.service";
-import { RefreshTokenDto } from "../../2fa/dto/refresh-token.dto";
+import { envs } from "@/src/common/envs";
 
 @Injectable()
 export class AuthService {
@@ -56,9 +56,9 @@ export class AuthService {
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" });
+    const token = this.createToken({ user, session_id, expiresIn: "30d" });
 
-    return { type, token }
+    return { type, token, refreshToken_hash }
 
   }
 
@@ -72,7 +72,7 @@ export class AuthService {
     };
   }
 
-  async signInWithOAuthProfile(profile: OAuthProfile, request: Request) {
+  async signInWithOAuthProfile(profile: OAuthProfile, request: Request): Promise<SignInResult> {
     if (!profile.email) {
       throw new UnauthorizedException("El proveedor no devolvió un email");
     }
@@ -83,25 +83,22 @@ export class AuthService {
       last_sign_in: new Date(),
     });
 
-    const { session_id, refreshToken_hash } = await this.createSession(user, request);
-    return this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" });
+    const { session_id } = await this.createSession(user, request);
+    return { type: "session", token: this.createToken({ user, session_id, expiresIn: "30d" }), refreshToken_hash: "" };
   }
 
   createToken({
     user,
     session_id,
-    refreshToken_hash,
-    expiresIn,
-  }: { user: User, session_id: string, refreshToken_hash: string, expiresIn: string }) {
+  }: { user: User, session_id: string, expiresIn?: string }) {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,
       session_id: session_id,
-      refreshToken_hash: refreshToken_hash,
       scope: user.two_factor_enabled ? "2fa_challenge" : "session"
     };
     return this.jwtService.sign(payload,
-      { expiresIn: expiresIn as any },
+      { expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any },
     );
   }
 
@@ -110,9 +107,19 @@ export class AuthService {
     await this.sessionService.delete(session.id);
   }
 
-  async refreshToken(dto: RefreshTokenDto, request: Request): Promise<SignInResult> {
-    const refresh_token = await this.refreshTokenService.findByTokenHash(dto.refresh_token);
+  async refreshToken(refreshToken: string): Promise<SignInResult> {
+    const refresh_token = await this.refreshTokenService.findByTokenHash(refreshToken);
     const user = await this.userService.findOne(refresh_token.session.user_id);
-    return this.signIn({ loginDto: { email: user.email, password: "" }, request, ignorePassword: true });
+    await this.refreshTokenService.revoke(refresh_token);
+    const newRefreshToken = await this.refreshTokenService.createForSession(user, refresh_token.session, refresh_token.id);
+    const session = await this.sessionService.update(refresh_token.session.id, {
+      refreshed_at: new Date(),
+      expires_at: new Date(Date.now() + envs.SESSION_EXPIRES_IN),
+    });
+    return {
+      type: "session",
+      token: this.createToken({ user, session_id: session.id, expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any }),
+      refreshToken_hash: newRefreshToken.token_hash,
+    }
   }
 }

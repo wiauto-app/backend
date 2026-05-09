@@ -15,6 +15,9 @@ export class RefreshTokenEntity {
   @Column()
   revoked: boolean;
 
+  @Column()
+  expires_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

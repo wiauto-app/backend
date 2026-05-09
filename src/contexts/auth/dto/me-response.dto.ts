@@ -1,5 +1,4 @@
-import { AuthProvider } from "../../users/entities/user.entity";
-import { UserResponse } from "../types/auth.types";
+import { AuthProvider, User } from "../../users/entities/user.entity";
 
 export class MeResponseDto {
   id: string;
@@ -12,8 +11,8 @@ export class MeResponseDto {
   created_at: string;
   type: "session" | "2fa_challenge";
 
-  static fromUser(data: UserResponse): MeResponseDto {
-    const { user, profile } = data
+  static fromUser(user: User): MeResponseDto {
+    const { profile } = user
     const dto = new MeResponseDto();
     dto.id = user.id;
     dto.email = user.email;

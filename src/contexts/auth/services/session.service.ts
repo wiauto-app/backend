@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Request } from "express";
 import { IsNull, Repository } from "typeorm";
@@ -26,12 +26,23 @@ export class SessionService {
     return this.session_repository.save(session);
   }
 
+  async update(id: string, session: Partial<SessionEntity>): Promise<SessionEntity> {
+    const updated = await this.session_repository.preload({
+      id,
+      ...session,
+    });
+    if (!updated) {
+      throw new NotFoundException("Session not found");
+    }
+    return this.session_repository.save(updated);
+  }
+
   async findOne(id: string): Promise<SessionEntity> {
     const session = await this.session_repository.findOne({
       where: { id },
     });
     if (!session) {
-      throw new NotFoundException("Session not found");
+      throw new UnauthorizedException("Session not found");
     }
     return session;
   }

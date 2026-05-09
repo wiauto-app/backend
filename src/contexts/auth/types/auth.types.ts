@@ -1,4 +1,3 @@
-import { Profile } from "../../profiles/entities/profile.entity";
 import { User } from "../../users/entities/user.entity";
 
 
@@ -6,17 +5,12 @@ export interface SessionPayload{
   id: string;
   email: string;
   session_id: string;
-  refreshToken_hash: string;
   scope: "2fa_challenge" | "session";
 }
 
-export interface UserResponse{
-  user:User;
-  profile:Profile
-}
 
 export type SignInResult =
-  | { type: "session" | "2fa_challenge"; token: string }
+  | { type: "session" | "2fa_challenge"; token: string, refreshToken_hash: string }
 
 export interface TwoFactorChallengeResponse{
   verified:boolean;

@@ -12,7 +12,8 @@ import { GoogleTokenService } from "../services/google-token.service";
 import { OAuthProfile } from "../strategies/google.strategy";
 import { envs } from "@/src/common/envs";
 import { JwtGuard } from "../guards/auth.guard";
-import { RefreshTokenDto } from "../../2fa/dto/refresh-token.dto";
+import { RefreshTokenGuard } from "../guards/refresh-token.guard";
+import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -22,9 +23,9 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly googleTokenService: GoogleTokenService,
     // private readonly appleTokenService: AppleTokenService,
-  ) {}
+  ) { }
 
-  
+
 
   @Post("login")
   login(@Body() loginDto: LoginDto, @Req() req: Request) {
@@ -40,7 +41,7 @@ export class AuthController {
   @Get("google/callback")
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-    const token = await this.authService.signInWithOAuthProfile(req.user, req);
+    const { token } = await this.authService.signInWithOAuthProfile(req.user, req);
     res.redirect(`${envs.FRONTEND_REDIRECT_URL}?token=${token}`);
     return
   }
@@ -73,10 +74,10 @@ export class AuthController {
   //   return { token };
   // }
 
-  @Post("refresh-token")
-  @UseGuards(JwtGuard)
-  refreshToken(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    return this.authService.refreshToken(dto, req);
+  @Post("refresh")
+  @UseGuards(RefreshTokenGuard)
+  refreshToken(@GetRefreshToken() refreshToken: string) {
+    return this.authService.refreshToken(refreshToken);
   }
 
   @Get("logout")

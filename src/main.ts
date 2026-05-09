@@ -9,6 +9,8 @@ import express from 'express';
 import compression from 'compression';
 
 import { AppModule } from "@/app/app.module";
+    
+const FRONTEND_URL = "http://localhost:3000";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule,{
@@ -16,7 +18,13 @@ async function bootstrap() {
     bodyParser: true,
   });
 
-  app.enableCors();
+  app.enableCors({
+    origin: FRONTEND_URL,
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    exposedHeaders: ['Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

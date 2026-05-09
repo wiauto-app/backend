@@ -7,6 +7,10 @@ const envsSchema = z.object({
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
 
+  REFRESH_TOKEN_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
+  ACCESS_TOKEN_EXPIRES_IN: z.string().default("10s"),
+  SESSION_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
+  
   FRONTEND_REDIRECT_URL: z.string().default(""),
 
   GOOGLE_CLIENT_ID: z.string().default(""),

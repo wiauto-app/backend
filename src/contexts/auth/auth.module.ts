@@ -63,7 +63,7 @@ import { SessionService } from "./services/session.service";
     JwtModule.register({
       secret: envs.JWT_SECRET,
       signOptions: {
-        expiresIn: "30d",
+        expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any,
       },
     }),
     forwardRef(() => UserModule),
