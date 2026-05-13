@@ -6,6 +6,9 @@ import { Repository } from "typeorm";
 import { Profile, PrimitiveProfile, PrimitiveProfileRole } from "../../domain/entities/profile";
 import { ProfileRepository } from "../../domain/repositories/profile.repository";
 import { ProfileEntity } from "../persistence/profile.entity";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { getSkip } from "@/src/contexts/shared/getSkip";
+import { ProfileFilter } from "../../domain/filters/profile.filter";
 
 function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole | null {
   if (!role) {
@@ -38,7 +41,7 @@ export class TypeOrmProfileRepository implements ProfileRepository {
   constructor(
     @InjectRepository(ProfileEntity)
     private readonly profile_entity_repository: Repository<ProfileEntity>,
-  ) {}
+  ) { }
 
   async save(profile: Profile): Promise<void> {
     const p = profile.toPrimitives();
@@ -54,21 +57,53 @@ export class TypeOrmProfileRepository implements ProfileRepository {
   }
 
   async exists(id: string): Promise<boolean> {
-    return this.profile_entity_repository.exist({ where: { id } });
+    return this.profile_entity_repository.exists({ where: { id } });
   }
 
-  async findAll(): Promise<Profile[]> {
-    const entities = await this.profile_entity_repository.find({
-      relations: { role: true },
-      order: { id: "ASC" },
-    });
 
-    return entities.map((entity) => Profile.fromPrimitives(entity_to_primitives(entity)));
+  async findAll(filter: ProfileFilter): Promise<PaginatedResult<Profile>> {
+    console.log(filter);
+    const skip = getSkip(filter.page, filter.limit);
+    const qb = this.profile_entity_repository.createQueryBuilder("p")
+      .leftJoinAndSelect("p.role", "role")
+      .skip(skip)
+      .take(filter.limit);
+
+    if (filter.query) {
+      qb.andWhere("p.name ILIKE :query OR p.last_name ILIKE :query", { query: `%${filter.query}%` });
+    }
+    if (filter.order_by) {
+      qb.orderBy(`p.${filter.order_by}`, filter.order_direction);
+    }
+
+    if (filter.role_id) {
+      qb.andWhere("p.role_id = :role_id", { role_id: filter.role_id });
+    }
+
+    if (filter.name) {
+      qb.andWhere("p.name ILIKE :name", { name: `%${filter.name}%` });
+    }
+
+    const [rows, total] = await qb.getManyAndCount();
+    return new PaginatedResult(rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row))), total, filter.page, filter.limit);
   }
 
   async findOne(id: string): Promise<Profile | null> {
     const entity = await this.profile_entity_repository.findOne({
       where: { id },
+      relations: { role: true },
+    });
+
+    if (!entity) {
+      return null;
+    }
+
+    return Profile.fromPrimitives(entity_to_primitives(entity));
+  }
+
+  async findByEmail(email: string): Promise<Profile | null> {
+    const entity = await this.profile_entity_repository.findOne({
+      where: { user: { email } },
       relations: { role: true },
     });
 

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "fs";
-import { join } from "path";
+import path from "path";
 
 import { Injectable, Logger } from "@nestjs/common";
 import { MailerService } from "@nestjs-modules/mailer";
@@ -44,14 +44,56 @@ export class MailService {
     }
   }
 
+  async sendDealershipTeamJoinedEmail(payload: {
+    to: string;
+    role: string;
+    dealership_id: string;
+  }): Promise<void> {
+    const html = this.build_dealership_team_joined_template(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Confirmación: ya formas parte del equipo en WiAuto",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la confirmación de ingreso a concesionaria a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendDealershipInvitationEmail(payload: {
+    to: string;
+    invitation_link: string;
+    role: string;
+    dealership_id: string;
+  }): Promise<void> {
+    const html = this.build_dealership_invitation_template(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Invitación a concesionaria en WiAuto",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(`No se pudo enviar la invitación de concesionaria a ${payload.to}`, error as Error);
+      throw error;
+    }
+  }
+
   private loadVerificationEmailTemplate(): string {
     const candidates = [
-      join(__dirname, "../../users/user-templates/verification-email.html"),
-      join(process.cwd(), "src/contexts/users/user-templates/verification-email.html"),
+      path.join(__dirname, "../../users/user-templates/verification-email.html"),
+      path.join(process.cwd(), "src/contexts/users/user-templates/verification-email.html"),
     ];
     for (const filePath of candidates) {
       if (existsSync(filePath)) {
-        return readFileSync(filePath, "utf-8");
+        return readFileSync(filePath, "utf8");
       }
     }
     this.logger.error("No se encontró verification-email.html en dist ni en src");
@@ -98,6 +140,89 @@ export class MailService {
           </p>
           <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
             Si no solicitaste este cambio, podés ignorar este mensaje. El enlace expira en 15 minutos.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  private build_dealership_invitation_template(payload: {
+    to: string;
+    invitation_link: string;
+    role: string;
+    dealership_id: string;
+  }): string {
+    const escaped_email = this.escapeHtml(payload.to);
+    const escaped_role = this.escapeHtml(payload.role);
+    const escaped_dealership_id = this.escapeHtml(payload.dealership_id);
+
+    return `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invitación a concesionaria</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+      <tr>
+        <td>
+          <h1 style="color:#111827;font-size:22px;margin:0 0 16px;">Recibiste una invitación</h1>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 14px;">
+            Te invitaron a formar parte de una concesionaria en WiAuto.
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 24px;">
+            Correo invitado: <strong>${escaped_email}</strong><br />
+            Rol: <strong>${escaped_role}</strong><br />
+            ID de concesionaria: <strong>${escaped_dealership_id}</strong>
+          </p>
+          <p style="text-align:center;margin:32px 0;">
+            <a href="${payload.invitation_link}"
+               style="display:inline-block;padding:14px 28px;background:#1d4ed8;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
+              Aceptar invitación
+            </a>
+          </p>
+          <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
+            Si no esperabas este correo, puedes ignorarlo. El enlace expira según la política de invitaciones.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  private build_dealership_team_joined_template(payload: {
+    to: string;
+    role: string;
+    dealership_id: string;
+  }): string {
+    const escaped_email = this.escapeHtml(payload.to);
+    const escaped_role = this.escapeHtml(payload.role);
+    const escaped_dealership_id = this.escapeHtml(payload.dealership_id);
+
+    return `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Confirmación de ingreso</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+      <tr>
+        <td>
+          <h1 style="color:#111827;font-size:22px;margin:0 0 16px;">Te uniste al equipo</h1>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 24px;">
+            Tu cuenta ya quedó vinculada correctamente a la concesionaria en WiAuto.
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 24px;">
+            Correo: <strong>${escaped_email}</strong><br />
+            Rol: <strong>${escaped_role}</strong><br />
+            ID de concesionaria: <strong>${escaped_dealership_id}</strong>
+          </p>
+          <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
+            Si no reconoces este cambio, contacta al administrador de tu concesionaria.
           </p>
         </td>
       </tr>

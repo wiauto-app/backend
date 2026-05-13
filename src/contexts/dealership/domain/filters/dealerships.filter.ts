@@ -5,7 +5,7 @@ export interface DealershipsFilterOptions {
   limit?: number;
   query?: string;
   order_by?: string;
-  order_direction?: "asc" | "desc";
+  order_direction?: "ASC" | "DESC";
   name?: string;
   slug?: string;
   email?: string;
@@ -18,6 +18,7 @@ export class DealershipsFilter extends PaginationFilter {
 
   constructor(options: DealershipsFilterOptions = {}) {
     const {
+      
       page = 1,
       limit = 10,
       query,
@@ -27,7 +28,7 @@ export class DealershipsFilter extends PaginationFilter {
       slug,
       email,
     } = options;
-    super(page, limit, query, order_by, order_direction);
+    super(page, limit, order_direction, query, order_by);
     this.name = name;
     this.slug = slug;
     this.email = email;

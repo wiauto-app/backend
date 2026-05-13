@@ -14,6 +14,7 @@ import { envs } from "@/src/common/envs";
 import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
+import { AdminLoginService } from "../services/admin-login.service";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -22,6 +23,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleTokenService: GoogleTokenService,
+    private readonly adminLoginService: AdminLoginService,
     // private readonly appleTokenService: AppleTokenService,
   ) { }
 
@@ -30,6 +32,48 @@ export class AuthController {
   @Post("login")
   login(@Body() loginDto: LoginDto, @Req() req: Request) {
     return this.authService.signIn({ loginDto, request: req });
+  }
+
+  @Post("admin/login")
+  async adminLogin(
+    @Body() adminLoginDto: LoginDto,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    const result = await this.adminLoginService.signIn({
+      adminLoginDto,
+      request: req,
+    });
+
+    res.cookie("refresh_token", result.refreshToken_hash, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+      path: "/",
+    });
+
+    res.cookie("access_token", result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 15, // mejor corto para access token
+      path: "/",
+    });
+
+    return res.json({
+      message: "Login successful",
+    });
+  }
+
+  @Post("admin/logout")
+  async adminLogout(@Req() req: Request, @Res() res: Response) {
+    await this.adminLoginService.logout(req);
+    res.clearCookie("refresh_token");
+    res.clearCookie("access_token");
+    return res.json({
+      message: "Logout successful",
+    });
   }
 
   @Get("google")

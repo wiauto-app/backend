@@ -10,7 +10,13 @@ import compression from 'compression';
 
 import { AppModule } from "@/app/app.module";
     
-const FRONTEND_URL = "http://localhost:3000";
+const FRONTEND_ORIGINS = (
+  process.env.FRONTEND_ORIGINS ??
+  "http://localhost:3000,http://localhost:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule,{
@@ -19,7 +25,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: FRONTEND_URL,
+    origin: FRONTEND_ORIGINS.length > 0 ? FRONTEND_ORIGINS : true,
     allowedHeaders: ['Authorization', 'Content-Type'],
     exposedHeaders: ['Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

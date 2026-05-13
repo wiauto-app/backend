@@ -5,23 +5,24 @@ export class PaginationHttpDto {
   
   @IsOptional()
   @IsString()
-  query: string;
+  query?: string;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt() @Min(1)
-  page?: number = 1;
+  page= 1;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt() @Min(1) @Max(100)
-  limit?: number = 10;
+  limit= 10;
 
   @IsOptional()
   @IsString()
   order_by: string;
 
   @IsOptional()
-  @IsEnum(["asc", "desc"])
-  order_direction: "asc" | "desc";
+  @IsEnum(["ASC", "DESC"])
+  order_direction: "ASC" | "DESC" = "ASC";
+  
 }

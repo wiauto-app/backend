@@ -4,12 +4,23 @@ import { CreateDealershipInvitationDto } from "./create-dealership-invitation.dt
 import { DealershipInvitation } from "../../../domain/entities/dealership-invitations";
 import { hashToken } from "@/src/contexts/shared/token_management/hash_token";
 import { generateToken } from "@/src/contexts/shared/token_management/generate_token";
+import { DealershipInvitationEmailService } from "../../../domain/services/dealership-invitation-email.service";
+import { InvitationAlreadyAcceptedException } from "../../../domain/exceptions/invitation-already-accepted.exception";
 
 @Injectable()
 export class CreateDealershipInvitationUseCase {
-  constructor(private readonly dealership_invitation_repository: DealershipInvitationRepository) {}
+  constructor(
+    private readonly dealership_invitation_repository: DealershipInvitationRepository,
+    private readonly dealership_invitation_email_service: DealershipInvitationEmailService,
+  ) { }
 
   async execute(create_dealership_invitation_dto: CreateDealershipInvitationDto): Promise<void> {
+
+    const accepted_invitation = await this.dealership_invitation_repository.findAcceptedByEmail(create_dealership_invitation_dto.email);
+    if (accepted_invitation) {
+      throw new InvitationAlreadyAcceptedException();
+    }
+
     const token = generateToken();
     const token_hash = hashToken(token);
     const dealership_invitation = DealershipInvitation.create({
@@ -23,5 +34,12 @@ export class CreateDealershipInvitationUseCase {
       accepted_at: null,
     });
     await this.dealership_invitation_repository.save(dealership_invitation);
+
+    await this.dealership_invitation_email_service.send_invitation_email({
+      invited_email: create_dealership_invitation_dto.email,
+      invited_role: create_dealership_invitation_dto.role,
+      dealership_id: create_dealership_invitation_dto.dealership_id,
+      invitation_token: token,
+    });
   }
 }

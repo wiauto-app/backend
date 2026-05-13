@@ -1,1 +1,0 @@
-export { ProfileEntity as Profile } from "../infrastructure/persistence/profile.entity";

@@ -73,6 +73,11 @@
       "description": "UUID de concesionario (`GET|PATCH|DELETE /v1/dealerships/:id`)."
     },
     {
+      "key": "dealership_invitation_token",
+      "value": "",
+      "description": "Token plano del enlace `GET /v1/dealership-invitations/accept?token=`."
+    },
+    {
       "key": "suspension_duration_type_id",
       "value": "",
       "description": "UUID de `suspension_duration_types` (GET /v1/users/suspensions/duration-types)."
@@ -1502,6 +1507,26 @@
             },
             "url": "{{base_url}}/v1/dealership-invitations",
             "description": "JWT + permiso `dealership_invitations.create`. `invited_by_id` se toma del usuario autenticado, no va en el body."
+          },
+          "response": []
+        },
+        {
+          "name": "aceptar invitación de concesionario (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/v1/dealership-invitations/accept?token={{dealership_invitation_token}}",
+            "description": "Público (sin Authorization). Query `token` (plano). Opcional `with_response=true` para JSON `{ must_create, email }`; si no, redirect al front."
+          },
+          "response": []
+        },
+        {
+          "name": "rechazar invitación de concesionario (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/v1/dealership-invitations/reject?token={{dealership_invitation_token}}",
+            "description": "Público. Marca invitación como revocada (rechazo). Opcional `with_response=true` para JSON `{ email, rejected }`; si no, redirect a `/invitacion/rechazada`."
           },
           "response": []
         }

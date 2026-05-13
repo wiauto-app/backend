@@ -16,7 +16,7 @@ export class PaginatedResult<T> {
 
   map<U>(mapper: (item: T) => U): PaginatedResult<U> {
     return new PaginatedResult(
-      this.data.map(mapper),
+      this.data.map((item) => mapper(item)),
       this.total,
       this.page,
       this.limit,

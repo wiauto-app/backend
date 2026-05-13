@@ -1,0 +1,34 @@
+---
+description: Envío de correo siempre asíncrono vía cola BullMQ (no SMTP en request HTTP)
+globs: "**/mail/**/*.ts,**/*.service.ts,**/application/**/*use-case*.ts"
+alwaysApply: false
+---
+
+# Correo saliente: siempre por cola
+
+## Regla
+
+- **Nunca** invoques `MailService` (ni `mailerService.sendMail`) desde **controllers**, **casos de uso** o **servicios de aplicación** en el camino del request HTTP para “mandar un correo”.
+- **Sí** encola un trabajo (BullMQ) y deja que un **processor** (`WorkerHost` / `@Processor`) llame a `MailService`.
+
+## Patrón del repo
+
+- Cola **`outbound-mail`**: `OutboundMailEnqueueService` para encolar; `OutboundMailProcessor` para ejecutar envíos reales.
+- Para nuevos tipos de correo: añade **nombre de job** + **interface de payload** en `outbound-mail.queue.constants.ts`, un método en `OutboundMailEnqueueService`, un `case` en `OutboundMailProcessor` que delegue en el método correspondiente de `MailService`.
+
+## Excepciones permitidas
+
+- **Workers / processors** y código que solo corre **después** de sacar un job de la cola pueden llamar a `MailService`.
+- Colas ya dedicadas (p. ej. verificación de email) siguen su flujo: **encolar en el request** → worker → `MailService`; no duplicar envío directo desde el request sin cola.
+
+## Anti‑ejemplos
+
+```typescript
+// ❌ Mal: SMTP en el caso de uso
+await this.mail_service.sendDealershipInvitationEmail(...);
+```
+
+```typescript
+// ✅ Bien: encolar y retornar
+await this.outbound_mail_enqueue_service.enqueue_dealership_invitation({ ... });
+```

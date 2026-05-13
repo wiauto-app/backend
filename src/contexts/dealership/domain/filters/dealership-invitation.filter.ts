@@ -1,15 +1,10 @@
 import { PaginationFilter } from "@/src/contexts/shared/domain/filters/pagination.filter";
 
-export interface DealershipInvitationsFilterOptions {
+export interface DealershipInvitationsFilterOptions extends PaginationFilter {
   dealership_id?: string;
   email?: string;
   role?: string;
   status?: "pending" | "accepted" | "revoked" | "expired";
-  page?: number;
-  limit?: number;
-  query?: string;
-  order_by?: string;
-  order_direction?: "asc" | "desc";
 }
 
 export class DealershipInvitationsFilter extends PaginationFilter {
@@ -18,7 +13,7 @@ export class DealershipInvitationsFilter extends PaginationFilter {
   public readonly role?: string;
   public readonly status?: "pending" | "accepted" | "revoked" | "expired";
 
-  constructor(options: DealershipInvitationsFilterOptions = {}) {
+  constructor(options: DealershipInvitationsFilterOptions ) {
     const {
       dealership_id,
       email,
@@ -30,7 +25,7 @@ export class DealershipInvitationsFilter extends PaginationFilter {
       order_by,
       order_direction,
     } = options;
-    super(page, limit, query, order_by, order_direction);
+    super(page, limit, order_direction, query, order_by);
     this.dealership_id = dealership_id;
     this.email = email;
     this.role = role;

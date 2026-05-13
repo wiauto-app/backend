@@ -1,9 +1,14 @@
-import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { envs } from "@/src/common/envs";
 
-import { MailService } from "../../shared/mail/mail.service";
+import { OutboundMailEnqueueService } from "../../shared/mail/outbound-mail-enqueue.service";
 import { UserService } from "../../users/services/user.service";
 
 interface PasswordResetTokenPayload {
@@ -18,14 +23,23 @@ export class PasswordRecoveryService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly mailService: MailService,
+    private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
   async requestRecovery(email: string): Promise<void> {
-    const user = await this.userService.getUserByEmail({ email });
+    let user;
+    try {
+      user = await this.userService.getUserByEmail({ email });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.debug(`Password recovery requested for unknown email: ${email}`);
+        return;
+      }
+      throw error;
+    }
 
-    if (!user || user.provider !== "local") {
-      this.logger.debug(`Password recovery requested for unknown or non-local email: ${email}`);
+    if (user.provider !== "local") {
+      this.logger.debug(`Password recovery requested for non-local email: ${email}`);
       return;
     }
 
@@ -39,7 +53,10 @@ export class PasswordRecoveryService {
     });
 
     const link = this.buildRecoveryLink(token);
-    await this.mailService.sendPasswordRecoveryEmail(user.email, link);
+    await this.outbound_mail_enqueue_service.enqueue_password_recovery({
+      to: user.email,
+      recovery_link: link,
+    });
   }
 
   async changePassword(token: string, newPassword: string): Promise<void> {

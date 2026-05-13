@@ -47,13 +47,13 @@ export class SessionService {
     return session;
   }
 
-  async findOneByIpAddress(ip_address: string | undefined): Promise<SessionEntity> {
+  async findOneByIpAddress(ip_address: string | undefined): Promise<SessionEntity | null> {
     const session = await this.session_repository.findOne({
       where: { ip_address: ip_address ?? IsNull() },
     });
 
     if (!session) {
-      throw new NotFoundException("Sesión no encontrada");
+      return null;
     }
 
     return session;

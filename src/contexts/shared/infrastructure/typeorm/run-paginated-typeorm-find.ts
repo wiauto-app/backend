@@ -19,5 +19,5 @@ export async function run_paginated_typeorm_find<Entity extends ObjectLiteral, D
     take,
     order: { [sort_key]: direction } as FindOptionsOrder<Entity>,
   });
-  return new PaginatedResult(rows.map(map_row), total, filter.page, filter.limit);
+  return new PaginatedResult(rows.map((row) => map_row(row)), total, filter.page, filter.limit);
 }

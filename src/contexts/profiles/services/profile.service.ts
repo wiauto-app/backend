@@ -36,10 +36,6 @@ export class ProfileService {
     return this.to_profile_entity(profile);
   }
 
-  async findAll(): Promise<Profile[]> {
-    const profiles = await this.find_all_profiles_use_case.execute();
-    return profiles.map((profile) => this.to_profile_entity(profile));
-  }
 
   async updateProfile(user_id: string, dto: UpdateProfileDto): Promise<Profile> {
     const profile = await this.update_profile_use_case.execute({

@@ -63,6 +63,10 @@ export class AuthService {
   }
 
   async createSession(user: User, request: Request): Promise<{ session_id: string, refreshToken_hash: string }> {
+    const currentSession = await this.sessionService.findOneByIpAddress(request.ip);
+    if (currentSession) {
+      await this.sessionService.delete(currentSession.id);
+    }
     const session = await this.sessionService.create(user, request);
     const refreshToken = await this.refreshTokenService.createForSession(user, session);
 
@@ -104,6 +108,9 @@ export class AuthService {
 
   async logout(request: Request) {
     const session = await this.sessionService.findOneByIpAddress(request.ip);
+    if (!session) {
+      throw new UnauthorizedException("Sesión no encontrada");
+    }
     await this.sessionService.delete(session.id);
   }
 

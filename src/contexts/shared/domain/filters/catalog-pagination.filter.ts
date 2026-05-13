@@ -1,22 +1,17 @@
+import { PaginationDto } from "../../application/dtos/pagination.dto";
 import { PaginationFilter } from "./pagination.filter";
 
-export interface CatalogPaginationFilterOptions {
-  page?: number;
-  limit?: number;
-  query?: string;
-  order_by?: string;
-  order_direction?: "asc" | "desc";
-}
+
 
 /** Listados de catálogo sin filtros de dominio extra (solo paginación / orden / búsqueda genérica en `query` si el repo la aplica). */
 export class CatalogPaginationFilter extends PaginationFilter {
-  constructor(options: CatalogPaginationFilterOptions = {}) {
+  constructor(options: PaginationDto ) {
     super(
-      options.page ?? 1,
-      options.limit ?? 10,
+      options.page,
+      options.limit,
+      options.order_direction,
       options.query,
       options.order_by,
-      options.order_direction,
     );
   }
 }

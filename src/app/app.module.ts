@@ -15,7 +15,7 @@ import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
-import { ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { FileModule } from "../contexts/shared/file/file.module";
 import { RolesModule } from "../contexts/roles/roles.module";
@@ -39,6 +39,14 @@ import { DealershipModule } from "../contexts/dealership/dealership.module";
     RolesModule,
     PermissionModule,
     DealershipModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60_000,
+          limit: 200,
+        },
+      ],
+    }),
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,

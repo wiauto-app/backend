@@ -6,7 +6,7 @@ import { UpdateDealershipInvitationPayload } from "../payloads/dealership-invita
 export interface PrimitiveDealershipInvitation {
   id: string;
   email: string;
-  role: string;
+  role: "owner" | "admin" | "member";
   token_hash: string;
   status: "pending" | "accepted" | "revoked" | "expired";
   expires_at: Date;
@@ -28,7 +28,7 @@ export class DealershipInvitation {
     return this.primitive_dealership_invitation.dealership_id;
   }
 
-  get role(): string {
+  get role(): "owner" | "admin" | "member" {
     return this.primitive_dealership_invitation.role;
   }
 

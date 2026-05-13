@@ -22,7 +22,7 @@ export class DealershipInvitationsEntity {
   email: string;
 
   @Column()
-  role: string;
+  role:  "owner" | "admin" | "member";;
 
   @Index({ unique: true })
   @Column({ unique: true })

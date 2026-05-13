@@ -8,6 +8,7 @@ import { Dealership, PrimitiveDealership } from "../../domain/entities/dealershi
 import { DealershipsFilter } from "../../domain/filters/dealerships.filter";
 import { DealershipRepository } from "../../domain/repositories/dealership.repository";
 import { DealershipEntity } from "../persistence/dealership.entity";
+import { getSkip } from "@/src/contexts/shared/getSkip";
 
 const dealership_order_columns = new Set([
   "id",
@@ -99,10 +100,10 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       filter.order_by && dealership_order_columns.has(filter.order_by)
         ? filter.order_by
         : "created_at";
-    const direction = (filter.order_direction ?? "desc").toUpperCase() as "ASC" | "DESC";
+    const direction = filter.order_direction;
 
     qb.orderBy(`d.${order_column}`, direction);
-    qb.skip(filter.skip);
+    qb.skip(getSkip(filter.page, filter.limit));
     qb.take(filter.limit);
 
     const [rows, total] = await qb.getManyAndCount();

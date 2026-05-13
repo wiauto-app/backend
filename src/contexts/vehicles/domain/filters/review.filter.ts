@@ -8,7 +8,7 @@ export interface ReviewFilterOptions {
   limit?: number;
   query?: string;
   order_by?: string;
-  order_direction?: "asc" | "desc";
+  order_direction?: "ASC" | "DESC";
 }
 
 export class ReviewFilter extends PaginationFilter {
@@ -30,7 +30,7 @@ export class ReviewFilter extends PaginationFilter {
       order_by,
       order_direction,
     } = options;
-    super(page, limit, query, order_by, order_direction);
+    super(page, limit, order_direction, query, order_by);
     this.profile_id = profile_id;
     this.created_since = created_since;
     this.created_until = created_until;

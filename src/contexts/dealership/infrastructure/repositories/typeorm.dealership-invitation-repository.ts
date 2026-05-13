@@ -10,6 +10,7 @@ import {
 import { DealershipInvitationsFilter } from "../../domain/filters/dealership-invitation.filter";
 import { DealershipInvitationRepository } from "../../domain/repositories/dealership-invitation.repository";
 import { DealershipInvitationsEntity } from "../persistence/dealership-invitations.entity";
+import { getSkip } from "@/src/contexts/shared/getSkip";
 
 const dealership_invitation_order_columns = new Set([
   "id",
@@ -115,10 +116,10 @@ export class TypeOrmDealershipInvitationRepository extends DealershipInvitationR
       filter.order_by && dealership_invitation_order_columns.has(filter.order_by)
         ? filter.order_by
         : "created_at";
-    const direction = (filter.order_direction ?? "desc").toUpperCase() as "ASC" | "DESC";
+    const direction = filter.order_direction;
 
     qb.orderBy(`di.${order_column}`, direction);
-    qb.skip(filter.skip);
+    qb.skip(getSkip(filter.page, filter.limit));
     qb.take(filter.limit);
 
     const [rows, total] = await qb.getManyAndCount();

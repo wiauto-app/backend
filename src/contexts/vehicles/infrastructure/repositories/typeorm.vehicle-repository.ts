@@ -7,7 +7,6 @@ import { InvalidVehicleFeatureIdsException } from "../../domain/exceptions/inval
 import { InvalidVehicleServiceIdsException } from "../../domain/exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../../domain/exceptions/invalid-vehicle-catalog-id.exception";
 import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
-import { getPaginationProps } from "@/src/contexts/shared/dto/getPaginationProps";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleListItem } from "../../domain/read-models/vehicle-list-item";
@@ -23,18 +22,9 @@ import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
 import { TractionEntity } from "../persistence/traction.entity";
 import { CuotaEntity } from "../persistence/cuota.entity";
 import { applyFilters } from "../validators/filters.applier";
+import { getSkip } from "@/src/contexts/shared/getSkip";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
-
-const list_order_columns = new Set([
-  "id",
-  "price",
-  "mileage",
-  "title",
-  "condition",
-  "created_at",
-  "updated_at",
-]);
 
 const vehicle_catalog_relations = {
   features: true,
@@ -101,7 +91,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
       }
       : null,
     cuotas:
-      entity.cuotas && entity.cuotas.length > 0
+       entity.cuotas.length > 0
         ? entity.cuotas.map((c) => ({
           id: c.id,
           name: c.name,
@@ -153,7 +143,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     dgt_label_id: entity.dgt_label?.id ?? null,
     warranty_type_id: entity.warranty_type?.id ?? null,
     cuota_ids:
-      entity.cuotas && entity.cuotas.length > 0
+       entity.cuotas.length > 0
         ? entity.cuotas.map((c) => c.id)
         : [],
     suggestions: entity.suggestions,
@@ -207,8 +197,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const found = await this.cuota_repository.findBy({ id: In(unique_ids) });
     if (found.length !== unique_ids.length) {
       const found_set = new Set(found.map((c) => c.id));
-      const missing = unique_ids.filter((id) => !found_set.has(id));
-      throw new InvalidVehicleCatalogIdException("cuota_ids", missing[0] ?? "");
+      const missing = unique_ids.find((id) => !found_set.has(id));
+      throw new InvalidVehicleCatalogIdException("cuota_ids", missing ?? "");
     }
   }
 
@@ -363,9 +353,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
   async find_all(
     filter: VehicleFilter,
   ): Promise<PaginatedResult<VehicleListItem>> {
-    const { skip, take, order_column, direction } = getPaginationProps(filter);
-    const order_key =
-      list_order_columns.has(order_column) ? order_column : "created_at";
+    const { page, limit, order_by, order_direction } = filter;
+    const skip = getSkip(page, limit);
     const qb = this.vehicle_repository.createQueryBuilder("vehicle")
       .leftJoinAndSelect("vehicle.features", "features")
       .leftJoinAndSelect("vehicle.services", "services")
@@ -387,8 +376,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    qb.orderBy(`vehicle.${order_key}`, direction === "desc" ? "DESC" : "ASC");
-    qb.skip(skip).take(take);
+    qb.orderBy(`vehicle.${order_by}`, order_direction);
+    qb.skip(skip).take(limit);
     const rows = await qb.getMany();
     const vehicles = rows.map((row) => entity_to_list_item(row));
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);

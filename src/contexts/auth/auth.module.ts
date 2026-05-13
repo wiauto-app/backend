@@ -2,7 +2,6 @@ import { forwardRef, Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { BullModule } from "@nestjs/bullmq";
-import { ThrottlerModule } from "@nestjs/throttler";
 import { envs } from "@/src/common/envs";
 import { UserModule } from "../users/user.module";
 import { AuthController } from "./api/auth.controller";
@@ -31,6 +30,7 @@ import { RefreshTokenEntity } from "./entities/refresh-token.entity";
 import { SessionEntity } from "./entities/session.entity";
 import { RefreshTokenService } from "./services/refresh-token.service";
 import { SessionService } from "./services/session.service";
+import { AdminLoginService } from "./services/admin-login.service";
 
 @Module({
   controllers: [
@@ -57,6 +57,7 @@ import { SessionService } from "./services/session.service";
     EmailVerificationQueue,
     SessionService,
     RefreshTokenService,
+    AdminLoginService,
   ],
   imports: [
     PassportModule.register({ defaultStrategy: "jwt", session: true }),
@@ -70,14 +71,8 @@ import { SessionService } from "./services/session.service";
     ProfileModule,
     TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60_000,
-          limit: 20,
-        },
-      ],
-    }),
+
+
   ],
   exports: [
     JwtGuard,
@@ -86,4 +81,4 @@ import { SessionService } from "./services/session.service";
     EmailVerificationService /*, AppleAuthGuard*/,
   ],
 })
-export class AuthModule {}
+export class AuthModule { }

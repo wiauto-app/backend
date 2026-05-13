@@ -151,6 +151,23 @@ export class UserService {
     return user
   }
 
+  /** Email + contraseña seleccionable + perfil y rol (panel admin / staff). */
+  async findOneByEmailWithPasswordAndProfileRole(email: string): Promise<User> {
+    const user = await this.userRepository
+      .createQueryBuilder("user")
+      .addSelect("user.password")
+      .innerJoinAndSelect("user.profile", "profile")
+      .leftJoinAndSelect("profile.role", "role")
+      .where("user.email = :email", { email })
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException("No se encontró el usuario");
+    }
+
+    return user;
+  }
+
   async findAll(): Promise<User[]> {
     const users = await this.userRepository.find({
       order: { created_at: "DESC" },

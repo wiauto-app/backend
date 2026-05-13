@@ -8,7 +8,7 @@ const envsSchema = z.object({
   JWT_SECRET: z.string(),
 
   REFRESH_TOKEN_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
-  ACCESS_TOKEN_EXPIRES_IN: z.string().default("10s"),
+  ACCESS_TOKEN_EXPIRES_IN: z.string().default("24h"),
   SESSION_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
   
   FRONTEND_REDIRECT_URL: z.string().default(""),
@@ -40,6 +40,8 @@ const envsSchema = z.object({
   /** URL del front (ej. https://app.tudominio.com/verify-email) — se añade ?token= */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string(),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
+
+  BACKEND_URL: z.string().default("http://localhost:4000"),
   /** Segundos hasta expirar el enlace de verificación (por defecto 48 h) */
   EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC: z.coerce.number().default(86_400),
 

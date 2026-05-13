@@ -65,10 +65,10 @@ export class TypeormReviewsRepository implements ReviewsRepository {
       filter.order_by !== undefined && list_order_columns.has(filter.order_by)
         ? filter.order_by
         : "created_at";
-    const direction = filter.order_direction === "asc" ? "ASC" : "DESC";
+    const direction = filter.order_direction;
     qb.orderBy(`r.${order_column}`, direction);
 
-    qb.skip(filter.skip).take(filter.limit);
+    // qb.skip(filter.skip).take(filter.limit);
 
     const [rows, total] = await qb.getManyAndCount();
     const data = rows.map((row) => Review.fromPrimitives(row));

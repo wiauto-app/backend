@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 import { User } from "../users/entities/user.entity";
@@ -11,14 +11,25 @@ import { RemoveProfileUseCase } from "./application/profile/remove-profile-use-c
 import { UpdateProfileUseCase } from "./application/profile/update-profile-use-case/update-profile.use-case";
 import { ProfileRepository } from "./domain/repositories/profile.repository";
 import { ProfileUserRepository } from "./domain/repositories/profile-user.repository";
-import { ProfilesController } from "./infrastructure/http-api/v1/profiles.controller";
+import { CreateProfileController } from "./infrastructure/http-api/v1/create-profile/create-profile.controller";
+import { FindAllProfilesController } from "./infrastructure/http-api/v1/find-all-profiles/find-all-profiles.controller";
+import { FindOneProfileController } from "./infrastructure/http-api/v1/find-one-profile/find-one-profile.controller";
+import { RemoveProfileController } from "./infrastructure/http-api/v1/remove-profile/remove-profile.controller";
+import { UpdateProfileController } from "./infrastructure/http-api/v1/update-profile/update-profile.controller";
 import { ProfileEntity } from "./infrastructure/persistence/profile.entity";
 import { TypeOrmProfileRepository } from "./infrastructure/repositories/typeorm.profile-repository";
 import { TypeOrmProfileUserRepository } from "./infrastructure/repositories/typeorm.profile-user-repository";
 import { ProfileService } from "./services/profile.service";
+import { FindByEmailUseCase } from "./application/profile/find-by-email-use-case/find-by-email.use-case";
 
 @Module({
-  controllers: [ProfilesController],
+  controllers: [
+    CreateProfileController,
+    FindAllProfilesController,
+    FindOneProfileController,
+    UpdateProfileController,
+    RemoveProfileController,
+  ],
   providers: [
     ProfileService,
     CreateProfileUseCase,
@@ -28,6 +39,7 @@ import { ProfileService } from "./services/profile.service";
     UpdateProfileUseCase,
     RemoveProfileUseCase,
     FillMissingProfileNamesUseCase,
+    FindByEmailUseCase,
     TypeOrmProfileRepository,
     TypeOrmProfileUserRepository,
     {
@@ -39,7 +51,10 @@ import { ProfileService } from "./services/profile.service";
       useExisting: TypeOrmProfileUserRepository,
     },
   ],
-  exports: [ProfileService, ProfileRepository],
-  imports: [TypeOrmModule.forFeature([ProfileEntity, User]), DealershipInvitationModule],
+  exports: [ProfileService, ProfileRepository, ProfileUserRepository, FindByEmailUseCase],
+  imports: [
+    TypeOrmModule.forFeature([ProfileEntity, User]),
+    forwardRef(() => DealershipInvitationModule),
+  ],
 })
 export class ProfileModule {}

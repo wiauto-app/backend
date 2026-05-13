@@ -1,7 +1,7 @@
 
 export class CreateDealershipInvitationPayload {
   email: string;
-  role: string;
+  role: "owner" | "admin" | "member";
   token_hash: string;
   status: "pending" | "accepted" | "revoked" | "expired";
   expires_at: Date;

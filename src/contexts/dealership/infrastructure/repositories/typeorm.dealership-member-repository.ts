@@ -27,6 +27,34 @@ export class TypeOrmDealershipMemberRepository implements DealershipMemberReposi
     private readonly dealership_member_entity_repository: Repository<DealershipMembersEntity>,
   ) {}
 
+  async findOneById(id: string): Promise<DealershipMember | null> {
+    const entity = await this.dealership_member_entity_repository.findOne({
+      where: { id },
+    });
+    if (!entity) {
+      return null;
+    }
+
+    return DealershipMember.fromPrimitives(entity_to_primitives(entity));
+  }
+
+  async findOwnerMemberByDealershipId(
+    dealership_id: string,
+    role?: "owner" | "admin" | "member",
+  ): Promise<DealershipMember | null> {
+    const entity = await this.dealership_member_entity_repository.findOne({
+      where: {
+        dealership_id,
+        ...(role ? { role } : {}),
+      },
+    });
+    if (!entity) {
+      return null;
+    }
+
+    return DealershipMember.fromPrimitives(entity_to_primitives(entity));
+  }
+
   async save(dealership_member: DealershipMember): Promise<void> {
     const p = dealership_member.toPrimitives();
     const entity = this.dealership_member_entity_repository.create({
@@ -39,6 +67,28 @@ export class TypeOrmDealershipMemberRepository implements DealershipMemberReposi
     });
 
     await this.dealership_member_entity_repository.save(entity);
+  }
+
+  async update(dealership_member: DealershipMember): Promise<void> {
+    const p = dealership_member.toPrimitives();
+    const preloaded = await this.dealership_member_entity_repository.preload({
+      id: p.id,
+      dealership_id: p.dealership_id,
+      profile_id: p.profile_id,
+      role: p.role,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+    });
+
+    if (!preloaded) {
+      return;
+    }
+
+    await this.dealership_member_entity_repository.save(preloaded);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.dealership_member_entity_repository.delete(id);
   }
 
   async existsByDealershipIdAndProfileId(
