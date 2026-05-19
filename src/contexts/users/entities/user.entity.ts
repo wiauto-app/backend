@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -9,7 +10,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm";
-import { Profile } from "../../profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { SuspensionDurationType } from "./suspension_duration_type.entity";
 
 export type AuthProvider = "local" | "google" | "apple";
@@ -60,6 +61,9 @@ export class User {
   @Column({ type: "timestamp", nullable: true })
   suspension_end_time: Date | null;
 
+  @Column({ type: "uuid", nullable: true })
+  suspension_duration_type_id: string | null;
+
   @ManyToOne(() => SuspensionDurationType, {
     nullable: true,
     onDelete: "SET NULL",
@@ -70,6 +74,9 @@ export class User {
   @CreateDateColumn()
   created_at: string;
 
-  @OneToOne(() => Profile, (profile) => profile.user)
-  profile: Relation<Profile>;
+  @DeleteDateColumn()
+  deleted_at?: Date;
+
+  @OneToOne(() => ProfileEntity, (profile) => profile.user, { onDelete: "CASCADE" })
+  profile: Relation<ProfileEntity>;
 }

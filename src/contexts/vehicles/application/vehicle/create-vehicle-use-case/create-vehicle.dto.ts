@@ -5,6 +5,7 @@ import {
 } from "../../../domain/entities/vehicle";
 
 export class CreateVehicleDto {
+  vin_code?: string;
   price: number;
   mileage: number;
   lat: number;

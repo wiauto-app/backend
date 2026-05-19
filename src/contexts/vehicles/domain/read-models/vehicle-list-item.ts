@@ -1,3 +1,5 @@
+import { PublisherType, StatusVehicle } from "../entities/vehicle";
+
 /**
  * Proyección de listado: datos necesarios para la API, sin el agregado completo.
  */
@@ -23,4 +25,15 @@ export interface VehicleListItem {
     name:string;
     avatar_url:string;
   }
+}
+
+
+export interface AdminVehicleListItem extends VehicleListItem {
+  status: StatusVehicle;
+  publisher_type: PublisherType;
+  is_featured: boolean;
+  expires_at: Date;
+  views: number;
+  created_at: Date;
+  updated_at: Date;
 }

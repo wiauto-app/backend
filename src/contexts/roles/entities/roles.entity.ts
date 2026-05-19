@@ -1,6 +1,6 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
-import { Profile } from "../../profiles/entities/profile.entity";
-import { Permissions } from "../../users/permissions/entities/permissions.entity";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
+import { RolesPermissionsEntity } from "../../users/roles-permissions/entities/roles-permissions.entity";
 
 @Entity('roles')
 export class Roles {
@@ -25,15 +25,15 @@ export class Roles {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({ select: false })
   deleted_at?: Date;
 
   // @Column({ nullable: true })
   // premium_url?: string;  
 
-  @OneToMany(() => Profile, (profile) => profile.role)
-  profiles: Relation<Profile[]>;  
+  @OneToMany(() => ProfileEntity, (profile) => profile.role)
+  profiles: Relation<ProfileEntity[]>;
 
-  @ManyToMany(() => Permissions, (permissions) => permissions.roles)
-  permissions: Relation<Permissions[]>;
+  @OneToMany(() => RolesPermissionsEntity, (roles_permissions) => roles_permissions.role)
+  roles_permissions: Relation<RolesPermissionsEntity[]>;
 }

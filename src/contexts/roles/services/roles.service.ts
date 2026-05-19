@@ -6,6 +6,8 @@ import { Permissions } from "../../users/permissions/entities/permissions.entity
 import { CreateRoleDto } from "../dto/create-role.dto";
 import { Roles } from "../entities/roles.entity";
 import { UpdateRoleDto } from "../dto/update-role.dto";
+import { FindAllRolesDto } from "../dto/find-all-roles.dto";
+import { runPaginatedTypeormFind } from "../../shared/infrastructure/typeorm/run-paginated-typeorm-find";
 
 @Injectable()
 export class RolesService {
@@ -14,19 +16,37 @@ export class RolesService {
     private readonly rolesRepository: Repository<Roles>,
     @InjectRepository(Permissions)
     private readonly permissionsRepository: Repository<Permissions>,
-  ) {}
+  ) { }
 
   async create(createRoleDto: CreateRoleDto) {
     const role = this.rolesRepository.create(createRoleDto)
     return await this.rolesRepository.save(role)
   }
 
-  async findAll() {
-    return await this.rolesRepository.find()
+  async findAll(findAllRolesDto: FindAllRolesDto) {
+    const result = await runPaginatedTypeormFind({
+      repository: this.rolesRepository,
+      filter: findAllRolesDto,
+      map_row: (row) => row,
+      allowed_sort_keys: new Set(["name", "is_admin", "is_developer", "created_at", "updated_at"]),
+      default_sort_key: "name",
+      relations: ["roles_permissions", "roles_permissions.permission"],
+    })
+    return result
   }
 
   async findOne(id: string) {
-    return await this.rolesRepository.findOne({ where: { id } })
+    return await this.rolesRepository.findOne({
+      where: { id }, relations: {
+        roles_permissions: {
+          permission: true
+        },
+      }
+    })
+  }
+
+  async findDefault() {
+    return await this.rolesRepository.findOne({ where: { is_default: true } })
   }
 
   async update(id: string, updateRoleDto: UpdateRoleDto) {
@@ -44,7 +64,7 @@ export class RolesService {
   async findOneWithPermissions(id: string) {
     return await this.rolesRepository.findOne({
       where: { id },
-      relations: { permissions: true },
+      relations: { roles_permissions: true },
     });
   }
 
@@ -58,7 +78,7 @@ export class RolesService {
   ): Promise<Roles> {
     const role = await this.rolesRepository.findOne({
       where: { id: role_id },
-      relations: { permissions: true },
+      relations: { roles_permissions: true },
     });
     if (!role) {
       throw new NotFoundException("Rol no encontrado");
@@ -67,7 +87,7 @@ export class RolesService {
     const unique_ids = [...new Set(permission_ids)];
 
     if (unique_ids.length === 0) {
-      role.permissions = [];
+      role.roles_permissions = [];
       await this.rolesRepository.save(role);
     } else {
       const permissions = await this.permissionsRepository.find({
@@ -80,13 +100,12 @@ export class RolesService {
         );
       }
 
-      role.permissions = permissions;
       await this.rolesRepository.save(role);
     }
 
     const updated = await this.rolesRepository.findOne({
       where: { id: role_id },
-      relations: { permissions: true },
+      relations: { roles_permissions: true },
     });
     if (!updated) {
       throw new NotFoundException("Rol no encontrado");

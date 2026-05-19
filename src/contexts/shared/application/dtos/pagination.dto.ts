@@ -2,6 +2,7 @@ export class PaginationDto {
   query?: string;
   page: number;
   limit: number;
+  search?: string;
   order_by?: string;
   order_direction?: "ASC" | "DESC";
 }

@@ -1,4 +1,4 @@
-import { Profile } from "@/src/contexts/profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 import { DealershipEntity } from "./dealership.entity";
 
@@ -27,7 +27,7 @@ export class DealershipMembersEntity {
   @JoinColumn({ name: "dealership_id" })
   dealership: Relation<DealershipEntity>;
   
-  @ManyToOne(() => Profile, (profile) => profile.dealership_members)
+  @ManyToOne(() => ProfileEntity, (profile) => profile.dealership_members)
   @JoinColumn({ name: "profile_id" })
-  profile: Relation<Profile>;
+  profile: Relation<ProfileEntity>;
 }

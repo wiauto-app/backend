@@ -1,13 +1,14 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { OAuth2Client } from "google-auth-library";
 
 import { envs } from "@/src/common/envs";
 import { OAuthProfile } from "../strategies/google.strategy";
+import { authResponseConfig } from "../response.config";
 
 @Injectable()
 export class GoogleTokenService {
   private readonly client = new OAuth2Client(envs.GOOGLE_CLIENT_ID);
-
+  private readonly logger = new Logger(GoogleTokenService.name);
   async verifyIdToken(idToken: string): Promise<OAuthProfile> {
     try {
       const ticket = await this.client.verifyIdToken({
@@ -16,19 +17,21 @@ export class GoogleTokenService {
       });
       const payload = ticket.getPayload();
 
-      if (!payload || !payload.sub || !payload.email) {
-        throw new UnauthorizedException("Google token inválido");
+      if (!payload?.sub || !payload.email) {
+        this.logger.error("Google token inválido");
+        throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
       }
 
       return {
         provider: "google",
         provider_id: payload.sub,
         email: payload.email,
-        first_name: payload.given_name ?? null,
-        last_name: payload.family_name ?? null,
+        first_name: payload.given_name ?? "",
+        last_name: payload.family_name ?? undefined,
       };
     } catch {
-      throw new UnauthorizedException("Google token inválido");
+      this.logger.error("Google token inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
   }
 }

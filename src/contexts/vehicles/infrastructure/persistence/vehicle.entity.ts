@@ -25,7 +25,7 @@ import { DgtLabelEntity } from "./dgt-label.entity";
 import { WarrantyTypeEntity } from "./warranty-type.entity";
 import { TractionEntity } from "./traction.entity";
 import { CuotaEntity } from "./cuota.entity";
-import { Profile } from "../../../profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { ReviewEntity } from "./review.entity";
 
 @Entity({ name: "vehicles" })
@@ -84,6 +84,9 @@ export class VehicleEntity {
 
   @Column()
   license_plate: string;
+
+  @Column({ nullable: true })
+  vin_code?: string;
 
   // --- Eléctrico (opcional según modelo) ---
   @Column()
@@ -172,9 +175,9 @@ export class VehicleEntity {
 
 
 
-  @ManyToOne(() => Profile, (profile) => profile.vehicles)
+  @ManyToOne(() => ProfileEntity, (profile) => profile.vehicles)
   @JoinColumn({ name: "profile_id" })
-  profile: Relation<Profile>;
+  profile: Relation<ProfileEntity>;
 
   @OneToMany(() => ReviewEntity, (review) => review.vehicle)
   reviews: Relation<ReviewEntity[]>;

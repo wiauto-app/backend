@@ -1,8 +1,8 @@
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { FindOptionsWhere, Repository } from "typeorm";
 
 import { CatalogVersion } from "../../domain/entities/catalog-version";
 import { CatalogVersionNotFoundException } from "../../domain/exceptions/catalog-version-not-found.exception";
@@ -44,9 +44,22 @@ export class TypeormCatalogVersionRepository extends CatalogVersionsRepository {
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogVersion>> {
-    return run_paginated_typeorm_find({
+    const extra_filters: FindOptionsWhere<VersionEntity> = {};
+    if (filter.model_id != null) {
+      extra_filters.model_id = filter.model_id;
+    }
+    if (filter.fuel_type_id != null) {
+      extra_filters.fuel_type_id = filter.fuel_type_id;
+    }
+    if (filter.year_id != null) {
+      extra_filters.year_id = filter.year_id;
+    }
+    const has_extra = Object.keys(extra_filters).length > 0;
+
+    return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
+      ...(has_extra ? { extra_filters } : {}),
       map_row: (row) => this.row_to_domain(row),
       allowed_sort_keys: CATALOG_VERSION_SORT_KEYS,
       default_sort_key: "id",

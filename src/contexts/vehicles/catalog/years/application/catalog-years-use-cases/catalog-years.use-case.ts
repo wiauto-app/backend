@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogYear,
   PrimitiveCatalogYear,
@@ -10,6 +9,7 @@ import { CatalogYearsRepository } from "../../domain/repositories/catalog-years.
 import { CatalogYearNotFoundException } from "../../domain/exceptions/catalog-year-not-found.exception";
 import { CreateCatalogYearDto } from "./dto/create-catalog-year.dto";
 import { UpdateCatalogYearDto } from "./dto/update-catalog-year.dto";
+import { FindAllYearsDto } from "./dto/find-all-years.dto";
 
 @Injectable()
 export class CatalogYearsUseCase {
@@ -35,7 +35,7 @@ export class CatalogYearsUseCase {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindAllYearsDto,
   ): Promise<PaginatedResult<PrimitiveCatalogYear>> {
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.repository.find_all(filter);

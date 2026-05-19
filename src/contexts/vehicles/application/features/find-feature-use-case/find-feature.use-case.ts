@@ -8,11 +8,11 @@ import { FindFeatureDto } from "./find-feature.dto";
 export class FindFeatureUseCase {
   constructor(private readonly featureRepository: FeatureRepository) {}
 
-  async execute(findFeatureDto: FindFeatureDto): Promise<{ feature: PrimitiveFeature }> {
+  async execute(findFeatureDto: FindFeatureDto): Promise<PrimitiveFeature> {
     const feature = await this.featureRepository.findOne(findFeatureDto.id); 
     if (!feature) {
       throw new FeatureNotFoundException(findFeatureDto.id);
     }
-    return { feature: feature.toPrimitives() };
+    return feature.toPrimitives();
   }
 }

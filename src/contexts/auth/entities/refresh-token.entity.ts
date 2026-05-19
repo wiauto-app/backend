@@ -30,7 +30,6 @@ export class RefreshTokenEntity {
   @Column()
   session_id: string;
 
-
   @ManyToOne(() => SessionEntity, (session) => session.refresh_tokens,{
     onDelete: "CASCADE"
   })

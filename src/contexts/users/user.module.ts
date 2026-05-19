@@ -13,12 +13,19 @@ import { SuspensionDurationType } from "./entities/suspension_duration_type.enti
 import { UserMailService } from "./services/user-mail.service";
 import { UserService } from "./services/user.service";
 import { SuspensionService } from "./services/suspension.service";
+import { AdminUsersController } from "./api/admin-v1/admin-users.controller";
+import { AdminUserService } from "./services/admin-user.service";
+import { AdminSuspensionController } from "./api/admin-v1/admin-suspension.controller";
+import { AdminSuspensionService } from "./services/admin-suspension.service";
+import { RolesPermissionsController } from "./roles-permissions/api/roles-permissions.controller";
+import { RolesPermissionsService } from "./roles-permissions/services/roles-permissions.service";
+import { RolesPermissionsEntity } from "./roles-permissions/entities/roles-permissions.entity";
 
 @Module({
-  controllers: [UsersController, UserSuspensionsController],
-  providers: [UserService, PasswordService, UserMailService, SuspensionService],
+  controllers: [UsersController, UserSuspensionsController, AdminUsersController, AdminSuspensionController, RolesPermissionsController],
+  providers: [UserService, PasswordService, UserMailService, SuspensionService, AdminUserService, AdminSuspensionService, RolesPermissionsService],
   imports: [
-    TypeOrmModule.forFeature([User, VehicleEntity, SuspensionDurationType]),
+    TypeOrmModule.forFeature([User, VehicleEntity, SuspensionDurationType, RolesPermissionsEntity]),
     ProfileModule,
     RolesModule,
     forwardRef(() => AuthModule),

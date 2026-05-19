@@ -36,6 +36,7 @@ export class CreateVehicleUseCase {
       condition: create_vehicle_dto.condition,
     });
     const vehicle = Vehicle.create({
+      vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
       price: create_vehicle_dto.price,
       mileage: create_vehicle_dto.mileage,

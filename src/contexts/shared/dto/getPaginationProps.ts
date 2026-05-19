@@ -5,6 +5,7 @@ interface PaginationProps {
   take: number;
   order_column: string;
   direction: "ASC" | "DESC";
+  search?: string;
 }
 
 export type PaginationPropsInput = Pick<

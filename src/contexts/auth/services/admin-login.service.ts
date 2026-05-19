@@ -7,6 +7,7 @@ import { SignInResult } from "../types/auth.types";
 import { AuthService } from "./auth.service";
 import { PasswordService } from "./password.service";
 import { SuspensionService } from "../../users/services/suspension.service";
+import { authResponseConfig } from "../response.config";
 
 @Injectable()
 export class AdminLoginService {
@@ -15,7 +16,7 @@ export class AdminLoginService {
     private readonly passwordService: PasswordService,
     private readonly suspensionService: SuspensionService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   async signIn({
     adminLoginDto,
@@ -29,7 +30,7 @@ export class AdminLoginService {
     );
 
     if (user.provider !== "local" || !user.password) {
-      throw new UnauthorizedException("El email o la contraseña son incorrectos");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);
     }
 
     const is_valid_password = await this.passwordService.comparePassword(
@@ -37,21 +38,21 @@ export class AdminLoginService {
       user.password,
     );
     if (!is_valid_password) {
-      throw new UnauthorizedException("El email o la contraseña son incorrectos");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);
     }
 
     if (!user.is_email_verified) {
-      throw new UnauthorizedException("El email no está verificado");
+      throw new UnauthorizedException(authResponseConfig.messages.EMAIL_NOT_VERIFIED);
     }
 
     if (user.is_suspended) {
-      throw new UnauthorizedException("El usuario está suspendido");
+      throw new UnauthorizedException(authResponseConfig.messages.USER_SUSPENDED);
     }
 
     const role = user.profile.role;
     if (!role || (!role.is_admin && !role.is_developer)) {
       throw new UnauthorizedException(
-        "No tenés permisos para acceder al panel de administración",
+        authResponseConfig.messages.NO_ADMIN,
       );
     }
 
@@ -66,7 +67,7 @@ export class AdminLoginService {
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.authService.createToken({ user, session_id });
+    const token = this.authService.createToken({ user, session_id, refreshToken_hash });
 
     return { type, token, refreshToken_hash };
   }

@@ -8,8 +8,8 @@ export interface OAuthProfile {
   provider: "google" | "apple";
   provider_id: string;
   email: string;
-  first_name: string | null;
-  last_name: string | null;
+  first_name: string;
+  last_name?: string;
 }
 
 @Injectable()
@@ -34,8 +34,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
       provider: "google",
       provider_id: profile.id,
       email,
-      first_name: profile.name?.givenName ?? null,
-      last_name: profile.name?.familyName ?? null,
+      first_name: profile.name?.givenName ?? "",
+      last_name: profile.name?.familyName ?? undefined,
     };
     done(null, oauthProfile as unknown as Express.User);
   }

@@ -5,10 +5,11 @@ import { TypeormCatalogYearRepository } from "../infrastructure/repositories/typ
 import { CatalogYearsRepository } from "../domain/repositories/catalog-years.repository";
 import { CatalogYearsController } from "../infrastructure/http-api/catalog-years-v1/catalog-years.controller";
 import { CatalogYearsUseCase } from "../application/catalog-years-use-cases/catalog-years.use-case";
+import { VersionEntity } from "../../versions/infrastructure/persistence/version.entity";
 
 @Module({
   controllers: [CatalogYearsController],
-  imports: [TypeOrmModule.forFeature([CatalogYearEntity])],
+  imports: [TypeOrmModule.forFeature([CatalogYearEntity, VersionEntity])],
   providers: [
     CatalogYearsUseCase,
     TypeormCatalogYearRepository,

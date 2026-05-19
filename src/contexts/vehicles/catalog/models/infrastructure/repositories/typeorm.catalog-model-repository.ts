@@ -1,6 +1,6 @@
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -27,7 +27,7 @@ export class TypeormCatalogModelRepository extends CatalogModelsRepository {
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogModel>> {
-    return run_paginated_typeorm_find({
+    return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
       map_row: (row) =>
@@ -39,6 +39,7 @@ export class TypeormCatalogModelRepository extends CatalogModelsRepository {
           slug: row.slug,
           created_at: row.created_at,
         }),
+      extra_filters: { make_id: filter.make_id },
       allowed_sort_keys: CATALOG_MODEL_SORT_KEYS,
       default_sort_key: "id",
     });

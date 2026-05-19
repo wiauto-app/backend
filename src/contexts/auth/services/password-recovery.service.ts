@@ -10,6 +10,7 @@ import { envs } from "@/src/common/envs";
 
 import { OutboundMailEnqueueService } from "../../shared/mail/outbound-mail-enqueue.service";
 import { UserService } from "../../users/services/user.service";
+import { authResponseConfig } from "../response.config";
 
 interface PasswordResetTokenPayload {
   sub: string;
@@ -70,11 +71,11 @@ export class PasswordRecoveryService {
     try {
       decoded = this.jwtService.verify<PasswordResetTokenPayload>(token);
     } catch {
-      throw new UnauthorizedException("El enlace es inválido o ya expiró");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
 
     if (!decoded.sub) {
-      throw new UnauthorizedException("Token con alcance inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
 
     return decoded;

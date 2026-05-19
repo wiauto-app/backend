@@ -5,6 +5,7 @@ export interface SessionPayload{
   id: string;
   email: string;
   session_id: string;
+  refreshToken_hash: string;
   scope: "2fa_challenge" | "session";
 }
 

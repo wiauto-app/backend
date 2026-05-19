@@ -2,10 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseUUIDPipe,
   Post,
   Req,
   UnauthorizedException,
@@ -20,6 +16,7 @@ import { StaffRoleGuard } from "@/src/contexts/roles/guards/staff-role.guard";
 import { SuspendUserBodyDto } from "../../dto/suspend-user.dto";
 import { SuspensionService } from "../../services/suspension.service";
 import { V1_USER_SUSPENSIONS } from "../../route.constants";
+import { UnsuspendUserBodyDto } from "../../dto/admin/unsuspend-user.dto";
 
 @Controller(V1_USER_SUSPENSIONS)
 @UseGuards(JwtGuard, StaffRoleGuard)
@@ -32,23 +29,20 @@ export class UserSuspensionsController {
     return this.suspension_service.list_active_duration_types();
   }
 
-  @Post(":user_id/suspend")
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post("suspend")
   async suspend(
-    @Req() request: Request,
-    @Param("user_id", ParseUUIDPipe) user_id: string,
     @Body() body: SuspendUserBodyDto,
+    @Req() request: Request,
   ): Promise<void> {
     const actor_id = request.user?.id;
     if (!actor_id) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
-    await this.suspension_service.suspend_user(actor_id, user_id, body);
+    await this.suspension_service.suspend_user(body, actor_id);
   }
 
-  @Post(":user_id/unsuspend")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async unsuspend(@Param("user_id", ParseUUIDPipe) user_id: string): Promise<void> {
-    await this.suspension_service.unsuspend_user(user_id);
+  @Post("unsuspend")
+  async unsuspend(@Body() body: UnsuspendUserBodyDto): Promise<void> {
+    await this.suspension_service.unsuspend_user(body);
   }
 }

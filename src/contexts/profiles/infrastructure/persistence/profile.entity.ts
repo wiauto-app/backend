@@ -27,22 +27,25 @@ export class ProfileEntity {
   @JoinColumn({ name: "id" })
   user!: Relation<User>;
 
-  @Column({ nullable: true })
-  name?: string;
+  @Column()
+  name: string;
 
+  @Column({ name: "role_id", nullable: true })
+  role_id: string;
+  
   @Column({ nullable: true })
   last_name?: string;
 
   @Column({ nullable: true })
-  avatar_url: string;
+  avatar_url?: string;
 
   @Column({ nullable: true })
-  image_url: string;
+  image_url?: string;
 
   @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
   vehicles: Relation<VehicleEntity[]>;
 
-  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true })
+  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true,onDelete: "SET NULL" })
   @JoinColumn({ name: "role_id" })
   role: Relation<Roles | null>;
 

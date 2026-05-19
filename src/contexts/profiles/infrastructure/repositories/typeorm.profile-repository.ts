@@ -9,6 +9,7 @@ import { ProfileEntity } from "../persistence/profile.entity";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { ProfileFilter } from "../../domain/filters/profile.filter";
+import { User } from "@/src/contexts/users/entities/user.entity";
 
 function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole | null {
   if (!role) {
@@ -24,6 +25,21 @@ function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole |
   };
 }
 
+
+function user_to_primitives(user: User) {
+  return {
+    id: user.id,
+    email: user.email,
+    last_sign_in: user.last_sign_in,
+    is_email_verified: user.is_email_verified,
+    two_factor_enabled: user.two_factor_enabled,
+    is_suspended: user.is_suspended,
+    suspension_reason: user.suspension_reason,
+    suspension_end_time: user.suspension_end_time,
+    suspended_at: user.suspended_at,
+    created_at: user.created_at,
+  };
+}
 function entity_to_primitives(entity: ProfileEntity): PrimitiveProfile {
   return {
     id: entity.id,
@@ -31,8 +47,9 @@ function entity_to_primitives(entity: ProfileEntity): PrimitiveProfile {
     last_name: entity.last_name,
     avatar_url: entity.avatar_url,
     image_url: entity.image_url,
-    role_id: entity.role?.id ?? null,
+    role_id: entity.role?.id ?? "",
     role: role_to_primitives(entity.role),
+    user: user_to_primitives(entity.user),
   };
 }
 
@@ -40,32 +57,32 @@ function entity_to_primitives(entity: ProfileEntity): PrimitiveProfile {
 export class TypeOrmProfileRepository implements ProfileRepository {
   constructor(
     @InjectRepository(ProfileEntity)
-    private readonly profile_entity_repository: Repository<ProfileEntity>,
+    private readonly profileRepository: Repository<ProfileEntity>,
   ) { }
 
   async save(profile: Profile): Promise<void> {
     const p = profile.toPrimitives();
     const entity = new ProfileEntity();
     entity.id = p.id;
-    entity.name = p.name ?? undefined;
+    entity.name = p.name;
     entity.last_name = p.last_name ?? undefined;
     entity.avatar_url = p.avatar_url ?? "";
     entity.image_url = p.image_url ?? "";
     entity.role = p.role_id ? ({ id: p.role_id } as Roles) : null;
 
-    await this.profile_entity_repository.save(entity);
+    await this.profileRepository.save(entity);
   }
 
   async exists(id: string): Promise<boolean> {
-    return this.profile_entity_repository.exists({ where: { id } });
+    return this.profileRepository.exists({ where: { id } });
   }
 
 
   async findAll(filter: ProfileFilter): Promise<PaginatedResult<Profile>> {
-    console.log(filter);
     const skip = getSkip(filter.page, filter.limit);
-    const qb = this.profile_entity_repository.createQueryBuilder("p")
+    const qb = this.profileRepository.createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
+      .leftJoinAndSelect("p.user", "user")
       .skip(skip)
       .take(filter.limit);
 
@@ -89,20 +106,29 @@ export class TypeOrmProfileRepository implements ProfileRepository {
   }
 
   async findOne(id: string): Promise<Profile | null> {
-    const entity = await this.profile_entity_repository.findOne({
+    const entity = await this.profileRepository.findOne({
       where: { id },
-      relations: { role: true },
+      relations: { role: true, user: true },
     });
 
     if (!entity) {
       return null;
     }
 
-    return Profile.fromPrimitives(entity_to_primitives(entity));
+    return Profile.fromPrimitives({
+      id: entity.id,
+      name: entity.name,
+      last_name: entity.last_name ?? undefined,
+      avatar_url: entity.avatar_url ,
+      image_url: entity.image_url,
+      role_id: entity.role?.id ?? "",
+      role: entity.role,
+      user: entity.user,
+    });
   }
 
   async findByEmail(email: string): Promise<Profile | null> {
-    const entity = await this.profile_entity_repository.findOne({
+    const entity = await this.profileRepository.findOne({
       where: { user: { email } },
       relations: { role: true },
     });
@@ -114,25 +140,25 @@ export class TypeOrmProfileRepository implements ProfileRepository {
     return Profile.fromPrimitives(entity_to_primitives(entity));
   }
 
-  async update(profile: Profile): Promise<void> {
+  async update(id: string, profile: Profile): Promise<void> {
     const p = profile.toPrimitives();
-    const preloaded = await this.profile_entity_repository.preload({
-      id: p.id,
-      name: p.name ?? undefined,
+    const preloaded = await this.profileRepository.preload({
+      id: id,
+      name: p.name,
       last_name: p.last_name ?? undefined,
       avatar_url: p.avatar_url ?? "",
       image_url: p.image_url ?? "",
-      role: p.role_id ? ({ id: p.role_id } as Roles) : null,
+      role_id: p.role_id,
     });
 
     if (!preloaded) {
       return;
     }
 
-    await this.profile_entity_repository.save(preloaded);
+    await this.profileRepository.save(preloaded);
   }
 
   async delete(id: string): Promise<void> {
-    await this.profile_entity_repository.delete(id);
+    await this.profileRepository.delete(id);
   }
 }

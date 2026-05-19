@@ -79,4 +79,9 @@ export class MinioAdapter extends FileStoragePort {
     );
   }
 
+  async generateReadSignedUrl(bucketName: string, fileKey: string): Promise<{ signed_url: string }> {
+    const signed_url = await this.minioService.generateReadUrl(bucketName, fileKey);
+    return { signed_url };
+  }
+
 }

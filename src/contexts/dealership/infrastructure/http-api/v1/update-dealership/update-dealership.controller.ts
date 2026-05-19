@@ -3,7 +3,7 @@ import { Body, Controller, Param, Patch } from "@nestjs/common";
 import { UpdateDealershipUseCase } from "../../../../application/dealership/update-dealership-use-case/update-dealership.use-case";
 import { V1_DEALERSHIPS } from "../../../route.constants";
 
-import { FindDealershipHttpDto } from "../find-dealership/find-dealership.http-dto";
+import { FindDealershipHttpDto } from "../find-one-dealership/find-one-dealership.http-dto";
 import { UpdateDealershipHttpDto } from "./update-dealership.http-dto";
 
 @Controller(V1_DEALERSHIPS)

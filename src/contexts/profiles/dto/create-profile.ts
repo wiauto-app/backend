@@ -4,15 +4,13 @@ export class CreateProfileDto {
   @IsUUID("4")
   id: string;
 
-  @IsOptional()
   @IsString()
-  name?: string;
+  name: string;
 
   @IsOptional()
   @IsString()
   last_name?: string;
 
-  @IsOptional()
   @IsUUID("4")
-  role_id?: string;
+  role_id: string;
 }

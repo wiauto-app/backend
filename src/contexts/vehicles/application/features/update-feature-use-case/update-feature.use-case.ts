@@ -10,13 +10,13 @@ export class UpdateFeatureUseCase {
 
   async execute(
     update_feature_dto: UpdateFeatureDto,
-  ): Promise<{ feature: PrimitiveFeature }> {
+  ): Promise<PrimitiveFeature> {
     const feature = await this.feature_repository.findOne(update_feature_dto.id);
     if (!feature) {
       throw new FeatureNotFoundException(update_feature_dto.id);
     }
     const updated = feature.update({ name: update_feature_dto.name });
     await this.feature_repository.persist_updated(updated);
-    return { feature: updated.toPrimitives() };
+    return updated.toPrimitives();
   }
 }

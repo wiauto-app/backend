@@ -5,6 +5,8 @@ import { IsNull, Repository } from "typeorm";
 
 import { User } from "../../users/entities/user.entity";
 import { SessionEntity } from "../entities/session.entity";
+import { authResponseConfig } from "../response.config";
+import { MONTH } from "@/src/common/envs";
 
 @Injectable()
 export class SessionService {
@@ -19,7 +21,7 @@ export class SessionService {
       ip_address: request.ip ?? null,
       user_agent: request.headers["user-agent"] ?? null,
       refreshed_at: new Date(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      expires_at: new Date(Date.now() + MONTH),
       refresh_tokens: [],
     });
 
@@ -32,7 +34,7 @@ export class SessionService {
       ...session,
     });
     if (!updated) {
-      throw new NotFoundException("Session not found");
+      throw new NotFoundException(authResponseConfig.messages.SESSION_NOT_FOUND);
     }
     return this.session_repository.save(updated);
   }
@@ -42,7 +44,7 @@ export class SessionService {
       where: { id },
     });
     if (!session) {
-      throw new UnauthorizedException("Session not found");
+      throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
     }
     return session;
   }

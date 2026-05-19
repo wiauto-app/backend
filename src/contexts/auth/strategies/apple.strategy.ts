@@ -47,8 +47,8 @@ export class AppleStrategy extends PassportStrategy(Strategy, "apple") {
       provider: "apple",
       provider_id: idToken.sub,
       email: idToken.email ?? "",
-      first_name: profile.name?.firstName ?? null,
-      last_name: profile.name?.lastName ?? null,
+      first_name: profile.name?.firstName ?? "",
+      last_name: profile.name?.lastName ?? undefined,
     };
     done(null, oauthProfile);
   }

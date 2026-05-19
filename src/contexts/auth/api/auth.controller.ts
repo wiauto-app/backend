@@ -15,6 +15,7 @@ import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 import { AdminLoginService } from "../services/admin-login.service";
+import { ACCESS_TOKEN_NAME, authCookieConfig, REFRESH_TOKEN_NAME } from "../cookie.config";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -38,42 +39,29 @@ export class AuthController {
   async adminLogin(
     @Body() adminLoginDto: LoginDto,
     @Req() req: Request,
-    @Res() res: Response
+    @Res({ passthrough: true }) res: Response
   ) {
     const result = await this.adminLoginService.signIn({
       adminLoginDto,
       request: req,
     });
 
-    res.cookie("refresh_token", result.refreshToken_hash, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 30,
-      path: "/",
-    });
+    res.cookie(REFRESH_TOKEN_NAME, result.refreshToken_hash, authCookieConfig.refresh_token);
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
 
-    res.cookie("access_token", result.token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 15, // mejor corto para access token
-      path: "/",
-    });
-
-    return res.json({
+    return {
       message: "Login successful",
-    });
+    };
   }
 
   @Post("admin/logout")
-  async adminLogout(@Req() req: Request, @Res() res: Response) {
+  async adminLogout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.adminLoginService.logout(req);
-    res.clearCookie("refresh_token");
-    res.clearCookie("access_token");
-    return res.json({
+    res.clearCookie(REFRESH_TOKEN_NAME);
+    res.clearCookie(ACCESS_TOKEN_NAME);
+    return {
       message: "Logout successful",
-    });
+    };
   }
 
   @Get("google")
@@ -122,6 +110,16 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   refreshToken(@GetRefreshToken() refreshToken: string) {
     return this.authService.refreshToken(refreshToken);
+  }
+
+
+  @Post("admin/refresh")
+  @UseGuards(RefreshTokenGuard)
+  async adminRefreshToken(@GetRefreshToken() refreshToken: string, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.refreshToken(refreshToken);
+    res.cookie(REFRESH_TOKEN_NAME, result.refreshToken_hash, authCookieConfig.refresh_token);
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+    return result;
   }
 
   @Get("logout")

@@ -16,7 +16,6 @@ export class MinioService {
   private bucketName: string;
   private videoBucketName: string;
   constructor() {
-    this.bucketName = envs.MINIO_BUCKET_NAME;
     this.videoBucketName = envs.MINIO_VIDEO_BUCKET_NAME;
   }
 
@@ -41,7 +40,7 @@ export class MinioService {
     return from(s3.send(command)).pipe(
       switchMap(() => this.getPublicUrl(storagePath)),
       catchError((error: Error) => {
-        console.error("Error uploading file: ", error)
+        console.error("Error uploading file:", error)
         throw new Error(`Error uploading file: ${error.message}`);
       }),
     );
@@ -59,13 +58,13 @@ export class MinioService {
         return null;
       }
       return Buffer.from(await response.Body.transformToByteArray());
-    } catch (e) {
-      const status = (e as { $metadata?: { httpStatusCode?: number } })?.$metadata
+    } catch (error) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata
         ?.httpStatusCode;
       if (status === 404) {
         return null;
       }
-      throw e;
+      throw error;
     }
   }
 
@@ -139,9 +138,9 @@ export class MinioService {
         const gcsBucketIndex = gcsParts.findIndex((part) =>
           part.includes("bucket"),
         );
-        return gcsBucketIndex !== -1
-          ? gcsParts.slice(gcsBucketIndex + 1).join("/")
-          : gcsParts.slice(1).join("/");
+        return gcsBucketIndex === -1
+          ? gcsParts.slice(1).join("/")
+          : gcsParts.slice(gcsBucketIndex + 1).join("/")
       }
       if (!trimmed.includes(this.bucketName)) {
         const pathname = (() => {
@@ -183,27 +182,46 @@ export class MinioService {
    * Elimina un archivo del bucket
    * @param storagePath Ruta (key) dentro del bucket
    */
-  deleteFile(storagePath: string): Observable<void> {
+  deleteFile(storagePath: string, bucket_name?: string): Observable<void> {
     const command = new DeleteObjectCommand({
-      Bucket: this.bucketName,
+      Bucket: bucket_name ?? this.bucketName,
       Key: storagePath,
     });
 
     return from(s3.send(command)).pipe(
-      map(() => undefined),
+      map(() => void 0)
+    );
+  }
+
+  deleteFiles(storagePaths: string[], bucket_name?: string): Observable<void> {
+    return from(
+      Promise.all(
+        storagePaths.map((storagePath) =>
+          this.deleteFile(storagePath, bucket_name).toPromise()
+        )
+      )
+    ).pipe(
+      map(() => void 0),
       catchError((error) => {
-        throw new Error(`Error deleting file: ${error.message}`);
-      }),
+        throw new Error(
+          `Error deleting files: ${error instanceof Error ? error.message : String(error)
+          }`
+        );
+      })
     );
   }
 
   /**
    * Elimina objeto del bucket por defecto. Acepta URL pública, path tipo `/bucket/key` (lo que persiste el adaptador) o la key S3.
    */
-  deleteFileByUrl(url: string): Observable<void> {
-    const filePath = this.extract_default_bucket_object_key(url);
+  deleteFileByUrl(urlOrPath: string): Observable<void> {
+    
+    const filePath = urlOrPath.startsWith("http")
+      ? this.extract_default_bucket_object_key(urlOrPath)
+      : urlOrPath;
     return this.deleteFile(filePath);
   }
+
 
   /**
    * URL firmada para subida directa (p. ej. desde el front). Debe usarse
@@ -215,6 +233,16 @@ export class MinioService {
       Bucket: bucketName,
       Key: fileKey,
       ContentType: contentType,
+    });
+    return await getSignedUrl(s3_for_presign as never, command, {
+      expiresIn: 60 * 20,
+    });
+  }
+
+  async generateReadUrl(bucketName: string, fileKey: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: fileKey,
     });
     return await getSignedUrl(s3_for_presign as never, command, {
       expiresIn: 60 * 20,

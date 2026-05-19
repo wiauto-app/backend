@@ -10,12 +10,13 @@ import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-fo
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleListItem } from "../../domain/read-models/vehicle-list-item";
+import { AdminVehicleListItem } from "../../domain/read-models/vehicle-list-item";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { ColorEntity } from "../persistence/color.entity";
 import { DgtLabelEntity } from "../persistence/dgt-label.entity";
 import { FeaturesEntity } from "../persistence/features.entity";
 import { ServiceEntity } from "../persistence/service.entity";
-import { Profile } from "@/src/contexts/profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { VehicleEntity } from "../persistence/vehicle.entity";
 import { VehicleTypeEntity } from "../persistence/vehicle-type.entity";
 import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
@@ -23,6 +24,7 @@ import { TractionEntity } from "../persistence/traction.entity";
 import { CuotaEntity } from "../persistence/cuota.entity";
 import { applyFilters } from "../validators/filters.applier";
 import { getSkip } from "@/src/contexts/shared/getSkip";
+import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -101,9 +103,22 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
         : [],
     publisher: {
       id: entity.profile.id,
-      name: entity.profile.name ?? "",
-      avatar_url: entity.profile.avatar_url,
+      name: entity.profile.name,
+      avatar_url: entity.profile.avatar_url ?? "",
     },
+  };
+}
+
+function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem {
+  return {
+    ...entity_to_list_item(entity),
+    status: entity.status,
+    publisher_type: entity.publisher_type,
+    is_featured: entity.is_featured,
+    expires_at: entity.expires_at,
+    views: entity.views,
+    created_at: entity.created_at,
+    updated_at: entity.updated_at,
   };
 }
 
@@ -136,6 +151,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     battery_capacity: entity.battery_capacity,
     time_to_charge: entity.time_to_charge,
     license_plate: entity.license_plate,
+    vin_code: entity.vin_code,
     features_ids: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => feature.id) : [],
     services_ids: entity.services && entity.services.length > 0 ? (entity.services).map((service) => service.id) : [],
     vehicle_type_id: entity.vehicle_type?.id ?? null,
@@ -302,7 +318,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
         this.cuota_repository.create({ id }),
       ),
       profile: p.profile_id
-        ? ({ id: p.profile_id } as Profile)
+        ? ({ id: p.profile_id } as ProfileEntity)
         : undefined,
     };
     if (p.status !== undefined) {
@@ -350,7 +366,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     return Vehicle.fromPrimitives(entity_to_primitives(row));
   }
 
-  async find_all(
+  async findAll(
     filter: VehicleFilter,
   ): Promise<PaginatedResult<VehicleListItem>> {
     const { page, limit, order_by, order_direction } = filter;
@@ -376,7 +392,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    qb.orderBy(`vehicle.${order_by}`, order_direction);
+    if(order_by) {
+      qb.orderBy(`vehicle.${order_by}`, order_direction);
+    }
     qb.skip(skip).take(limit);
     const rows = await qb.getMany();
     const vehicles = rows.map((row) => entity_to_list_item(row));
@@ -396,5 +414,39 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
 
   async remove(id: string): Promise<void> {
     await this.vehicle_repository.softDelete(id);
+  }
+
+  async adminFindAll(filter: AdminVehicleFilter): Promise<PaginatedResult<AdminVehicleListItem>> {
+    const { page, limit, order_by, order_direction } = filter;
+    const skip = getSkip(page, limit);
+    const qb = this.vehicle_repository.createQueryBuilder("vehicle")
+      .leftJoinAndSelect("vehicle.features", "features")
+      .leftJoinAndSelect("vehicle.services", "services")
+      .leftJoinAndSelect("vehicle.vehicle_type", "vehicle_type")
+      .leftJoinAndSelect("vehicle.color", "color")
+      .leftJoinAndSelect("vehicle.dgt_label", "dgt_label")
+      .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")
+      .leftJoinAndSelect("vehicle.cuotas", "cuotas")
+      .leftJoinAndSelect("vehicle.traction", "traction")
+      .leftJoinAndSelect("vehicle.profile", "profile");
+
+    applyFilters(qb, filter);
+
+    const count_qb = qb.clone();
+    (
+      count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
+    ).expressionMap.orderBys = [];
+    count_qb.select("COUNT(DISTINCT vehicle.id)", "cnt");
+    const count_row = await count_qb.getRawOne<{ cnt: string }>();
+    const total_count = Number(count_row?.cnt ?? 0);
+
+    if(order_by) {
+      qb.orderBy(`vehicle.${order_by}`, order_direction);
+    }
+    qb.skip(skip).take(limit);
+    const rows = await qb.getMany();
+    const vehicles = rows.map((row) => entity_to_admin_list_item(row));
+    
+    return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
   }
 }

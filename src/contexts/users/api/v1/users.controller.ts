@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
-import { CreateUserDto } from "../../dto/create-user.dto";
+import { RegisterUserDto } from "../../dto/register-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
 import { UserService } from "../../services/user.service";
 import { V1_USERS } from "../../route.constants";
@@ -23,7 +23,7 @@ export class UsersController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() create_user_dto: CreateUserDto) {
+  create(@Body() create_user_dto: RegisterUserDto) {
     return this.user_service.create(create_user_dto);
   }
 

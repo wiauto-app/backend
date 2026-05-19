@@ -1,4 +1,4 @@
-
+export const V1_ADMIN_VEHICLES = "v1/admin/vehicles";
 
 export const V1_VEHICLES = "v1/vehicles";
 export const V1_FEATURES = "v1/features";

@@ -14,6 +14,7 @@ import {
   EMAIL_VERIFICATION_QUEUE,
   EmailVerificationJobData,
 } from "../queues/email-verification.queue.constants";
+import { authResponseConfig } from "../response.config";
 
 export interface EmailVerificationTokenPayload {
   sub: string;
@@ -90,13 +91,13 @@ export class EmailVerificationService {
 
     if (!user || user.email !== payload.email) {
       throw new UnauthorizedException(
-        "El enlace ya no es válido para esta cuenta. Pedí un correo nuevo.",
+        authResponseConfig.messages.EMAIL_VERIFICATION_ERROR,
       );
     }
 
     if (user.is_email_verified) {
       return {
-        message: "El correo ya está verificado",
+        message: authResponseConfig.messages.EMAIL_ALREADY_VERIFIED,
       }
     }
     
@@ -107,7 +108,7 @@ export class EmailVerificationService {
 
 
     return {
-      message: "El correo se ha verificado correctamente",
+      message: authResponseConfig.messages.EMAIL_VERIFIED,
     }
   }
 
@@ -119,11 +120,11 @@ export class EmailVerificationService {
     try {
       decoded = this.jwtService.verify(token);
     } catch {
-      throw new UnauthorizedException("El enlace es inválido o ya expiró");
+      throw new UnauthorizedException(authResponseConfig.messages.EMAIL_VERIFICATION_EXPIRED);
     }
 
     if (decoded === null || typeof decoded !== "object") {
-      throw new UnauthorizedException("Token con alcance inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.EMAIL_VERIFICATION_ERROR);
     }
 
     const o = decoded as Record<string, unknown>;
@@ -134,7 +135,7 @@ export class EmailVerificationService {
       typeof o.email !== "string" ||
       !o.email
     ) {
-      throw new UnauthorizedException("Token con alcance inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.EMAIL_VERIFICATION_ERROR);
     }
     return {
       sub: o.sub,

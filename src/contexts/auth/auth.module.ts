@@ -31,6 +31,8 @@ import { SessionEntity } from "./entities/session.entity";
 import { RefreshTokenService } from "./services/refresh-token.service";
 import { SessionService } from "./services/session.service";
 import { AdminLoginService } from "./services/admin-login.service";
+import { FindOneProfileUseCase } from "../profiles/application/profile/find-one-profile-use-case/find-one-profile.use-case";
+import { RolesModule } from "../roles/roles.module";
 
 @Module({
   controllers: [
@@ -58,6 +60,8 @@ import { AdminLoginService } from "./services/admin-login.service";
     SessionService,
     RefreshTokenService,
     AdminLoginService,
+    FindOneProfileUseCase,
+   
   ],
   imports: [
     PassportModule.register({ defaultStrategy: "jwt", session: true }),
@@ -69,6 +73,8 @@ import { AdminLoginService } from "./services/admin-login.service";
     }),
     forwardRef(() => UserModule),
     ProfileModule,
+    RolesModule,
+
     TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
 

@@ -1,13 +1,14 @@
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { CatalogFuelType } from "../../domain/entities/catalog-fuel-type";
 import { CatalogFuelTypeNotFoundException } from "../../domain/exceptions/catalog-fuel-type-not-found.exception";
 import { CatalogFuelTypesRepository } from "../../domain/repositories/catalog-fuel-types.repository";
 import { CatalogFuelTypeEntity } from "../persistence/catalog-fuel-type.entity";
+import { VersionEntity } from "../../../versions/infrastructure/persistence/version.entity";
 
 const CATALOG_FUEL_TYPE_SORT_KEYS = new Set([
   "id",
@@ -22,14 +23,28 @@ export class TypeormCatalogFuelTypeRepository extends CatalogFuelTypesRepository
   constructor(
     @InjectRepository(CatalogFuelTypeEntity)
     private readonly repo: Repository<CatalogFuelTypeEntity>,
+    @InjectRepository(VersionEntity)
+    private readonly versionRepo: Repository<VersionEntity>,
   ) {
     super();
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogFuelType>> {
-    return run_paginated_typeorm_find({
+    const fuelTypeIds: number[] = [];
+    if (filter.model_id) {
+      const qb = this.versionRepo.createQueryBuilder("version")
+        .distinctOn(["fuel_type_id"])
+
+      if (filter.model_id) {
+        qb.andWhere("version.model_id = :model_id", { model_id: filter.model_id });
+      }
+      const versions = await qb.getMany();
+      fuelTypeIds.push(...versions.map((v) => v.fuel_type_id));
+    }
+    return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
+      ...(fuelTypeIds.length > 0 ? { extra_filters: { id: In(fuelTypeIds) } } : {}),
       map_row: (row) =>
         CatalogFuelType.fromPrimitives({
           id: row.id,

@@ -9,6 +9,9 @@ import express from 'express';
 import compression from 'compression';
 
 import { AppModule } from "@/app/app.module";
+import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
+import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
+
     
 const FRONTEND_ORIGINS = (
   process.env.FRONTEND_ORIGINS ??
@@ -28,7 +31,7 @@ async function bootstrap() {
     origin: FRONTEND_ORIGINS.length > 0 ? FRONTEND_ORIGINS : true,
     allowedHeaders: ['Authorization', 'Content-Type'],
     exposedHeaders: ['Authorization'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
   });
   app.useGlobalPipes(
@@ -41,8 +44,9 @@ async function bootstrap() {
       },
     }),
   );
-
   app.use(cookieParser());
+  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new HttpErrorFilter());
   app.use(compression());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

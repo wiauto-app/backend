@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogVersion,
   PrimitiveCatalogVersion,
@@ -10,6 +9,7 @@ import { CatalogVersionsRepository } from "../../domain/repositories/catalog-ver
 import { CatalogVersionNotFoundException } from "../../domain/exceptions/catalog-version-not-found.exception";
 import { CreateCatalogVersionDto } from "./dto/create-catalog-version.dto";
 import { UpdateCatalogVersionDto } from "./dto/update-catalog-version.dto";
+import { FindAllVersionsDto } from "./dto/find-all-versions.dto";
 
 @Injectable()
 export class CatalogVersionsUseCase {
@@ -45,7 +45,7 @@ export class CatalogVersionsUseCase {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindAllVersionsDto,
   ): Promise<PaginatedResult<PrimitiveCatalogVersion>> {
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.repository.find_all(filter);

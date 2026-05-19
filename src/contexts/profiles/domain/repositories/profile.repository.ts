@@ -8,6 +8,6 @@ export abstract class ProfileRepository {
   abstract exists(id: string): Promise<boolean>;
   abstract findAll(filter: ProfileFilter): Promise<PaginatedResult<Profile>>;
   abstract findOne(id: string): Promise<Profile | null>;
-  abstract update(profile: Profile): Promise<void>;
+  abstract update(id: string, profile: Profile): Promise<void>;
   abstract delete(id: string): Promise<void>;
 }

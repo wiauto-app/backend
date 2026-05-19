@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogBodyType,
   PrimitiveCatalogBodyType,
@@ -10,6 +9,7 @@ import { CatalogBodyTypesRepository } from "../../domain/repositories/catalog-bo
 import { CatalogBodyTypeNotFoundException } from "../../domain/exceptions/catalog-body-type-not-found.exception";
 import { CreateCatalogBodyTypeDto } from "./dto/create-catalog-body-type.dto";
 import { UpdateCatalogBodyTypeDto } from "./dto/update-catalog-body-type.dto";
+import { FindAllBodyTypesDto } from "./dto/find-all-body-types.dto";
 
 @Injectable()
 export class CatalogBodyTypesUseCase {
@@ -42,7 +42,7 @@ export class CatalogBodyTypesUseCase {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindAllBodyTypesDto,
   ): Promise<PaginatedResult<PrimitiveCatalogBodyType>> {
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.repository.find_all(filter);

@@ -3,7 +3,7 @@ import { Controller, Delete, HttpCode, HttpStatus, Param } from "@nestjs/common"
 import { RemoveDealershipUseCase } from "../../../../application/dealership/remove-dealership-use-case/remove-dealership.use-case";
 import { V1_DEALERSHIPS } from "../../../route.constants";
 
-import { FindDealershipHttpDto } from "../find-dealership/find-dealership.http-dto";
+import { FindDealershipHttpDto } from "../find-one-dealership/find-one-dealership.http-dto";
 
 @Controller(V1_DEALERSHIPS)
 export class RemoveDealershipController {

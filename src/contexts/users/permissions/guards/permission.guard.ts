@@ -23,7 +23,7 @@ export class PermissionGuard implements CanActivate {
     if (required_permission_keys.length === 0) {
       return true;
     }
-    const granted_keys = new Set(role.permissions.map((permission) => permission.key));
+    const granted_keys = new Set(role.roles_permissions.map((roles_permissions) => roles_permissions.permission.key));
     return required_permission_keys.every((key) => granted_keys.has(key));
   }
 
@@ -42,7 +42,7 @@ export class PermissionGuard implements CanActivate {
 
     const user_role = user.profile.role;
     if (!user_role) {
-      throw new UnauthorizedException("Rol no encontrado");
+      throw new ForbiddenException("Rol no encontrado");
     }
 
     if (user_role.is_admin || user_role.is_developer) {
@@ -55,10 +55,10 @@ export class PermissionGuard implements CanActivate {
 
     const role_with_permissions = await this.data_source.getRepository(Roles).findOne({
       where: { id: user_role.id },
-      relations: { permissions: true },
+      relations: ["roles_permissions", "roles_permissions.permission"],
     });
     if (!role_with_permissions) {
-      throw new UnauthorizedException("Rol no encontrado");
+      throw new ForbiddenException("Rol no encontrado");
     }
 
     if (!this.has_permissions(role_with_permissions, required_permission_keys)) {

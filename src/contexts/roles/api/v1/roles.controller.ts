@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
 } from "@nestjs/common";
 import { AssignPermissionsToRoleDto } from "../../dto/assign-permissions-to-role.dto";
 import { CreateRoleDto } from "../../dto/create-role.dto";
@@ -18,6 +19,7 @@ import { RolesService } from "../../services/roles.service";
 import { UpdateRoleDto } from "../../dto/update-role.dto";
 import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
 import { AuthPermissions } from "../../../users/permissions/decorators/authPermission.decorator";
+import { FindAllRolesDto } from "../../dto/find-all-roles.dto";
 
 @AuthPermissions(PermissionKeys.ROLES_MANAGE)
 @Controller(V1_ROLES)
@@ -30,8 +32,8 @@ export class RolesController {
   }
 
   @Get()
-  findAll() {
-    return this.rolesService.findAll();
+  findAll(@Query() findAllRolesDto: FindAllRolesDto) {
+    return this.rolesService.findAll(findAllRolesDto);
   }
 
   @Put(":id/permissions")

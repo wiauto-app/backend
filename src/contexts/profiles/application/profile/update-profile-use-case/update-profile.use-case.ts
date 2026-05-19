@@ -17,9 +17,9 @@ export class UpdateProfileUseCase {
       throw new ProfileNotFoundException(id);
     }
 
-    const payload: UpdateProfilePayload = { ...patch_fields };
+    const payload: UpdateProfilePayload = { id, ...patch_fields };
     const updated = profile.update(payload);
-    await this.profile_repository.update(updated);
+    await this.profile_repository.update(id, updated);
     return updated.toPrimitives();
   }
 }

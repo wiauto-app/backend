@@ -1,4 +1,3 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -14,6 +13,7 @@ import { V1_CATALOG_BODY_TYPES } from "../../../../route.constants";
 import { CatalogBodyTypesUseCase } from "../../../application/catalog-body-types-use-cases/catalog-body-types.use-case";
 import { CreateCatalogBodyTypeHttpDto } from "./dto/create-catalog-body-type.http-dto";
 import { UpdateCatalogBodyTypeHttpDto } from "./update-catalog-body-type.http-dto";
+import { FindAllBodyTypesHttpDto } from "./dto/find-all-body-types.http-dto";
 
 @Controller(V1_CATALOG_BODY_TYPES)
 export class CatalogBodyTypesController {
@@ -33,7 +33,7 @@ export class CatalogBodyTypesController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllBodyTypesHttpDto) {
     return this.use_case.findAll(query);
   }
 

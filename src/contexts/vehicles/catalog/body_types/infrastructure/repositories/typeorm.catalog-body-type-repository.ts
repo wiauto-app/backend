@@ -1,13 +1,14 @@
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { CatalogBodyType } from "../../domain/entities/catalog-body-type";
 import { CatalogBodyTypeNotFoundException } from "../../domain/exceptions/catalog-body-type-not-found.exception";
 import { CatalogBodyTypesRepository } from "../../domain/repositories/catalog-body-types.repository";
 import { CatalogBodyTypeEntity } from "../persistence/catalog-body-type.entity";
+import { VersionEntity } from "../../../versions/infrastructure/persistence/version.entity";
 
 const CATALOG_BODY_TYPE_SORT_KEYS = new Set([
   "id",
@@ -22,26 +23,33 @@ export class TypeormCatalogBodyTypeRepository extends CatalogBodyTypesRepository
   constructor(
     @InjectRepository(CatalogBodyTypeEntity)
     private readonly repo: Repository<CatalogBodyTypeEntity>,
+    @InjectRepository(VersionEntity)
+    private readonly versionRepo: Repository<VersionEntity>,
   ) {
     super();
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogBodyType>> {
-    return run_paginated_typeorm_find({
+    const bodyTypeIds: number[] = [];
+    if (filter.model_id) {
+      const qb = this.versionRepo.createQueryBuilder("version")
+        .distinctOn(["body_type_id"])
+
+      if (filter.model_id) {
+        qb.andWhere("version.model_id = :model_id", { model_id: filter.model_id });
+      }
+      const versions = await qb.getMany();
+      bodyTypeIds.push(...versions.map((v) => v.body_type_id));
+    }
+    const bodyTypes = runPaginatedTypeormFind({
       repository: this.repo,
       filter,
-      map_row: (row) =>
-        CatalogBodyType.fromPrimitives({
-          id: row.id,
-          body_type_id: row.body_type_id,
-          doors: row.doors,
-          name: row.name,
-          slug: row.slug,
-          created_at: row.created_at,
-        }),
+      ...(bodyTypeIds.length > 0 ? { extra_filters: { id: In(bodyTypeIds) } } : {}),
+      map_row: (row) => CatalogBodyType.fromPrimitives(row),
       allowed_sort_keys: CATALOG_BODY_TYPE_SORT_KEYS,
       default_sort_key: "id",
     });
+    return bodyTypes;
   }
 
   async findOne(id: number): Promise<CatalogBodyType | null> {

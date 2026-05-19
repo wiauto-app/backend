@@ -1,4 +1,3 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -14,6 +13,7 @@ import { V1_CATALOG_FUEL_TYPES } from "../../../../route.constants";
 import { CatalogFuelTypesUseCase } from "../../../application/catalog-fuel-types-use-cases/catalog-fuel-types.use-case";
 import { CreateCatalogFuelTypeHttpDto } from "./dto/create-catalog-fuel-type.http-dto";
 import { UpdateCatalogFuelTypeHttpDto } from "./update-catalog-fuel-type.http-dto";
+import { FindAllFuelTypesHttpDto } from "./dto/find-all-fuel-types.http-dto";
 
 @Controller(V1_CATALOG_FUEL_TYPES)
 export class CatalogFuelTypesController {
@@ -33,7 +33,7 @@ export class CatalogFuelTypesController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllFuelTypesHttpDto) {
     return this.use_case.findAll(query);
   }
 

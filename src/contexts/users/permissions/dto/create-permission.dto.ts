@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 export class CreatePermissionDto {
   @IsString()
@@ -10,7 +10,7 @@ export class CreatePermissionDto {
   key: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsInt()
-  @IsPositive()
   value?: number;
 }

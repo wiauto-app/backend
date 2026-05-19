@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogFuelType,
   PrimitiveCatalogFuelType,
@@ -10,6 +9,7 @@ import { CatalogFuelTypesRepository } from "../../domain/repositories/catalog-fu
 import { CatalogFuelTypeNotFoundException } from "../../domain/exceptions/catalog-fuel-type-not-found.exception";
 import { CreateCatalogFuelTypeDto } from "./dto/create-catalog-fuel-type.dto";
 import { UpdateCatalogFuelTypeDto } from "./dto/update-catalog-fuel-type.dto";
+import { FindAllFuelTypesDto } from "./dto/find-all-fuel-types.dto";
 
 @Injectable()
 export class CatalogFuelTypesUseCase {
@@ -42,7 +42,7 @@ export class CatalogFuelTypesUseCase {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindAllFuelTypesDto,
   ): Promise<PaginatedResult<PrimitiveCatalogFuelType>> {
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.repository.find_all(filter);

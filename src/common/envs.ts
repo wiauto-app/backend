@@ -1,15 +1,14 @@
 import "dotenv/config";
 
 import { z } from "zod";
-
+export const ONE_HOUR = 1 * 60 * 60 * 1000;
+export const MONTH = 30 * 24 * 60 * 60 * 1000;
 const envsSchema = z.object({
   PORT: z.coerce.number(),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
 
-  REFRESH_TOKEN_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
-  ACCESS_TOKEN_EXPIRES_IN: z.string().default("24h"),
-  SESSION_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60 * 1000),
+  ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   
   FRONTEND_REDIRECT_URL: z.string().default(""),
 
@@ -54,8 +53,10 @@ const envsSchema = z.object({
   MINIO_ACCESS_KEY: z.string(),
   MINIO_SECRET_KEY: z.string(),
 
-  MINIO_BUCKET_NAME: z.string(),
   MINIO_VIDEO_BUCKET_NAME: z.string(),
+  MINIO_BUCKET_NAMES: z
+  .string()
+  .transform((value) => value.split(",")),
 });
 
 export const envs = envsSchema.parse(process.env);

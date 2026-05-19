@@ -14,7 +14,7 @@ export class FindAllVehiclesUseCase {
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
   ): Promise<PaginatedResult<VehicleListItemDto>> {
     const filter = new VehicleFilter({ ...find_all_vehicles_dto });
-    const result = await this.vehicle_repository.find_all(filter);
+    const result = await this.vehicle_repository.findAll(filter);
     return result;
   }
 }

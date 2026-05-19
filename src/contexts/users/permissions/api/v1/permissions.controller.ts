@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { CreatePermissionDto } from "../../dto/create-permission.dto";
 import { DeletePermissionDto } from "../../dto/delete-permission.dto";
@@ -18,10 +19,11 @@ import { V1_PERMISSIONS } from "../../route.constants";
 import { PermissionService } from "../../services/permission.service";
 import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
 import { PermissionKeys } from "../../lib/available-permission";
+import { FindAllPermissionsDto } from "../../dto/find-all-permissions.dto";
 
 
-@AuthPermissions(PermissionKeys.PERMISSIONS_MANAGE)
 @Controller(V1_PERMISSIONS)
+@AuthPermissions(PermissionKeys.PERMISSIONS_MANAGE)
 export class PermissionsController {
   constructor(private readonly permission_service: PermissionService) {}
 
@@ -38,8 +40,8 @@ export class PermissionsController {
   }
 
   @Get()
-  findAll() {
-    return this.permission_service.findAll();
+  findAll(@Query() find_all_permissions_dto: FindAllPermissionsDto) {
+    return this.permission_service.findAll(find_all_permissions_dto);
   }
 
   @Get(":id")

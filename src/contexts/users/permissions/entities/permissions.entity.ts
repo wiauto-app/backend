@@ -1,5 +1,5 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
-import { Roles } from "../../../roles/entities/roles.entity";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import { RolesPermissionsEntity } from "../../roles-permissions/entities/roles-permissions.entity";
 
 
 @Entity("permissions")
@@ -25,7 +25,6 @@ export class Permissions {
   @DeleteDateColumn()
   deleted_at?: Date;
 
-  @ManyToMany(() => Roles, (roles) => roles.permissions, { cascade: true })
-  @JoinTable({ name: "roles_permissions" })
-  roles: Relation<Roles[]>;
+  @OneToMany(() => RolesPermissionsEntity, (roles_permissions) => roles_permissions.permission)
+  roles_permissions: Relation<RolesPermissionsEntity[]>;
 }

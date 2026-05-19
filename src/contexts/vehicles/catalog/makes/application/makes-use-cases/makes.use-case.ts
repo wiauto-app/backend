@@ -1,12 +1,12 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { Make, PrimitiveMake } from "../../domain/entities/make";
 import { MakesRepository } from "../../domain/repositories/makes.repository";
 import { MakeNotFoundException } from "../../domain/exceptions/make-not-found.exception";
 import { CreateMakeDto } from "./dto/create-make.dto";
 import { UpdateMakeDto } from "./dto/update-make.dto";
+import { PaginationDto } from "@/src/contexts/shared/application/dtos/pagination.dto";
 
 @Injectable()
 export class MakesUseCase {
@@ -26,13 +26,13 @@ export class MakesUseCase {
       throw new MakeNotFoundException(id);
     }
     const prev = existing.toPrimitives();
-    const next_name = dto.name ?? prev.name!;
+    const next_name = dto.name ?? prev.name;
     const saved = await this.makes_repository.save(existing.update({ name: next_name }));
     return { make: saved.toPrimitives() };
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: PaginationDto,
   ): Promise<PaginatedResult<PrimitiveMake>> {
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.makes_repository.find_all(filter);

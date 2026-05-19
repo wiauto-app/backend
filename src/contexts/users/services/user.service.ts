@@ -13,7 +13,7 @@ import { Repository } from "typeorm";
 
 import { VehicleEntity } from "../../vehicles/infrastructure/persistence/vehicle.entity";
 import { AuthProvider, User } from "../entities/user.entity";
-import { CreateUserDto } from '../dto/create-user.dto'
+import { RegisterUserDto } from '../dto/register-user.dto'
 import { PasswordService } from "../../auth/services/password.service";
 import { UpdateEmailDto } from "../dto/update-email.dto";
 import { ApiResponse } from "@/src/common/types/default.types";
@@ -22,6 +22,7 @@ import { GetUserByEmailDto } from "../dto/get-user-by-email.dto";
 import { ProfileService } from "../../profiles/services/profile.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { EmailVerificationService } from "../../auth/services/email-verification.service";
+import { ProfileRepository } from "../../profiles/domain/repositories/profile.repository";
 
 @Injectable()
 export class UserService {
@@ -34,15 +35,15 @@ export class UserService {
     private readonly vehicleRepository: Repository<VehicleEntity>,
     private readonly passwordService: PasswordService,
     private readonly profileService: ProfileService,
+    private readonly profileRepository: ProfileRepository,
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
-  ) {}
+  ) { }
 
-  async create(createUserDto: CreateUserDto): Promise<ApiResponse<User>> {
-
+  async create(registerUserDto: RegisterUserDto): Promise<ApiResponse<User>> {
     const existingUser = await this.userRepository.findOne({
       where: {
-        email: createUserDto.email
+        email: registerUserDto.email
       }
     })
 
@@ -50,18 +51,18 @@ export class UserService {
       throw new ConflictException("Ya existe un usuario registrado con ese email")
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(createUserDto.password)
+    const hashedPassword = await this.passwordService.hashPassword(registerUserDto.password)
 
     const createdUser = this.userRepository.create({
-      email: createUserDto.email,
+      email: registerUserDto.email,
       password: hashedPassword,
     })
     const user = await this.userRepository.save(createdUser)
     await this.profileService.createProfile({
       id: user.id,
-      name: createUserDto.name,
-      last_name: createUserDto.last_name,
-      role_id: createUserDto.role_id,
+      name: registerUserDto.name,
+      last_name: registerUserDto.last_name,
+      role_id: registerUserDto.role_id,
     });
 
     void this.emailVerificationService
@@ -87,8 +88,9 @@ export class UserService {
     provider: Exclude<AuthProvider, "local">;
     provider_id: string;
     email: string;
-    first_name?: string | null;
+    first_name: string;
     last_name?: string | null;
+    role_id: string;
   }): Promise<User> {
     const existing = await this.userRepository.findOne({ where: { email: profile.email } });
 
@@ -98,10 +100,7 @@ export class UserService {
         existing.provider = profile.provider;
         existing.provider_id = profile.provider_id;
         await this.userRepository.save(existing);
-        await this.profileService.fillMissingNames(existing.id, {
-          name: profile.first_name ?? null,
-          last_name: profile.last_name ?? null,
-        });
+
       }
       return existing;
     }
@@ -116,8 +115,9 @@ export class UserService {
     const saved = await this.userRepository.save(created);
     await this.profileService.createProfile({
       id: saved.id,
-      name: profile.first_name ?? undefined,
+      name: profile.first_name,
       last_name: profile.last_name ?? undefined,
+      role_id: profile.role_id,
     });
     saved.password = null;
     return saved;
@@ -200,7 +200,8 @@ export class UserService {
       where: {
         id
       },
-      ...(selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] })
+      ...(selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
+      relations:["profile","profile.role"]
     })
 
     if (!user) {
@@ -220,7 +221,6 @@ export class UserService {
     }
 
     await this.userRepository.save(user)
-    user.password = null;
 
     return {
       message: "Usuario actualizado correctamente",
@@ -241,7 +241,8 @@ export class UserService {
       email: updateEmailDto.email,
       is_email_verified: false,
     });
-    user.password = null;
+
+
 
     return {
       message: "Email actualizado correctamente",

@@ -5,8 +5,13 @@ import { CreateDealershipUseCase } from "../../../../application/dealership/crea
 import { V1_DEALERSHIPS } from "../../../route.constants";
 
 import { CreateDealershipHttpDto } from "./create-dealership.http-dto";
+import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
+import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
 
 @Controller(V1_DEALERSHIPS)
+@AuthPermissions({
+  permissions: [PermissionKeys.DEALERSHIP_CREATE],
+})
 export class CreateDealershipController {
   constructor(private readonly create_dealership_use_case: CreateDealershipUseCase) {}
 

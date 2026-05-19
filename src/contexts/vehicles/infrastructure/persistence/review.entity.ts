@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { PrimitiveReview } from "../../domain/entities/reviews";
 import { VehicleEntity } from "./vehicle.entity";
-import { Profile } from "../../../profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 
 @Entity({ name: "reviews" })
 export class ReviewEntity implements PrimitiveReview {
@@ -35,9 +35,9 @@ export class ReviewEntity implements PrimitiveReview {
   @Column()
   vehicle_id: string;
 
-  @ManyToOne(() => Profile, (profile) => profile.reviews, { onDelete: "CASCADE" })
+  @ManyToOne(() => ProfileEntity, (profile) => profile.reviews, { onDelete: "CASCADE" })
   @JoinColumn({ name: "profile_id" })
-  profile: Relation<Profile>;
+  profile: Relation<ProfileEntity>;
 
   @ManyToOne(() => VehicleEntity, (vehicle) => vehicle.reviews, { onDelete: "CASCADE" })
   @JoinColumn({ name: "vehicle_id" })

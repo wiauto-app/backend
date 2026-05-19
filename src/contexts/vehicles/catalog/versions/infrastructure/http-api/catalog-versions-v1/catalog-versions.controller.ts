@@ -1,4 +1,3 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -14,6 +13,7 @@ import { V1_CATALOG_VERSIONS } from "../../../../route.constants";
 import { CatalogVersionsUseCase } from "../../../application/catalog-versions-use-cases/catalog-versions.use-case";
 import { CreateCatalogVersionHttpDto } from "./dto/create-catalog-version.http-dto";
 import { UpdateCatalogVersionHttpDto } from "./update-catalog-version.http-dto";
+import { FindAllVersionsHttpDto } from "./dto/find-all-versions.http-dto";
 
 @Controller(V1_CATALOG_VERSIONS)
 export class CatalogVersionsController {
@@ -33,7 +33,7 @@ export class CatalogVersionsController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllVersionsHttpDto) {
     return this.use_case.findAll(query);
   }
 

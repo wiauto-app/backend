@@ -1,7 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   CatalogModel,
   PrimitiveCatalogModel,
@@ -10,6 +9,7 @@ import { CatalogModelsRepository } from "../../domain/repositories/catalog-model
 import { CatalogModelNotFoundException } from "../../domain/exceptions/catalog-model-not-found.exception";
 import { CreateCatalogModelDto } from "./dto/create-catalog-model.dto";
 import { UpdateCatalogModelDto } from "./dto/update-catalog-model.dto";
+import { FindAllModelDto } from "./dto/find-all-model.dto";
 
 @Injectable()
 export class CatalogModelsUseCase {
@@ -40,9 +40,9 @@ export class CatalogModelsUseCase {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    dto: FindAllModelDto,
   ): Promise<PaginatedResult<PrimitiveCatalogModel>> {
-    const filter = new CatalogPaginationFilter({ ...query });
+    const filter = new CatalogPaginationFilter({ ...dto });
     const page = await this.repository.find_all(filter);
     return page.map((x) => x.toPrimitives());
   }

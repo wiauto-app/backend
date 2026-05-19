@@ -1,4 +1,4 @@
-import { Profile } from "@/src/contexts/profiles/entities/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import {
   Column,
   CreateDateColumn,
@@ -49,11 +49,11 @@ export class DealershipInvitationsEntity {
   @Column({ type: "uuid" })
   invited_by_id: string;
 
-  @ManyToOne(() => Profile, (profile) => profile.dealership_invitations)
+  @ManyToOne(() => ProfileEntity, (profile) => profile.dealership_invitations, { onDelete: "CASCADE" })
   @JoinColumn({ name: "invited_by_id" })
-  invited_by: Relation<Profile>;
+  invited_by: Relation<ProfileEntity>;
 
-  @ManyToOne(() => DealershipEntity, (dealership) => dealership.invitations)
+  @ManyToOne(() => DealershipEntity, (dealership) => dealership.invitations, { onDelete: "CASCADE" })
   @JoinColumn({ name: "dealership_id" })
   dealership: Relation<DealershipEntity>;
 }

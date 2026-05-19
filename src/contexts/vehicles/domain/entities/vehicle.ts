@@ -52,6 +52,7 @@ export interface PrimitiveVehicle {
   battery_capacity: number;
   time_to_charge: number;
   license_plate: string;
+  vin_code?: string;
   phone_code: string;
   phone: string;
   email: string;
@@ -107,6 +108,7 @@ export class Vehicle {
     battery_capacity: number;
     time_to_charge: number;
     license_plate: string;
+    vin_code: string;
     suggestions: string[];
   }): Vehicle {
     return new Vehicle({
@@ -152,6 +154,7 @@ export class Vehicle {
       battery_capacity: this.primitiveVehicle.battery_capacity,
       time_to_charge: this.primitiveVehicle.time_to_charge,
       license_plate: this.primitiveVehicle.license_plate,
+      vin_code: this.primitiveVehicle.vin_code,
       phone_code: this.primitiveVehicle.phone_code,
       phone: this.primitiveVehicle.phone,
       email: this.primitiveVehicle.email,

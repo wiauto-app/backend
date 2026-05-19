@@ -1,13 +1,14 @@
 import { CatalogPaginationFilter } from "@/src/contexts/shared/domain/filters/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
-import { run_paginated_typeorm_find } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { CatalogYear } from "../../domain/entities/catalog-year";
 import { CatalogYearNotFoundException } from "../../domain/exceptions/catalog-year-not-found.exception";
 import { CatalogYearsRepository } from "../../domain/repositories/catalog-years.repository";
 import { CatalogYearEntity } from "../persistence/catalog-year.entity";
+import { VersionEntity } from "../../../versions/infrastructure/persistence/version.entity";
 
 const CATALOG_YEAR_SORT_KEYS = new Set(["id", "year", "slug", "created_at"]);
 
@@ -15,14 +16,32 @@ export class TypeormCatalogYearRepository extends CatalogYearsRepository {
   constructor(
     @InjectRepository(CatalogYearEntity)
     private readonly repo: Repository<CatalogYearEntity>,
+    @InjectRepository(VersionEntity)
+    private readonly versionRepo: Repository<VersionEntity>,
   ) {
     super();
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogYear>> {
-    return run_paginated_typeorm_find({
+    const yearIds: number[] = [];
+    if (filter.model_id) {
+      const qb = this.versionRepo
+        .createQueryBuilder("version")
+        .distinctOn(["year_id"]);
+
+      qb.andWhere("version.model_id = :model_id", { model_id: filter.model_id });
+      if (filter.body_type_id != null) {
+        qb.andWhere("version.body_type_id = :body_type_id", {
+          body_type_id: filter.body_type_id,
+        });
+      }
+      const versions = await qb.getMany();
+      yearIds.push(...versions.map((v) => v.year_id));
+    }
+    return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
+      ...(yearIds.length > 0 ? { extra_filters: { id: In(yearIds) } } : {}),
       map_row: (row) =>
         CatalogYear.fromPrimitives({
           id: row.id,
@@ -32,6 +51,7 @@ export class TypeormCatalogYearRepository extends CatalogYearsRepository {
         }),
       allowed_sort_keys: CATALOG_YEAR_SORT_KEYS,
       default_sort_key: "year",
+      search_column: "slug",
     });
   }
 

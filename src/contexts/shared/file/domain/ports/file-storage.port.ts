@@ -28,4 +28,5 @@ export abstract class FileStoragePort {
   /** Borra un objeto en el bucket de vídeos (p. ej. clave antigua al pasar a `.mp4`). */
   abstract deleteVideoObject(file_key: string): Promise<void>;
   abstract generateSignedUrl(bucketName: string, fileKey: string, contentType: ContentType): Promise<string>;
+  abstract generateReadSignedUrl(bucketName: string, fileKey: string): Promise<{ signed_url: string }>;
 }

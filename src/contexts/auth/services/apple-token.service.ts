@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import * as jwt from "jsonwebtoken";
 import jwksClient, { JwksClient } from "jwks-rsa";
 
 import { envs } from "@/src/common/envs";
 import { OAuthProfile } from "../strategies/google.strategy";
+import { authResponseConfig } from "../response.config";
 
 interface AppleIdTokenPayload extends jwt.JwtPayload {
   sub: string;
@@ -12,6 +13,7 @@ interface AppleIdTokenPayload extends jwt.JwtPayload {
 
 @Injectable()
 export class AppleTokenService {
+  private readonly logger = new Logger(AppleTokenService.name); 
   private readonly jwks: JwksClient = jwksClient({
     jwksUri: "https://appleid.apple.com/auth/keys",
     cache: true,
@@ -21,7 +23,8 @@ export class AppleTokenService {
   async verifyIdentityToken(identityToken: string): Promise<OAuthProfile> {
     const decoded = jwt.decode(identityToken, { complete: true });
     if (!decoded || typeof decoded === "string" || !decoded.header.kid) {
-      throw new UnauthorizedException("Apple token inválido");
+      this.logger.error("Apple token inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
     }
 
     let publicKey: string;
@@ -29,7 +32,8 @@ export class AppleTokenService {
       const signingKey = await this.jwks.getSigningKey(decoded.header.kid);
       publicKey = signingKey.getPublicKey();
     } catch {
-      throw new UnauthorizedException("No se pudo obtener la clave pública de Apple");
+      this.logger.error("No se pudo obtener la clave pública de Apple");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
     }
 
     let payload: AppleIdTokenPayload;
@@ -39,19 +43,21 @@ export class AppleTokenService {
         issuer: "https://appleid.apple.com",
       }) as AppleIdTokenPayload;
     } catch {
-      throw new UnauthorizedException("Apple token expirado o inválido");
+      this.logger.error("Apple token expirado o inválido");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
     }
 
     if (!payload.sub) {
-      throw new UnauthorizedException("Apple token sin sub");
+      this.logger.error("Apple token sin sub");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
     }
 
     return {
       provider: "apple",
       provider_id: payload.sub,
       email: payload.email ?? "",
-      first_name: null,
-      last_name: null,
+      first_name: "",
+      last_name: undefined,
     };
   }
 }

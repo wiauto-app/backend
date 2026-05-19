@@ -1,4 +1,3 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -14,6 +13,7 @@ import { V1_CATALOG_YEARS } from "../../../../route.constants";
 import { CatalogYearsUseCase } from "../../../application/catalog-years-use-cases/catalog-years.use-case";
 import { CreateCatalogYearHttpDto } from "./dto/create-catalog-year.http-dto";
 import { UpdateCatalogYearHttpDto } from "./update-catalog-year.http-dto";
+import { FindAllYearsHttpDto } from "./dto/find-all-years.http-dto";
 
 @Controller(V1_CATALOG_YEARS)
 export class CatalogYearsController {
@@ -33,7 +33,7 @@ export class CatalogYearsController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllYearsHttpDto) {
     return this.use_case.findAll(query);
   }
 

@@ -64,7 +64,6 @@ export class CreateProfileUseCase {
 
   private to_create_payload(dto: CreateProfileDto): CreateProfilePayload {
     const payload = new CreateProfilePayload();
-    payload.id = dto.id;
     payload.name = dto.name;
     payload.last_name = dto.last_name;
     payload.avatar_url = dto.avatar_url;

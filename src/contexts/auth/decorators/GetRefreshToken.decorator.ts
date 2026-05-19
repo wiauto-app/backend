@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { createParamDecorator, ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { Request } from "express";
 
 
@@ -6,11 +6,8 @@ import { Request } from "express";
 export const GetRefreshToken = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string | undefined => {
     const req = ctx.switchToHttp().getRequest<
-      Request & { resolved_refresh_token?: string }
+      Request
     >();
-    if (req.resolved_refresh_token) {
-      return req.resolved_refresh_token;
-    }
-    return (req.cookies?.refresh_token as string | undefined)?.trim() ?? "";
+    return req.refresh_token;
   },
 )

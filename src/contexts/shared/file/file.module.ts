@@ -15,13 +15,22 @@ import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/ve
 import { OptimizeImageUseCase } from "./application/images-use-cases/optimize-image-use-case/optimize-image.use-case";
 import { UploadImageUseCase } from "./application/images-use-cases/upload-image.use-case/upload-image.use-case";
 import { ValidateImagesUseCase } from "./application/images-use-cases/validate-images.use-case/validate-images.use-case";
-import { GenerateVideoSignedUrlController } from "./infrastructure/generate-video-signed-url/generate-video-signed-url.controller";
+import { GenerateFileSignedUrlController } from "./infrastructure/http-api/generate-file-signed-url/generate-file-signed-url.controller";
 import { GenerateSignedUrlUseCase } from "./application/videos-use-cases/generate-signed-url-use-case/generate-signed-url.use-case";
-import { ConfirmVideoUploadController } from "./infrastructure/confirm-video-upload/confirm-video-upload.controller";
+import { ConfirmVideoUploadController } from "./infrastructure/http-api/confirm-video-upload/confirm-video-upload.controller";
 import { ConfirmVideoUploadUseCase } from "./application/videos-use-cases/confirm-video-upload-use-case/confirm-video-upload.use-case";
+import { GenerateReadFileSignedUrlController } from "./infrastructure/http-api/generate-read-file-signed-url/generate-read-file-signed-url.controller";
+import { GenerateReadFileSignedUrlUseCase } from "./application/files-use-cases/files-use-cases/files-use-cases/generate-read-file-signed-url.use-case";
+import { RemoveFilesUseCase } from "./application/images-use-cases/remove-files-use-case/remove-files.use-case";
+import { RemoveFileController } from "./infrastructure/http-api/remove-file/remove-file.controller";
 
 @Module({
-  controllers: [GenerateVideoSignedUrlController, ConfirmVideoUploadController],
+  controllers: [
+    GenerateFileSignedUrlController,
+    ConfirmVideoUploadController,
+    GenerateReadFileSignedUrlController,
+    RemoveFileController,
+  ],
   providers: [
     MinioService,
     MinioAdapter,
@@ -29,13 +38,15 @@ import { ConfirmVideoUploadUseCase } from "./application/videos-use-cases/confir
       provide: FileStoragePort,
       useExisting: MinioAdapter,
     },
-    
+
     UploadImageUseCase,
     ValidateImagesUseCase,
     OptimizeImageUseCase,
     GenerateSignedUrlUseCase,
     ConfirmVideoUploadUseCase,
-    
+    GenerateReadFileSignedUrlUseCase,
+    RemoveFilesUseCase,
+
     FileQueueAdapter,
     ImageProcessor,
     FfmpegAdapter,

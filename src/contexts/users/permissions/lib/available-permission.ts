@@ -4,7 +4,7 @@
  * o POST /v1/permissions/sync-available-keys-file (JWT).
  *
  * Uso en endpoints: JwtGuard + PermissionGuard + @RequirePermissions(PermissionKeys.XXX).
- * Generado: 2026-05-08T02:21:48.526Z
+ * Generado: 2026-05-15T01:29:47.054Z
  */
 
 export const PermissionKeys = {
@@ -15,6 +15,7 @@ export const PermissionKeys = {
   DEALERSHIP_UPDATE: "dealership.update",
   PERMISSIONS_MANAGE: "permissions.manage",
   ROLES_MANAGE: "roles.manage",
+  SUSPENSION_MANAGE: "suspension.manage",
   USERS_CREATE: "users.create",
   VEHICLES_CREATE: "vehicles.create",
 } as const;

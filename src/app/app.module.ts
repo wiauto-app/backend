@@ -39,14 +39,14 @@ import { DealershipModule } from "../contexts/dealership/dealership.module";
     RolesModule,
     PermissionModule,
     DealershipModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60_000,
-          limit: 200,
-        },
-      ],
-    }),
+    // ThrottlerModule.forRoot({
+    //   throttlers: [
+    //     {
+    //       ttl: 60_000,
+    //       limit: 200,
+    //     },
+    //   ],
+    // }),
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,
@@ -58,11 +58,11 @@ import { DealershipModule } from "../contexts/dealership/dealership.module";
       },
     }),
   ],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard
-    }
-  ],
+  // providers: [
+  //   {
+  //     provide: APP_GUARD,
+  //     useClass: ThrottlerGuard
+  //   }
+  // ],
 })
 export class AppModule { }

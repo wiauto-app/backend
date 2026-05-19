@@ -5,10 +5,11 @@ import { TypeormCatalogBodyTypeRepository } from "../infrastructure/repositories
 import { CatalogBodyTypesRepository } from "../domain/repositories/catalog-body-types.repository";
 import { CatalogBodyTypesController } from "../infrastructure/http-api/catalog-body-types-v1/catalog-body-types.controller";
 import { CatalogBodyTypesUseCase } from "../application/catalog-body-types-use-cases/catalog-body-types.use-case";
+import { VersionEntity } from "../../versions/infrastructure/persistence/version.entity";
 
 @Module({
   controllers: [CatalogBodyTypesController],
-  imports: [TypeOrmModule.forFeature([CatalogBodyTypeEntity])],
+  imports: [TypeOrmModule.forFeature([CatalogBodyTypeEntity, VersionEntity])],
   providers: [
     CatalogBodyTypesUseCase,
     TypeormCatalogBodyTypeRepository,

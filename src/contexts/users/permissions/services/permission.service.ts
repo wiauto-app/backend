@@ -7,6 +7,9 @@ import { build_available_permission_file_content } from "../lib/build-available-
 import { CreatePermissionDto } from "../dto/create-permission.dto";
 import { UpdatePermissionDto } from "../dto/update-permission.dto";
 import { Permissions } from "../entities/permissions.entity";
+import { FindAllPermissionsDto } from "../dto/find-all-permissions.dto";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 
 const available_permission_file_relative = path.join(
   "src",
@@ -41,16 +44,21 @@ export class PermissionService {
     return await this.permissions_repository.save(permission);
   }
 
-  async findAll(): Promise<Permissions[]> {
-    return await this.permissions_repository.find({
-      order: { key: "ASC" },
+  async findAll(find_all_permissions_dto: FindAllPermissionsDto): Promise<PaginatedResult<Permissions>> {
+    const result = await runPaginatedTypeormFind({
+      repository: this.permissions_repository,
+      filter: find_all_permissions_dto,
+      map_row: (row) => row,
+      allowed_sort_keys: new Set(["name", "key", "value", "created_at", "updated_at"]),
+      default_sort_key: "created_at",
     });
+    return result;
   }
 
   async findOne(id: string): Promise<Permissions> {
     const permission = await this.permissions_repository.findOne({
       where: { id },
-      relations: { roles: true },
+      relations: { roles_permissions: true },
     });
     if (!permission) {
       throw new NotFoundException("Permiso no encontrado");

@@ -47,17 +47,17 @@ export class VehicleCreationGuard implements CanActivate {
 
     const role_with_permissions = await this.roles_repository.findOne({
       where: { id: role.id },
-      relations: { permissions: true },
+      relations: { roles_permissions: true },
     });
     if (!role_with_permissions) {
       throw new UnauthorizedException("Rol no encontrado");
     }
 
-    const quota_permission = role_with_permissions.permissions.find(
-      (permission) => permission.key === PermissionKeys.VEHICLES_CREATE,
+    const quota_permission = role_with_permissions.roles_permissions.find(
+      (roles_permissions) => roles_permissions.permission.key === PermissionKeys.VEHICLES_CREATE,
     );
 
-    const max_listings = quota_permission?.value;
+    const max_listings = quota_permission?.permission.value;
     if (!(typeof max_listings === "number" && max_listings >= 1)) {
       throw new ForbiddenException(
         "Tu plan no tiene definida la cuota de anuncios: asigna un entero ≥ 1 en `value` del permiso vehicles.create.",

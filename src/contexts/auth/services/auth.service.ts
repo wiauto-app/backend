@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 
@@ -11,10 +11,13 @@ import { SessionPayload, SignInResult } from "../types/auth.types";
 import { PasswordService } from "./password.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { SessionService } from "./session.service";
-import { envs } from "@/src/common/envs";
+import { envs, MONTH } from "@/src/common/envs";
+import { authResponseConfig } from "../response.config";
+import { RolesService } from "../../roles/services/roles.service";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly userService: UserService,
     private readonly suspensionService: SuspensionService,
@@ -22,6 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly roleService: RolesService,
   ) { }
 
   async signIn({
@@ -33,19 +37,19 @@ export class AuthService {
     const user = await this.userService.findOneByEmailWithPassword(loginDto.email);
     if (user.provider !== "local" || !user.password) {
       throw new UnauthorizedException(
-        `Este email está registrado con ${user.provider}. Iniciá sesión con ese proveedor.`,
+        authResponseConfig.messages.DIFFERENT_PROVIDER,
       );
     }
 
     const isValidPassword = ignorePassword ? true : await this.passwordService.comparePassword(loginDto.password, user.password);
 
     if (!isValidPassword) {
-      throw new UnauthorizedException("El email o la contraseña son incorrectos");
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);
     }
 
     if (!user.is_email_verified) {
       throw new UnauthorizedException(
-        "Debés verificar tu correo antes de iniciar sesión. Revisá tu bandeja de entrada o solicitá un nuevo enlace desde la app.",
+        authResponseConfig.messages.EMAIL_NOT_VERIFIED,
       );
     }
     const { session_id, refreshToken_hash } = await this.createSession(user, request);
@@ -56,7 +60,7 @@ export class AuthService {
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({ user, session_id, expiresIn: "30d" });
+    const token = this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" });
 
     return { type, token, refreshToken_hash }
 
@@ -78,27 +82,36 @@ export class AuthService {
 
   async signInWithOAuthProfile(profile: OAuthProfile, request: Request): Promise<SignInResult> {
     if (!profile.email) {
-      throw new UnauthorizedException("El proveedor no devolvió un email");
+      this.logger.error("El proveedor no devolvió un email");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
     }
-
-    const user = await this.userService.findOrCreateOAuthUser(profile);
+    const role = await this.roleService.findDefault();
+    if (!role) {
+      throw new UnauthorizedException(authResponseConfig.messages.ROLE_NOT_FOUND);
+    }
+    const user = await this.userService.findOrCreateOAuthUser({
+      ...profile,
+      role_id: role.id,
+    });
     await this.suspensionService.assert_session_allowed_by_id(user.id);
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
 
-    const { session_id } = await this.createSession(user, request);
-    return { type: "session", token: this.createToken({ user, session_id, expiresIn: "30d" }), refreshToken_hash: "" };
+    const { session_id, refreshToken_hash } = await this.createSession(user, request);
+    return { type: "session", token: this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" }), refreshToken_hash: refreshToken_hash };
   }
 
   createToken({
     user,
     session_id,
-  }: { user: User, session_id: string, expiresIn?: string }) {
+    refreshToken_hash,
+  }: { user: User, session_id: string, refreshToken_hash: string, expiresIn?: string }) {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,
       session_id: session_id,
+      refreshToken_hash: refreshToken_hash,
       scope: user.two_factor_enabled ? "2fa_challenge" : "session"
     };
     return this.jwtService.sign(payload,
@@ -109,24 +122,22 @@ export class AuthService {
   async logout(request: Request) {
     const session = await this.sessionService.findOneByIpAddress(request.ip);
     if (!session) {
-      throw new UnauthorizedException("Sesión no encontrada");
+      throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
     }
     await this.sessionService.delete(session.id);
   }
 
   async refreshToken(refreshToken: string): Promise<SignInResult> {
+    console.log("refreshToken", refreshToken);
     const refresh_token = await this.refreshTokenService.findByTokenHash(refreshToken);
     const user = await this.userService.findOne(refresh_token.session.user_id);
-    await this.refreshTokenService.revoke(refresh_token);
+    await this.refreshTokenService.revokeBySessionId(refresh_token.session.id);
     const newRefreshToken = await this.refreshTokenService.createForSession(user, refresh_token.session, refresh_token.id);
     const session = await this.sessionService.update(refresh_token.session.id, {
       refreshed_at: new Date(),
-      expires_at: new Date(Date.now() + envs.SESSION_EXPIRES_IN),
+      expires_at: new Date(Date.now() + MONTH),
     });
-    return {
-      type: "session",
-      token: this.createToken({ user, session_id: session.id, expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any }),
-      refreshToken_hash: newRefreshToken.token_hash,
-    }
+    const token = this.createToken({ user, session_id: session.id, refreshToken_hash: newRefreshToken.token_hash, expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any });
+    return { type: "session", token, refreshToken_hash: newRefreshToken.token_hash };
   }
 }

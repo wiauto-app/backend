@@ -4,7 +4,6 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
 import { User } from "../users/entities/user.entity";
 import { AdminCreateProfileUseCase } from "./application/profile/admin-create-profile-use-case/admin-create-profile.use-case";
 import { CreateProfileUseCase } from "./application/profile/create-profile-use-case/create-profile.use-case";
-import { FillMissingProfileNamesUseCase } from "./application/profile/fill-missing-profile-names-use-case/fill-missing-profile-names.use-case";
 import { FindAllProfilesUseCase } from "./application/profile/find-all-profiles-use-case/find-all-profiles.use-case";
 import { FindOneProfileUseCase } from "./application/profile/find-one-profile-use-case/find-one-profile.use-case";
 import { RemoveProfileUseCase } from "./application/profile/remove-profile-use-case/remove-profile.use-case";
@@ -21,6 +20,11 @@ import { TypeOrmProfileRepository } from "./infrastructure/repositories/typeorm.
 import { TypeOrmProfileUserRepository } from "./infrastructure/repositories/typeorm.profile-user-repository";
 import { ProfileService } from "./services/profile.service";
 import { FindByEmailUseCase } from "./application/profile/find-by-email-use-case/find-by-email.use-case";
+import { TypeOrmAdminProfileRepository } from "./infrastructure/repositories/typeorm.admin-profile-repository";
+import { AdminProfileRepository } from "./domain/repositories/admin-profile.repository";
+import { AdminCreateProfileController } from "./infrastructure/http-api/v1-admin/create-profile/admin-create-profile.controller";
+import { AdminUpdateProfileUseCase } from "./application/profile/admin-update-profile-use-case/admin-update-profile.use-case";
+import { AdminUpdateProfileController } from "./infrastructure/http-api/v1-admin/admin-update-profile/admin-update-profile.controller";
 
 @Module({
   controllers: [
@@ -29,19 +33,24 @@ import { FindByEmailUseCase } from "./application/profile/find-by-email-use-case
     FindOneProfileController,
     UpdateProfileController,
     RemoveProfileController,
+    AdminCreateProfileController,
+    AdminUpdateProfileController,
   ],
   providers: [
     ProfileService,
+
     CreateProfileUseCase,
     AdminCreateProfileUseCase,
     FindAllProfilesUseCase,
     FindOneProfileUseCase,
     UpdateProfileUseCase,
     RemoveProfileUseCase,
-    FillMissingProfileNamesUseCase,
     FindByEmailUseCase,
+    AdminUpdateProfileUseCase,
+    
     TypeOrmProfileRepository,
     TypeOrmProfileUserRepository,
+    TypeOrmAdminProfileRepository,
     {
       provide: ProfileRepository,
       useExisting: TypeOrmProfileRepository,
@@ -50,8 +59,12 @@ import { FindByEmailUseCase } from "./application/profile/find-by-email-use-case
       provide: ProfileUserRepository,
       useExisting: TypeOrmProfileUserRepository,
     },
+    {
+      provide: AdminProfileRepository,
+      useExisting: TypeOrmAdminProfileRepository,
+    },
   ],
-  exports: [ProfileService, ProfileRepository, ProfileUserRepository, FindByEmailUseCase],
+  exports: [ProfileService, ProfileRepository, ProfileUserRepository, AdminProfileRepository, FindByEmailUseCase],
   imports: [
     TypeOrmModule.forFeature([ProfileEntity, User]),
     forwardRef(() => DealershipInvitationModule),

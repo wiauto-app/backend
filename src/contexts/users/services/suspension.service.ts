@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -11,6 +12,7 @@ import { Repository } from "typeorm";
 import { User } from "../entities/user.entity";
 import { SuspensionDurationType } from "../entities/suspension_duration_type.entity";
 import { SuspendUserBodyDto } from "../dto/suspend-user.dto";
+import { UnsuspendUserBodyDto } from "../dto/admin/unsuspend-user.dto";
 
 @Injectable()
 export class SuspensionService {
@@ -29,12 +31,11 @@ export class SuspensionService {
   }
 
   async suspend_user(
-    actor_user_id: string,
-    target_user_id: string,
     dto: SuspendUserBodyDto,
-  ): Promise<void> {
-    if (actor_user_id === target_user_id) {
-      throw new ForbiddenException("No podés suspenderte a vos mismo");
+    actor_id: string,
+  ): Promise<User> {
+    if (actor_id === dto.target_user_id) {
+      throw new ForbiddenException("No podés suspenderte a tí mismo");
     }
 
     const duration_type = await this.duration_type_repository.findOne({
@@ -57,33 +58,38 @@ export class SuspensionService {
       suspension_end_time = new Date(now.getTime() + ms);
     }
 
-    const merged = await this.user_repository.preload({
-      id: target_user_id,
+    const userToSuspend = await this.user_repository.preload({
+      id: dto.target_user_id,
       is_suspended: true,
       suspended_at: now,
-      suspension_reason: dto.reason,
+      suspension_reason: dto.suspension_reason,
       suspension_end_time,
       suspension_duration_type: { id: duration_type.id } as SuspensionDurationType,
     });
-    if (!merged) {
+    if (!userToSuspend) {
       throw new NotFoundException("Usuario no encontrado");
     }
-    await this.user_repository.save(merged);
+    if(userToSuspend.is_suspended) {
+      throw new ConflictException("El usuario ya está suspendido");
+    }
+    await this.user_repository.save(userToSuspend);
+    return userToSuspend;
   }
 
-  async unsuspend_user(target_user_id: string): Promise<void> {
+  async unsuspend_user(dto: UnsuspendUserBodyDto): Promise<User> {
     const merged = await this.user_repository.preload({
-      id: target_user_id,
+      id: dto.target_user_id,
       is_suspended: false,
       suspended_at: null,
       suspension_reason: null,
       suspension_end_time: null,
-      suspension_duration_type: null,
+      suspension_duration_type_id: null,
     });
     if (!merged) {
       throw new NotFoundException("Usuario no encontrado");
     }
     await this.user_repository.save(merged);
+    return merged;
   }
 
   /**
@@ -92,7 +98,7 @@ export class SuspensionService {
   async assert_session_allowed_by_id(user_id: string): Promise<void> {
     const user = await this.user_repository.findOne({ where: { id: user_id } });
     if (!user) {
-      throw new UnauthorizedException("Usuario no encontrado");
+      throw new NotFoundException("Usuario no encontrado");
     }
     await this.apply_suspension_policy_for_user(user);
   }
