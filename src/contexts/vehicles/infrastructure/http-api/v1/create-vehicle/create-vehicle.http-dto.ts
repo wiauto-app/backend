@@ -6,6 +6,7 @@ import {
   TransmissionType,
   ConditionVehicle,
 } from "@/src/contexts/vehicles/domain/entities/vehicle";
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsEmail,
@@ -18,9 +19,18 @@ import {
   Min,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from "class-validator";
+import { ImageHttpDto } from "./image.http-dto";
 
 export class CreateVehicleHttpDto {
+
+
+
+  @IsOptional()
+  @IsString()
+  vin_code?: string;
+
   @IsUUID("4")
   vehicle_type_id: string;
 
@@ -85,17 +95,16 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   traction_id: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  power: number;
-
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
+  @Min(0)
+  power?: number;
+
+  @IsNumber()
   @IsNotEmpty()
   @Min(0)
-  displacement?: number;
+  displacement: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
@@ -150,4 +159,12 @@ export class CreateVehicleHttpDto {
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsUUID("4")
   warranty_type_id?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImageHttpDto)
+  images?: ImageHttpDto[];
 }
+
+

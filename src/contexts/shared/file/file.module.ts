@@ -3,10 +3,13 @@ import { BullModule } from "@nestjs/bullmq";
 
 import { FileQueuePort } from "./domain/ports/file-queue.port";
 import { FileStoragePort } from "./domain/ports/file-storage.port";
+import { TempStoragePromotionPort } from "./domain/ports/temp-storage-promotion.port";
 import { VideoProcessorPort } from "./domain/ports/video-processor.port";
 import { FileQueueAdapter } from "./infrastructure/adapters/file-queue.adapter";
 import { FfmpegAdapter } from "./infrastructure/adapters/ffmpeg.adapter";
 import { MinioAdapter } from "./infrastructure/adapters/minio.adapter";
+import { MinioTempStoragePromotionAdapter } from "./infrastructure/adapters/minio-temp-storage-promotion.adapter";
+import { PromoteTempStoragePathsUseCase } from "./application/promote-temp-storage-paths-use-case/promote-temp-storage-paths.use-case";
 import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE } from "./infrastructure/media.constants";
 import { ImageProcessor } from "./infrastructure/processors/image.processor";
 import { VideoProcessor } from "./infrastructure/processors/video.processor";
@@ -46,6 +49,12 @@ import { RemoveFileController } from "./infrastructure/http-api/remove-file/remo
     ConfirmVideoUploadUseCase,
     GenerateReadFileSignedUrlUseCase,
     RemoveFilesUseCase,
+    PromoteTempStoragePathsUseCase,
+    MinioTempStoragePromotionAdapter,
+    {
+      provide: TempStoragePromotionPort,
+      useExisting: MinioTempStoragePromotionAdapter,
+    },
 
     FileQueueAdapter,
     ImageProcessor,
@@ -65,6 +74,14 @@ import { RemoveFileController } from "./infrastructure/http-api/remove-file/remo
     BullModule.registerQueue({ name: UPLOAD_VIDEO_QUEUE }),
     VehicleImagesPersistenceModule,
   ],
-  exports: [FileStoragePort, UploadImageUseCase, MinioService, FileQueueAdapter, FileQueuePort],
+  exports: [
+    FileStoragePort,
+    UploadImageUseCase,
+    MinioService,
+    FileQueueAdapter,
+    FileQueuePort,
+    TempStoragePromotionPort,
+    PromoteTempStoragePathsUseCase,
+  ],
 })
 export class FileModule {}

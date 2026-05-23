@@ -66,17 +66,20 @@ export class VehicleEntity {
   expires_at: Date;
 
   // --- Ubicación ---
-  @Column("decimal", { precision: 10, scale: 8 })
+  @Column("numeric")
   lat: number;
 
-  @Column("decimal", { precision: 11, scale: 8 })
+  @Column("numeric")
   lng: number;
 
   // --- Ficha técnica (motor / transmisión / identificación) ---
   @Column({ type: "enum", enum: TRANSMISSION_TYPE })
   transmission_type: TransmissionType;
 
-  @Column()
+  @Column({
+    type: "numeric",
+    nullable: true,
+  })
   power: number;
 
   @Column()

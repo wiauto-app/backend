@@ -4,10 +4,12 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { envs } from '@/src/common/envs';
+import { split_storage_compound_path } from '@/src/contexts/shared/file/domain/temp-storage-path';
 import { s3, s3_for_presign } from './s3.client';
 import { Injectable } from '../dependency-injectable/injectable';
 
@@ -115,6 +117,24 @@ export class MinioService {
   }
 
   /**
+   * Copia un objeto dentro del mismo bucket (p. ej. temp → definitivo).
+   */
+  async copyObjectInBucket(
+    bucket_name: string,
+    source_object_key: string,
+    dest_object_key: string,
+  ): Promise<void> {
+    const copy_source = `${bucket_name}/${source_object_key.split("/").map(encodeURIComponent).join("/")}`;
+    await s3.send(
+      new CopyObjectCommand({
+        Bucket: bucket_name,
+        CopySource: copy_source,
+        Key: dest_object_key,
+      }),
+    );
+  }
+
+  /**
    * Obtiene la clave del objeto (Key) en el bucket por defecto a partir de:
    * - URL absoluta `http(s)://.../bucket/key...`
    * - Path guardado por el adaptador: `/bucket/key...` (sin host; fallaba con `new URL`)
@@ -212,14 +232,35 @@ export class MinioService {
   }
 
   /**
-   * Elimina objeto del bucket por defecto. Acepta URL pública, path tipo `/bucket/key` (lo que persiste el adaptador) o la key S3.
+   * Resuelve `bucket` + `object_key` desde URL absoluta o pathname `/bucket/clave/...`.
+   */
+  private resolve_bucket_and_object_key(
+    stored: string,
+  ): { bucket_name: string; object_key: string } {
+    const trimmed = stored.trim();
+    if (!trimmed) {
+      throw new Error("Referencia de almacenamiento vacía");
+    }
+    if (/^https?:\/\//i.test(trimmed)) {
+      let pathname: string;
+      try {
+        pathname = new URL(trimmed).pathname;
+      } catch {
+        throw new Error("URL inválida");
+      }
+      return this.resolve_bucket_and_object_key(pathname);
+    }
+    return split_storage_compound_path(trimmed);
+  }
+
+  /**
+   * Elimina objeto en MinIO. Acepta URL pública o pathname `/bucket/clave/...`.
    */
   deleteFileByUrl(urlOrPath: string): Observable<void> {
-    
-    const filePath = urlOrPath.startsWith("http")
-      ? this.extract_default_bucket_object_key(urlOrPath)
-      : urlOrPath;
-    return this.deleteFile(filePath);
+    const { bucket_name, object_key } = this.resolve_bucket_and_object_key(urlOrPath);
+    return from(this.deleteObjectFromBucket(bucket_name, object_key)).pipe(
+      map(() => void 0),
+    );
   }
 
 

@@ -1,5 +1,5 @@
 import { InjectRepository } from "@nestjs/typeorm";
-import { DeepPartial, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { lastValueFrom } from "rxjs";
 
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
@@ -18,24 +18,28 @@ export class TypeOrmVehicleImagesRepository implements VehicleImageRepository {
     private readonly minioService: MinioService,
   ) {}
 
-  private to_persistence(vehicleImage: VehicleImage): DeepPartial<VehicleImagesEntity> {
+  private to_entity(vehicleImage: VehicleImage): VehicleImagesEntity {
     const p = vehicleImage.toPrimitives();
-    return {
+    return this.vehicleImagesRepository.create({
       id: p.id,
       url: p.url,
       created_at: p.created_at,
       updated_at: p.updated_at,
       vehicle: { id: p.vehicle_id } as VehicleEntity,
-    };
+    });
   }
 
   async save(vehicleImage: VehicleImage): Promise<void> {
-    await this.vehicleImagesRepository.save(this.to_persistence(vehicleImage));
+    const entity = this.to_entity(vehicleImage);
+    await this.vehicleImagesRepository.save(entity);
   }
 
   async saveBulk(vehicleImages: VehicleImage[]): Promise<void> {
+    if (vehicleImages.length === 0) {
+      return;
+    }
     await this.vehicleImagesRepository.save(
-      vehicleImages.map((v) => this.to_persistence(v)),
+      vehicleImages.map((image) => this.to_entity(image)),
     );
   }
 

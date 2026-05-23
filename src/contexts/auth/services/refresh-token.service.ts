@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { MoreThan, Repository } from "typeorm";
 
@@ -40,7 +40,7 @@ export class RefreshTokenService {
       relations:["session"],
     });
     if (!refresh_token) {
-      throw new NotFoundException(authResponseConfig.messages.NOT_FOUND_TOKEN);
+      throw new UnauthorizedException(authResponseConfig.messages.NOT_FOUND_TOKEN);
     }
 
     await this.suspensionService.assert_session_allowed_by_id(refresh_token.session.user_id);

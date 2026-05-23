@@ -379,6 +379,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.dgt_label", "dgt_label")
       .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")
       .leftJoinAndSelect("vehicle.cuotas", "cuotas")
+      .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.profile", "profile");
 
@@ -428,6 +429,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")
       .leftJoinAndSelect("vehicle.cuotas", "cuotas")
       .leftJoinAndSelect("vehicle.traction", "traction")
+      .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.profile", "profile");
 
     applyFilters(qb, filter);

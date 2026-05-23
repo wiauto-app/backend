@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
   UpdateDateColumn,
 } from "typeorm";
 import { VehicleEntity } from "../../../infrastructure/persistence/vehicle.entity";
@@ -19,9 +20,8 @@ export class VehicleImagesEntity {
 
   @ManyToOne(() => VehicleEntity, (vehicle) => vehicle.images, { onDelete: "CASCADE" })
   @JoinColumn({ name: "vehicle_id" })
-  vehicle: VehicleEntity;
+  vehicle: Relation<VehicleEntity>;
 
-  /** Misma columna que la FK; solo lectura para mapeo a dominio / saves por id. */
   @Column({ type: "uuid" })
   vehicle_id: string;
 

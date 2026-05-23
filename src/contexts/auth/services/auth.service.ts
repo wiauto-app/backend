@@ -122,13 +122,12 @@ export class AuthService {
   async logout(request: Request) {
     const session = await this.sessionService.findOneByIpAddress(request.ip);
     if (!session) {
-      throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
+      return;
     }
     await this.sessionService.delete(session.id);
   }
 
   async refreshToken(refreshToken: string): Promise<SignInResult> {
-    console.log("refreshToken", refreshToken);
     const refresh_token = await this.refreshTokenService.findByTokenHash(refreshToken);
     const user = await this.userService.findOne(refresh_token.session.user_id);
     await this.refreshTokenService.revokeBySessionId(refresh_token.session.id);

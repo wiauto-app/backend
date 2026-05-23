@@ -3,6 +3,7 @@ import {
   PublisherType,
   TransmissionType,
 } from "../../../domain/entities/vehicle";
+import { ImageDto } from "./image.dto";
 
 export class CreateVehicleDto {
   vin_code?: string;
@@ -17,8 +18,8 @@ export class CreateVehicleDto {
   publisher_type: PublisherType;
   transmission_type?: TransmissionType;
   traction_id: string;
-  power: number;
-  displacement?: number;
+  power?: number;
+  displacement: number;
   autonomy?: number;
   battery_capacity?: number;
   time_to_charge?: number;
@@ -33,4 +34,5 @@ export class CreateVehicleDto {
   dgt_label_id?: string | null;
   warranty_type_id?: string | null;
   cuota_ids?: string[];
+  images?: ImageDto[];
 }

@@ -14,7 +14,6 @@ export class RemoveVehicleUseCase {
 
   async execute(removeVehicleDto: RemoveVehicleDto): Promise<void> {
     const existing = await this.vehicle_repository.findOne(removeVehicleDto.id);
-
     if (!existing) {
       throw new VehicleNotFoundException(removeVehicleDto.id);
     }
