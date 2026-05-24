@@ -9,8 +9,8 @@ import { InvalidVehicleCatalogIdException } from "../../domain/exceptions/invali
 import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
-import { VehicleListItem } from "../../domain/read-models/vehicle-list-item";
-import { AdminVehicleListItem } from "../../domain/read-models/vehicle-list-item";
+import { VehicleListItem, AdminVehicleListItem } from "../../domain/read-models/vehicle-list-item";
+import { AdminVehicleDetail } from "../../domain/read-models/admin-vehicle-detail";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { ColorEntity } from "../persistence/color.entity";
 import { DgtLabelEntity } from "../persistence/dgt-label.entity";
@@ -93,7 +93,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
       }
       : null,
     cuotas:
-       entity.cuotas.length > 0
+      entity.cuotas.length > 0
         ? entity.cuotas.map((c) => ({
           id: c.id,
           name: c.name,
@@ -109,6 +109,52 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   };
 }
 
+const pathname_to_compound_path = (pathname: string): string =>
+  pathname.trim().replace(/^\/+/, "");
+
+function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDetail {
+  const base = entity_to_primitives(entity);
+  const sorted_images = [...(entity.images ?? [])].sort(
+    (a, b) => a.created_at.getTime() - b.created_at.getTime(),
+  );
+
+  return {
+    id: base.id,
+    vin_code: base.vin_code ?? null,
+    vehicle_type_id: base.vehicle_type_id,
+    title: base.title,
+    description: base.description,
+    price: base.price,
+    mileage: base.mileage,
+    condition: base.condition,
+    lat: base.lat,
+    lng: base.lng,
+    version_id: base.version_id,
+    traction_id: base.traction_id,
+    transmission_type: base.transmission_type,
+    power: base.power,
+    displacement: base.displacement,
+    autonomy: base.autonomy,
+    battery_capacity: base.battery_capacity,
+    time_to_charge: base.time_to_charge,
+    license_plate: base.license_plate,
+    publisher_type: base.publisher_type,
+    phone_code: base.phone_code,
+    phone: base.phone,
+    email: base.email,
+    features_ids: base.features_ids,
+    services_ids: base.services_ids,
+    color_id: base.color_id,
+    dgt_label_id: base.dgt_label_id,
+    warranty_type_id: base.warranty_type_id,
+    cuota_ids: base.cuota_ids,
+    images: sorted_images.map((image, index) => ({
+      path: pathname_to_compound_path(image.url),
+      order: index,
+    })),
+  };
+}
+
 function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem {
   return {
     ...entity_to_list_item(entity),
@@ -117,8 +163,23 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     is_featured: entity.is_featured,
     expires_at: entity.expires_at,
     views: entity.views,
-    created_at: entity.created_at,
     updated_at: entity.updated_at,
+    transmission_type: entity.transmission_type,
+    power: entity.power,
+    displacement: entity.displacement,
+    license_plate: entity.license_plate,
+    autonomy: entity.autonomy,
+    battery_capacity: entity.battery_capacity,
+    time_to_charge: entity.time_to_charge,
+    phone_code: entity.phone_code,
+    phone: entity.phone,
+    email: entity.email,
+    version_id: entity.version_id,
+    traction: {
+      id: entity.traction.id,
+      name: entity.traction.name,
+      slug: entity.traction.slug,
+    },
   };
 }
 
@@ -450,5 +511,16 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const vehicles = rows.map((row) => entity_to_admin_list_item(row));
     
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
+  }
+
+  async adminFindOne(id: string): Promise<AdminVehicleDetail | null> {
+    const row = await this.vehicle_repository.findOne({
+      where: { id },
+      relations: vehicle_catalog_relations,
+    });
+    if (!row) {
+      return null;
+    }
+    return entity_to_admin_vehicle_detail(row);
   }
 }

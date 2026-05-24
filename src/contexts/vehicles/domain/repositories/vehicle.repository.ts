@@ -2,7 +2,8 @@ import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/pagi
 
 import { VehicleFilter } from "../filters/vehicle.filter";
 import { Vehicle } from "../entities/vehicle";
-import { VehicleListItem } from "../read-models/vehicle-list-item";
+import { VehicleListItem, AdminVehicleListItem } from "../read-models/vehicle-list-item";
+import { AdminVehicleDetail } from "../read-models/admin-vehicle-detail";
 import { AdminVehicleFilter } from "../filters/admin-vehicle.filter";
 
 export abstract class VehicleRepository {
@@ -15,5 +16,6 @@ export abstract class VehicleRepository {
   abstract update(vehicle: Vehicle): Promise<void>;
   abstract remove(id: string): Promise<void>;
 
-  abstract adminFindAll(filter: AdminVehicleFilter): Promise<PaginatedResult<VehicleListItem>>;
+  abstract adminFindAll(filter: AdminVehicleFilter): Promise<PaginatedResult<AdminVehicleListItem>>;
+  abstract adminFindOne(id: string): Promise<AdminVehicleDetail | null>;
 }

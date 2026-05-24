@@ -52,9 +52,11 @@ import { ValidateVehicleUseCase } from "./application/vehicle/validate-vehicle-u
 import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-vehicle/remove-vehicle.controller";
 import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-find-all-vehicles-use-case/admin-find-all-vehicles.use-case";
 import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
+import { AdminGetVehicleUseCase } from "./application/admin-vehicles/admin-get-vehicle-use-case/admin-get-vehicle.use-case";
+import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController],
+  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController],
   providers: [
     VehicleCreationGuard,
     ImageValidationPipe,
@@ -71,6 +73,7 @@ import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-
     FindFeatureUseCase,
     FindFeaturesUseCase,
     AdminFindAllVehiclesUseCase,
+    AdminGetVehicleUseCase,
     /* Repositories */
     TypeOrmVehicleRepository,
     TypeOrmFeatureRepository,
