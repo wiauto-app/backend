@@ -130,6 +130,13 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     lat: base.lat,
     lng: base.lng,
     version_id: base.version_id,
+    version_catalog: {
+      make_id: entity.version.make_id,
+      model_id: entity.version.model_id,
+      body_type_id: entity.version.body_type_id,
+      fuel_type_id: entity.version.fuel_type_id,
+      year_id: entity.version.year_id,
+    },
     traction_id: base.traction_id,
     transmission_type: base.transmission_type,
     power: base.power,
@@ -516,7 +523,10 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
   async adminFindOne(id: string): Promise<AdminVehicleDetail | null> {
     const row = await this.vehicle_repository.findOne({
       where: { id },
-      relations: vehicle_catalog_relations,
+      relations: {
+        ...vehicle_catalog_relations,
+        version: true,
+      },
     });
     if (!row) {
       return null;

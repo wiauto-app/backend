@@ -9,6 +9,15 @@ export interface AdminVehicleFormImage {
   order: number;
 }
 
+/** IDs del catálogo asociados a `version_id` (marca → versión). */
+export interface AdminVehicleVersionCatalog {
+  make_id: number;
+  model_id: number;
+  body_type_id: number;
+  fuel_type_id: number;
+  year_id: number;
+}
+
 /** Detalle admin para rellenar el formulario de creación/edición. */
 export interface AdminVehicleDetail {
   id: string;
@@ -22,6 +31,7 @@ export interface AdminVehicleDetail {
   lat: number;
   lng: number;
   version_id: number;
+  version_catalog: AdminVehicleVersionCatalog;
   traction_id: string;
   transmission_type: TransmissionType;
   power: number;
