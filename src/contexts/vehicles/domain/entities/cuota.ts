@@ -27,11 +27,11 @@ export class Cuota {
 
   update(payload: { name?: string; value?: number }): Cuota {
     const name =
-      payload.name !== undefined ? payload.name.trim() : this.primitive.name;
+      payload.name ?? this.primitive.name;
     const slug =
-      payload.name !== undefined ? slugify(name) : this.primitive.slug;
+      payload.name ?? slugify(name);
     const value =
-      payload.value !== undefined ? payload.value : this.primitive.value;
+      payload.value ?? this.primitive.value;
     return new Cuota({
       ...this.primitive,
       name,

@@ -37,6 +37,7 @@ export interface VehicleListItem {
   features: VehicleListItemCatalogRef[];
   services: VehicleListItemCatalogRef[];
   vehicle_type: VehicleListItemCatalogRef | null;
+  category: VehicleListItemCatalogRef | null;
   color: (VehicleListItemCatalogRef & { hex_code: string }) | null;
   dgt_label: (VehicleListItemCatalogRef & { code: string }) | null;
   warranty_type: VehicleListItemCatalogRef | null;

@@ -2,6 +2,7 @@ export const V1_ADMIN_VEHICLES = "v1/admin/vehicles";
 
 export const V1_VEHICLES = "v1/vehicles";
 export const V1_FEATURES = "v1/features";
+export const V1_CATEGORIES = "v1/categories";
 export const V1_VEHICLE_TYPES = "v1/vehicle-types";
 export const V1_COLORS = "v1/colors";
 export const V1_SERVICES = "v1/services";

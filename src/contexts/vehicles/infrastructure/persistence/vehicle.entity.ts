@@ -27,6 +27,7 @@ import { TractionEntity } from "./traction.entity";
 import { CuotaEntity } from "./cuota.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { ReviewEntity } from "./review.entity";
+import { CategoryEntity } from "./category.entity";
 
 @Entity({ name: "vehicles" })
 export class VehicleEntity {
@@ -117,6 +118,13 @@ export class VehicleEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ type: "uuid",nullable: true })
+  category_id?: string;
+
+  @ManyToOne(() => CategoryEntity, { nullable: true })
+  @JoinColumn({ name: "category_id" })
+  category: Relation<CategoryEntity | null>;
 
   // --- Catálogo: versión ---
   @Column()

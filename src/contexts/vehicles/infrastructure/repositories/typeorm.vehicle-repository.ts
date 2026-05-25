@@ -22,6 +22,7 @@ import { VehicleTypeEntity } from "../persistence/vehicle-type.entity";
 import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
 import { TractionEntity } from "../persistence/traction.entity";
 import { CuotaEntity } from "../persistence/cuota.entity";
+import { CategoryEntity } from "../persistence/category.entity";
 import { applyFilters } from "../validators/filters.applier";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
@@ -33,6 +34,7 @@ const vehicle_catalog_relations = {
   images: true,
   traction: true,
   vehicle_type: true,
+  category: true,
   color: true,
   dgt_label: true,
   warranty_type: true,
@@ -67,6 +69,13 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
         id: entity.vehicle_type.id,
         name: entity.vehicle_type.name,
         slug: entity.vehicle_type.slug,
+      }
+      : null,
+    category: entity.category
+      ? {
+        id: entity.category.id,
+        name: entity.category.name,
+        slug: entity.category.slug,
       }
       : null,
     color: entity.color
@@ -122,6 +131,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     id: base.id,
     vin_code: base.vin_code ?? null,
     vehicle_type_id: base.vehicle_type_id,
+    category_id: base.category_id,
     title: base.title,
     description: base.description,
     price: base.price,
@@ -223,6 +233,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     features_ids: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => feature.id) : [],
     services_ids: entity.services && entity.services.length > 0 ? (entity.services).map((service) => service.id) : [],
     vehicle_type_id: entity.vehicle_type?.id ?? null,
+    category_id: entity.category?.id ?? entity.category_id ?? null,
     color_id: entity.color?.id ?? null,
     dgt_label_id: entity.dgt_label?.id ?? null,
     warranty_type_id: entity.warranty_type?.id ?? null,
@@ -256,6 +267,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     private readonly traction_repository: Repository<TractionEntity>,
     @InjectRepository(CuotaEntity)
     private readonly cuota_repository: Repository<CuotaEntity>,
+    @InjectRepository(CategoryEntity)
+    private readonly category_repository: Repository<CategoryEntity>,
   ) {
     super();
   }
@@ -323,6 +336,11 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       p.vehicle_type_id,
       "vehicle_type_id",
     );
+    await this.assert_optional_fk(
+      this.category_repository,
+      p.category_id,
+      "category_id",
+    );
     await this.assert_optional_fk(this.color_repository, p.color_id, "color_id");
     await this.assert_optional_fk(
       this.dgt_label_repository,
@@ -374,6 +392,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       services: service_ids.map((id) => this.service_repository.create({ id })),
       vehicle_type: p.vehicle_type_id
         ? this.vehicle_type_repository.create({ id: p.vehicle_type_id })
+        : null,
+      category: p.category_id
+        ? this.category_repository.create({ id: p.category_id })
         : null,
       color: p.color_id ? this.color_repository.create({ id: p.color_id }) : null,
       dgt_label: p.dgt_label_id
@@ -443,6 +464,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.features", "features")
       .leftJoinAndSelect("vehicle.services", "services")
       .leftJoinAndSelect("vehicle.vehicle_type", "vehicle_type")
+      .leftJoinAndSelect("vehicle.category", "category")
       .leftJoinAndSelect("vehicle.color", "color")
       .leftJoinAndSelect("vehicle.dgt_label", "dgt_label")
       .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")
@@ -492,6 +514,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.features", "features")
       .leftJoinAndSelect("vehicle.services", "services")
       .leftJoinAndSelect("vehicle.vehicle_type", "vehicle_type")
+      .leftJoinAndSelect("vehicle.category", "category")
       .leftJoinAndSelect("vehicle.color", "color")
       .leftJoinAndSelect("vehicle.dgt_label", "dgt_label")
       .leftJoinAndSelect("vehicle.warranty_type", "warranty_type")

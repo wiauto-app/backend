@@ -28,6 +28,10 @@
       "value": ""
     },
     {
+      "key": "category_id",
+      "value": ""
+    },
+    {
       "key": "vehicle_type_id",
       "value": ""
     },
@@ -2770,6 +2774,184 @@
                     "method": "DELETE",
                     "header": [],
                     "url": "{{base_url}}/v1/features/{{feature_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [],
+                  "body": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "categorias",
+          "item": [
+            {
+              "name": "crear categoría",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"SUV\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/suv.png\"\n}"
+                },
+                "url": "{{base_url}}/v1/categories",
+                "description": "Respuesta incluye `slug` generado a partir de `name`. `image_url` es opcional."
+              },
+              "response": [
+                {
+                  "name": "201 Created (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/categories",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"SUV\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/suv.png\"\n}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"name\": \"SUV\",\n  \"slug\": \"suv\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/suv.png\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\",\n  \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "obtener todas las categorías",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/categories"
+              },
+              "response": [
+                {
+                  "name": "200 OK (ejemplo)",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/categories"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "[\n  {\n    \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"name\": \"SUV\",\n    \"slug\": \"suv\",\n    \"image_url\": \"https://cdn.ejemplo.com/categorias/suv.png\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n]"
+                }
+              ]
+            },
+            {
+              "name": "obtener categoría por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/categories/{{category_id}}"
+              },
+              "response": [
+                {
+                  "name": "200 OK (ejemplo)",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/categories/{{category_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"name\": \"SUV\",\n  \"slug\": \"suv\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/suv.png\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\",\n  \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "actualizar categoría",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{category_id}}\",\n  \"name\": \"Todoterreno\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/todoterreno.png\"\n}"
+                },
+                "url": "{{base_url}}/v1/categories",
+                "description": "El id va en el body. `name` e `image_url` son opcionales; el `slug` solo se recalcula si cambias el nombre. Envía `\"image_url\": null` para quitar la imagen."
+              },
+              "response": [
+                {
+                  "name": "200 OK (ejemplo)",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/categories",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"id\": \"{{category_id}}\",\n  \"name\": \"Todoterreno\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/todoterreno.png\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"name\": \"Todoterreno\",\n  \"slug\": \"todoterreno\",\n  \"image_url\": \"https://cdn.ejemplo.com/categorias/todoterreno.png\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\",\n  \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "eliminar categoría",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/v1/categories/{{category_id}}"
+              },
+              "response": [
+                {
+                  "name": "200 OK — sin cuerpo (ejemplo)",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/v1/categories/{{category_id}}"
                   },
                   "status": "OK",
                   "code": 200,

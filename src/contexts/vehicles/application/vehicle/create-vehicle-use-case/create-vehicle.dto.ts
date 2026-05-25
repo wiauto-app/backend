@@ -28,6 +28,7 @@ export class CreateVehicleDto {
   phone: string;
   email: string;
   vehicle_type_id: string;
+  category_id?: string | null;
   features_ids?: string[];
   services_ids?: string[];
   color_id?: string | null;

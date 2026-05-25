@@ -34,6 +34,11 @@ export class CreateVehicleHttpDto {
   @IsUUID("4")
   vehicle_type_id: string;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @IsUUID("4")
+  category_id?: string | null;
+
   @IsNumber()
   @IsNotEmpty()
   @Min(0)

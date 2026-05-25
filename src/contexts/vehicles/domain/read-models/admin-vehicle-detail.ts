@@ -23,6 +23,7 @@ export interface AdminVehicleDetail {
   id: string;
   vin_code?: string | null;
   vehicle_type_id: string | null;
+  category_id: string | null;
   title: string;
   description: string;
   price: number;

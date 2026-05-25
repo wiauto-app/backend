@@ -14,6 +14,7 @@ import { DgtLabelEntity } from "./infrastructure/persistence/dgt-label.entity";
 import { WarrantyTypeEntity } from "./infrastructure/persistence/warranty-type.entity";
 import { TractionEntity } from "./infrastructure/persistence/traction.entity";
 import { CuotaEntity } from "./infrastructure/persistence/cuota.entity";
+import { CategoryEntity } from "./infrastructure/persistence/category.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeOrmVehicleRepository } from "./infrastructure/repositories/typeorm.vehicle-repository";
 import { FindVehicleController } from "./infrastructure/http-api/v1/find-vehicle/find-vehicle.controller";
@@ -44,6 +45,7 @@ import { DgtLabelsModule } from "./modules/dgt-labels.module";
 import { WarrantyTypesModule } from "./modules/warranty-types.module";
 import { TractionsModule } from "./modules/tractions.module";
 import { CuotasModule } from "./modules/cuotas.module";
+import { CategoriesModule } from "./modules/categories.module";
 import { CatalogModule } from "./catalog/catalog.module";
 import { UpdateVehicleUseCase } from "./application/vehicle/update-vehicle-use-case/update-vehicle.use-case";
 import { FindAllVehiclesUseCase } from "./application/vehicle/find-all-vehicles-use-case/find-all-vehicles.use-case";
@@ -98,6 +100,7 @@ import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/ad
       WarrantyTypeEntity,
       TractionEntity,
       CuotaEntity,
+      CategoryEntity,
       Roles,
     ]),
     VehicleImagesModule,
@@ -109,6 +112,7 @@ import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/ad
     WarrantyTypesModule,
     TractionsModule,
     CuotasModule,
+    CategoriesModule,
     CatalogModule,
     AuthModule,
     PermissionModule,

@@ -61,6 +61,7 @@ export interface PrimitiveVehicle {
   features_ids: string[];
   services_ids: string[];
   vehicle_type_id: string | null;
+  category_id: string | null;
   color_id: string | null;
   dgt_label_id: string | null;
   warranty_type_id: string | null;
@@ -95,6 +96,7 @@ export class Vehicle {
     features_ids: string[];
     services_ids?: string[];
     vehicle_type_id?: string | null;
+    category_id?: string | null;
     color_id?: string | null;
     dgt_label_id?: string | null;
     warranty_type_id?: string | null;
@@ -116,6 +118,7 @@ export class Vehicle {
       id: uuidv4(),
       services_ids: createVehicle.services_ids ?? [],
       vehicle_type_id: createVehicle.vehicle_type_id ?? null,
+      category_id: createVehicle.category_id ?? null,
       color_id: createVehicle.color_id ?? null,
       dgt_label_id: createVehicle.dgt_label_id ?? null,
       warranty_type_id: createVehicle.warranty_type_id ?? null,
@@ -161,6 +164,7 @@ export class Vehicle {
       features_ids: this.primitiveVehicle.features_ids,
       services_ids: this.primitiveVehicle.services_ids,
       vehicle_type_id: this.primitiveVehicle.vehicle_type_id,
+      category_id: this.primitiveVehicle.category_id,
       color_id: this.primitiveVehicle.color_id,
       dgt_label_id: this.primitiveVehicle.dgt_label_id,
       warranty_type_id: this.primitiveVehicle.warranty_type_id,

@@ -61,6 +61,7 @@ export class CreateVehicleUseCase {
       features_ids: create_vehicle_dto.features_ids ?? [],
       services_ids: create_vehicle_dto.services_ids ?? [],
       vehicle_type_id: create_vehicle_dto.vehicle_type_id,
+      category_id: create_vehicle_dto.category_id ?? null,
       color_id: create_vehicle_dto.color_id ?? null,
       dgt_label_id: create_vehicle_dto.dgt_label_id ?? null,
       warranty_type_id: create_vehicle_dto.warranty_type_id ?? null,
