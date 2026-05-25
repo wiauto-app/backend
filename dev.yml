@@ -1,21 +1,21 @@
 services:
-  my-service-production:
-    container_name: my-service-production
-    build:
-      target: production
-      context: .
-      args:
-        - PORT=${PORT:-4000}
-    ports:
-      - "${PORT:-4000}:${PORT:-4000}"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: "512m"
-        reservations:
-          cpus: "0.25"
-          memory: "256m"
+  # my-service-production:
+  #   container_name: my-service-production
+  #   build:
+  #     target: production
+  #     context: .
+  #     args:
+  #       - PORT=${PORT:-4000}
+  #   ports:
+  #     - "${PORT:-4000}:${PORT:-4000}"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "1"
+  #         memory: "512m"
+  #       reservations:
+  #         cpus: "0.25"
+  #         memory: "256m"
 
   postgres:
     image: postgis/postgis:18-3.6
@@ -60,37 +60,37 @@ services:
   #     - postgres
   #     - redis
 
-  # wiauto-dev:
-  #   container_name: wiauto-dev
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   env_file: .env
-  #   build:
-  #     dockerfile: Dockerfile.dev
-  #     context: .
-  #     args:
-  #       - PORT=${PORT:-3000}
-  #   ports:
-  #     - "${PORT:-3000}:${PORT:-3000}"
-  #     - "9229:9229"
-  #   volumes:
-  #     - ./src:/app/src
-  #     - ./package.json:/app/package.json
-  #     - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
-  #   networks:
-  #     - wiauto-network
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: "1"
-  #         memory: "768m"
-  #       reservations:
-  #         cpus: "0.25"
-  #         memory: "256m"
+  wiauto-dev:
+    container_name: wiauto-dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file: .env
+    build:
+      dockerfile: Dockerfile.dev
+      context: .
+      args:
+        - PORT=${PORT:-3000}
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+      - "9229:9229"
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+    networks:
+      - wiauto-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "768m"
+        reservations:
+          cpus: "0.25"
+          memory: "256m"
 
   # k6:
   #   image: ghcr.io/grafana/xk6-dashboard:0.7.2
