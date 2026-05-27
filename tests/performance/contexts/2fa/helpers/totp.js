@@ -8,16 +8,16 @@ function base32Decode(input) {
   let bits = 0;
   let value = 0;
 
-  for (let i = 0; i < cleaned.length; i++) {
-    const idx = alphabet.indexOf(cleaned[i]);
-    if (idx < 0) {
-      throw new Error(`Carácter inválido en secreto base32: ${cleaned[i]}`);
+  for (const element of cleaned) {
+    const idx = alphabet.indexOf(element);
+    if (idx === -1) {
+      throw new Error(`Carácter inválido en secreto base32: ${element}`);
     }
     value = (value << 5) | idx;
     bits += 5;
     if (bits >= 8) {
       bits -= 8;
-      bytes.push((value >> bits) & 0xff);
+      bytes.push((value >> bits) & 0xFF);
     }
   }
 
@@ -29,7 +29,7 @@ function counterBuffer(counter) {
   const buf = new Uint8Array(8);
   let c = counter;
   for (let i = 7; i >= 0; i--) {
-    buf[i] = c & 0xff;
+    buf[i] = c & 0xFF;
     c = Math.floor(c / 256);
   }
   return buf;
@@ -45,15 +45,15 @@ export function generateTotp(secretBase32, step = 30, digits = 6, nowMs = Date.n
 
   const hmac = [];
   for (let i = 0; i < hex.length; i += 2) {
-    hmac.push(parseInt(hex.substr(i, 2), 16));
+    hmac.push(Number.parseInt(hex.substr(i, 2), 16));
   }
 
-  const offset = hmac[hmac.length - 1] & 0x0f;
+  const offset = hmac.at(-1) & 0x0F;
   const bin =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff);
+    ((hmac[offset] & 0x7F) << 24) |
+    ((hmac[offset + 1] & 0xFF) << 16) |
+    ((hmac[offset + 2] & 0xFF) << 8) |
+    (hmac[offset + 3] & 0xFF);
 
   const mod = Math.pow(10, digits);
   return (bin % mod).toString().padStart(digits, "0");

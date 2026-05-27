@@ -29,7 +29,7 @@ export class CatalogYearsUseCase {
       throw new CatalogYearNotFoundException(id);
     }
     const prev = existing.toPrimitives();
-    const next_year = dto.year ?? prev.year!;
+    const next_year = dto.year ?? prev.year;
     const saved = await this.repository.save(existing.update({ year: next_year }));
     return { year: saved.toPrimitives() };
   }

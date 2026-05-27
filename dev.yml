@@ -1,21 +1,4 @@
 services:
-  # my-service-production:
-  #   container_name: my-service-production
-  #   build:
-  #     target: production
-  #     context: .
-  #     args:
-  #       - PORT=${PORT:-4000}
-  #   ports:
-  #     - "${PORT:-4000}:${PORT:-4000}"
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: "1"
-  #         memory: "512m"
-  #       reservations:
-  #         cpus: "0.25"
-  #         memory: "256m"
 
   postgres:
     image: postgis/postgis:18-3.6
@@ -44,22 +27,7 @@ services:
       - 6379:6379
     volumes:
       - redis_data:/data
-
-  # opensearch:
-  #   image: opensearchproject/opensearch:2.13.0
-  #   ports:
-  #     - 9200:9200
-  #   volumes:
-  #     - opensearch_data:/opensearch/data
-  #   environment:
-  #     - discovery.type=single-node
-  #     - DISABLE_SECURITY_PLUGIN=true
-  #     - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-  #   command: ["opensearch"]
-  #   depends_on:
-  #     - postgres
-  #     - redis
-
+      
   wiauto-dev:
     container_name: wiauto-dev
     restart: unless-stopped

@@ -36,9 +36,9 @@ export class CatalogVersion {
     >,
   ): CatalogVersion {
     const name =
-      payload.name !== undefined ? payload.name.trim() : this.primitive.name;
+      payload.name === undefined ? this.primitive.name : payload.name.trim();
     const next_slug =
-      payload.name !== undefined ? slugify(name) : this.primitive.slug;
+      payload.name === undefined ? this.primitive.slug : slugify(name);
     return new CatalogVersion({
       ...this.primitive,
       ...payload,

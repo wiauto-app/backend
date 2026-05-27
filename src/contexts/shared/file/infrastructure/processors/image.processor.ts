@@ -11,7 +11,7 @@ import { UPLOAD_IMAGE_QUEUE } from "../media.constants";
 
 function queuedPayloadsToMulterFiles(job: UploadJob["files"]): Express.Multer.File[] {
   return job.map((f) => {
-    const buffer = Buffer.from(f.contentBase64 as string, "base64");
+    const buffer = Buffer.from(f.contentBase64, "base64");
     return {
       fieldname: "files",
       originalname: f.originalname,

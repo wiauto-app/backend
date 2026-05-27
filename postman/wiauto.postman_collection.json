@@ -115,6 +115,16 @@
       "key": "catalog_version_id",
       "value": "",
       "description": "PK interna de version (`v1/catalog/versions/:id`). Referencia en `version_id` del vehículo."
+    },
+    {
+      "key": "chat_id",
+      "value": "",
+      "description": "UUID del chat (`GET /v1/chats/:id`)."
+    },
+    {
+      "key": "chat_message_id",
+      "value": "",
+      "description": "UUID del mensaje (`GET /v1/chat-messages/:id`)."
     }
   ],
   "item": [
@@ -4289,14 +4299,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/makes?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "makes"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "makes"],
                       "query": [
                         {
                           "key": "page",
@@ -4402,14 +4406,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/models?page=1&limit=10&make_id={{catalog_make_id}}",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "models"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "models"],
                       "query": [
                         {
                           "key": "page",
@@ -4520,14 +4518,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/body-types?page=1&limit=10&model_id={{catalog_model_id}}",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "body-types"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "body-types"],
                       "query": [
                         {
                           "key": "page",
@@ -4638,14 +4630,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/fuel-types?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "fuel-types"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "fuel-types"],
                       "query": [
                         {
                           "key": "page",
@@ -4751,14 +4737,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/years?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "years"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "years"],
                       "query": [
                         {
                           "key": "page",
@@ -4876,14 +4856,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/versions?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "versions"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "versions"],
                       "query": [
                         {
                           "key": "page",
@@ -4979,6 +4953,188 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "item": [
+        {
+          "name": "crear chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/chats",
+            "description": "Crea un chat (JWT). El backend añade el usuario autenticado a `participants` si no está.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participants\": [\"{{user_id}}\"],\n  \"chat_type\": \"individual\",\n  \"vehicle_id\": \"{{vehicle_id}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "listar mis chats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/chats?page=1&limit=10&order_direction=ASC",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chats"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "order_direction", "value": "ASC" }
+              ]
+            },
+            "description": "Lista chats donde el usuario autenticado es participante (JWT)."
+          },
+          "response": []
+        },
+        {
+          "name": "obtener chat por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/chats/{{chat_id}}",
+            "description": "Obtiene un chat por ID (JWT). Solo participantes."
+          },
+          "response": []
+        },
+        {
+          "name": "eliminar chat por id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/chats/{{chat_id}}",
+            "description": "Elimina un chat por ID (JWT). Solo participantes."
+          },
+          "response": []
+        },
+        {
+          "name": "listar mensajes por chat",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/chats/{{chat_id}}/messages?page=1&limit=20&order_direction=DESC",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chats", "{{chat_id}}", "messages"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "order_direction", "value": "DESC" }
+              ]
+            },
+            "description": "Lista mensajes de un chat (JWT). Solo participantes. Excluye mensajes borrados (soft delete)."
+          },
+          "response": []
+        },
+        {
+          "name": "crear mensaje en chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/chats/{{chat_id}}/messages",
+            "description": "Crea un mensaje en el chat (JWT). Emite evento Socket.IO `message_created` al room `chat:{{chat_id}}`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hola, ¿sigue disponible?\",\n  \"type\": \"text\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "obtener mensaje por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/chat-messages/{{chat_message_id}}",
+            "description": "Obtiene un mensaje por ID (JWT). Solo participantes del chat."
+          },
+          "response": []
+        },
+        {
+          "name": "actualizar mensaje por id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/chat-messages/{{chat_message_id}}",
+            "description": "Actualiza un mensaje (JWT). Solo el `sender_id`. Emite `message_updated`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Mensaje actualizado\",\n  \"status\": \"sent\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "eliminar mensaje por id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/chat-messages/{{chat_message_id}}",
+            "description": "Soft delete de un mensaje (JWT). Solo el `sender_id`. Emite `message_deleted`."
+          },
+          "response": []
         }
       ]
     },

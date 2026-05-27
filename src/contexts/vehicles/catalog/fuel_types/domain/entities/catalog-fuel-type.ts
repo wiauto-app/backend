@@ -30,13 +30,13 @@ export class CatalogFuelType {
     payload: Partial<Pick<PrimitiveCatalogFuelType, "fuel_id" | "name" | "can_charge">>,
   ): CatalogFuelType {
     const name =
-      payload.name !== undefined ? payload.name.trim() : this.primitive.name;
+      payload.name === undefined ? this.primitive.name : payload.name.trim();
     const next_slug =
-      payload.name !== undefined ? slugify(name) : this.primitive.slug;
+      payload.name === undefined ? this.primitive.slug : slugify(name);
     const can_charge =
-      payload.can_charge !== undefined
-        ? payload.can_charge
-        : this.primitive.can_charge;
+      payload.can_charge === undefined
+        ? this.primitive.can_charge
+        : payload.can_charge;
     return new CatalogFuelType({
       ...this.primitive,
       ...payload,

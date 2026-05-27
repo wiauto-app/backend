@@ -1,15 +1,15 @@
 /** Construye el texto TS para `available-permission.ts` a partir de las `key` de BD. */
 
-export type permission_row_for_codegen = {
+export interface permission_row_for_codegen {
   key: string;
-};
+}
 
 const permission_db_key_to_identifier = (db_key: string): string => {
   const normalized = db_key
     .trim()
     .split(/[.\s\-/]+/)
     .filter(Boolean)
-    .map((segment) => segment.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())
+    .map((segment) => segment.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase())
     .join("_");
   const base = normalized || "PERMISSION";
   return /^[0-9]/.test(base) ? `_${base}` : base;
@@ -24,12 +24,12 @@ export const build_available_permission_file_content = (
   const pairs: { identifier: string; db_key: string }[] = [];
 
   for (const row of sorted) {
-    const db_key = row.key?.trim();
+    const db_key = row.key.trim();
     if (!db_key) continue;
     if (seen_db_keys.has(db_key)) continue;
     seen_db_keys.add(db_key);
 
-    let base = permission_db_key_to_identifier(db_key);
+    const base = permission_db_key_to_identifier(db_key);
     let candidate = base;
     let suffix = 1;
     while (used_identifiers.has(candidate)) {

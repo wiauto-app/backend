@@ -19,7 +19,7 @@ function normalizePath(raw) {
     .replace(/^https?:\/\/[^/]+/i, "")
     .trim();
   const q = s.indexOf("?");
-  if (q >= 0) s = s.slice(0, q);
+  if (q !== -1) s = s.slice(0, q);
   s = s.replace(/\/+$/, "") || "/";
   return s.startsWith("/") ? s.slice(1) : s;
 }
@@ -112,8 +112,8 @@ function makeExample(
 
 const vehicle_primitive = {
   id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  price: 25000,
-  mileage: 45000,
+  price: 25_000,
+  mileage: 45_000,
   lat: -12.0464,
   lng: -77.0428,
   condition: "used",
@@ -374,8 +374,8 @@ function resolveResponses(method, pathKey, req) {
         body: {
           vehicle: {
             ...vehicle_primitive,
-            price: 26000,
-            mileage: 46000,
+            price: 26_000,
+            mileage: 46_000,
             title: "Título actualizado mínimo cinco chars",
           },
         },
@@ -937,19 +937,55 @@ function resolveResponses(method, pathKey, req) {
         ) ||
         /^\d+$/.test(seg)
       ) {
-        const prev = out[out.length - 1] ?? "";
-        if (prev === "vehicles") out.push(":vehicle_id");
-        else if (prev === "features") out.push(":feature_id");
-        else if (prev === "vehicle-types") out.push(":vehicle_type_id");
-        else if (prev === "services") out.push(":service_id");
-        else if (prev === "dgt-labels") out.push(":dgt_label_id");
-        else if (prev === "warranty-types") out.push(":warranty_type_id");
-        else if (prev === "cuotas") out.push(":cuota_id");
-        else if (prev === "colors") out.push(":color_id");
-        else if (prev === "tractions") out.push(":traction_id");
-        else if (prev === "upload") out.push(":vehicle_id");
-        else if (prev === "bulk") out.push(":vehicle_id");
-        else out.push(":id");
+        const prev = out.at(-1) ?? "";
+        switch (prev) {
+        case "vehicles": {
+        out.push(":vehicle_id");
+        break;
+        }
+        case "features": {
+        out.push(":feature_id");
+        break;
+        }
+        case "vehicle-types": {
+        out.push(":vehicle_type_id");
+        break;
+        }
+        case "services": {
+        out.push(":service_id");
+        break;
+        }
+        case "dgt-labels": {
+        out.push(":dgt_label_id");
+        break;
+        }
+        case "warranty-types": {
+        out.push(":warranty_type_id");
+        break;
+        }
+        case "cuotas": {
+        out.push(":cuota_id");
+        break;
+        }
+        case "colors": {
+        out.push(":color_id");
+        break;
+        }
+        case "tractions": {
+        out.push(":traction_id");
+        break;
+        }
+        case "upload": {
+        out.push(":vehicle_id");
+        break;
+        }
+        case "bulk": {
+        out.push(":vehicle_id");
+        break;
+        }
+        default: { out.push(":id");
+        }
+        }
       } else out.push(seg);
     }
     return out.join("/");

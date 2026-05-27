@@ -21,6 +21,7 @@ import { FileModule } from "../contexts/shared/file/file.module";
 import { RolesModule } from "../contexts/roles/roles.module";
 import { PermissionModule } from "../contexts/users/permissions/permission.module";
 import { DealershipModule } from "../contexts/dealership/dealership.module";
+import { ChatModule } from "../contexts/chat/modules/chat.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { DealershipModule } from "../contexts/dealership/dealership.module";
     RolesModule,
     PermissionModule,
     DealershipModule,
+    ChatModule,
     // ThrottlerModule.forRoot({
     //   throttlers: [
     //     {

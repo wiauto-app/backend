@@ -27,7 +27,7 @@ export class VehicleImagesVehicleIdCascadeFk1778000000000 implements MigrationIn
       return;
     }
 
-    for (const fk of [...table.foreignKeys]) {
+    for (const fk of table.foreignKeys) {
       const is_vehicle_fk = fk.referencedTableName === parent_table;
       const is_vehicle_fk_col =
         fk.columnNames.includes("vehicle_id") || fk.columnNames.includes("vehicleId");
