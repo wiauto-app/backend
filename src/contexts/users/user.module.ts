@@ -32,4 +32,4 @@ import { RolesPermissionsEntity } from "./roles-permissions/entities/roles-permi
   ],
   exports: [UserService, UserMailService, SuspensionService],
 })
-export class UserModule {}
+export class UserModule { }

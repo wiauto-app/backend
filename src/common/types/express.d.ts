@@ -1,4 +1,5 @@
 import { User as AppUser } from "@/src/contexts/users/entities/user.entity"
+import type { SessionPayload } from "@/src/contexts/auth/types/auth.types"
 import "express"
 import { Multer } from "multer";
 
@@ -14,6 +15,8 @@ declare global {
       files?: Multer.File[];
       refresh_token?: string;
       auth_session_id?: string;
+      auth_scope?: SessionPayload["scope"];
+      auth_session_payload?: SessionPayload;
       uploaded_files?: string[];
       uploaded_file: string;
       /** Rellena `VehicleCreationGuard`: anuncios activos del perfil. */

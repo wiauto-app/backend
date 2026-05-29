@@ -11,6 +11,7 @@ import { User } from "../../users/entities/user.entity";
 import { RefreshTokenService } from "../services/refresh-token.service";
 import { SessionService } from "../services/session.service";
 import { authResponseConfig } from "../response.config";
+import { isTwoFactorChallengeAllowedPath } from "../constants/two-factor-challenge.constants";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
@@ -51,7 +52,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     if (refresh_token.session_id !== payload.session_id) {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
+
+    const scope = payload.scope ?? "session";
+
     req.auth_session_id = payload.session_id;
+    req.auth_scope = scope;
+    req.auth_session_payload = { ...payload, scope };
+
+    if (
+      scope === "2fa_challenge" &&
+      !isTwoFactorChallengeAllowedPath(req.path)
+    ) {
+      throw new UnauthorizedException(
+        authResponseConfig.messages.TWO_FA_REQUIRED,
+      );
+    }
+
     const user = await this.userService.findOne(payload.id);
     return user;
   }

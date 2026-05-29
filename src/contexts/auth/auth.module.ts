@@ -15,6 +15,7 @@ import { GoogleStrategy } from "./strategies/google.strategy";
 import { JwtGuard } from "./guards/auth.guard";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { MeService } from "./services/me.service";
+import { AccountSettingsService } from "./services/account-settings.service";
 import { MeController } from "./api/me.controller";
 import { PasswordRecoveryController } from "./api/password-recovery.controller";
 import { PasswordRecoveryService } from "./services/password-recovery.service";
@@ -31,8 +32,11 @@ import { SessionEntity } from "./entities/session.entity";
 import { RefreshTokenService } from "./services/refresh-token.service";
 import { SessionService } from "./services/session.service";
 import { AdminLoginService } from "./services/admin-login.service";
+import { AdminTwoFactorLoginService } from "./services/admin-two-factor-login.service";
+import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scope.guard";
 import { FindOneProfileUseCase } from "../profiles/application/profile/find-one-profile-use-case/find-one-profile.use-case";
 import { RolesModule } from "../roles/roles.module";
+import { TwoFactorAuthModule } from "../2fa/2fa.module";
 
 @Module({
   controllers: [
@@ -54,12 +58,15 @@ import { RolesModule } from "../roles/roles.module";
     // AppleAuthGuard,
 
     MeService,
+    AccountSettingsService,
     PasswordRecoveryService,
     EmailVerificationService,
     EmailVerificationQueue,
     SessionService,
     RefreshTokenService,
     AdminLoginService,
+    AdminTwoFactorLoginService,
+    TwoFactorChallengeScopeGuard,
     FindOneProfileUseCase,
    
   ],
@@ -74,6 +81,7 @@ import { RolesModule } from "../roles/roles.module";
     forwardRef(() => UserModule),
     ProfileModule,
     RolesModule,
+    forwardRef(() => TwoFactorAuthModule),
 
     TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),

@@ -68,6 +68,11 @@
       "value": ""
     },
     {
+      "key": "profile_id",
+      "value": "",
+      "description": "UUID de perfil/usuario (mismo id que users.id); opcional en POST /v1/vehicles/:vehicle_id/views y POST /v1/vehicles/:vehicle_id/shares."
+    },
+    {
       "key": "permission_id",
       "value": ""
     },
@@ -170,6 +175,157 @@
               "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"email\": \"usuario@ejemplo.com\",\n  \"provider\": \"local\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"last_sign_in\": \"2026-04-29T14:30:00.000Z\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\"\n}"
             }
           ]
+        },
+        {
+          "name": "Login admin (panel)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/login",
+            "description": "Establece cookies `access_token` y `refresh_token`. Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda en scope `2fa_challenge`."
+          },
+          "response": []
+        },
+        {
+          "name": "Estado challenge 2FA admin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/admin/two-factor/challenge",
+            "description": "Requiere cookie `access_token` con scope `2fa_challenge`. Devuelve `{ email, type: \"2fa_required\" }`."
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar 2FA admin (TOTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/verify-2fa",
+            "description": "Cookie challenge + código TOTP de 6 dígitos. Actualiza `access_token` a scope `session`."
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar 2FA admin (código de respaldo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"ABCD-1234\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/verify-backup-code",
+            "description": "Cookie challenge + código de respaldo `XXXX-XXXX`. Consume el código y emite sesión completa."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener configuración de cuenta",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/me/account",
+            "description": "Datos de cuenta y perfil del usuario autenticado (sin secretos ni backup codes en claro). `JwtGuard`."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar email",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo@ejemplo.com\"\n}"
+            },
+            "url": "{{base_url}}/auth/me/email",
+            "description": "Actualiza el email del usuario autenticado. Marca `is_email_verified` en false y encola verificación."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar contraseña",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"passwordActual123\",\n  \"password\": \"nuevaPassword123\"\n}"
+            },
+            "url": "{{base_url}}/auth/me/password",
+            "description": "Solo usuarios `provider: local`. Requiere contraseña actual."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"avatar_url\": \"profile-images/avatars/ejemplo.webp\"\n}"
+            },
+            "url": "{{base_url}}/auth/me/profile",
+            "description": "Actualiza nombre, apellido y avatar del perfil del usuario autenticado."
+          },
+          "response": []
         },
         {
           "name": "Iniciar sesión con google",
@@ -276,6 +432,142 @@
               "body": "{\n  \"type\": \"2fa_required\",\n  \"challenge_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
             }
           ]
+        },
+        {
+          "name": "Admin — iniciar sesión (cookies)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/login",
+            "description": "Panel admin: setea cookies `access_token` y `refresh_token`. Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda con scope `2fa_challenge` (solo rutas de verificación)."
+          },
+          "response": [
+            {
+              "name": "200 OK — sesión directa (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
+                },
+                "url": "{{base_url}}/auth/admin/login"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Set-Cookie",
+                  "value": "access_token=...; HttpOnly"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"message\": \"Login successful\",\n    \"data\": {\n      \"type\": \"session\",\n      \"email\": \"admin@ejemplo.com\"\n    }\n  }\n}"
+            },
+            {
+              "name": "200 OK — requiere 2FA (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
+                },
+                "url": "{{base_url}}/auth/admin/login"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"message\": \"Login successful\",\n    \"data\": {\n      \"type\": \"2fa_required\",\n      \"email\": \"admin@ejemplo.com\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin — estado challenge 2FA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/admin/two-factor/challenge",
+            "description": "Requiere cookie `access_token` con scope `2fa_challenge`. Devuelve email y `type: 2fa_required` para reanudar el paso 2 en el login."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin — verificar TOTP (login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/verify-2fa",
+            "description": "Completa el login admin con código TOTP de 6 dígitos. Actualiza cookie `access_token` a scope `session`."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin — verificar código de respaldo (login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"ABCD-1234\"\n}"
+            },
+            "url": "{{base_url}}/auth/admin/verify-backup-code",
+            "description": "Completa el login admin con código de respaldo `XXXX-XXXX`. Consume el código y actualiza cookie `access_token` a scope `session`."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin — cerrar sesión",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/admin/logout",
+            "description": "JWT (challenge o sesión completa). Limpia cookies de sesión."
+          },
+          "response": []
         },
         {
           "name": "iniciar sesión google en mobile",
@@ -2380,6 +2672,102 @@
                     }
                   ],
                   "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 26000,\n    \"mileage\": 46000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Título actualizado mínimo cinco chars\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "registrar visita vehículo",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"{{profile_id}}\",\n  \"metadata\": {}\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/views",
+                "description": "Público (sin JWT). Registra una visita al vehículo e incrementa `vehicles.views` en +1. Body opcional: `user_id` (UUID de perfil/usuario) y `metadata` (objeto JSON)."
+              },
+              "response": [
+                {
+                  "name": "201 Created — visita registrada (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"user_id\": \"{{profile_id}}\",\n  \"metadata\": {}\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/views",
+                    "description": "Público (sin JWT). Registra una visita al vehículo e incrementa `vehicles.views` en +1. Body opcional: `user_id` (UUID de perfil/usuario) y `metadata` (objeto JSON)."
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"view\": {\n    \"id\": \"11111111-2222-3333-4444-555555555555\",\n    \"vehicle_id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"profile_id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"ip_hash\": \"a1b2c3d4e5f6...\",\n    \"user_agent\": \"Mozilla/5.0\",\n    \"referer\": null,\n    \"metadata\": {},\n    \"created_at\": \"2026-05-28T12:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "registrar compartido vehículo",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"{{profile_id}}\",\n  \"platform\": \"whatsapp\",\n  \"source\": \"vehicle_detail\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/shares",
+                "description": "Público (sin JWT). Registra un compartido del vehículo. Body: `platform` y `source` obligatorios; `user_id` (UUID de perfil/usuario) opcional."
+              },
+              "response": [
+                {
+                  "name": "201 Created — compartido registrado (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"user_id\": \"{{profile_id}}\",\n  \"platform\": \"whatsapp\",\n  \"source\": \"vehicle_detail\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/shares",
+                    "description": "Público (sin JWT). Registra un compartido del vehículo. Body: `platform` y `source` obligatorios; `user_id` (UUID de perfil/usuario) opcional."
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"share\": {\n    \"id\": \"22222222-3333-4444-5555-666666666666\",\n    \"vehicle_id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"profile_id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"platform\": \"whatsapp\",\n    \"source\": \"vehicle_detail\",\n    \"created_at\": \"2026-05-28T12:00:00.000Z\"\n  }\n}"
                 }
               ]
             },

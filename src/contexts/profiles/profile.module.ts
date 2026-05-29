@@ -25,6 +25,8 @@ import { AdminProfileRepository } from "./domain/repositories/admin-profile.repo
 import { AdminCreateProfileController } from "./infrastructure/http-api/v1-admin/create-profile/admin-create-profile.controller";
 import { AdminUpdateProfileUseCase } from "./application/profile/admin-update-profile-use-case/admin-update-profile.use-case";
 import { AdminUpdateProfileController } from "./infrastructure/http-api/v1-admin/admin-update-profile/admin-update-profile.controller";
+import { UpdateMyProfileUseCase } from "./application/profile/update-my-profile-use-case/update-my-profile.use-case";
+import { UpdateMyProfileController } from "./infrastructure/http-api/auth-me/update-my-profile/update-my-profile.controller";
 
 @Module({
   controllers: [
@@ -35,6 +37,7 @@ import { AdminUpdateProfileController } from "./infrastructure/http-api/v1-admin
     RemoveProfileController,
     AdminCreateProfileController,
     AdminUpdateProfileController,
+    UpdateMyProfileController,
   ],
   providers: [
     ProfileService,
@@ -47,7 +50,8 @@ import { AdminUpdateProfileController } from "./infrastructure/http-api/v1-admin
     RemoveProfileUseCase,
     FindByEmailUseCase,
     AdminUpdateProfileUseCase,
-    
+    UpdateMyProfileUseCase,
+
     TypeOrmProfileRepository,
     TypeOrmProfileUserRepository,
     TypeOrmAdminProfileRepository,

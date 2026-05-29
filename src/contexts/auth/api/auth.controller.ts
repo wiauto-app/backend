@@ -4,19 +4,22 @@ import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { LoginDto } from "../dto/login.dto";
 import { GoogleMobileDto } from "../dto/google-mobile.dto";
-// import { AppleMobileDto } from "../dto/apple-mobile.dto";
 import { GoogleAuthGuard } from "../guards/google-auth.guard";
-// import { AppleAuthGuard } from "../guards/apple-auth.guard";
 import { GoogleTokenService } from "../services/google-token.service";
-// import { AppleTokenService } from "../services/apple-token.service";
 import { OAuthProfile } from "../strategies/google.strategy";
 import { envs } from "@/src/common/envs";
 import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 import { AdminLoginService } from "../services/admin-login.service";
+import { AdminTwoFactorLoginService } from "../services/admin-two-factor-login.service";
 import { ACCESS_TOKEN_NAME, authCookieConfig, REFRESH_TOKEN_NAME } from "../cookie.config";
 import { GetSessionId } from "../decorators/GetSessionId.decorator";
+import { TwoFactorChallengeScopeGuard } from "../guards/two-factor-challenge-scope.guard";
+import { GetSessionPayload } from "../decorators/GetSessionPayload.decorator";
+import { TwofaDto } from "../../2fa/dto/2fa.dto";
+import { VerifyBackupCodeLoginHttpDto } from "../dto/verify-backup-code-login.http-dto";
+import type { SessionPayload } from "../types/auth.types";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -26,7 +29,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly googleTokenService: GoogleTokenService,
     private readonly adminLoginService: AdminLoginService,
-    // private readonly appleTokenService: AppleTokenService,
+    private readonly admin_two_factor_login_service: AdminTwoFactorLoginService,
   ) { }
 
 
@@ -52,6 +55,61 @@ export class AuthController {
 
     return {
       message: "Login successful",
+      data: {
+        type: result.type === "2fa_challenge" ? "2fa_required" : "session",
+        email: adminLoginDto.email,
+      },
+    };
+  }
+
+  @Get("admin/two-factor/challenge")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  getTwoFactorChallenge(@GetSessionPayload() session_payload: SessionPayload) {
+    return this.admin_two_factor_login_service.getChallengeStatus(
+      session_payload.email,
+    );
+  }
+
+  @Post("admin/verify-2fa")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  async verifyTwoFactorLogin(
+    @GetSessionPayload() session_payload: SessionPayload,
+    @Body() twofa_dto: TwofaDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.admin_two_factor_login_service.verifyTotpChallenge(
+      session_payload.id,
+      twofa_dto,
+      session_payload,
+    );
+
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+
+    return {
+      message: "Verificación completada correctamente",
+      data: { type: result.type },
+    };
+  }
+
+  @Post("admin/verify-backup-code")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  async verifyBackupCodeLogin(
+    @GetSessionPayload() session_payload: SessionPayload,
+    @Body() verify_backup_code_login_http_dto: VerifyBackupCodeLoginHttpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result =
+      await this.admin_two_factor_login_service.verifyBackupCodeChallenge(
+        session_payload.id,
+        verify_backup_code_login_http_dto.code.toUpperCase(),
+        session_payload,
+      );
+
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+
+    return {
+      message: "Código de respaldo validado correctamente",
+      data: { type: result.type },
     };
   }
 

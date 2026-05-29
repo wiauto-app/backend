@@ -88,7 +88,7 @@ export class AuthService {
     return {
       session_id: session.id,
       refresh_token: raw_token,
-      refresh_token_hash: entity?.token_hash ?? "",
+      refresh_token_hash: entity.token_hash,
     };
   }
 
@@ -122,17 +122,41 @@ export class AuthService {
     user,
     session_id,
     refresh_token_hash,
-  }: { user: User; session_id: string; refresh_token_hash: string }) {
+    scope,
+  }: {
+    user: User;
+    session_id: string;
+    refresh_token_hash: string;
+    scope?: SessionPayload["scope"];
+  }) {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,
       session_id: session_id,
       refreshToken_hash: refresh_token_hash,
-      scope: user.two_factor_enabled ? "2fa_challenge" : "session"
+      scope:
+        scope ?? (user.two_factor_enabled ? "2fa_challenge" : "session"),
     };
-    return this.jwtService.sign(payload,
-      { expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any },
-    );
+    return this.jwtService.sign(payload, {
+      expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any,
+    });
+  }
+
+  createVerifiedSessionToken({
+    user,
+    session_id,
+    refresh_token_hash,
+  }: {
+    user: User;
+    session_id: string;
+    refresh_token_hash: string;
+  }) {
+    return this.createToken({
+      user,
+      session_id,
+      refresh_token_hash,
+      scope: "session",
+    });
   }
 
   async logout(session_id: string): Promise<void> {
@@ -185,11 +209,17 @@ export class AuthService {
       },
     );
 
+    const scope = user.two_factor_enabled ? "2fa_challenge" : "session";
     const token = this.createToken({
       user,
       session_id: refresh_token.session_id,
       refresh_token_hash,
+      scope,
     });
-    return { type: "session", token, refresh_token: new_raw_token };
+    return {
+      type: scope,
+      token,
+      refresh_token: new_raw_token,
+    };
   }
 }

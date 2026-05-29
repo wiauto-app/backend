@@ -228,13 +228,31 @@ export class UserService {
     }
   }
 
+  async getBackupCodesRemaining(id: string): Promise<number> {
+    const user = await this.userRepository
+      .createQueryBuilder("user")
+      .addSelect("user.two_factor_backup_codes")
+      .where("user.id = :id", { id })
+      .getOne();
+
+    return user?.two_factor_backup_codes?.length ?? 0;
+  }
+
   async updateEmail(updateEmailDto: UpdateEmailDto, id: string): Promise<ApiResponse<null>> {
     const user = await this.userRepository.findOne({
-      where: { id }
-    })
+      where: { id },
+    });
 
     if (!user) {
-      throw new NotFoundException("No se ha encontrado el usuario")
+      throw new NotFoundException("No se ha encontrado el usuario");
+    }
+
+    const existing_email = await this.userRepository.findOne({
+      where: { email: updateEmailDto.email },
+    });
+
+    if (existing_email && existing_email.id !== id) {
+      throw new ConflictException("Ya existe un usuario registrado con ese email");
     }
 
     await this.userRepository.update(id, {
@@ -242,12 +260,10 @@ export class UserService {
       is_email_verified: false,
     });
 
-
-
     return {
       message: "Email actualizado correctamente",
-      data: null
-    }
+      data: null,
+    };
   }
 
   async resetPassword(id: string, newPassword: string): Promise<void> {
@@ -268,29 +284,46 @@ export class UserService {
   }
 
   async updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): Promise<ApiResponse<null>> {
-    const user = await this.userRepository.findOne({
-      where: { id }
-    })
+    const user = await this.userRepository
+      .createQueryBuilder("user")
+      .addSelect("user.password")
+      .where("user.id = :id", { id })
+      .getOne();
 
     if (!user) {
-      throw new NotFoundException("No se ha encontrado el usuario")
+      throw new NotFoundException("No se ha encontrado el usuario");
     }
 
-    const isValidPassword = await this.passwordService.comparePassword(updatePasswordDto.current_password, user.password as unknown as string)
-    if (!isValidPassword) {
-      throw new UnauthorizedException("La contraseña ingresada no es correcta")
+    if (user.provider !== "local") {
+      throw new UnauthorizedException(
+        "Este usuario se autentica con un proveedor externo y no tiene contraseña que cambiar",
+      );
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(updatePasswordDto.password)
+    if (!user.password) {
+      throw new UnauthorizedException("La contraseña ingresada no es correcta");
+    }
+
+    const is_valid_password = await this.passwordService.comparePassword(
+      updatePasswordDto.current_password,
+      user.password,
+    );
+    if (!is_valid_password) {
+      throw new UnauthorizedException("La contraseña ingresada no es correcta");
+    }
+
+    const hashed_password = await this.passwordService.hashPassword(
+      updatePasswordDto.password,
+    );
 
     await this.userRepository.update(id, {
-      password: hashedPassword
-    })
+      password: hashed_password,
+    });
 
     return {
-      message: "Email actualizado correctamente",
-      data: null
-    }
+      message: "Contraseña actualizada correctamente",
+      data: null,
+    };
   }
 
 }

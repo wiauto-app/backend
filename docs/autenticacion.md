@@ -113,8 +113,17 @@ El panel admin usa cookies HTTP (`access_token` y `refresh_token`); el valor de 
 }
 ```
 
-En **B**, hoy el backend no expone un endpoint documentado del estilo “código del autenticador + `challenge_token` → devuelve `session`”. Coordiná con backend si tenés que completar login solo con TOTP.  
-**Alternativa que sí existe:** si el usuario tiene **códigos de respaldo**, podés llamar:
+En **B**, completá el login con los endpoints del panel admin (cookies HTTP):
+
+| Paso                       | Método | Ruta                               | Body                      |
+| -------------------------- | ------ | ---------------------------------- | ------------------------- |
+| Reanudar paso 2 (opcional) | GET    | `/auth/admin/two-factor/challenge` | — (cookie challenge)      |
+| TOTP                       | POST   | `/auth/admin/verify-2fa`           | `{ "code": "123456" }`    |
+| Código de respaldo         | POST   | `/auth/admin/verify-backup-code`   | `{ "code": "XXXX-XXXX" }` |
+
+Tras verificar, la cookie `access_token` pasa a scope `session` y podés usar `GET /auth/me`.
+
+**Alternativa (app móvil / sin cookies):** si el usuario tiene **códigos de respaldo**, podés llamar:
 
 **`POST /2fa/validate-backup-code`** (sin Bearer)
 
@@ -199,7 +208,42 @@ El usuario abre el link del mail (lleva un `token`), tu pantalla manda:
 
 ---
 
-## 8. 2FA (cuando el usuario ya está logueado)
+## 8. Login del panel admin (cookies + 2FA)
+
+**`POST /auth/admin/login`**
+
+```json
+{
+  "email": "admin@ejemplo.com",
+  "password": "tu_contraseña"
+}
+```
+
+Respuesta (además de cookies `access_token` y `refresh_token`):
+
+```json
+{
+  "message": "Login successful",
+  "data": {
+    "type": "session",
+    "email": "admin@ejemplo.com"
+  }
+}
+```
+
+Si el usuario tiene 2FA activo, `data.type` es `"2fa_required"`. El JWT en cookie queda con scope `2fa_challenge` y **no** puede acceder a rutas protegidas (`GET /auth/me` devuelve 401) hasta completar:
+
+1. **`GET /auth/admin/two-factor/challenge`** — reanudar el paso 2 si el usuario recarga `/signIn`.
+2. **`POST /auth/admin/verify-2fa`** — `{ "code": "123456" }` (TOTP).
+3. **`POST /auth/admin/verify-backup-code`** — `{ "code": "XXXX-XXXX" }` (código de respaldo, se consume).
+
+Rutas permitidas con token `2fa_challenge`: verify-2fa, verify-backup-code, challenge, admin/logout.
+
+**`POST /auth/admin/logout`** — cierra sesión y limpia cookies (válido en challenge o sesión completa).
+
+---
+
+## 9. 2FA (cuando el usuario ya está logueado)
 
 Llevás **`Authorization: Bearer`** + JWT **de sesión** (el del login exitoso sin 2FA, o el mismo patrón que use el backend para rutas autenticadas).
 
@@ -212,6 +256,57 @@ Otras rutas (`enable`, `disable`, `delete`, regenerar respaldos) siguen igual: B
 
 ---
 
+## 9. Login admin (dashboard) con 2FA
+
+El panel admin usa **cookies** (`access_token`, `refresh_token`), no Bearer en el body del login.
+
+**Paso 1 — credenciales**
+
+**`POST /auth/admin/login`**
+
+```json
+{
+  "email": "admin@ejemplo.com",
+  "password": "tu_contraseña"
+}
+```
+
+Respuesta (dentro de `data` por el interceptor):
+
+```json
+{
+  "message": "Login successful",
+  "type": "session",
+  "email": "admin@ejemplo.com"
+}
+```
+
+Si el usuario tiene 2FA activo, `type` será **`2fa_required`**. Las cookies quedan con JWT en scope **`2fa_challenge`**; las rutas protegidas del panel devuelven **401** hasta completar el segundo factor.
+
+**Paso 2a — TOTP (autenticador)**
+
+**`POST /auth/admin/verify-2fa`** (cookie challenge)
+
+```json
+{ "code": "123456" }
+```
+
+Actualiza la cookie `access_token` con scope **`session`**.
+
+**Paso 2b — código de respaldo**
+
+**`POST /auth/admin/verify-backup-code`** (cookie challenge)
+
+```json
+{ "code": "ABCD-1234" }
+```
+
+**Reanudar pantalla de 2FA**
+
+**`GET /auth/admin/two-factor/challenge`** (cookie challenge) → `{ "email", "type": "2fa_required" }`.
+
+---
+
 ## Cheatsheet (una tabla)
 
 | Acción                           | Método | Ruta                                                   |
@@ -220,12 +315,21 @@ Otras rutas (`enable`, `disable`, `delete`, regenerar respaldos) siguen igual: B
 | Confirmar correo (link del mail) | GET    | `/auth/email-verification/confirm?token=&redirectUrl=` |
 | Reenviar correo                  | POST   | `/auth/email-verification/resend`                      |
 | Login email                      | POST   | `/auth/login`                                          |
+| Login admin (cookies)            | POST   | `/auth/admin/login`                                    |
+| Verificar 2FA admin (TOTP)       | POST   | `/auth/admin/verify-2fa`                               |
+| Verificar 2FA admin (backup)     | POST   | `/auth/admin/verify-backup-code`                       |
+| Estado challenge 2FA admin       | GET    | `/auth/admin/two-factor/challenge`                     |
 | Yo mismo                         | GET    | `/auth/me`                                             |
 | Google web                       | GET    | `/auth/google` → vuelta con `?token=`                  |
 | Google app                       | POST   | `/auth/google/mobile`                                  |
 | Pedir reset contraseña           | POST   | `/auth/password-recovery/request`                      |
 | Nueva contraseña                 | POST   | `/auth/password-recovery/change`                       |
 | Código de respaldo → sesión      | POST   | `/2fa/validate-backup-code`                            |
+| Login panel admin                | POST   | `/auth/admin/login`                                    |
+| Completar 2FA admin (TOTP)       | POST   | `/auth/admin/verify-2fa`                               |
+| Completar 2FA admin (respaldo)   | POST   | `/auth/admin/verify-backup-code`                       |
+| Estado challenge admin           | GET    | `/auth/admin/two-factor/challenge`                     |
+| Logout panel admin               | POST   | `/auth/admin/logout`                                   |
 
 ---
 

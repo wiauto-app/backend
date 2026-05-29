@@ -18,5 +18,7 @@ export const authResponseConfig = {
     NOT_FOUND_TOKEN: "Token no encontrado",
     SESSION_EXPIRED: "Sesión expirada",
     ROLE_NOT_FOUND: "Rol no encontrado",
+    TWO_FA_REQUIRED: "Debes completar la verificación en dos pasos",
+    TWO_FA_CHALLENGE_INVALID: "La sesión de verificación en dos pasos no es válida",
   }
 }

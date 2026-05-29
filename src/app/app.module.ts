@@ -11,6 +11,8 @@ import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
 import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
 import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
+import { SharesModule } from "../contexts/vehicles/modules/shares.module";
+import { ViewsModule } from "../contexts/vehicles/modules/views.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
@@ -34,6 +36,8 @@ import { ChatModule } from "../contexts/chat/modules/chat.module";
     ProfileModule,
     VehiclesModule,
     ReviewsModule,
+    SharesModule,
+    ViewsModule,
     MailModule,
     TwoFactorAuthModule,
     FileModule,

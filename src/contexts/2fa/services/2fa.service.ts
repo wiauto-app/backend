@@ -150,37 +150,47 @@ export class TwoFactorAuthService {
   async validateBackupCode(dto: ValidateBackupCodeDto, req: Request): Promise<{ message: string, token: string }> {
     const user = await this.userService.getUserByEmail({ email: dto.email, selectPrivateFields: true })
 
-    if (!user.two_factor_backup_codes || user.two_factor_backup_codes.length === 0) {
-      throw new NotFoundException("No se encontraron códigos de respaldo")
-    }
-
-    const validationCodes = await Promise.all(user.two_factor_backup_codes.map(async (code) => ({
-      code,
-      isValid: await bcrypt.compare(dto.code, code)
-    })))
-
-
-    const isValid = validationCodes.some(({ isValid }) => isValid)
-    if (!isValid) {
-      throw new BadRequestException("Código de respaldo incorrecto")
-    }
-
-    const validCode = validationCodes.find(({ isValid }) => isValid)
-
-    const newValidationCodes = user.two_factor_backup_codes.filter((code) => code !== validCode?.code)
-    await this.userService.update(user.id, {
-      two_factor_backup_codes: newValidationCodes
-    })
+    await this.consumeBackupCode(user.id, dto.code)
 
     user.password = null
 
     const { session_id, refresh_token_hash } = await this.authService.createSession(user, req);
-    const token = this.authService.createToken({ user, session_id, refresh_token_hash });
+    const token = this.authService.createVerifiedSessionToken({ user, session_id, refresh_token_hash });
 
     return {
       message: "Código de respaldo validado correctamente",
       token: token
     }
+  }
+
+  async consumeBackupCode(user_id: string, code: string): Promise<void> {
+    const user = await this.userService.findOne(user_id, true);
+    const normalized_code = code.trim().toUpperCase();
+
+    if (!user.two_factor_backup_codes || user.two_factor_backup_codes.length === 0) {
+      throw new NotFoundException("No se encontraron códigos de respaldo");
+    }
+
+    const validation_codes = await Promise.all(
+      user.two_factor_backup_codes.map(async (stored_code) => ({
+        code: stored_code,
+        is_valid: await bcrypt.compare(normalized_code, stored_code),
+      })),
+    );
+
+    const is_valid = validation_codes.some(({ is_valid }) => is_valid);
+    if (!is_valid) {
+      throw new BadRequestException("Código de respaldo incorrecto");
+    }
+
+    const valid_code = validation_codes.find(({ is_valid }) => is_valid);
+    const remaining_codes = user.two_factor_backup_codes.filter(
+      (stored_code) => stored_code !== valid_code?.code,
+    );
+
+    await this.userService.update(user_id, {
+      two_factor_backup_codes: remaining_codes,
+    });
   }
 
   async regenerateBackupCodes(id: string): Promise<{ message: string, backup_codes: string[] }> {

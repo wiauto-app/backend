@@ -11,8 +11,11 @@ export class MeResponseDto {
   created_at: string;
   type: "session" | "2fa_challenge";
 
-  static fromUser(user: User): MeResponseDto {
-    const { profile } = user
+  static fromUser(
+    user: User,
+    scope?: "session" | "2fa_challenge",
+  ): MeResponseDto {
+    const { profile } = user;
     const dto = new MeResponseDto();
     dto.id = user.id;
     dto.email = user.email;
@@ -20,9 +23,9 @@ export class MeResponseDto {
     dto.last_sign_in = user.last_sign_in;
     dto.created_at = user.created_at;
     dto.name = profile.name;
-    dto.last_name = profile.last_name
-    dto.avatar_url = profile.avatar_url
-    dto.type = user.two_factor_enabled ? "2fa_challenge" : "session";
+    dto.last_name = profile.last_name;
+    dto.avatar_url = profile.avatar_url;
+    dto.type = scope === "2fa_challenge" ? "2fa_challenge" : "session";
     return dto;
   }
 }
