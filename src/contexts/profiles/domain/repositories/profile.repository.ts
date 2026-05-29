@@ -4,6 +4,7 @@ import { Profile } from "../entities/profile";
 
 export abstract class ProfileRepository {
   abstract findByEmail(email: string): Promise<Profile | null>;
+  abstract findByIds(ids: string[]): Promise<Profile[]>;
   abstract save(profile: Profile): Promise<void>;
   abstract exists(id: string): Promise<boolean>;
   abstract findAll(filter: ProfileFilter): Promise<PaginatedResult<Profile>>;

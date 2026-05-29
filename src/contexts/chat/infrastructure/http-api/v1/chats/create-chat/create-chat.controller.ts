@@ -10,12 +10,12 @@ import { CreateChatHttpDto } from "./create-chat.http-dto";
 @Controller(V1_CHATS)
 @UseGuards(JwtGuard)
 export class CreateChatController {
-  constructor(private readonly create_chat_use_case: CreateChatUseCase) {}
+  constructor(private readonly createChatUseCase: CreateChatUseCase) {}
 
   @Post()
   run(@GetUserId() user_id: string, @Body() body: CreateChatHttpDto) {
     const participants = [...new Set([...body.participants, user_id])];
-    return this.create_chat_use_case.execute({
+    return this.createChatUseCase.execute({
       participants,
       chat_type: body.chat_type,
       vehicle_id: body.vehicle_id,

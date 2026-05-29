@@ -5,6 +5,7 @@ export interface PrimitiveMake {
   name: string;
   slug: string;
   created_at?: Date;
+  vehicle_count?: number;
 }
 
 export class Make {

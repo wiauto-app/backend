@@ -16,6 +16,7 @@ import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 import { AdminLoginService } from "../services/admin-login.service";
 import { ACCESS_TOKEN_NAME, authCookieConfig, REFRESH_TOKEN_NAME } from "../cookie.config";
+import { GetSessionId } from "../decorators/GetSessionId.decorator";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -46,7 +47,7 @@ export class AuthController {
       request: req,
     });
 
-    res.cookie(REFRESH_TOKEN_NAME, result.refreshToken_hash, authCookieConfig.refresh_token);
+    res.cookie(REFRESH_TOKEN_NAME, result.refresh_token, authCookieConfig.refresh_token);
     res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
 
     return {
@@ -55,8 +56,12 @@ export class AuthController {
   }
 
   @Post("admin/logout")
-  async adminLogout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    await this.adminLoginService.logout(req);
+  @UseGuards(JwtGuard)
+  async adminLogout(
+    @Res({ passthrough: true }) res: Response,
+    @GetSessionId() session_id: string,
+  ) {
+    await this.adminLoginService.logout(session_id);
     res.clearCookie(REFRESH_TOKEN_NAME);
     res.clearCookie(ACCESS_TOKEN_NAME);
     return {
@@ -117,14 +122,14 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   async adminRefreshToken(@GetRefreshToken() refreshToken: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.refreshToken(refreshToken);
-    res.cookie(REFRESH_TOKEN_NAME, result.refreshToken_hash, authCookieConfig.refresh_token);
+    res.cookie(REFRESH_TOKEN_NAME, result.refresh_token, authCookieConfig.refresh_token);
     res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
     return result;
   }
 
   @Get("logout")
   @UseGuards(JwtGuard)
-  logout(@Req() req: Request) {
-    return this.authService.logout(req);
+  logout(@GetSessionId() session_id: string) {
+    return this.authService.logout(session_id);
   }
 }

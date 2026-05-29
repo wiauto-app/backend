@@ -43,7 +43,7 @@ services:
     networks:
       - wiauto-network
     ports:
-      - 6379:6379
+      - 6381:6379
     volumes:
       - redis_data:/data
 

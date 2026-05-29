@@ -1,7 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { Profile, PrimitiveProfile, PrimitiveProfileRole } from "../../domain/entities/profile";
 import { ProfileRepository } from "../../domain/repositories/profile.repository";
@@ -101,6 +101,10 @@ export class TypeOrmProfileRepository implements ProfileRepository {
       qb.andWhere("p.name ILIKE :name", { name: `%${filter.name}%` });
     }
 
+    if (filter.email) {
+      qb.andWhere("user.email ILIKE :email", { email: `%${filter.email}%` });
+    }
+
     const [rows, total] = await qb.getManyAndCount();
     return new PaginatedResult(rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row))), total, filter.page, filter.limit);
   }
@@ -138,6 +142,19 @@ export class TypeOrmProfileRepository implements ProfileRepository {
     }
 
     return Profile.fromPrimitives(entity_to_primitives(entity));
+  }
+
+  async findByIds(ids: string[]): Promise<Profile[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const rows = await this.profileRepository.find({
+      where: { id: In(ids) },
+      relations: { role: true, user: true },
+    });
+
+    return rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row)));
   }
 
   async update(id: string, profile: Profile): Promise<void> {

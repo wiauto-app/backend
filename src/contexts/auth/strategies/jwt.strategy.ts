@@ -9,12 +9,16 @@ import { UserService } from "../../users/services/user.service";
 import { SuspensionService } from "../../users/services/suspension.service";
 import { User } from "../../users/entities/user.entity";
 import { RefreshTokenService } from "../services/refresh-token.service";
+import { SessionService } from "../services/session.service";
+import { authResponseConfig } from "../response.config";
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
   constructor(
     private readonly userService: UserService,
     private readonly suspensionService: SuspensionService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly sessionService: SessionService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -25,26 +29,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
 
           if (authorization?.startsWith("Bearer")) {
             return authorization.slice(7);
-          } 
+          }
           if (cookie_access_token) {
             return cookie_access_token;
           }
-          
+
           return null;
         },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
       secretOrKey: envs.JWT_SECRET,
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: SessionPayload): Promise<User> {
+  async validate(req: Request, payload: SessionPayload): Promise<User> {
     await this.suspensionService.assert_session_allowed_by_id(payload.id);
+    await this.sessionService.findActiveById(payload.session_id);
     const refresh_token = await this.refreshTokenService.findByTokenHash(payload.refreshToken_hash);
-    if (refresh_token.expires_at < new Date()) {
-      throw new UnauthorizedException("Session expired");
+    if (refresh_token.session_id !== payload.session_id) {
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
+    req.auth_session_id = payload.session_id;
     const user = await this.userService.findOne(payload.id);
     return user;
   }

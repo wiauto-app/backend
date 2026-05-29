@@ -10,4 +10,8 @@ export class FindAllProfilesHttpDto extends PaginationHttpDto {
   @IsOptional()
   @IsUUID("4")
   role_id?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
 }

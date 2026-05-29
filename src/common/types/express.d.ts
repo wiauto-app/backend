@@ -13,6 +13,7 @@ declare global {
       file?: Multer.File;
       files?: Multer.File[];
       refresh_token?: string;
+      auth_session_id?: string;
       uploaded_files?: string[];
       uploaded_file: string;
       /** Rellena `VehicleCreationGuard`: anuncios activos del perfil. */

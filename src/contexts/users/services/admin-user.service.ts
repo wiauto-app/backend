@@ -46,9 +46,10 @@ export class AdminUserService {
     const existingUser = await this.userRepository.findOne({
       where: { id: updateUserDto.id }
     })
-    if (updateUserDto.email && updateUserDto.email === existingUser?.email) {
-      throw new ConflictException("Ya existe un usuario registrado con ese email")
+    if (!existingUser) {
+      throw new NotFoundException("Usuario no encontrado")
     }
+
 
     const user = await this.userRepository.preload({
       ...updateUserDto,

@@ -1,11 +1,4 @@
-import { IsEnum, IsOptional, IsString } from "class-validator";
-
-import {
-  CHAT_MESSAGE_STATUS,
-  CHAT_MESSAGE_TYPE,
-  ChatMessageStatus,
-  ChatMessageType,
-} from "@/src/contexts/chat/domain/entities/chatMessage";
+import { IsOptional, IsString } from "class-validator";
 
 export class UpdateChatMessageHttpDto {
   @IsOptional()
@@ -13,11 +6,5 @@ export class UpdateChatMessageHttpDto {
   content?: string;
 
   @IsOptional()
-  @IsEnum(CHAT_MESSAGE_TYPE)
-  type?: ChatMessageType;
-
-  @IsOptional()
-  @IsEnum(CHAT_MESSAGE_STATUS)
-  status?: ChatMessageStatus;
+  metadata?: Record<string, unknown>;
 }
-

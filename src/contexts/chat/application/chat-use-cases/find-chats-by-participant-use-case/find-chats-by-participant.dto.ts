@@ -1,9 +1,6 @@
-export class FindChatsByParticipantDto {
-  participant_id: string;
-  page: number;
-  limit: number;
-  order_direction?: "ASC" | "DESC";
-  query?: string;
-  order_by?: string;
-  search?: string;
+import { PaginationDto } from "@/src/contexts/shared/application/dtos/pagination.dto";
+
+export class FindChatsByParticipantDto extends PaginationDto {
+  participants_ids: string[];
+  requesting_user_id: string;
 }

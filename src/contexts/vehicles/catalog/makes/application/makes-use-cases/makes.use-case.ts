@@ -5,8 +5,10 @@ import { Make, PrimitiveMake } from "../../domain/entities/make";
 import { MakesRepository } from "../../domain/repositories/makes.repository";
 import { MakeNotFoundException } from "../../domain/exceptions/make-not-found.exception";
 import { CreateMakeDto } from "./dto/create-make.dto";
+import { FindSearchMakesDto } from "./dto/find-search-makes-dto";
 import { UpdateMakeDto } from "./dto/update-make.dto";
 import { PaginationDto } from "@/src/contexts/shared/application/dtos/pagination.dto";
+import { SearchMakesFilter } from "../../domain/filters/searchMakes.filter";
 
 @Injectable()
 export class MakesUseCase {
@@ -49,5 +51,23 @@ export class MakesUseCase {
 
   async remove(id: number): Promise<void> {
     await this.makes_repository.remove(id);
+  }
+
+  async findSearchMakes(dto: FindSearchMakesDto): Promise<{ makes: PrimitiveMake[] }> {
+    const filter = new SearchMakesFilter({
+      search: dto.search,
+      province_id: dto.province_id,
+      since_price: dto.since_price,
+      until_price: dto.until_price,
+      page: dto.page,
+      limit: dto.limit,
+      order_direction: dto.order_direction,
+      query: dto.query,
+      order_by: dto.order_by,
+    });
+    const makes = await this.makes_repository.findSearchMakes(filter);
+    return {
+      makes: makes.map((make) => make.toPrimitives()),
+    };
   }
 }

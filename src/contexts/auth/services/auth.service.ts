@@ -1,6 +1,8 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { InjectDataSource } from "@nestjs/typeorm";
 import { Request } from "express";
+import { DataSource } from "typeorm";
 
 import { SuspensionService } from "../../users/services/suspension.service";
 import { UserService } from "../../users/services/user.service";
@@ -14,6 +16,16 @@ import { SessionService } from "./session.service";
 import { envs, MONTH } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
 import { RolesService } from "../../roles/services/roles.service";
+import { RefreshTokenEntity } from "../entities/refresh-token.entity";
+import { SessionEntity } from "../entities/session.entity";
+import { generateToken } from "../../shared/token_management/generate_token";
+import { hashToken } from "../../shared/token_management/hash_token";
+
+export interface CreateSessionResult {
+  session_id: string;
+  refresh_token: string;
+  refresh_token_hash: string;
+};
 
 @Injectable()
 export class AuthService {
@@ -26,6 +38,8 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly roleService: RolesService,
+    @InjectDataSource()
+    private readonly data_source: DataSource,
   ) { }
 
   async signIn({
@@ -52,31 +66,29 @@ export class AuthService {
         authResponseConfig.messages.EMAIL_NOT_VERIFIED,
       );
     }
-    const { session_id, refreshToken_hash } = await this.createSession(user, request);
+
     await this.suspensionService.assert_session_allowed_by_id(user.id);
+
+    const { session_id, refresh_token, refresh_token_hash } = await this.createSession(user, request);
 
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" });
+    const token = this.createToken({ user, session_id, refresh_token_hash });
 
-    return { type, token, refreshToken_hash }
-
+    return { type, token, refresh_token };
   }
 
-  async createSession(user: User, request: Request): Promise<{ session_id: string, refreshToken_hash: string }> {
-    const currentSession = await this.sessionService.findOneByIpAddress(request.ip);
-    if (currentSession) {
-      await this.sessionService.delete(currentSession.id);
-    }
+  async createSession(user: User, request: Request): Promise<CreateSessionResult> {
     const session = await this.sessionService.create(user, request);
-    const refreshToken = await this.refreshTokenService.createForSession(user, session);
+    const { entity, raw_token } = await this.refreshTokenService.createForSession(user, session);
 
     return {
       session_id: session.id,
-      refreshToken_hash: refreshToken.token_hash,
+      refresh_token: raw_token,
+      refresh_token_hash: entity?.token_hash ?? "",
     };
   }
 
@@ -98,20 +110,24 @@ export class AuthService {
       last_sign_in: new Date(),
     });
 
-    const { session_id, refreshToken_hash } = await this.createSession(user, request);
-    return { type: "session", token: this.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" }), refreshToken_hash: refreshToken_hash };
+    const { session_id, refresh_token, refresh_token_hash } = await this.createSession(user, request);
+    return {
+      type: "session",
+      token: this.createToken({ user, session_id, refresh_token_hash }),
+      refresh_token,
+    };
   }
 
   createToken({
     user,
     session_id,
-    refreshToken_hash,
-  }: { user: User, session_id: string, refreshToken_hash: string, expiresIn?: string }) {
+    refresh_token_hash,
+  }: { user: User; session_id: string; refresh_token_hash: string }) {
     const payload: SessionPayload = {
       id: user.id,
       email: user.email,
       session_id: session_id,
-      refreshToken_hash: refreshToken_hash,
+      refreshToken_hash: refresh_token_hash,
       scope: user.two_factor_enabled ? "2fa_challenge" : "session"
     };
     return this.jwtService.sign(payload,
@@ -119,24 +135,61 @@ export class AuthService {
     );
   }
 
-  async logout(request: Request) {
-    const session = await this.sessionService.findOneByIpAddress(request.ip);
-    if (!session) {
+  async logout(session_id: string): Promise<void> {
+    if (!session_id) {
       return;
     }
-    await this.sessionService.delete(session.id);
+    await this.sessionService.delete(session_id);
   }
 
-  async refreshToken(refreshToken: string): Promise<SignInResult> {
-    const refresh_token = await this.refreshTokenService.findByTokenHash(refreshToken);
+  async refreshToken(raw_token: string): Promise<SignInResult> {
+    const token_hash = hashToken(raw_token);
+    const revoked = await this.refreshTokenService.findRevokedByTokenHash(token_hash);
+    if (revoked) {
+      await this.sessionService.delete(revoked.session_id);
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
+    }
+
+    const refresh_token = await this.refreshTokenService.findByRawToken(raw_token);
     const user = await this.userService.findOne(refresh_token.session.user_id);
-    await this.refreshTokenService.revokeBySessionId(refresh_token.session.id);
-    const newRefreshToken = await this.refreshTokenService.createForSession(user, refresh_token.session, refresh_token.id);
-    const session = await this.sessionService.update(refresh_token.session.id, {
-      refreshed_at: new Date(),
-      expires_at: new Date(Date.now() + MONTH),
+
+    const { raw_token: new_raw_token, refresh_token_hash } = await this.data_source.transaction(
+      async (manager) => {
+        await manager.update(RefreshTokenEntity, { session_id: refresh_token.session_id }, { revoked: true });
+
+        const raw_new_token = generateToken();
+        const new_refresh_token = manager.create(RefreshTokenEntity, {
+          user_id: user.id,
+          token_hash: hashToken(raw_new_token),
+          session_id: refresh_token.session_id,
+          revoked: false,
+          expires_at: new Date(Date.now() + MONTH),
+          parent_id: refresh_token.id,
+        });
+        const saved_refresh_token = await manager.save(new_refresh_token);
+
+        const session_updated = await manager.preload(SessionEntity, {
+          id: refresh_token.session_id,
+          refreshed_at: new Date(),
+          expires_at: new Date(Date.now() + MONTH),
+        });
+        if (!session_updated) {
+          throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
+        }
+        await manager.save(session_updated);
+
+        return {
+          raw_token: raw_new_token,
+          refresh_token_hash: saved_refresh_token.token_hash,
+        };
+      },
+    );
+
+    const token = this.createToken({
+      user,
+      session_id: refresh_token.session_id,
+      refresh_token_hash,
     });
-    const token = this.createToken({ user, session_id: session.id, refreshToken_hash: newRefreshToken.token_hash, expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any });
-    return { type: "session", token, refreshToken_hash: newRefreshToken.token_hash };
+    return { type: "session", token, refresh_token: new_raw_token };
   }
 }

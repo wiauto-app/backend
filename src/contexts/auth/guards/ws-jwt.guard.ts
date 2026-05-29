@@ -1,46 +1,49 @@
 import { ExecutionContext, Injectable } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import type { Request } from "express";
 import type { Socket } from "socket.io";
-
-interface WsRequestLike {
-  headers: { authorization?: string; cookie?: string };
-  cookies: Record<string, string | undefined>;
-}
 
 const parse_cookie_header = (cookie_header: string | undefined): Record<string, string> => {
   if (!cookie_header) return {};
-  return cookie_header.split(";").reduce<Record<string, string>>((acc, part) => {
+  const cookies: Record<string, string> = {};
+  for (const part of cookie_header.split(";")) {
     const [raw_key, ...raw_value] = part.trim().split("=");
     const key = raw_key.trim();
-    if (!key) return acc;
-    acc[key] = decodeURIComponent(raw_value.join("="));
-    return acc;
-  }, {});
+    if (!key) continue;
+    cookies[key] = decodeURIComponent(raw_value.join("="));
+  }
+  return cookies;
+};
+
+const strip_bearer_prefix = (token: string): string =>
+  token.startsWith("Bearer ") ? token.slice(7) : token;
+
+type SocketRequest = Request & {
+  cookies: Record<string, string | undefined>;
 };
 
 @Injectable()
 export class WsJwtGuard extends AuthGuard("jwt") {
-  getRequest(context: ExecutionContext): WsRequestLike {
+  getRequest(context: ExecutionContext): SocketRequest {
     const client = context.switchToWs().getClient<Socket>();
-    const auth_token = client.handshake.auth.token as string | undefined;
-    const cookie_header = client.handshake.headers.cookie;
-    const cookies = parse_cookie_header(cookie_header);
+    const request = client.request as SocketRequest;
+    const cookies = parse_cookie_header(client.handshake.headers.cookie);
+    const auth_token_raw =
+      typeof client.handshake.auth.token === "string" ? client.handshake.auth.token : undefined;
 
-    const authorization = auth_token
-      ? (auth_token.startsWith("Bearer ")
-        ? auth_token
-        : `Bearer ${auth_token}`)
-      : undefined;
+    const token_from_auth = auth_token_raw ? strip_bearer_prefix(auth_token_raw) : undefined;
+    const token_from_cookie = cookies.access_token;
+    const token = token_from_auth ?? token_from_cookie;
+    if (token) {
 
-    return {
-      headers: {
-        authorization,
-        cookie: cookie_header,
-      },
-      cookies: {
-        access_token: cookies.access_token,
-      },
+      request.headers.authorization = `Bearer ${token}`;
+    }
+
+    request.cookies = {
+      ...request.cookies,
+      access_token: token_from_cookie,
     };
+
+    return request;
   }
 }
-

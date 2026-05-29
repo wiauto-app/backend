@@ -64,7 +64,7 @@ import { RolesModule } from "../roles/roles.module";
    
   ],
   imports: [
-    PassportModule.register({ defaultStrategy: "jwt", session: true }),
+    PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
       secret: envs.JWT_SECRET,
       signOptions: {

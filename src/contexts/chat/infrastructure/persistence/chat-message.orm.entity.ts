@@ -16,6 +16,7 @@ import {
   ChatMessageStatus,
   ChatMessageType,
 } from "../../domain/entities/chatMessage";
+import { ChatMessageMetadata } from "../../domain/entities/chatMessageMetadata";
 import { ChatEntity } from "./chat.entity";
 
 @Entity({ name: "chat_messages" })
@@ -43,6 +44,12 @@ export class ChatMessageEntity {
 
   @Column({ type: "enum", enum: Object.values(CHAT_MESSAGE_STATUS) })
   status: ChatMessageStatus;
+
+  @Column({ type: "jsonb", nullable: true })
+  metadata: ChatMessageMetadata | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  edited_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

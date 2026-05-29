@@ -13,6 +13,7 @@ import {
 import { V1_CATALOG_MAKES } from "../../../../route.constants";
 import { MakesUseCase } from "../../../application/makes-use-cases/makes.use-case";
 import { CreateMakeHttpDto } from "./dto/create-make.http-dto";
+import { FindSearchMakesHttpDto } from "./dto/find-search-makes.http-dto";
 import { UpdateMakeHttpDto } from "./update-make.http-dto";
 
 @Controller(V1_CATALOG_MAKES)
@@ -35,6 +36,11 @@ export class MakesController {
   @Get()
   findAll(@Query() query: PaginationHttpDto) {
     return this.makes_use_case.findAll(query);
+  }
+
+  @Get("search")
+  findSearchMakes(@Query() query: FindSearchMakesHttpDto) {
+    return this.makes_use_case.findSearchMakes(query);
   }
 
   @Get(":id")

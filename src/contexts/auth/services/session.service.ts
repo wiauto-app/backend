@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Request } from "express";
-import { IsNull, Repository } from "typeorm";
+import { Repository } from "typeorm";
 
 import { User } from "../../users/entities/user.entity";
 import { SessionEntity } from "../entities/session.entity";
 import { authResponseConfig } from "../response.config";
+import { normalizeUserAgent } from "../utils/normalize-user-agent";
 import { MONTH } from "@/src/common/envs";
 
 @Injectable()
@@ -13,13 +14,13 @@ export class SessionService {
   constructor(
     @InjectRepository(SessionEntity)
     private readonly session_repository: Repository<SessionEntity>,
-  ) {}
+  ) { }
 
   async create(user: User, request: Request): Promise<SessionEntity> {
     const session = this.session_repository.create({
       user_id: user.id,
       ip_address: request.ip ?? null,
-      user_agent: request.headers["user-agent"] ?? null,
+      user_agent: normalizeUserAgent(request.headers["user-agent"] as string | undefined),
       refreshed_at: new Date(),
       expires_at: new Date(Date.now() + MONTH),
       refresh_tokens: [],
@@ -49,15 +50,16 @@ export class SessionService {
     return session;
   }
 
-  async findOneByIpAddress(ip_address: string | undefined): Promise<SessionEntity | null> {
+  async findActiveById(session_id: string): Promise<SessionEntity> {
     const session = await this.session_repository.findOne({
-      where: { ip_address: ip_address ?? IsNull() },
+      where: { id: session_id },
     });
-
     if (!session) {
-      return null;
+      throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
     }
-
+    if (session.expires_at < new Date()) {
+      throw new UnauthorizedException(authResponseConfig.messages.SESSION_EXPIRED);
+    }
     return session;
   }
 

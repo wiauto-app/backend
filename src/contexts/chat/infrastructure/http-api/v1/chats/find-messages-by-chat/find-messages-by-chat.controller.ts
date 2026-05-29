@@ -5,6 +5,7 @@ import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/infrastructure/http-dtos/pagination.http-dto";
 import { FindChatUseCase } from "@/src/contexts/chat/application/chat-use-cases/find-chat-use-case/find-chat.use-case";
 import { FindMessagesByChatUseCase } from "@/src/contexts/chat/application/chat-message-use-cases/find-messages-by-chat-use-case/find-messages-by-chat.use-case";
+import { ChatMessageReadModelService } from "@/src/contexts/chat/application/services/chat-message-read-model.service";
 import { ChatAccessService } from "@/src/contexts/chat/infrastructure/services/chat-access.service";
 
 import { V1_CHATS } from "../../../route.constants";
@@ -16,6 +17,7 @@ export class FindMessagesByChatController {
     private readonly find_chat_use_case: FindChatUseCase,
     private readonly find_messages_by_chat_use_case: FindMessagesByChatUseCase,
     private readonly chat_access_service: ChatAccessService,
+    private readonly chat_message_read_model_service: ChatMessageReadModelService,
   ) {}
 
   @Get(":chat_id/messages")
@@ -26,7 +28,7 @@ export class FindMessagesByChatController {
   ) {
     const chat = await this.find_chat_use_case.execute({ id: chat_id });
     this.chat_access_service.assertChatParticipant(chat, user_id);
-    return this.find_messages_by_chat_use_case.execute({
+    const messages = await this.find_messages_by_chat_use_case.execute({
       chat_id,
       page: query.page,
       limit: query.limit,
@@ -35,6 +37,6 @@ export class FindMessagesByChatController {
       order_by: query.order_by,
       search: query.search,
     });
+    return this.chat_message_read_model_service.toList(messages);
   }
 }
-

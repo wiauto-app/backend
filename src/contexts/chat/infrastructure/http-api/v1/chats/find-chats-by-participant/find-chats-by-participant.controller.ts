@@ -17,7 +17,8 @@ export class FindChatsByParticipantController {
   @Get()
   run(@GetUserId() participant_id: string, @Query() query: PaginationHttpDto) {
     return this.find_chats_by_participant_use_case.execute({
-      participant_id,
+      participants_ids: [participant_id],
+      requesting_user_id: participant_id,
       page: query.page,
       limit: query.limit,
       order_direction: query.order_direction,

@@ -4,8 +4,14 @@ import { IsNull, Repository } from "typeorm";
 import { PaginationFilter } from "@/src/contexts/shared/domain/filters/pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { Chat } from "../../domain/entities/chat";
-import { ChatMessage } from "../../domain/entities/chatMessage";
-import { ChatMessageRepository } from "../../domain/repositories/chat-message.repository";
+import {
+  CHAT_MESSAGE_STATUS,
+  ChatMessage,
+} from "../../domain/entities/chatMessage";
+import {
+  ChatLastMessageSnapshot,
+  ChatMessageRepository,
+} from "../../domain/repositories/chat-message.repository";
 import { ChatMessageEntity } from "../persistence/chat-message.orm.entity";
 
 const CHAT_MESSAGE_SORT_KEYS = new Set([
@@ -32,6 +38,8 @@ export class TypeOrmChatMessageRepository extends ChatMessageRepository {
       content: chat_message.content,
       type: chat_message.type,
       status: chat_message.status,
+      metadata: chat_message.metadata,
+      edited_at: chat_message.edited_at,
       created_at: chat_message.created_at,
       updated_at: chat_message.updated_at,
       deleted_at: chat_message.deleted_at,
@@ -94,6 +102,92 @@ export class TypeOrmChatMessageRepository extends ChatMessageRepository {
     await this.chat_message_repository.save(row);
   }
 
+  async findLatestByChatIds(chat_ids: string[]): Promise<Map<string, ChatLastMessageSnapshot>> {
+    if (chat_ids.length === 0) return new Map();
+
+    const rows = await this.chat_message_repository
+      .createQueryBuilder("message")
+      .distinctOn(["message.chat_id"])
+      .where("message.chat_id IN (:...chat_ids)", { chat_ids })
+      .andWhere("message.deleted_at IS NULL")
+      .orderBy("message.chat_id", "ASC")
+      .addOrderBy("message.created_at", "DESC")
+      .getMany();
+
+    const map = new Map<string, ChatLastMessageSnapshot>();
+    for (const row of rows) {
+      map.set(row.chat_id, {
+        chat_id: row.chat_id,
+        content: row.content,
+        type: row.type,
+        created_at: row.created_at,
+      });
+    }
+    return map;
+  }
+
+  async markMessagesAsReadForRecipient(
+    chat_id: string,
+    recipient_id: string,
+    last_message_id?: string,
+  ): Promise<ChatMessage[]> {
+    const qb = this.chat_message_repository
+      .createQueryBuilder("message")
+      .leftJoinAndSelect("message.chat", "chat")
+      .where("message.chat_id = :chat_id", { chat_id })
+      .andWhere("message.sender_id != :recipient_id", { recipient_id })
+      .andWhere("message.deleted_at IS NULL")
+      .andWhere("message.status IN (:...statuses)", {
+        statuses: [CHAT_MESSAGE_STATUS.SENT, CHAT_MESSAGE_STATUS.DELIVERED],
+      });
+
+    if (last_message_id) {
+      const anchor = await this.chat_message_repository.findOne({
+        where: { id: last_message_id, chat_id },
+      });
+      if (anchor) {
+        qb.andWhere("message.created_at <= :anchor_created_at", {
+          anchor_created_at: anchor.created_at,
+        });
+      }
+    }
+
+    const rows = await qb.getMany();
+    const updated: ChatMessage[] = [];
+
+    for (const row of rows) {
+      const message = this.mapRowToChatMessage(row);
+      const next = message.update({ status: CHAT_MESSAGE_STATUS.READ });
+      await this.save(next);
+      updated.push(next);
+    }
+
+    return updated;
+  }
+
+  async markMessagesAsDeliveredForRecipient(
+    chat_id: string,
+    recipient_id: string,
+  ): Promise<ChatMessage[]> {
+    const rows = await this.chat_message_repository
+      .createQueryBuilder("message")
+      .leftJoinAndSelect("message.chat", "chat")
+      .where("message.chat_id = :chat_id", { chat_id })
+      .andWhere("message.sender_id != :recipient_id", { recipient_id })
+      .andWhere("message.deleted_at IS NULL")
+      .andWhere("message.status = :status", { status: CHAT_MESSAGE_STATUS.SENT })
+      .getMany();
+
+    const updated: ChatMessage[] = [];
+    for (const row of rows) {
+      const message = this.mapRowToChatMessage(row);
+      const next = message.update({ status: CHAT_MESSAGE_STATUS.DELIVERED });
+      await this.save(next);
+      updated.push(next);
+    }
+    return updated;
+  }
+
   private mapRowToChatMessage(row: ChatMessageEntity): ChatMessage {
     const chat_message = new ChatMessage();
     chat_message.id = row.id;
@@ -101,6 +195,8 @@ export class TypeOrmChatMessageRepository extends ChatMessageRepository {
     chat_message.content = row.content;
     chat_message.type = row.type;
     chat_message.status = row.status;
+    chat_message.metadata = row.metadata ?? null;
+    chat_message.edited_at = row.edited_at ?? null;
     chat_message.created_at = row.created_at;
     chat_message.updated_at = row.updated_at;
     chat_message.deleted_at = row.deleted_at ?? null;
@@ -119,4 +215,3 @@ export class TypeOrmChatMessageRepository extends ChatMessageRepository {
     return chat;
   }
 }
-

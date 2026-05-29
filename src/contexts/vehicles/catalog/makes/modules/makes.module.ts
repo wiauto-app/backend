@@ -5,10 +5,11 @@ import { TypeormMakeRepository } from "../infrastructure/repositories/typeorm.ma
 import { MakesRepository } from "../domain/repositories/makes.repository";
 import { MakesController } from "../infrastructure/http-api/makes-v1/makes.controller";
 import { MakesUseCase } from "../application/makes-use-cases/makes.use-case";
+import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 
 @Module({
   controllers: [MakesController],
-  imports: [TypeOrmModule.forFeature([MakeEntity])],
+  imports: [TypeOrmModule.forFeature([MakeEntity, VehicleEntity])],
   providers: [
     MakesUseCase,
     TypeormMakeRepository,

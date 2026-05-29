@@ -1,7 +1,7 @@
 import { User } from "../../users/entities/user.entity";
 
 
-export interface SessionPayload{
+export interface SessionPayload {
   id: string;
   email: string;
   session_id: string;
@@ -11,14 +11,14 @@ export interface SessionPayload{
 
 
 export type SignInResult =
-  | { type: "session" | "2fa_challenge"; token: string, refreshToken_hash: string }
+  | { type: "session" | "2fa_challenge"; token: string; refresh_token: string };
 
-export interface TwoFactorChallengeResponse{
-  verified:boolean;
-  user?:User;
-  message?:string;
+export interface TwoFactorChallengeResponse {
+  verified: boolean;
+  user?: User;
+  message?: string;
 }
 
-export interface TwoFactorEnableResponse extends TwoFactorChallengeResponse{
-  backup_codes?:string[];
+export interface TwoFactorEnableResponse extends TwoFactorChallengeResponse {
+  backup_codes?: string[];
 }

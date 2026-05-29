@@ -10,6 +10,11 @@ export const CONTENT_TYPES = {
   VIDEO_WEBM: "video/webm",
   AUDIO_MP3: "audio/mp3",
   AUDIO_M4A: "audio/m4a",
+  AUDIO_WEBM: "audio/webm",
+  AUDIO_OGG: "audio/ogg",
+  AUDIO_WAV: "audio/wav",
+  APPLICATION_PDF: "application/pdf",
+  APPLICATION_OCTET_STREAM: "application/octet-stream",
 } as const;
 export type ContentType = (typeof CONTENT_TYPES)[keyof typeof CONTENT_TYPES];
 

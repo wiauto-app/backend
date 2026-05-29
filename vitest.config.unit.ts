@@ -5,5 +5,9 @@ import { createVitestTestConfig } from "./create-vitest-test-config";
 
 export default defineConfig({
   test: createVitestTestConfig("unit"),
-  plugins: [swc.vite()],
+  plugins: [
+    swc.vite({
+      module: { type: "es6" },
+    }),
+  ],
 });

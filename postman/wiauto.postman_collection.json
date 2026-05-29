@@ -245,7 +245,7 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"type\": \"session\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+              "body": "{\n  \"type\": \"session\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh_token\": \"<refresh_token_en_claro>\"\n}"
             },
             {
               "name": "200 OK — requiere 2FA (ejemplo)",
@@ -4333,6 +4333,57 @@
                       ]
                     },
                     "description": "GET paginado. Query: page, limit, search, order_by, order_direction."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "buscar makes",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/catalog/makes/search?search=toy&page=1&limit=10",
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "makes", "search"],
+                      "query": [
+                        {
+                          "key": "search",
+                          "value": "toy",
+                          "description": "Búsqueda parcial por nombre de la marca."
+                        },
+                        {
+                          "key": "province_id",
+                          "value": "",
+                          "description": "ID de provincia para filtrar el conteo por ubicación.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "since_price",
+                          "value": "",
+                          "description": "Precio mínimo de vehículos para el conteo.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "until_price",
+                          "value": "",
+                          "description": "Precio máximo de vehículos para el conteo.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "description": "Página (default 1).",
+                          "disabled": true
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10",
+                          "description": "Tamaño de página (1-100, default 10).",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "GET de búsqueda rápida de marcas. Retorna `makes[]` con `vehicle_count`."
                   },
                   "response": []
                 },

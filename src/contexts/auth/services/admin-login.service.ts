@@ -56,23 +56,24 @@ export class AdminLoginService {
       );
     }
 
-    const { session_id, refreshToken_hash } = await this.authService.createSession(
+    await this.suspensionService.assert_session_allowed_by_id(user.id);
+
+    const { session_id, refresh_token, refresh_token_hash } = await this.authService.createSession(
       user,
       request,
     );
-    await this.suspensionService.assert_session_allowed_by_id(user.id);
 
     await this.userService.update(user.id, {
       last_sign_in: new Date(),
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.authService.createToken({ user, session_id, refreshToken_hash });
+    const token = this.authService.createToken({ user, session_id, refresh_token_hash });
 
-    return { type, token, refreshToken_hash };
+    return { type, token, refresh_token };
   }
 
-  async logout(request: Request) {
-    await this.authService.logout(request);
+  async logout(session_id: string) {
+    await this.authService.logout(session_id);
   }
 }

@@ -174,8 +174,8 @@ export class TwoFactorAuthService {
 
     user.password = null
 
-    const { session_id, refreshToken_hash } = await this.authService.createSession(user,req);
-    const token = this.authService.createToken({ user, session_id, refreshToken_hash, expiresIn: "30d" })
+    const { session_id, refresh_token_hash } = await this.authService.createSession(user, req);
+    const token = this.authService.createToken({ user, session_id, refresh_token_hash });
 
     return {
       message: "Código de respaldo validado correctamente",

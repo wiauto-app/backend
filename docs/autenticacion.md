@@ -69,7 +69,7 @@ Sirve cuando el usuario **no puede iniciar sesión** porque aún no verificó el
 }
 ```
 
-**Respuesta (siempre la misma, aunque el correo no exista o ya esté verificado):** texto neutro tipo *“Si ese correo tiene una cuenta local pendiente de verificación, te enviamos un nuevo enlace.”* Evita que alguien descubra qué mails están registrados. Solo cuenta **email + contraseña** pendiente de verificación recibe otro correo (Google/social no aplica).
+**Respuesta (siempre la misma, aunque el correo no exista o ya esté verificado):** texto neutro tipo _“Si ese correo tiene una cuenta local pendiente de verificación, te enviamos un nuevo enlace.”_ Evita que alguien descubra qué mails están registrados. Solo cuenta **email + contraseña** pendiente de verificación recibe otro correo (Google/social no aplica).
 
 ---
 
@@ -97,9 +97,12 @@ Sirve cuando el usuario **no puede iniciar sesión** porque aún no verificó el
 ```json
 {
   "type": "session",
-  "token": "<JWT para guardar y usar en Bearer>"
+  "token": "<JWT para guardar y usar en Bearer>",
+  "refresh_token": "<refresh token en claro; guardar de forma segura si el cliente no usa cookies>"
 }
 ```
+
+El panel admin usa cookies HTTP (`access_token` y `refresh_token`); el valor de `refresh_token` en cookie es el token en claro (en base de datos solo se guarda su hash).
 
 **B) Con 2FA — falta un segundo paso**
 
@@ -200,9 +203,9 @@ El usuario abre el link del mail (lleva un `token`), tu pantalla manda:
 
 Llevás **`Authorization: Bearer`** + JWT **de sesión** (el del login exitoso sin 2FA, o el mismo patrón que use el backend para rutas autenticadas).
 
-| Paso | Petición |
-|------|----------|
-| Obtener QR y datos para la app del autenticador | `GET /2fa/setup` |
+| Paso                                                          | Petición                                        |
+| ------------------------------------------------------------- | ----------------------------------------------- |
+| Obtener QR y datos para la app del autenticador               | `GET /2fa/setup`                                |
 | Activar tras escribir el código de 6 dígitos del autenticador | `POST /2fa/activate` con `{ "code": "123456" }` |
 
 Otras rutas (`enable`, `disable`, `delete`, regenerar respaldos) siguen igual: Bearer + la que corresponda; detalle en colección Postman si la tenés.
@@ -211,18 +214,18 @@ Otras rutas (`enable`, `disable`, `delete`, regenerar respaldos) siguen igual: B
 
 ## Cheatsheet (una tabla)
 
-| Acción | Método | Ruta |
-|--------|--------|------|
-| Registro | POST | `/users` |
-| Confirmar correo (link del mail) | GET | `/auth/email-verification/confirm?token=&redirectUrl=` |
-| Reenviar correo | POST | `/auth/email-verification/resend` |
-| Login email | POST | `/auth/login` |
-| Yo mismo | GET | `/auth/me` |
-| Google web | GET | `/auth/google` → vuelta con `?token=` |
-| Google app | POST | `/auth/google/mobile` |
-| Pedir reset contraseña | POST | `/auth/password-recovery/request` |
-| Nueva contraseña | POST | `/auth/password-recovery/change` |
-| Código de respaldo → sesión | POST | `/2fa/validate-backup-code` |
+| Acción                           | Método | Ruta                                                   |
+| -------------------------------- | ------ | ------------------------------------------------------ |
+| Registro                         | POST   | `/users`                                               |
+| Confirmar correo (link del mail) | GET    | `/auth/email-verification/confirm?token=&redirectUrl=` |
+| Reenviar correo                  | POST   | `/auth/email-verification/resend`                      |
+| Login email                      | POST   | `/auth/login`                                          |
+| Yo mismo                         | GET    | `/auth/me`                                             |
+| Google web                       | GET    | `/auth/google` → vuelta con `?token=`                  |
+| Google app                       | POST   | `/auth/google/mobile`                                  |
+| Pedir reset contraseña           | POST   | `/auth/password-recovery/request`                      |
+| Nueva contraseña                 | POST   | `/auth/password-recovery/change`                       |
+| Código de respaldo → sesión      | POST   | `/2fa/validate-backup-code`                            |
 
 ---
 

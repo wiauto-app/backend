@@ -22,8 +22,8 @@ export class ChatEntity {
   @Column({ type: "enum", enum: Object.values(CHAT_TYPE) })
   chat_type: ChatType;
 
-  @Column({ type: "uuid" })
-  vehicle_id: string;
+  @Column({ type: "uuid", nullable: true })
+  vehicle_id: string | null;
 
   @CreateDateColumn()
   created_at: Date;

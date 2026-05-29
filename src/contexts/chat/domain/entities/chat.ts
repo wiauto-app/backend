@@ -11,14 +11,14 @@ export class Chat {
   id: string;
   participants: string[];
   chat_type: ChatType;
-  vehicle_id: string;
+  vehicle_id: string | null;
   created_at: Date;
   updated_at: Date;
 
   static create(payload: {
     participants: string[];
     chat_type: ChatType;
-    vehicle_id: string;
+    vehicle_id: string | null;
   }): Chat {
     const chat = new Chat()
     chat.id = uuidv4();

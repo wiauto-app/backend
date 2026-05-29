@@ -40,8 +40,8 @@ export class TypeOrmChatRepository extends ChatRepository {
     return this.mapRowToChat(row);
   }
 
-  async findByParticipantId(
-    participant_id: string,
+  async findByParticipantsIds(
+    participants_ids: string[],
     pagination: PaginationFilter,
   ): Promise<PaginatedResult<Chat>> {
     const skip = (pagination.page - 1) * pagination.limit;
@@ -50,18 +50,20 @@ export class TypeOrmChatRepository extends ChatRepository {
       pagination.order_by && CHAT_SORT_KEYS.has(pagination.order_by)
         ? pagination.order_by
         : "created_at";
-    const order_direction = pagination.order_direction ?? "ASC";
+    const order_direction = pagination.order_direction;
 
     const qb = this.chat_repository
       .createQueryBuilder("chat")
       .where("chat.participants @> :participant", {
-        participant: JSON.stringify([participant_id]),
+        participant: JSON.stringify(participants_ids),
       })
       .skip(skip)
       .take(take)
       .orderBy(`chat.${order_by}`, order_direction);
 
+
     const [rows, total] = await qb.getManyAndCount();
+
     return new PaginatedResult(
       rows.map((row) => this.mapRowToChat(row)),
       total,
@@ -69,6 +71,20 @@ export class TypeOrmChatRepository extends ChatRepository {
       pagination.limit,
     );
   }
+
+  async chatExists(participants_ids: string[], vehicle_id: string | null): Promise<boolean> {
+    const qb = this.chat_repository
+      .createQueryBuilder("chat")
+      .where("chat.participants @> :participants", {
+        participants: JSON.stringify(participants_ids),
+      })
+      .andWhere("chat.vehicle_id = :vehicle_id", { vehicle_id });
+    const row = await qb.getOne();
+    return row ? true : false;
+
+  }
+
+
 
   async delete(id: string): Promise<void> {
     await this.chat_repository.delete(id);
