@@ -65,7 +65,7 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
-      - MINIO_SERVER_URL=${MINIO_ENDPOINT}
+      - MINIO_SERVER_URL=${MINIO_S3_URL}
     command: server /data --console-address ":9001"
     ports:
       - 9000:9000
