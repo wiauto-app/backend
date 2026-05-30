@@ -1,5 +1,5 @@
 import { Share } from "../entities/share";
 
 export abstract class ShareRepository {
-  abstract save(share: Share): Promise<void>;
+  abstract record(share: Share): Promise<void>;
 }

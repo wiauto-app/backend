@@ -1,4 +1,15 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from "class-validator";
+
+import { DealershipMemberInputHttpDto } from "../dealership-member-input/dealership-member-input.http-dto";
 
 export class CreateDealershipHttpDto {
   @IsString()
@@ -46,4 +57,10 @@ export class CreateDealershipHttpDto {
 
   @IsNumber()
   lng: number;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => DealershipMemberInputHttpDto)
+  members: DealershipMemberInputHttpDto[];
 }

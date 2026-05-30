@@ -1,4 +1,5 @@
 import { DealershipMember } from "../entities/dealership-member";
+import { DealershipMemberDetail } from "../read-models/dealership-detail";
 
 export abstract class DealershipMemberRepository {
   abstract save(dealership_member: DealershipMember): Promise<void>;
@@ -23,4 +24,6 @@ export abstract class DealershipMemberRepository {
     dealership_id: string,
     profile_id: string,
   ): Promise<boolean>;
+
+  abstract findAllByDealershipId(dealership_id: string): Promise<DealershipMemberDetail[]>;
 }

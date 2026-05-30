@@ -1,9 +1,9 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 
-import { PrimitiveDealership } from "../../../domain/entities/dealership";
 import { DealershipsFilter } from "../../../domain/filters/dealerships.filter";
 import { DealershipRepository } from "../../../domain/repositories/dealership.repository";
+import { DealershipAdminList } from "../../../domain/read-models/dealership-admin-list";
 
 import { FindAllDealershipDto } from "./find-all-dealership.dto";
 
@@ -13,9 +13,8 @@ export class FindAllDealershipUseCase {
 
   async execute(
     find_all_dealership_dto: FindAllDealershipDto,
-  ): Promise<PaginatedResult<PrimitiveDealership>> {
+  ): Promise<PaginatedResult<DealershipAdminList>> {
     const filter = new DealershipsFilter({ ...find_all_dealership_dto });
-    const result = await this.dealership_repository.findAll(filter);
-    return result.map((dealership) => dealership.toPrimitives());
+    return this.dealership_repository.findAll(filter);
   }
 }

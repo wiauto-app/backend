@@ -5,11 +5,12 @@ import { RecordVehicleShareUseCase } from "../application/share-use-cases/record
 import { ShareRepository } from "../domain/repositories/share.repository";
 import { RecordVehicleShareController } from "../infrastructure/http-api/v1/record-vehicle-share/record-vehicle-share.controller";
 import { ShareEntity } from "../infrastructure/persistence/share.entity";
+import { VehicleEntity } from "../infrastructure/persistence/vehicle.entity";
 import { TypeOrmShareRepository } from "../infrastructure/repositories/typeorm.share-repository";
 import { VehiclesModule } from "../vehicles.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ShareEntity]), VehiclesModule],
+  imports: [TypeOrmModule.forFeature([ShareEntity, VehicleEntity]), VehiclesModule],
   controllers: [RecordVehicleShareController],
   providers: [
     RecordVehicleShareUseCase,

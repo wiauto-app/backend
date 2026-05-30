@@ -13,6 +13,7 @@ import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
 import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
 import { SharesModule } from "../contexts/vehicles/modules/shares.module";
 import { ViewsModule } from "../contexts/vehicles/modules/views.module";
+import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
@@ -23,7 +24,10 @@ import { FileModule } from "../contexts/shared/file/file.module";
 import { RolesModule } from "../contexts/roles/roles.module";
 import { PermissionModule } from "../contexts/users/permissions/permission.module";
 import { DealershipModule } from "../contexts/dealership/dealership.module";
+import { DealershipReviewsModule } from "../contexts/dealership/modules/dealership-reviews.module";
 import { ChatModule } from "../contexts/chat/modules/chat.module";
+import { TicketCategoriesModule } from "../contexts/support/modules/ticket-categories.module";
+import { TicketsModule } from "../contexts/support/modules/tickets.module";
 
 @Module({
   imports: [
@@ -38,13 +42,17 @@ import { ChatModule } from "../contexts/chat/modules/chat.module";
     ReviewsModule,
     SharesModule,
     ViewsModule,
+    VehicleListsModule,
     MailModule,
     TwoFactorAuthModule,
     FileModule,
     RolesModule,
     PermissionModule,
     DealershipModule,
+    DealershipReviewsModule,
     ChatModule,
+    TicketCategoriesModule,
+    TicketsModule,
     // ThrottlerModule.forRoot({
     //   throttlers: [
     //     {

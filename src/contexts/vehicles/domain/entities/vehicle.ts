@@ -44,6 +44,8 @@ export interface PrimitiveVehicle {
   is_featured?: boolean;
   expires_at?: Date;
   views?: number;
+  favorites?: number;
+  shares?: number;
   transmission_type: TransmissionType;
   traction_id: string;
   power: number;
@@ -171,6 +173,9 @@ export class Vehicle {
       cuota_ids: this.primitiveVehicle.cuota_ids,
       suggestions: this.primitiveVehicle.suggestions,
       profile_id: this.primitiveVehicle.profile_id,
+      views: this.primitiveVehicle.views,
+      favorites: this.primitiveVehicle.favorites,
+      shares: this.primitiveVehicle.shares,
     };
   }
 }

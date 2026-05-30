@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "wiauto-api-collection",
     "name": "wiauto",
-    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
+    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealership-reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/ticket-categories`, `v1/tickets`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -130,6 +130,21 @@
       "key": "chat_message_id",
       "value": "",
       "description": "UUID del mensaje (`GET /v1/chat-messages/:id`)."
+    },
+    {
+      "key": "list_id",
+      "value": "",
+      "description": "UUID de lista de vehículos (`v1/vehicle-lists/:list_id`)."
+    },
+    {
+      "key": "ticket_id",
+      "value": "",
+      "description": "UUID de ticket de soporte (`v1/tickets/:ticket_id`)."
+    },
+    {
+      "key": "ticket_category_id",
+      "value": "",
+      "description": "UUID de categoría de ticket (`v1/ticket-categories/:id`)."
     }
   ],
   "item": [
@@ -1712,7 +1727,7 @@
                 }
               ]
             },
-            "description": "`FindAllDealershipsHttpDto`. Sin `AuthGuard` en el código actual. Respuesta: `PaginatedResult` con `data` = primitivos de agregado."
+            "description": "`FindAllDealershipsHttpDto`. Sin `AuthGuard`. Respuesta: `PaginatedResult` con `data` = `DealershipAdminList` (incluye `members_count` y `reviews_count`)."
           },
           "response": [
             {
@@ -1731,9 +1746,42 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"data\": [],\n  \"total\": 0,\n  \"page\": 1,\n  \"limit\": 10,\n  \"totalPages\": 0,\n  \"hasNextPage\": false\n}"
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n      \"name\": \"Concesionario ejemplo\",\n      \"slug\": \"concesionario-ejemplo\",\n      \"description\": \"Descripción del concesionario.\",\n      \"email\": \"contacto@ejemplo.com\",\n      \"phone_code\": \"+34\",\n      \"phone\": \"912345678\",\n      \"address\": \"Calle Ejemplo 1\",\n      \"created_at\": \"2026-05-05T12:00:00.000Z\",\n      \"updated_at\": \"2026-05-05T12:00:00.000Z\",\n      \"members_count\": 2,\n      \"reviews_count\": 5\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10,\n  \"totalPages\": 1,\n  \"hasNextPage\": false\n}"
             }
           ]
+        },
+        {
+          "name": "crear reseña de concesionario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dealership_id\": \"{{dealership_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Atención excelente y buen stock de vehículos.\"\n}"
+            },
+            "url": "{{base_url}}/v1/dealership-reviews",
+            "description": "JWT (`JwtGuard`). El autor es el usuario autenticado (`profile_id` implícito). Comprueba que el `dealership_id` exista."
+          },
+          "response": []
+        },
+        {
+          "name": "listar reseñas de concesionario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/v1/dealership-reviews?dealership_id={{dealership_id}}&page=1&limit=10",
+            "description": "Público. Query obligatorio: `dealership_id`. Opcional: `profile_id`, `created_since`, `created_until`, `page`, `limit`, `query`, `order_by`, `order_direction`."
+          },
+          "response": []
         },
         {
           "name": "obtener concesionario por id",
@@ -3756,6 +3804,155 @@
           ]
         },
         {
+          "name": "vehicle-lists",
+          "item": [
+            {
+              "name": "listar mis listas",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists",
+                "description": "JWT (`JwtGuard`). Si el usuario no tiene listas, crea automáticamente la lista default \"Favoritos\"."
+              },
+              "response": []
+            },
+            {
+              "name": "crear lista",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Para comparar\",\n  \"description\": \"Opciones que estoy evaluando\",\n  \"is_default\": false\n}"
+                },
+                "url": "{{base_url}}/v1/vehicle-lists",
+                "description": "JWT (`JwtGuard`). `profile_id` implícito desde el token. Si no hay listas previas, asegura la default \"Favoritos\" antes de crear."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener lista con items",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}",
+                "description": "JWT (`JwtGuard`). Devuelve la lista con items y preview del vehículo (título, precio, imagen principal). Solo el dueño."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar lista",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Favoritos renombrados\",\n  \"description\": null,\n  \"is_default\": true\n}"
+                },
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}",
+                "description": "JWT (`JwtGuard`). PATCH parcial. Si `is_default` es true, desmarca otras listas default del usuario."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar lista",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}",
+                "description": "JWT (`JwtGuard`). Decrementa `vehicles.favorites` por cada item y elimina la lista (CASCADE items). Solo el dueño."
+              },
+              "response": []
+            },
+            {
+              "name": "añadir vehículo a lista",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vehicle_id\": \"{{vehicle_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items",
+                "description": "JWT (`JwtGuard`). Inserta item e incrementa `vehicles.favorites`. Duplicado → 409."
+              },
+              "response": []
+            },
+            {
+              "name": "listar items de lista",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items",
+                "description": "JWT (`JwtGuard`). Items con preview del vehículo. Solo el dueño de la lista."
+              },
+              "response": []
+            },
+            {
+              "name": "quitar vehículo de lista",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items/{{vehicle_id}}",
+                "description": "JWT (`JwtGuard`). Elimina el item y decrementa `vehicles.favorites` (mínimo 0)."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "etiquetas DGT",
           "item": [
             {
@@ -5574,6 +5771,180 @@
             "description": "Soft delete de un mensaje (JWT). Solo el `sender_id`. Emite `message_deleted`."
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "support",
+      "item": [
+        {
+          "name": "ticket-categories",
+          "item": [
+            {
+              "name": "crear categoría de ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Problemas con mi cuenta\"\n}"
+                },
+                "url": "{{base_url}}/v1/ticket-categories",
+                "description": "Público (sin JWT). `slug` se genera desde `name`."
+              },
+              "response": []
+            },
+            {
+              "name": "listar categorías de ticket",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/ticket-categories?page=1&limit=10",
+                "description": "Público. Paginación estándar (`page`, `limit`, `query`, `order_by`, `order_direction`)."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener categoría de ticket",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/ticket-categories/{{ticket_category_id}}",
+                "description": "Público. Detalle por id."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar categoría de ticket",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{ticket_category_id}}\",\n  \"name\": \"Problemas con la cuenta\"\n}"
+                },
+                "url": "{{base_url}}/v1/ticket-categories",
+                "description": "Público. PATCH con `id` en body. Recalcula `slug` si cambia `name`."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar categoría de ticket",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/v1/ticket-categories/{{ticket_category_id}}",
+                "description": "Público. CASCADE elimina tickets asociados."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "tickets",
+          "item": [
+            {
+              "name": "crear ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"category_id\": \"{{ticket_category_id}}\",\n  \"title\": \"No puedo iniciar sesión\",\n  \"description\": \"Desde ayer el login devuelve error 500.\",\n  \"file_url\": null\n}"
+                },
+                "url": "{{base_url}}/v1/tickets",
+                "description": "JWT (`JwtGuard`). `profile_id` implícito desde el token. Valida que exista la categoría."
+              },
+              "response": []
+            },
+            {
+              "name": "listar mis tickets",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/tickets?page=1&limit=10",
+                "description": "JWT. Solo tickets del usuario autenticado. Cada item incluye objeto `category`. Filtros opcionales: `status`, `category_id`, `query`, `order_by`, `order_direction`."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener ticket",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/tickets/{{ticket_id}}",
+                "description": "JWT. Detalle con categoría embebida. Solo el dueño."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar ticket",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Login sigue fallando\",\n  \"description\": \"Adjunté captura en file_url.\",\n  \"status\": \"in_progress\"\n}"
+                },
+                "url": "{{base_url}}/v1/tickets/{{ticket_id}}",
+                "description": "JWT. PATCH parcial. `status`: open, closed, pending, in_progress, resolved, cancelled. Solo el dueño."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar ticket",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/tickets/{{ticket_id}}",
+                "description": "JWT. Solo el dueño del ticket."
+              },
+              "response": []
+            }
+          ]
         }
       ]
     },

@@ -1,3 +1,5 @@
+import { DealershipMemberInputDto } from "../dealership-member-input.dto";
+
 export class UpdateDealershipDto {
   id: string;
   name?: string;
@@ -12,4 +14,5 @@ export class UpdateDealershipDto {
   address?: string;
   lat?: number;
   lng?: number;
+  members?: DealershipMemberInputDto[];
 }

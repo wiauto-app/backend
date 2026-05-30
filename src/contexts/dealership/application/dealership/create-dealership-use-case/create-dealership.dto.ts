@@ -1,3 +1,5 @@
+import { DealershipMemberInputDto } from "../dealership-member-input.dto";
+
 /** DTO de aplicación: no debe depender de tipos del dominio. */
 export class CreateDealershipDto {
   name: string;
@@ -12,4 +14,5 @@ export class CreateDealershipDto {
   address: string;
   lat?: number;
   lng?: number;
+  members: DealershipMemberInputDto[];
 }

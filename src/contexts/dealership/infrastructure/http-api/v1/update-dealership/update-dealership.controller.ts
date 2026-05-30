@@ -1,5 +1,6 @@
 import { Body, Controller, Param, Patch } from "@nestjs/common";
 
+import { DealershipMemberInputDto } from "../../../../application/dealership/dealership-member-input.dto";
 import { UpdateDealershipUseCase } from "../../../../application/dealership/update-dealership-use-case/update-dealership.use-case";
 import { V1_DEALERSHIPS } from "../../../route.constants";
 
@@ -15,9 +16,21 @@ export class UpdateDealershipController {
     @Param() params: FindDealershipHttpDto,
     @Body() update_dealership_http_dto: UpdateDealershipHttpDto,
   ) {
+    const { members, ...dealership_fields } = update_dealership_http_dto;
+
     return this.update_dealership_use_case.execute({
       id: params.id,
-      ...update_dealership_http_dto,
+      ...dealership_fields,
+      ...(members !== undefined
+        ? {
+            members: members.map(
+              (member): DealershipMemberInputDto => ({
+                profile_id: member.profile_id,
+                role: member.role,
+              }),
+            ),
+          }
+        : {}),
     });
   }
 }

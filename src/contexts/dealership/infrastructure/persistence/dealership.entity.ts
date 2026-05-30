@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 import { DealershipMembersEntity } from "./dealership-members.entity";
 import { DealershipInvitationsEntity } from "./dealership-invitations.entity";
+import { DealershipReviewEntity } from "./dealership-review.entity";
 
 
 @Entity({ name: "dealerships" })
@@ -55,4 +56,7 @@ export class DealershipEntity {
 
   @OneToMany(() => DealershipInvitationsEntity, (dealership_invitations) => dealership_invitations.dealership)
   invitations: Relation<DealershipInvitationsEntity[]>;
+
+  @OneToMany(() => DealershipReviewEntity, (review) => review.dealership)
+  reviews: Relation<DealershipReviewEntity[]>;
 }

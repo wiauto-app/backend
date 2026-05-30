@@ -28,7 +28,7 @@ export class RecordVehicleShareUseCase {
       source: dto.source,
     });
 
-    await this.share_repository.save(share);
+    await this.share_repository.record(share);
 
     return { share: share.toPrimitives() };
   }

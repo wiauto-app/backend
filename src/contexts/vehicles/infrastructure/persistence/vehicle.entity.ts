@@ -60,6 +60,12 @@ export class VehicleEntity {
   @Column({ default: 0 })
   views: number;
 
+  @Column({ default: 0 })
+  favorites: number;
+
+  @Column({ default: 0 })
+  shares: number;
+
   @Column({ type: "enum", enum: PUBLISHER_TYPE, default: PUBLISHER_TYPE.PROFESSIONAL })
   publisher_type: PublisherType;
 

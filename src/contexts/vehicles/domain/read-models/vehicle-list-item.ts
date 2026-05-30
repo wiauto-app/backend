@@ -52,6 +52,8 @@ export interface AdminVehicleListItem extends VehicleListItem {
   is_featured: boolean;
   expires_at: Date;
   views: number;
+  favorites: number;
+  shares: number;
   updated_at: Date;
   transmission_type: TransmissionType;
   power: number;

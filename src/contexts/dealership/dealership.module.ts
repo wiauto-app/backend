@@ -1,6 +1,9 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { ProfileModule } from "@/src/contexts/profiles/profile.module";
+
+import { SyncDealershipMembersUseCase } from "./application/dealership-members/sync-dealership-members-use-case/sync-dealership-members.use-case";
 import { CreateDealershipUseCase } from "./application/dealership/create-dealership-use-case/create-dealership.use-case";
 import { FindAllDealershipUseCase } from "./application/dealership/find-all-dealership-use-case/find-all-dealership.use-case";
 import { FindOneDealershipUseCase } from "./application/dealership/find-one-dealership-use-case/find-one-dealership.use-case";
@@ -19,7 +22,11 @@ import { RemoveFilesUseCase } from "../shared/file/application/images-use-cases/
 import { MinioService } from "../shared/minio-provider/minio.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DealershipEntity]),DealershipInvitationModule],
+  imports: [
+    TypeOrmModule.forFeature([DealershipEntity]),
+    DealershipInvitationModule,
+    forwardRef(() => ProfileModule),
+  ],
   controllers: [
     CreateDealershipController,
     FindAllDealershipsController,
@@ -28,6 +35,7 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     RemoveDealershipController,
   ],
   providers: [
+    SyncDealershipMembersUseCase,
     CreateDealershipUseCase,
     FindAllDealershipUseCase,
     FindOneDealershipUseCase,

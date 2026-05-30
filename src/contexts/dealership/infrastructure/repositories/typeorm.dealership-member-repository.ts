@@ -7,6 +7,10 @@ import {
   PrimitiveDealershipMember,
 } from "../../domain/entities/dealership-member";
 import { DealershipMemberRepository } from "../../domain/repositories/dealership-member.repository";
+import {
+  DealershipMemberDetail,
+  DealershipMemberProfileSummary,
+} from "../../domain/read-models/dealership-detail";
 import { DealershipMembersEntity } from "../persistence/dealership-members.entity";
 
 function entity_to_primitives(entity: DealershipMembersEntity): PrimitiveDealershipMember {
@@ -17,6 +21,26 @@ function entity_to_primitives(entity: DealershipMembersEntity): PrimitiveDealers
     role: entity.role,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
+  };
+}
+
+function entity_to_member_detail(entity: DealershipMembersEntity): DealershipMemberDetail {
+  const profile_summary: DealershipMemberProfileSummary = {
+    id: entity.profile.id,
+    name: entity.profile.name,
+    last_name: entity.profile.last_name,
+    avatar_url: entity.profile.avatar_url,
+    email: entity.profile.user?.email ?? "",
+  };
+
+  return {
+    id: entity.id,
+    dealership_id: entity.dealership_id,
+    profile_id: entity.profile_id,
+    role: entity.role,
+    created_at: entity.created_at,
+    updated_at: entity.updated_at,
+    profile: profile_summary,
   };
 }
 
@@ -119,5 +143,18 @@ export class TypeOrmDealershipMemberRepository implements DealershipMemberReposi
     }
 
     return DealershipMember.fromPrimitives(entity_to_primitives(entity));
+  }
+
+  async findAllByDealershipId(dealership_id: string): Promise<DealershipMemberDetail[]> {
+    const entities = await this.dealership_member_entity_repository.find({
+      where: { dealership_id },
+      relations: {
+        profile: {
+          user: true,
+        },
+      },
+    });
+
+    return entities.map(entity_to_member_detail);
   }
 }
