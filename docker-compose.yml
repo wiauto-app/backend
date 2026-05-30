@@ -69,6 +69,8 @@ services:
     ports:
       - 9000:9000
       - 9001:9001
+    expose:
+      - 9001
     networks:
       - wiauto-network
 
