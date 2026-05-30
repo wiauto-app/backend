@@ -2,12 +2,16 @@ import { SelectQueryBuilder } from "typeorm";
 
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleEntity } from "../persistence/vehicle.entity";
+import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
 
 const has_non_empty_string = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
 const is_finite_number = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
+
+const is_valid_date = (value: unknown): value is Date =>
+  value instanceof Date && !Number.isNaN(value.getTime());
 
 const has_non_empty_string_array = (value: unknown): value is string[] =>
   Array.isArray(value) &&
@@ -71,6 +75,8 @@ export const applyFilters = (
       model_slug: filters.model_slug,
     });
   }
+
+
 
   if (is_finite_number(filters.since_year) || is_finite_number(filters.until_year)) {
     qb.leftJoin("year", "cat_year", "cat_year.id = catalog_ver.year_id");
@@ -311,6 +317,93 @@ export const applyFilters = (
   if (has_non_empty_string(filters.query)) {
     qb.andWhere("(vehicle.title ILIKE :search OR vehicle.description ILIKE :search)", {
       search: `%${filters.query.trim()}%`,
+    });
+  }
+};
+
+export const applyAdminFilters = (
+  qb: SelectQueryBuilder<VehicleEntity>,
+  filters: AdminVehicleFilter,
+): void => {
+  if (has_non_empty_string(filters.query)) {
+    qb.andWhere(
+      "(vehicle.title ILIKE :admin_search OR vehicle.description ILIKE :admin_search)",
+      { admin_search: `%${filters.query.trim()}%` },
+    );
+  }
+
+  if (has_non_empty_string(filters.publisher_name)) {
+    const publisher_name = `%${filters.publisher_name.trim()}%`;
+    qb.andWhere(
+      `(profile.name ILIKE :publisher_name OR profile.last_name ILIKE :publisher_name OR CONCAT(profile.name, ' ', COALESCE(profile.last_name, '')) ILIKE :publisher_name)`,
+      { publisher_name },
+    );
+  }
+
+  if (has_non_empty_string(filters.publisher_email)) {
+    qb.andWhere(
+      "vehicle.email = :publisher_email",
+      { publisher_email: filters.publisher_email.trim() },
+    );
+  }
+
+  if (filters.status) {
+    qb.andWhere("vehicle.status = :admin_status", {
+      admin_status: filters.status,
+    });
+  }
+
+  if (is_valid_date(filters.since_created_at)) {
+    qb.andWhere("vehicle.created_at >= :since_created_at", {
+      since_created_at: filters.since_created_at,
+    });
+  }
+
+  if (is_valid_date(filters.until_created_at)) {
+    qb.andWhere("vehicle.created_at <= :until_created_at", {
+      until_created_at: filters.until_created_at,
+    });
+  }
+
+  if (is_valid_date(filters.since_updated_at)) {
+    qb.andWhere("vehicle.updated_at >= :since_updated_at", {
+      since_updated_at: filters.since_updated_at,
+    });
+  }
+
+  if (is_valid_date(filters.until_updated_at)) {
+    qb.andWhere("vehicle.updated_at <= :until_updated_at", {
+      until_updated_at: filters.until_updated_at,
+    });
+  }
+
+  if (is_valid_date(filters.since_expires_at)) {
+    qb.andWhere("vehicle.expires_at >= :since_expires_at", {
+      since_expires_at: filters.since_expires_at,
+    });
+  }
+
+  if (is_valid_date(filters.until_expires_at)) {
+    qb.andWhere("vehicle.expires_at <= :until_expires_at", {
+      until_expires_at: filters.until_expires_at,
+    });
+  }
+
+  if (typeof filters.is_featured === "boolean") {
+    qb.andWhere("vehicle.is_featured = :admin_is_featured", {
+      admin_is_featured: filters.is_featured,
+    });
+  }
+
+  if (filters.publisher_type) {
+    qb.andWhere("vehicle.publisher_type = :admin_publisher_type", {
+      admin_publisher_type: filters.publisher_type,
+    });
+  }
+
+  if (has_non_empty_string(filters.vehicle_type_id)) {
+    qb.andWhere("vehicle.vehicle_type_id = :vehicle_type_id", {
+      vehicle_type_id: filters.vehicle_type_id.trim(),
     });
   }
 };

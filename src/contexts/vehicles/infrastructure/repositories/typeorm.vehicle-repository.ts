@@ -23,7 +23,7 @@ import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
 import { TractionEntity } from "../persistence/traction.entity";
 import { CuotaEntity } from "../persistence/cuota.entity";
 import { CategoryEntity } from "../persistence/category.entity";
-import { applyFilters } from "../validators/filters.applier";
+import { applyAdminFilters, applyFilters } from "../validators/filters.applier";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
 
@@ -527,7 +527,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.profile", "profile");
 
-    applyFilters(qb, filter);
+    applyAdminFilters(qb, filter);
 
     const count_qb = qb.clone();
     (
