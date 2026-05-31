@@ -8,6 +8,7 @@ import {
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { CreateVehicleDto } from "./create-vehicle.dto";
 import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/application/attach-vehicle-images-from-temp-use-case/attach-vehicle-images-from-temp.use-case";
+import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { ValidateVehicleUseCase } from "../validate-vehicle-use-case/validate-vehicle.use-case";
 
 @Injectable()
@@ -17,6 +18,7 @@ export class CreateVehicleUseCase {
     private readonly vehicle_repository: VehicleRepository,
     private readonly attach_vehicle_images_from_temp_use_case: AttachVehicleImagesFromTempUseCase,
     private readonly validateVehicleUseCase: ValidateVehicleUseCase,
+    private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
   ) {
   }
 
@@ -37,7 +39,6 @@ export class CreateVehicleUseCase {
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
-      price: create_vehicle_dto.price,
       mileage: create_vehicle_dto.mileage,
       lat: create_vehicle_dto.lat,
       lng: create_vehicle_dto.lng,
@@ -69,6 +70,11 @@ export class CreateVehicleUseCase {
       suggestions,
     });
     await this.vehicle_repository.save(vehicle);
+
+    await this.set_vehicle_price_use_case.execute({
+      vehicle_id: vehicle.toPrimitives().id,
+      price: create_vehicle_dto.price,
+    });
 
     if (create_vehicle_dto.images && create_vehicle_dto.images.length > 0) {
       await this.attach_vehicle_images_from_temp_use_case.execute({

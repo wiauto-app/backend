@@ -24,6 +24,7 @@ import { UpdateVehicleController } from "./infrastructure/http-api/v1/update-veh
 import { FileModule } from "../shared/file/file.module";
 import { ImageValidationPipe } from "../shared/file/infrastructure/pipes/image-validation.pipe";
 import { VehicleImagesModule } from "./vehicle-images/vehicle-images.module";
+import { VehiclePricesModule } from "./vehicle-prices/vehicle-prices.module";
 import { CreateFeatureController } from "./infrastructure/http-api/feature-v1/create-feature/create-feature.controller";
 import { CreateFeatureUseCase } from "./application/features/create-feature-use-case/create-feature.use-case";
 import { FeatureRepository } from "./domain/repositories/feature.repository";
@@ -104,6 +105,7 @@ import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/ad
       Roles,
     ]),
     VehicleImagesModule,
+    VehiclePricesModule,
     FileModule,
     VehicleTypesModule,
     ColorsModule,

@@ -26,6 +26,8 @@ import { PermissionModule } from "../contexts/users/permissions/permission.modul
 import { DealershipModule } from "../contexts/dealership/dealership.module";
 import { DealershipReviewsModule } from "../contexts/dealership/modules/dealership-reviews.module";
 import { ChatModule } from "../contexts/chat/modules/chat.module";
+import { ReportCategoriesModule } from "../contexts/reports/modules/report-categories.module";
+import { ReportsModule } from "../contexts/reports/modules/reports.module";
 import { TicketCategoriesModule } from "../contexts/support/modules/ticket-categories.module";
 import { TicketsModule } from "../contexts/support/modules/tickets.module";
 
@@ -53,6 +55,8 @@ import { TicketsModule } from "../contexts/support/modules/tickets.module";
     ChatModule,
     TicketCategoriesModule,
     TicketsModule,
+    ReportCategoriesModule,
+    ReportsModule,
     // ThrottlerModule.forRoot({
     //   throttlers: [
     //     {

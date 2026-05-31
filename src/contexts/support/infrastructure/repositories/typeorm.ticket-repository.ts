@@ -24,6 +24,7 @@ const entity_to_list_item = (row: TicketEntity): TicketListItem => ({
   file_url: row.file_url,
   status: row.status,
   profile_id: row.profile_id,
+  profile_label: row.profile?.name ?? "",
   created_at: row.created_at,
   updated_at: row.updated_at,
   category: {
@@ -47,6 +48,7 @@ export class TypeOrmTicketRepository extends TicketRepository {
     const row = await this.ticket_repository
       .createQueryBuilder("ticket")
       .leftJoinAndSelect("ticket.category", "category")
+      .leftJoinAndSelect("ticket.profile", "profile")
       .where("ticket.id = :id", { id })
       .getOne();
 
@@ -60,7 +62,8 @@ export class TypeOrmTicketRepository extends TicketRepository {
   async find_all(filter: TicketFilter): Promise<PaginatedResult<TicketListItem>> {
     const qb = this.ticket_repository
       .createQueryBuilder("ticket")
-      .leftJoinAndSelect("ticket.category", "category");
+      .leftJoinAndSelect("ticket.category", "category")
+      .leftJoinAndSelect("ticket.profile", "profile");
 
     if (filter.profile_id) {
       qb.andWhere("ticket.profile_id = :profile_id", {

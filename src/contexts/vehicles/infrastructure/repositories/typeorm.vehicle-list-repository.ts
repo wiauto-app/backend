@@ -9,6 +9,7 @@ import { VehicleListRepository } from "../../domain/repositories/vehicle-list.re
 import { VehicleListEntity } from "../persistence/vehicle-list.entity";
 import { VehicleListItemEntity } from "../persistence/vehicle-list-item.entity";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
+import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/domain/vehicle-price";
 
 const first_image_url = (images: VehicleImagesEntity[] | undefined): string | null => {
   if (!images || images.length === 0) {
@@ -18,6 +19,13 @@ const first_image_url = (images: VehicleImagesEntity[] | undefined): string | nu
     (a, b) => a.created_at.getTime() - b.created_at.getTime(),
   );
   return sorted[0]?.url ?? null;
+};
+
+const get_active_price = (vehicle: { vehicle_prices?: { status: string; price: number }[] }): number => {
+  const active = vehicle.vehicle_prices?.find(
+    (item) => item.status === VEHICLE_PRICE_STATUS.ACTIVE,
+  );
+  return active?.price ?? 0;
 };
 
 const entity_to_list = (entity: VehicleListEntity): List =>
@@ -112,6 +120,12 @@ export class TypeOrmVehicleListRepository extends VehicleListRepository {
       .createQueryBuilder("item")
       .leftJoinAndSelect("item.vehicle", "vehicle")
       .leftJoinAndSelect("vehicle.images", "images")
+      .leftJoinAndSelect(
+        "vehicle.vehicle_prices",
+        "vehicle_prices",
+        "vehicle_prices.status = :active_vehicle_price_status",
+        { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
+      )
       .where("item.list_id = :list_id", { list_id: id })
       .orderBy("item.created_at", "DESC")
       .getMany();
@@ -131,7 +145,7 @@ export class TypeOrmVehicleListRepository extends VehicleListRepository {
         vehicle: {
           id: item.vehicle.id,
           title: item.vehicle.title,
-          price: item.vehicle.price,
+          price: get_active_price(item.vehicle),
           image_url: first_image_url(item.vehicle.images),
         },
       })),

@@ -102,14 +102,22 @@ export const applyFilters = (
     });
   }
 
+  if (is_finite_number(filters.since_price) || is_finite_number(filters.until_price)) {
+    qb.innerJoin(
+      "vehicle_prices",
+      "price_filter_vp",
+      "price_filter_vp.vehicle_id = vehicle.id AND price_filter_vp.status = 'active'",
+    );
+  }
+
   if (is_finite_number(filters.since_price)) {
-    qb.andWhere("vehicle.price >= :since_price", {
+    qb.andWhere("price_filter_vp.price >= :since_price", {
       since_price: filters.since_price,
     });
   }
 
   if (is_finite_number(filters.until_price)) {
-    qb.andWhere("vehicle.price <= :until_price", {
+    qb.andWhere("price_filter_vp.price <= :until_price", {
       until_price: filters.until_price,
     });
   }

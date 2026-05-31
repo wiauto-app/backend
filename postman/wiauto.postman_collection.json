@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "wiauto-api-collection",
     "name": "wiauto",
-    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealership-reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/ticket-categories`, `v1/tickets`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
+    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealership-reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/ticket-categories`, `v1/tickets`, `v1/report-categories`, `v1/reports`, `v1/admin/report-categories`, `v1/admin/reports`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -21,6 +21,10 @@
     },
     {
       "key": "vehicle_id",
+      "value": ""
+    },
+    {
+      "key": "vehicle_price_id",
       "value": ""
     },
     {
@@ -145,6 +149,16 @@
       "key": "ticket_category_id",
       "value": "",
       "description": "UUID de categoría de ticket (`v1/ticket-categories/:id`)."
+    },
+    {
+      "key": "report_id",
+      "value": "",
+      "description": "UUID de denuncia (`v1/reports/:report_id`, `v1/admin/reports/:report_id`)."
+    },
+    {
+      "key": "report_category_id",
+      "value": "",
+      "description": "UUID de categoría de denuncia (`v1/report-categories`, `v1/admin/report-categories`)."
     }
   ],
   "item": [
@@ -2687,10 +2701,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"price\": 26000,\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
+                  "raw": "{\n  \"price\": 26000,\n  \"vehicle_price_id\": \"{{vehicle_price_id}}\",\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
                 },
                 "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
-                "description": "Incluye opcionales: `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
+                "description": "Incluye opcionales: `price` (nuevo precio activo), `vehicle_price_id` (reactivar un precio histórico sin crear fila), `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
               },
               "response": [
                 {
@@ -2706,9 +2720,9 @@
                     "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"price\": 26000,\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
+                      "raw": "{\n  \"price\": 26000,\n  \"vehicle_price_id\": \"{{vehicle_price_id}}\",\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
                     },
-                    "description": "Incluye opcionales: `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
+                    "description": "Incluye opcionales: `price` (nuevo precio activo), `vehicle_price_id` (reactivar un precio histórico sin crear fila), `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
                   },
                   "status": "OK",
                   "code": 200,
@@ -5941,6 +5955,224 @@
                 ],
                 "url": "{{base_url}}/v1/tickets/{{ticket_id}}",
                 "description": "JWT. Solo el dueño del ticket."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reports",
+      "item": [
+        {
+          "name": "report-categories",
+          "item": [
+            {
+              "name": "listar categorías de denuncia (app)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/report-categories?target_type=profile&page=1&limit=10",
+                "description": "Público. Filtro opcional `target_type`: profile, dealership, vehicle."
+              },
+              "response": []
+            },
+            {
+              "name": "crear categoría de denuncia (admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Perfil falso\",\n  \"target_type\": \"profile\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/report-categories",
+                "description": "Dashboard admin. `slug` se genera desde `name`."
+              },
+              "response": []
+            },
+            {
+              "name": "listar categorías de denuncia (admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/report-categories?page=1&limit=10",
+                "description": "Dashboard admin. Paginación y filtro `target_type` opcional."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener categoría de denuncia (admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/report-categories/{{report_category_id}}",
+                "description": "Dashboard admin. Detalle por id."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar categoría de denuncia (admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{report_category_id}}\",\n  \"name\": \"Contenido inapropiado en perfil\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/report-categories",
+                "description": "Dashboard admin. PATCH con `id` en body."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar categoría de denuncia (admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/report-categories/{{report_category_id}}",
+                "description": "Dashboard admin. CASCADE elimina denuncias asociadas."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "reports",
+          "item": [
+            {
+              "name": "crear denuncia (usuario)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"category_id\": \"{{report_category_id}}\",\n  \"title\": \"Perfil sospechoso\",\n  \"description\": \"Publica datos falsos de contacto.\",\n  \"file_url\": null,\n  \"target_type\": \"profile\",\n  \"target_id\": \"{{profile_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/reports",
+                "description": "JWT. Valida categoría, objetivo existente y no auto-denuncia perfil."
+              },
+              "response": []
+            },
+            {
+              "name": "listar mis denuncias",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/reports?page=1&limit=10",
+                "description": "JWT. Solo denuncias del reporter autenticado."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener denuncia (usuario)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/reports/{{report_id}}",
+                "description": "JWT. Solo si eres el reporter."
+              },
+              "response": []
+            },
+            {
+              "name": "crear denuncia (admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"category_id\": \"{{report_category_id}}\",\n  \"title\": \"Denuncia registrada por admin\",\n  \"description\": \"Registro manual desde el dashboard.\",\n  \"file_url\": null,\n  \"target_type\": \"profile\",\n  \"target_id\": \"{{profile_id}}\",\n  \"reporter_profile_id\": \"{{profile_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/reports",
+                "description": "Dashboard admin. JWT (cookie o Bearer). `reporter_profile_id` opcional; si se omite, usa el perfil autenticado."
+              },
+              "response": []
+            },
+            {
+              "name": "listar denuncias (admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/reports?page=1&limit=10&target_type=profile&status=open",
+                "description": "Dashboard admin. Filtros: `target_type`, `status`, `category_id`, `query`."
+              },
+              "response": []
+            },
+            {
+              "name": "obtener denuncia (admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/reports/{{report_id}}",
+                "description": "Dashboard admin. Sin restricción de reporter."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar denuncia (admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"in_review\",\n  \"admin_notes\": \"Revisando evidencia adjunta.\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/reports/{{report_id}}",
+                "description": "Dashboard admin. `status`: open, in_review, resolved, dismissed, escalated."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar denuncia (admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/v1/admin/reports/{{report_id}}",
+                "description": "Dashboard admin. Borrado permanente."
               },
               "response": []
             }

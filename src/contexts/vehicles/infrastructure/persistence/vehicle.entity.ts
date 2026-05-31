@@ -14,7 +14,9 @@ import {
 } from "typeorm";
 import { VersionEntity } from "../../catalog/versions/infrastructure/persistence/version.entity";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
+import type { VehiclePriceEntity } from "../../vehicle-prices/infrastructure/persistence/vehicle-price.entity";
 import { get_vehicle_images_entity } from "./vehicle-images-entity.relation-type";
+import { get_vehicle_prices_entity } from "./vehicle-prices-entity.relation-type";
 import { CONDITION_VEHICLE, ConditionVehicle, PUBLISHER_TYPE, PublisherType, STATUS_VEHICLE, StatusVehicle, TRANSMISSION_TYPE, TransmissionType } from "../../domain/entities/vehicle";
 import { VideosEntity } from "./videos.entity";
 import { FeaturesEntity } from "./features.entity";
@@ -40,9 +42,6 @@ export class VehicleEntity {
 
   @Column()
   description: string;
-
-  @Column()
-  price: number;
 
   @Column()
   mileage: number;
@@ -175,6 +174,12 @@ export class VehicleEntity {
     (vehicle_image: VehicleImagesEntity) => vehicle_image.vehicle,
   )
   images?: Relation<VehicleImagesEntity[]>;
+
+  @OneToMany(
+    () => get_vehicle_prices_entity(),
+    (vehicle_price: VehiclePriceEntity) => vehicle_price.vehicle,
+  )
+  vehicle_prices?: Relation<VehiclePriceEntity[]>;
 
   @OneToMany(() => VideosEntity, (video) => video.vehicle)
   videos?: Relation<VideosEntity[]>;

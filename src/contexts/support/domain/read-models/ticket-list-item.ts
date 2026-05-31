@@ -15,6 +15,7 @@ export interface TicketListItem {
   file_url: string | null;
   status: TicketStatus;
   profile_id: string;
+  profile_label: string;
   created_at: Date;
   updated_at: Date;
   category: TicketCategoryRef;

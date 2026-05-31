@@ -3,6 +3,7 @@ import {
   PublisherType,
   TransmissionType,
 } from "../entities/vehicle";
+import { VehiclePriceStatus } from "../../vehicle-prices/domain/vehicle-price";
 
 export interface AdminVehicleFormImage {
   path: string;
@@ -18,6 +19,13 @@ export interface AdminVehicleVersionCatalog {
   year_id: number;
 }
 
+export interface AdminVehiclePriceHistoryItem {
+  id: string;
+  price: number;
+  status: VehiclePriceStatus;
+  created_at: Date;
+}
+
 /** Detalle admin para rellenar el formulario de creación/edición. */
 export interface AdminVehicleDetail {
   id: string;
@@ -27,6 +35,7 @@ export interface AdminVehicleDetail {
   title: string;
   description: string;
   price: number;
+  vehicle_prices: AdminVehiclePriceHistoryItem[];
   mileage: number;
   condition: ConditionVehicle;
   lat: number;

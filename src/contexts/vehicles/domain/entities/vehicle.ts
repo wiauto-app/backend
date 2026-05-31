@@ -31,7 +31,6 @@ export type TransmissionType =
 
 export interface PrimitiveVehicle {
   id: string;
-  price: number;
   mileage: number;
   lat: number;
   lng: number;
@@ -83,7 +82,6 @@ export class Vehicle {
   }
 
   static create(createVehicle: {
-    price: number;
     mileage: number;
     lat: number;
     lng: number;
@@ -142,7 +140,6 @@ export class Vehicle {
     return {
       ...this.primitiveVehicle,
       id: this.primitiveVehicle.id,
-      price: this.primitiveVehicle.price,
       mileage: this.primitiveVehicle.mileage,
       lat: this.primitiveVehicle.lat,
       lng: this.primitiveVehicle.lng,

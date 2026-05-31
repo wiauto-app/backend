@@ -44,13 +44,29 @@ export class TypeormMakeRepository extends MakesRepository {
       .andWhere("vehicle.deleted_at IS NULL");
 
     if (typeof filters?.since_price === "number" && Number.isFinite(filters.since_price)) {
-      vehicle_count_query.andWhere("vehicle.price >= :since_price", {
-        since_price: filters.since_price,
-      });
+      vehicle_count_query
+        .innerJoin(
+          "vehicle_prices",
+          "price_filter_vp",
+          "price_filter_vp.vehicle_id = vehicle.id AND price_filter_vp.status = 'active'",
+        )
+        .andWhere("price_filter_vp.price >= :since_price", {
+          since_price: filters.since_price,
+        });
     }
 
     if (typeof filters?.until_price === "number" && Number.isFinite(filters.until_price)) {
-      vehicle_count_query.andWhere("vehicle.price <= :until_price", {
+      if (
+        typeof filters?.since_price !== "number" ||
+        !Number.isFinite(filters.since_price)
+      ) {
+        vehicle_count_query.innerJoin(
+          "vehicle_prices",
+          "price_filter_vp",
+          "price_filter_vp.vehicle_id = vehicle.id AND price_filter_vp.status = 'active'",
+        );
+      }
+      vehicle_count_query.andWhere("price_filter_vp.price <= :until_price", {
         until_price: filters.until_price,
       });
     }

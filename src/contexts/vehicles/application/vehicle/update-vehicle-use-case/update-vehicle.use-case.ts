@@ -5,6 +5,7 @@ import { VehicleUpdateFields } from "../../../domain/entities/vehicle";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/application/attach-vehicle-images-from-temp-use-case/attach-vehicle-images-from-temp.use-case";
+import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { UpdateVehicleDto } from "./update-vehicle.dto";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class UpdateVehicleUseCase {
   constructor(
     private readonly vehicle_repository: VehicleRepository,
     private readonly attach_vehicle_images_from_temp_use_case: AttachVehicleImagesFromTempUseCase,
+    private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
   ) {}
 
   async execute(update_vehicle_dto: UpdateVehicleDto) {
@@ -21,7 +23,7 @@ export class UpdateVehicleUseCase {
     }
 
     const prev = existing.toPrimitives();
-    const { id, images, ...dto_fields } = update_vehicle_dto;
+    const { id, images, price, vehicle_price_id, ...dto_fields } = update_vehicle_dto;
 
     const patch: VehicleUpdateFields = {
       ...prev,
@@ -32,6 +34,14 @@ export class UpdateVehicleUseCase {
 
     const updated = existing.applyUpdates(patch);
     await this.vehicle_repository.update(updated);
+
+    if (price !== undefined || vehicle_price_id !== undefined) {
+      await this.set_vehicle_price_use_case.execute({
+        vehicle_id: id,
+        price,
+        vehicle_price_id,
+      });
+    }
 
     if (images && images.length > 0) {
       const temp_images = images.filter((image) =>

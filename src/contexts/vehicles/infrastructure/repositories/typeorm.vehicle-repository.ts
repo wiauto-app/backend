@@ -23,11 +23,32 @@ import { WarrantyTypeEntity } from "../persistence/warranty-type.entity";
 import { TractionEntity } from "../persistence/traction.entity";
 import { CuotaEntity } from "../persistence/cuota.entity";
 import { CategoryEntity } from "../persistence/category.entity";
+import { VehiclePriceEntity } from "../../vehicle-prices/infrastructure/persistence/vehicle-price.entity";
+import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/domain/vehicle-price";
 import { applyAdminFilters, applyFilters } from "../validators/filters.applier";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
+
+const get_active_price = (entity: VehicleEntity): number => {
+  const active = entity.vehicle_prices?.find(
+    (item) => item.status === VEHICLE_PRICE_STATUS.ACTIVE,
+  );
+  return active?.price ?? 0;
+};
+
+const map_vehicle_prices_history = (
+  vehicle_prices: VehiclePriceEntity[] | undefined,
+) =>
+  [...(vehicle_prices ?? [])]
+    .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+    .map((item) => ({
+      id: item.id,
+      price: item.price,
+      status: item.status,
+      created_at: item.created_at,
+    }));
 
 const vehicle_catalog_relations = {
   features: true,
@@ -46,7 +67,7 @@ const vehicle_catalog_relations = {
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
-    price: entity.price,
+    price: get_active_price(entity),
     mileage: entity.mileage,
     lat: Number(entity.lat),
     lng: Number(entity.lng),
@@ -126,6 +147,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
   const sorted_images = [...(entity.images ?? [])].sort(
     (a, b) => a.created_at.getTime() - b.created_at.getTime(),
   );
+  const active_price = get_active_price(entity);
 
   return {
     id: base.id,
@@ -134,7 +156,8 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     category_id: base.category_id,
     title: base.title,
     description: base.description,
-    price: base.price,
+    price: active_price,
+    vehicle_prices: map_vehicle_prices_history(entity.vehicle_prices),
     mileage: base.mileage,
     condition: base.condition,
     lat: base.lat,
@@ -205,7 +228,6 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
 function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
   return {
     id: entity.id,
-    price: entity.price,
     mileage: entity.mileage,
     lat: Number(entity.lat),
     lng: Number(entity.lng),
@@ -372,7 +394,6 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       services: ServiceEntity[];
     } = {
       id: p.id,
-      price: p.price,
       mileage: p.mileage,
       lat: p.lat,
       lng: p.lng,
@@ -475,7 +496,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.cuotas", "cuotas")
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.traction", "traction")
-      .leftJoinAndSelect("vehicle.profile", "profile");
+      .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect(
+        "vehicle.vehicle_prices",
+        "vehicle_prices",
+        "vehicle_prices.status = :active_vehicle_price_status",
+        { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
+      );
 
     applyFilters(qb, filter);
 
@@ -525,7 +552,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.cuotas", "cuotas")
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.images", "images")
-      .leftJoinAndSelect("vehicle.profile", "profile");
+      .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect(
+        "vehicle.vehicle_prices",
+        "vehicle_prices",
+        "vehicle_prices.status = :active_vehicle_price_status",
+        { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
+      );
 
     applyAdminFilters(qb, filter);
 
@@ -553,6 +586,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       relations: {
         ...vehicle_catalog_relations,
         version: true,
+        vehicle_prices: true,
       },
     });
     if (!row) {
