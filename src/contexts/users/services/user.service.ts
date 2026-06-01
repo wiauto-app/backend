@@ -41,6 +41,7 @@ export class UserService {
   ) { }
 
   async create(registerUserDto: RegisterUserDto): Promise<ApiResponse<User>> {
+    console.log(registerUserDto)
     const existingUser = await this.userRepository.findOne({
       where: {
         email: registerUserDto.email

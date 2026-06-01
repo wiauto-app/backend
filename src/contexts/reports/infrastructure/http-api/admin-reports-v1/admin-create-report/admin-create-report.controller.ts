@@ -2,13 +2,14 @@ import { Body, Controller, Post, UseGuards } from "@nestjs/common";
 
 import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
+import { AdminOnlyGuard } from "@/src/contexts/roles/guards/admin-only.guard";
 import { CreateReportUseCase } from "@/src/contexts/reports/application/report-use-cases/create-report-use-case/create-report.use-case";
 
 import { V1_ADMIN_REPORTS } from "../../../route.constants";
 import { AdminCreateReportHttpDto } from "./admin-create-report.http-dto";
 
 @Controller(V1_ADMIN_REPORTS)
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, AdminOnlyGuard)
 export class AdminCreateReportController {
   constructor(private readonly create_report_use_case: CreateReportUseCase) {}
 

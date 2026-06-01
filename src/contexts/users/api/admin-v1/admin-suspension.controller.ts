@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { V1_ADMIN_SUSPENSION } from "../../route.constants";
 import { AdminSuspensionService } from "../../services/admin-suspension.service";
 import { FindAllSuspensionDurationTypesDto } from "../../dto/admin/find-all-suspension.dto";
@@ -10,8 +10,11 @@ import { UpdateSuspensionDurationTypeDto } from "../../dto/admin/update-suspensi
 import { DeleteSuspensionDurationTypeDto } from "../../dto/admin/delete-suspension.dto";
 import { AuthPermissions } from "../../permissions/decorators/authPermission.decorator";
 import { PermissionKeys } from "../../permissions/lib/available-permission";
+import { JwtGuard } from "../../../auth/guards/auth.guard";
+import { AdminOnlyGuard } from "../../../roles/guards/admin-only.guard";
 
 @Controller(V1_ADMIN_SUSPENSION)
+@UseGuards(JwtGuard, AdminOnlyGuard)
 @AuthPermissions(PermissionKeys.SUSPENSION_MANAGE)
 export class AdminSuspensionController {
   constructor(
