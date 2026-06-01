@@ -1094,7 +1094,7 @@
               ]
             },
             {
-              "name": "solicitar recuperación de contraseña",
+              "name": "admin solicitar recuperación de contraseña",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1107,7 +1107,7 @@
                   "mode": "raw",
                   "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
                 },
-                "url": "{{base_url}}/auth/password-recovery/request"
+                "url": "{{base_url}}/auth/admin/password-recovery/request"
               },
               "response": [
                 {
@@ -1120,7 +1120,7 @@
                         "value": "application/json"
                       }
                     ],
-                    "url": "{{base_url}}/auth/password-recovery/request",
+                    "url": "{{base_url}}/auth/admin/password-recovery/request",
                     "body": {
                       "mode": "raw",
                       "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
@@ -1140,7 +1140,7 @@
               ]
             },
             {
-              "name": "cambiar contraseña (token del correo)",
+              "name": "admin cambiar contraseña (token del correo)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1153,7 +1153,7 @@
                   "mode": "raw",
                   "raw": "{\n  \"token\": \"<token>\",\n  \"password\": \"nuevaPass12\"\n}"
                 },
-                "url": "{{base_url}}/auth/password-recovery/change"
+                "url": "{{base_url}}/auth/admin/password-recovery/change"
               },
               "response": [
                 {
@@ -1166,7 +1166,7 @@
                         "value": "application/json"
                       }
                     ],
-                    "url": "{{base_url}}/auth/password-recovery/change",
+                    "url": "{{base_url}}/auth/admin/password-recovery/change",
                     "body": {
                       "mode": "raw",
                       "raw": "{\n  \"token\": \"<token>\",\n  \"password\": \"nuevaPass12\"\n}"

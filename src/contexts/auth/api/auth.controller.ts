@@ -20,6 +20,9 @@ import { GetSessionPayload } from "../decorators/GetSessionPayload.decorator";
 import { TwofaDto } from "../../2fa/dto/2fa.dto";
 import { VerifyBackupCodeLoginHttpDto } from "../dto/verify-backup-code-login.http-dto";
 import type { SessionPayload } from "../types/auth.types";
+import { PasswordRecoveryRequestDto } from "../dto/password-recovery-request.dto";
+import { PasswordRecoveryChangeDto } from "../dto/password-recovery-change.dto";
+import { PasswordRecoveryService } from "../services/password-recovery.service";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -30,6 +33,7 @@ export class AuthController {
     private readonly googleTokenService: GoogleTokenService,
     private readonly adminLoginService: AdminLoginService,
     private readonly admin_two_factor_login_service: AdminTwoFactorLoginService,
+    private readonly password_recovery_service: PasswordRecoveryService,
   ) { }
 
 
@@ -183,6 +187,22 @@ export class AuthController {
     res.cookie(REFRESH_TOKEN_NAME, result.refresh_token, authCookieConfig.refresh_token);
     res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
     return result;
+  }
+
+  @Post("admin/password-recovery/request")
+  async adminPasswordRecoveryRequest(@Body() dto: PasswordRecoveryRequestDto) {
+    await this.password_recovery_service.requestAdminRecovery(dto.email);
+    return {
+      message: "Si el email está registrado, vas a recibir un correo con instrucciones.",
+    };
+  }
+
+  @Post("admin/password-recovery/change")
+  async adminPasswordRecoveryChange(@Body() dto: PasswordRecoveryChangeDto) {
+    await this.password_recovery_service.changeAdminPassword(dto.token, dto.password);
+    return {
+      message: "Contraseña actualizada correctamente.",
+    };
   }
 
   @Get("logout")
