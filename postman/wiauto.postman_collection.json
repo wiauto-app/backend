@@ -1720,9 +1720,9 @@
                 },
                 {
                   "key": "order_direction",
-                  "value": "desc",
+                  "value": "DESC",
                   "disabled": true,
-                  "description": "asc|desc"
+                  "description": "ASC|DESC"
                 },
                 {
                   "key": "name",
@@ -2407,9 +2407,9 @@
                     },
                     {
                       "key": "order_direction",
-                      "value": "desc",
+                      "value": "DESC",
                       "disabled": true,
-                      "description": "asc|desc"
+                      "description": "ASC|DESC"
                     },
                     {
                       "key": "type_slug",
@@ -2627,7 +2627,7 @@
                   "originalRequest": {
                     "method": "GET",
                     "header": [],
-                    "url": "{{base_url}}/v1/vehicles?page=1&limit=20&order_by=created_at&order_direction=desc"
+                    "url": "{{base_url}}/v1/vehicles?page=1&limit=20&order_by=created_at&order_direction=DESC"
                   },
                   "status": "OK",
                   "code": 200,
@@ -2657,6 +2657,78 @@
                     }
                   ],
                   "body": "{\n  \"data\": [],\n  \"total\": 0,\n  \"page\": 1,\n  \"limit\": 20\n}"
+                }
+              ]
+            },
+            {
+              "name": "search",
+              "item": [
+                {
+                  "name": "hero facets — marcas",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/search/hero-facets?facet=makes",
+                      "query": [
+                        {
+                          "key": "facet",
+                          "value": "makes",
+                          "description": "makes | models | provinces | municipalities | price_ranges"
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "until_price",
+                          "value": "20000",
+                          "disabled": true
+                        },
+                        {
+                          "key": "province_slug",
+                          "value": "madrid",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Facetas del buscador hero (OpenSearch). Una faceta por request. Filtros en cascada: make_slug, model_slug, province_slug, municipality_slug, until_price."
+                  }
+                },
+                {
+                  "name": "hero facets — modelos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/search/hero-facets?facet=models&make_slug=audi",
+                      "query": [
+                        { "key": "facet", "value": "models" },
+                        { "key": "make_slug", "value": "audi" }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "hero facets — rangos de precio",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/search/hero-facets?facet=price_ranges",
+                      "query": [{ "key": "facet", "value": "price_ranges" }]
+                    }
+                  }
+                },
+                {
+                  "name": "reindex hero search (admin)",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/v1/admin/search/reindex-hero",
+                    "description": "Bulk reindex de vehículos active no borrados en OpenSearch (índice vehicles_hero_v1)."
+                  }
                 }
               ]
             },
@@ -5095,6 +5167,60 @@
                       ]
                     },
                     "description": "GET paginado. Query: page, limit, search, order_by, order_direction; filtros: make_id."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "buscar models (search)",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/catalog/models/search?make_id={{catalog_make_id}}&search=cor&page=1&limit=10",
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "models", "search"],
+                      "query": [
+                        {
+                          "key": "make_id",
+                          "value": "{{catalog_make_id}}",
+                          "description": "ID de marca (obligatorio)."
+                        },
+                        {
+                          "key": "search",
+                          "value": "cor",
+                          "description": "Búsqueda parcial por nombre del modelo."
+                        },
+                        {
+                          "key": "province_id",
+                          "value": "",
+                          "description": "ID de provincia para filtrar el conteo por ubicación.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "since_price",
+                          "value": "",
+                          "description": "Precio mínimo de vehículos para el conteo.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "until_price",
+                          "value": "",
+                          "description": "Precio máximo de vehículos para el conteo.",
+                          "disabled": true
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "description": "Página (default 1)."
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10",
+                          "description": "Tamaño de página (1-100, default 10)."
+                        }
+                      ]
+                    },
+                    "description": "GET búsqueda de modelos por marca con vehicle_count. Mismos filtros de conteo que makes/search."
                   },
                   "response": []
                 },

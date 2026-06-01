@@ -7,6 +7,7 @@ import { VehicleRepository } from "../../../domain/repositories/vehicle.reposito
 import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/application/attach-vehicle-images-from-temp-use-case/attach-vehicle-images-from-temp.use-case";
 import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { UpdateVehicleDto } from "./update-vehicle.dto";
+import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
 
 @Injectable()
 export class UpdateVehicleUseCase {
@@ -14,6 +15,7 @@ export class UpdateVehicleUseCase {
     private readonly vehicle_repository: VehicleRepository,
     private readonly attach_vehicle_images_from_temp_use_case: AttachVehicleImagesFromTempUseCase,
     private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
+    private readonly vehicle_search_indexer: VehicleSearchIndexer,
   ) {}
 
   async execute(update_vehicle_dto: UpdateVehicleDto) {
@@ -54,6 +56,8 @@ export class UpdateVehicleUseCase {
         });
       }
     }
+
+    await this.vehicle_search_indexer.indexVehicle(id);
 
     return { vehicle: updated.toPrimitives() };
   }

@@ -4,11 +4,13 @@ import { VehiclePriceNotFoundException } from "../../domain/exceptions/vehicle-p
 import { VehiclePrice, VEHICLE_PRICE_STATUS } from "../../domain/vehicle-price";
 import { VehiclePriceRepository } from "../../domain/vehicle-price.repository";
 import { SetVehiclePriceDto } from "./set-vehicle-price.dto";
+import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
 
 @Injectable()
 export class SetVehiclePriceUseCase {
   constructor(
     private readonly vehicle_price_repository: VehiclePriceRepository,
+    private readonly vehicle_search_indexer: VehicleSearchIndexer,
   ) {}
 
   async execute(dto: SetVehiclePriceDto): Promise<void> {
@@ -23,6 +25,7 @@ export class SetVehiclePriceUseCase {
         throw new VehiclePriceNotFoundException(vehicle_price_id, vehicle_id);
       }
       await this.vehicle_price_repository.activatePrice(vehicle_id, vehicle_price_id);
+      await this.vehicle_search_indexer.indexVehicle(vehicle_id);
       return;
     }
 
@@ -41,5 +44,6 @@ export class SetVehiclePriceUseCase {
       status: VEHICLE_PRICE_STATUS.ACTIVE,
     });
     await this.vehicle_price_repository.create(new_price);
+    await this.vehicle_search_indexer.indexVehicle(vehicle_id);
   }
 }

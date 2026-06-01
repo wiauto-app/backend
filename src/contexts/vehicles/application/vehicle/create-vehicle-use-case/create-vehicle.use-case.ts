@@ -10,6 +10,7 @@ import { CreateVehicleDto } from "./create-vehicle.dto";
 import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/application/attach-vehicle-images-from-temp-use-case/attach-vehicle-images-from-temp.use-case";
 import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { ValidateVehicleUseCase } from "../validate-vehicle-use-case/validate-vehicle.use-case";
+import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
 
 @Injectable()
 export class CreateVehicleUseCase {
@@ -19,6 +20,7 @@ export class CreateVehicleUseCase {
     private readonly attach_vehicle_images_from_temp_use_case: AttachVehicleImagesFromTempUseCase,
     private readonly validateVehicleUseCase: ValidateVehicleUseCase,
     private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
+    private readonly vehicle_search_indexer: VehicleSearchIndexer,
   ) {
   }
 
@@ -82,6 +84,8 @@ export class CreateVehicleUseCase {
         images: create_vehicle_dto.images,
       });
     }
+
+    await this.vehicle_search_indexer.indexVehicle(vehicle.toPrimitives().id);
 
     return { vehicle: vehicle.toPrimitives() };
   }

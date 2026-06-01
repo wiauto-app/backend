@@ -14,6 +14,7 @@ import { CatalogModelsUseCase } from "../../../application/catalog-models-use-ca
 import { CreateCatalogModelHttpDto } from "./dto/create-catalog-model.http-dto";
 import { UpdateCatalogModelHttpDto } from "./update-catalog-model.http-dto";
 import { FindAllModelsHttpDto } from "./dto/find-all-models.http-dto";
+import { FindSearchModelsHttpDto } from "./dto/find-search-models.http-dto";
 
 @Controller(V1_CATALOG_MODELS)
 export class CatalogModelsController {
@@ -33,8 +34,14 @@ export class CatalogModelsController {
   }
 
   @Get()
+  
   findAll(@Query() query: FindAllModelsHttpDto) {
     return this.use_case.findAll(query);
+  }
+
+  @Get("search")
+  findSearchModels(@Query() query: FindSearchModelsHttpDto) {
+    return this.use_case.findSearchModels(query);
   }
 
   @Get(":id")

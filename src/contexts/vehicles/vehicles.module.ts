@@ -57,9 +57,19 @@ import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-
 import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
 import { AdminGetVehicleUseCase } from "./application/admin-vehicles/admin-get-vehicle-use-case/admin-get-vehicle.use-case";
 import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
+import { VehicleSearchModule } from "./search/vehicle-search.module";
+import { FindFiltersController } from "./infrastructure/http-api/filters-v1/find-filters.controller";
+import { FindFiltersUseCase } from "./application/filters/find-filters-use-case/find-filters.use-case";
+import { VehicleTypesUseCase } from "./application/vehicle-types-use-cases/vehicle-types.use-case";
+import { ServicesUseCase } from "./application/services-use-cases/services.use-case";
+import { CuotasUseCase } from "./application/cuotas-use-cases/cuotas.use-case";
+import { TractionsUseCase } from "./application/tractions-use-cases/tractions.use-case";
+import { WarrantyTypesUseCase } from "./application/warranty-types-use-cases/warranty-types.use-case";
+import { ColorsUseCase } from "./application/colors-use-cases/colors.use-case";
+import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.use-case";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController],
+  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController],
   providers: [
     VehicleCreationGuard,
     ImageValidationPipe,
@@ -77,6 +87,14 @@ import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/ad
     FindFeaturesUseCase,
     AdminFindAllVehiclesUseCase,
     AdminGetVehicleUseCase,
+    FindFiltersUseCase,
+    VehicleTypesUseCase,
+    ServicesUseCase,
+    CuotasUseCase,
+    TractionsUseCase,
+    WarrantyTypesUseCase,
+    ColorsUseCase,
+    DgtLabelsUseCase,
     /* Repositories */
     TypeOrmVehicleRepository,
     TypeOrmFeatureRepository,
@@ -118,6 +136,7 @@ import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/ad
     CatalogModule,
     AuthModule,
     PermissionModule,
+    VehicleSearchModule,
   ],
   exports: [CreateVehicleUseCase, VehicleRepository],
 })

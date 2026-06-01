@@ -57,6 +57,9 @@ const envsSchema = z.object({
   MINIO_BUCKET_NAMES: z
   .string()
   .transform((value) => value.split(",")),
+
+  OPENSEARCH_URL: z.string().default("http://localhost:9200"),
+  OPENSEARCH_INDEX_HERO: z.string().default("vehicles_hero_v1"),
 });
 
 export const envs = envsSchema.parse(process.env);

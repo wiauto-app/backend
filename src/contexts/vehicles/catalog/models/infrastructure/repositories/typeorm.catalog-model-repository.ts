@@ -4,8 +4,11 @@ import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/ty
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
+import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 import { CatalogModel } from "../../domain/entities/catalog-model";
+import { CatalogModelSearchItem } from "../../domain/read-models/catalog-model-search-item";
 import { CatalogModelNotFoundException } from "../../domain/exceptions/catalog-model-not-found.exception";
+import { SearchModelsFilter } from "../../domain/filters/searchModels.filter";
 import { CatalogModelsRepository } from "../../domain/repositories/catalog-models.repository";
 import { CatalogModelEntity } from "../persistence/catalog-model.entity";
 
@@ -22,8 +25,89 @@ export class TypeormCatalogModelRepository extends CatalogModelsRepository {
   constructor(
     @InjectRepository(CatalogModelEntity)
     private readonly repo: Repository<CatalogModelEntity>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehicle_repository: Repository<VehicleEntity>,
   ) {
     super();
+  }
+
+  private async find_vehicle_count_by_model_ids(
+    make_id: number,
+    model_ids: number[],
+    filters?: {
+      province_id?: string;
+      since_price?: number;
+      until_price?: number;
+    },
+  ): Promise<Map<number, number>> {
+    if (model_ids.length === 0) {
+      return new Map();
+    }
+
+
+    const vehicle_count_query = this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .leftJoin("version", "version", "version.id = vehicle.version_id")
+      .select("version.model_id", "model_id")
+      .addSelect("COUNT(vehicle.id)", "vehicle_count")
+      .where("version.make_id = :make_id", { make_id })
+      .andWhere("version.model_id IN (:...model_ids)", { model_ids })
+      .andWhere("vehicle.deleted_at IS NULL");
+
+    if (typeof filters?.since_price === "number" && Number.isFinite(filters.since_price)) {
+      vehicle_count_query
+        .innerJoin(
+          "vehicle_prices",
+          "price_filter_vp",
+          "price_filter_vp.vehicle_id = vehicle.id AND price_filter_vp.status = 'active'",
+        )
+        .andWhere("price_filter_vp.price >= :since_price", {
+          since_price: filters.since_price,
+        });
+    }
+
+    if (typeof filters?.until_price === "number" && Number.isFinite(filters.until_price)) {
+      if (
+        typeof filters.since_price !== "number" ||
+        !Number.isFinite(filters.since_price)
+      ) {
+        vehicle_count_query.innerJoin(
+          "vehicle_prices",
+          "price_filter_vp",
+          "price_filter_vp.vehicle_id = vehicle.id AND price_filter_vp.status = 'active'",
+        );
+      }
+      vehicle_count_query.andWhere("price_filter_vp.price <= :until_price", {
+        until_price: filters.until_price,
+      });
+    }
+
+    if (typeof filters?.province_id === "string" && filters.province_id.trim().length > 0) {
+      vehicle_count_query.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM provinces loc_p
+          WHERE loc_p.id = :province_id
+            AND ST_Intersects(
+              ST_SetSRID(
+                ST_MakePoint(CAST(vehicle.lng AS double precision), CAST(vehicle.lat AS double precision)),
+                4326
+              ),
+              loc_p.geom
+            )
+        )`,
+        { province_id: filters.province_id.trim() },
+      );
+    }
+
+    const rows = await vehicle_count_query
+      .groupBy("version.model_id")
+      .getRawMany<{ model_id: string; vehicle_count: string }>();
+    const vehicle_count_by_model_id = new Map<number, number>();
+    for (const row of rows) {
+      vehicle_count_by_model_id.set(Number(row.model_id), Number(row.vehicle_count));
+    }
+    return vehicle_count_by_model_id;
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogModel>> {
@@ -103,5 +187,42 @@ export class TypeormCatalogModelRepository extends CatalogModelsRepository {
 
   async remove(id: number): Promise<void> {
     await this.repo.delete(id);
+  }
+
+  async findSearchModels(filter: SearchModelsFilter): Promise<CatalogModelSearchItem[]> {
+    const { make_id, search, province_id, since_price, until_price } = filter;
+    const search_query = this.repo
+      .createQueryBuilder("model")
+      .where("model.make_id = :make_id", { make_id })
+      .orderBy("model.name", "ASC")
+      .take(filter.limit);
+
+    if (typeof search === "string" && search.trim().length > 0) {
+      search_query.andWhere("model.name ILIKE :search", {
+        search: `%${search.trim()}%`,
+      });
+    }
+
+    const rows = await search_query.getMany();
+    const model_ids = rows.map((row) => row.id);
+    const vehicle_count_by_model_id = await this.find_vehicle_count_by_model_ids(
+      make_id,
+      model_ids,
+      {
+        province_id,
+        since_price,
+        until_price,
+      },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      make_id: row.make_id,
+      model_id: row.model_id,
+      name: row.name,
+      slug: row.slug,
+      created_at: row.created_at,
+      vehicle_count: vehicle_count_by_model_id.get(row.id) ?? 0,
+    })).filter((model) => model.vehicle_count > 0);
   }
 }

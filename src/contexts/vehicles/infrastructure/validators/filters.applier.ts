@@ -47,9 +47,16 @@ export const applyFilters = (
     });
   }
 
+  const makes_slugs = has_non_empty_string_array(filters.makes_slugs)
+    ? trim_slug_array(filters.makes_slugs)
+    : [];
+  const models_slugs = has_non_empty_string_array(filters.models_slugs)
+    ? trim_slug_array(filters.models_slugs)
+    : [];
+
   const needs_catalog_version =
-    has_non_empty_string(filters.make_slug) ||
-    has_non_empty_string(filters.model_slug) ||
+    makes_slugs.length > 0 ||
+    models_slugs.length > 0 ||
     is_finite_number(filters.since_year) ||
     is_finite_number(filters.until_year) ||
     has_non_empty_string_array(filters.fuel_type_slugs);
@@ -58,22 +65,20 @@ export const applyFilters = (
     qb.leftJoin("vehicle.version", "catalog_ver");
   }
 
-  if (has_non_empty_string(filters.make_slug)) {
+  if (makes_slugs.length > 0) {
     qb.leftJoin(
       "make",
       "cat_make",
       "cat_make.id = catalog_ver.make_id",
-    ).andWhere("cat_make.slug = :make_slug", { make_slug: filters.make_slug });
+    ).andWhere("cat_make.slug IN (:...makes_slugs)", { makes_slugs });
   }
 
-  if (has_non_empty_string(filters.model_slug)) {
+  if (models_slugs.length > 0) {
     qb.leftJoin(
       "model",
       "cat_model",
       "cat_model.id = catalog_ver.model_id",
-    ).andWhere("cat_model.slug = :model_slug", {
-      model_slug: filters.model_slug,
-    });
+    ).andWhere("cat_model.slug IN (:...models_slugs)", { models_slugs });
   }
 
 

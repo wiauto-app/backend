@@ -4,12 +4,14 @@ import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { VehicleImageRepository } from "../../../vehicle-images/domain/vehicle-imagen.repository";
 import { RemoveVehicleDto } from "./remove-vehicle.dto";
+import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
 
 @Injectable()
 export class RemoveVehicleUseCase {
   constructor(
     private readonly vehicle_repository: VehicleRepository,
     private readonly vehicle_image_repository: VehicleImageRepository,
+    private readonly vehicle_search_indexer: VehicleSearchIndexer,
   ) {}
 
   async execute(removeVehicleDto: RemoveVehicleDto): Promise<void> {
@@ -22,5 +24,6 @@ export class RemoveVehicleUseCase {
       removeVehicleDto.id,
     );
     await this.vehicle_repository.remove(removeVehicleDto.id);
+    await this.vehicle_search_indexer.deleteVehicle(removeVehicleDto.id);
   }
 }

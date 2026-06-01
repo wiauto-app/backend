@@ -15,8 +15,8 @@ export class FindAllVehiclesDto extends PickType(PaginationDto, [
   type_slug: string;
 
   //marca y modelo
-  make_slug: string;
-  model_slug: string;
+  makes_slugs: string[];
+  models_slugs: string[];
 
   //price filters
   since_price: number;

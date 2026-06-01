@@ -8,11 +8,7 @@ import {
 import {
   OptionalPositiveInt,
   OptionalQueryStringArray,
-  normalize_optional_boolean,
-  normalize_optional_number,
-  normalize_query_string_array,
 } from "@/src/contexts/vehicles/infrastructure/validators/filter.validator";
-import { Transform } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -28,28 +24,23 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   @IsString()
   type_slug: string;
 
-  @IsOptional()
-  @IsString()
-  make_slug: string;
+  @OptionalQueryStringArray()
+  makes_slugs: string[] = [];
+
+  @OptionalQueryStringArray()
+  models_slugs: string[] = [];
 
   @IsOptional()
-  @IsString()
-  model_slug: string;
-
-  @IsOptional()
-  @Transform(({ value }) => normalize_optional_number(value))
   @IsNumber()
   @Min(0)
   since_price: number;
 
   @IsOptional()
-  @Transform(({ value }) => normalize_optional_number(value))
   @IsNumber()
   @Min(0)
   until_price: number;
 
   @IsOptional()
-  @Transform(({ value }) => normalize_optional_boolean(value))
   @IsBoolean()
   price_offer: boolean;
 
@@ -66,12 +57,10 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   service_slugs: string[] = [];
 
   @IsOptional()
-  @Transform(({ value }) => normalize_optional_number(value))
   @IsNumber()
   lat: number;
 
   @IsOptional()
-  @Transform(({ value }) => normalize_optional_number(value))
   @IsNumber()
   lng: number;
 
@@ -79,13 +68,11 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   radius: number;
 
   @IsOptional()
-  @Transform(({ value }) => normalize_query_string_array(value))
   @IsArray()
   @IsIn(Object.values(PUBLISHER_TYPE), { each: true })
   publisher_types: PublisherType[] = [];
 
   @IsOptional()
-  @Transform(({ value }) => normalize_optional_boolean(value))
   @IsBoolean()
   is_seller_featured: boolean;
 
@@ -105,7 +92,6 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   until_mileage: number;
 
   @IsOptional()
-  @Transform(({ value }) => normalize_query_string_array(value))
   @IsArray()
   @IsIn(Object.values(TRANSMISSION_TYPE), { each: true })
   transmission_types: TransmissionType[] = [];

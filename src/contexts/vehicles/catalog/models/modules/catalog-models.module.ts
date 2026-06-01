@@ -5,10 +5,11 @@ import { TypeormCatalogModelRepository } from "../infrastructure/repositories/ty
 import { CatalogModelsRepository } from "../domain/repositories/catalog-models.repository";
 import { CatalogModelsController } from "../infrastructure/http-api/catalog-models-v1/catalog-models.controller";
 import { CatalogModelsUseCase } from "../application/catalog-models-use-cases/catalog-models.use-case";
+import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 
 @Module({
   controllers: [CatalogModelsController],
-  imports: [TypeOrmModule.forFeature([CatalogModelEntity])],
+  imports: [TypeOrmModule.forFeature([CatalogModelEntity, VehicleEntity])],
   providers: [
     CatalogModelsUseCase,
     TypeormCatalogModelRepository,

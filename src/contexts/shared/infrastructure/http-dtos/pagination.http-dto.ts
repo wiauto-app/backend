@@ -1,5 +1,13 @@
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
+
+const normalizeOrderDirectionQuery = (value: unknown): unknown => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  return value.toUpperCase();
+};
 
 export class PaginationHttpDto {
 
@@ -26,6 +34,7 @@ export class PaginationHttpDto {
   order_by: string;
 
   @IsOptional()
+  @Transform(({ value }) => normalizeOrderDirectionQuery(value))
   @IsEnum(["ASC", "DESC"])
   order_direction: "ASC" | "DESC" = "ASC";
 

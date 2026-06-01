@@ -7,8 +7,8 @@ import { PaginationDto } from "@/src/contexts/shared/application/dtos/pagination
 export interface VehicleFilterOptions extends PaginationDto {
   
   type_slug?: string;
-  make_slug?: string;
-  model_slug?: string;
+  makes_slugs?: string[];
+  models_slugs?: string[];
   since_price?: number;
   until_price?: number;
   price_offer?: boolean;
@@ -45,8 +45,8 @@ export interface VehicleFilterOptions extends PaginationDto {
 
 export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilterOptions, "page" | "limit" | "query" | "order_by" | "order_direction"> {
   type_slug?: string;
-  make_slug?: string;
-  model_slug?: string;
+  makes_slugs?: string[];
+  models_slugs?: string[];
   since_price?: number;
   until_price?: number;
   price_offer?: boolean;

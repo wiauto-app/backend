@@ -9,15 +9,30 @@ import {
   registerDecorator,
 } from "class-validator";
 
+const split_query_string_array_item = (raw: string): string[] => {
+  const decoded = decodeURIComponent(raw.trim());
+  return decoded
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+};
+
 export function normalize_query_string_array(value: unknown): string[] | undefined {
   if (value === undefined || value === null || value === "") {
     return undefined;
   }
   if (Array.isArray(value)) {
-    return value.map(String);
+    const expanded = value.flatMap((item) => {
+      if (typeof item === "string") {
+        return split_query_string_array_item(item);
+      }
+      return [String(item)];
+    });
+    return expanded.length > 0 ? expanded : undefined;
   }
   if (typeof value === "string") {
-    return [value];
+    const expanded = split_query_string_array_item(value);
+    return expanded.length > 0 ? expanded : undefined;
   }
   return undefined;
 }

@@ -57,7 +57,7 @@ export class TypeormMakeRepository extends MakesRepository {
 
     if (typeof filters?.until_price === "number" && Number.isFinite(filters.until_price)) {
       if (
-        typeof filters?.since_price !== "number" ||
+        typeof filters.since_price !== "number" ||
         !Number.isFinite(filters.since_price)
       ) {
         vehicle_count_query.innerJoin(

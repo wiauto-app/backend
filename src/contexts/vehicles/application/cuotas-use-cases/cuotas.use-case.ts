@@ -29,8 +29,8 @@ export class CuotasUseCase {
     }
     const prev = existing.toPrimitives();
     const updated = existing.update({
-      name: dto.name === undefined ? prev.name : dto.name,
-      value: dto.value === undefined ? prev.value : dto.value,
+      name: dto.name ?? prev.name,
+      value: dto.value ?? prev.value,
     });
     await this.cuotas_repository.save(updated);
     return { cuota: updated.toPrimitives() };
