@@ -3,6 +3,11 @@ import { SelectQueryBuilder } from "typeorm";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleEntity } from "../persistence/vehicle.entity";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
+import { MakeModelFilterMode } from "./make-model-filter-mode.utils";
+
+export interface ApplyFiltersOptions {
+  make_model_filter_mode?: MakeModelFilterMode;
+}
 
 const has_non_empty_string = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
@@ -40,6 +45,7 @@ const sql_vehicle_point =
 export const applyFilters = (
   qb: SelectQueryBuilder<VehicleEntity>,
   filters: VehicleFilter,
+  options?: ApplyFiltersOptions,
 ): void => {
   if (has_non_empty_string(filters.type_slug)) {
     qb.andWhere("vehicle_type.slug = :type_slug", {
@@ -65,23 +71,41 @@ export const applyFilters = (
     qb.leftJoin("vehicle.version", "catalog_ver");
   }
 
-  if (makes_slugs.length > 0) {
+  const use_make_model_or =
+    makes_slugs.length > 0 &&
+    models_slugs.length > 0 &&
+    options?.make_model_filter_mode === "or";
+
+  if (use_make_model_or) {
     qb.leftJoin(
       "make",
       "cat_make",
       "cat_make.id = catalog_ver.make_id",
-    ).andWhere("cat_make.slug IN (:...makes_slugs)", { makes_slugs });
-  }
-
-  if (models_slugs.length > 0) {
-    qb.leftJoin(
+    ).leftJoin(
       "model",
       "cat_model",
       "cat_model.id = catalog_ver.model_id",
-    ).andWhere("cat_model.slug IN (:...models_slugs)", { models_slugs });
+    ).andWhere(
+      "(cat_make.slug IN (:...makes_slugs) OR cat_model.slug IN (:...models_slugs))",
+      { makes_slugs, models_slugs },
+    );
+  } else {
+    if (makes_slugs.length > 0) {
+      qb.leftJoin(
+        "make",
+        "cat_make",
+        "cat_make.id = catalog_ver.make_id",
+      ).andWhere("cat_make.slug IN (:...makes_slugs)", { makes_slugs });
+    }
+
+    if (models_slugs.length > 0) {
+      qb.leftJoin(
+        "model",
+        "cat_model",
+        "cat_model.id = catalog_ver.model_id",
+      ).andWhere("cat_model.slug IN (:...models_slugs)", { models_slugs });
+    }
   }
-
-
 
   if (is_finite_number(filters.since_year) || is_finite_number(filters.until_year)) {
     qb.leftJoin("year", "cat_year", "cat_year.id = catalog_ver.year_id");

@@ -8,7 +8,6 @@ export class FindAllVehiclesController {
 
   @Get()
   run(@Query() findAllVehiclesHttpDto: FindAllVehiclesHttpDto) {
-    console.log(findAllVehiclesHttpDto);
     return this.findAllVehiclesUseCase.execute(findAllVehiclesHttpDto);
   }
 }

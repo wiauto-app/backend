@@ -2661,6 +2661,64 @@
               ]
             },
             {
+              "name": "filtros activos (resolución para UI)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/filters/active?type_slug=suv&makes_slugs=audi&makes_slugs=bmw&models_slugs=a3&since_price=5000&until_price=30000",
+                  "query": [
+                    {
+                      "key": "type_slug",
+                      "value": "suv",
+                      "description": "Mismos query params que GET /v1/vehicles (FindAllVehiclesHttpDto)."
+                    },
+                    {
+                      "key": "makes_slugs",
+                      "value": "audi"
+                    },
+                    {
+                      "key": "makes_slugs",
+                      "value": "bmw"
+                    },
+                    {
+                      "key": "models_slugs",
+                      "value": "a3"
+                    },
+                    {
+                      "key": "since_price",
+                      "value": "5000"
+                    },
+                    {
+                      "key": "until_price",
+                      "value": "30000"
+                    }
+                  ]
+                },
+                "description": "Resuelve slugs/ids de filtros activos a entidades (`resolved`) y devuelve rangos/enums sin lookup (`applied`). Misma query que el listado de vehículos; no pagina resultados. Respuesta: `{ resolved: { vehicle_type, makes, models, provinces, communities, municipalities, services, warranties, colors, dgt_labels, features, fuels, tractions, cuotas }, applied: { since_price, ... } }`. Orden de arrays respeta el orden de los query params."
+              },
+              "response": [
+                {
+                  "name": "200 OK (ejemplo)",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/filters/active?type_slug=suv&makes_slugs=audi&models_slugs=a3&since_price=5000&until_price=30000"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"resolved\": {\n    \"vehicle_type\": { \"id\": \"cccccccc-dddd-eeee-ffff-000000000001\", \"slug\": \"suv\", \"name\": \"SUV\" },\n    \"makes\": [\n      { \"id\": 1, \"slug\": \"audi\", \"name\": \"Audi\" }\n    ],\n    \"models\": [\n      { \"id\": 10, \"slug\": \"a3\", \"name\": \"A3\", \"make_id\": 1, \"model_id\": 100 }\n    ],\n    \"provinces\": [],\n    \"communities\": [],\n    \"municipalities\": [],\n    \"services\": [],\n    \"warranties\": [],\n    \"colors\": [],\n    \"dgt_labels\": [],\n    \"features\": [],\n    \"fuels\": [],\n    \"tractions\": [],\n    \"cuotas\": []\n  },\n  \"applied\": {\n    \"since_price\": 5000,\n    \"until_price\": 30000\n  }\n}"
+                }
+              ]
+            },
+            {
               "name": "search",
               "item": [
                 {
@@ -2693,7 +2751,7 @@
                         }
                       ]
                     },
-                    "description": "Facetas del buscador hero (OpenSearch). Una faceta por request. Filtros en cascada: make_slug, model_slug, province_slug, municipality_slug, until_price."
+                    "description": "Facetas del buscador hero (OpenSearch). Una faceta por request. Filtros en cascada: make_slugs, model_slugs, province_slug, municipality_slug, until_price."
                   }
                 },
                 {
@@ -2702,12 +2760,13 @@
                     "method": "GET",
                     "header": [],
                     "url": {
-                      "raw": "{{base_url}}/v1/search/hero-facets?facet=models&make_slug=audi",
+                      "raw": "{{base_url}}/v1/search/hero-facets?facet=models&make_slugs=audi",
                       "query": [
                         { "key": "facet", "value": "models" },
-                        { "key": "make_slug", "value": "audi" }
+                        { "key": "make_slugs", "value": "audi" }
                       ]
-                    }
+                    },
+                    "description": "Requiere make_slugs. Cada item incluye make_id de la marca padre. Ejemplo: { id, slug, name, vehicle_count, make_id }."
                   }
                 },
                 {

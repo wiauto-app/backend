@@ -10,6 +10,8 @@ export type HeroCatalogFacetItem = {
   slug: string;
   name: string;
   vehicle_count: number;
+  /** Presente solo cuando facet=models */
+  make_id?: number;
 };
 
 export type HeroPriceRangeFacetItem = {

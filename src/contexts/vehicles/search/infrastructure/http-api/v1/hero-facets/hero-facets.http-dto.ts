@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import {
+  IsArray,
   IsEnum,
   IsInt,
   IsOptional,
@@ -26,12 +27,14 @@ export class HeroFacetsHttpDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  make_slug?: string;
+  @IsArray()
+  @IsString({ each: true })
+  make_slugs?: string[];  
 
   @IsOptional()
-  @IsString()
-  model_slug?: string;
+  @IsArray()
+  @IsString({ each: true })
+  model_slugs?: string[];
 
   @IsOptional()
   @IsString()

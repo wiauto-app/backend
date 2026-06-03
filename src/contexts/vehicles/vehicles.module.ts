@@ -59,7 +59,17 @@ import { AdminGetVehicleUseCase } from "./application/admin-vehicles/admin-get-v
 import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
 import { VehicleSearchModule } from "./search/vehicle-search.module";
 import { FindFiltersController } from "./infrastructure/http-api/filters-v1/find-filters.controller";
+import { FindActiveFiltersController } from "./infrastructure/http-api/filters-v1/find-active-filters.controller";
 import { FindFiltersUseCase } from "./application/filters/find-filters-use-case/find-filters.use-case";
+import { FindActiveFiltersUseCase } from "./application/filters/find-active-filters-use-case/find-active-filters.use-case";
+import { ActiveFiltersLookupPort } from "./application/ports/active-filters-lookup.port";
+import { TypeOrmActiveFiltersLookupAdapter } from "./infrastructure/adapters/typeorm-active-filters-lookup.adapter";
+import { MakeEntity } from "./catalog/makes/infrastructure/persistence/make.entity";
+import { CatalogModelEntity } from "./catalog/models/infrastructure/persistence/catalog-model.entity";
+import { CatalogFuelTypeEntity } from "./catalog/fuel_types/infrastructure/persistence/catalog-fuel-type.entity";
+import { Provinces } from "@/src/contexts/locations/provinces/entities/province.entity";
+import { Comunity } from "@/src/contexts/locations/comunities/entities/comunity.entity";
+import { Municipality } from "@/src/contexts/locations/municipalities/entities/municipality.entity";
 import { VehicleTypesUseCase } from "./application/vehicle-types-use-cases/vehicle-types.use-case";
 import { ServicesUseCase } from "./application/services-use-cases/services.use-case";
 import { CuotasUseCase } from "./application/cuotas-use-cases/cuotas.use-case";
@@ -69,7 +79,7 @@ import { ColorsUseCase } from "./application/colors-use-cases/colors.use-case";
 import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.use-case";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController],
+  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController, FindActiveFiltersController],
   providers: [
     VehicleCreationGuard,
     ImageValidationPipe,
@@ -88,6 +98,8 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
     AdminFindAllVehiclesUseCase,
     AdminGetVehicleUseCase,
     FindFiltersUseCase,
+    FindActiveFiltersUseCase,
+    TypeOrmActiveFiltersLookupAdapter,
     VehicleTypesUseCase,
     ServicesUseCase,
     CuotasUseCase,
@@ -107,6 +119,10 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
       provide: FeatureRepository,
       useExisting: TypeOrmFeatureRepository,
     },
+    {
+      provide: ActiveFiltersLookupPort,
+      useExisting: TypeOrmActiveFiltersLookupAdapter,
+    },
   ],
   imports: [
     TypeOrmModule.forFeature([
@@ -120,6 +136,12 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
       TractionEntity,
       CuotaEntity,
       CategoryEntity,
+      MakeEntity,
+      CatalogModelEntity,
+      CatalogFuelTypeEntity,
+      Provinces,
+      Comunity,
+      Municipality,
       Roles,
     ]),
     VehicleImagesModule,

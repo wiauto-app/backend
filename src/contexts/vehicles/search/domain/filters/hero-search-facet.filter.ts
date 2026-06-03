@@ -1,10 +1,10 @@
 import type { HeroFacetKind } from "../read-models/hero-facet-item";
 
-export type HeroSearchFacetFilter = {
+export interface HeroSearchFacetFilter {
   facet: HeroFacetKind;
   search?: string;
-  make_slug?: string;
-  model_slug?: string;
+  make_slugs?: string[];
+  model_slugs?: string[];
   province_slug?: string;
   municipality_slug?: string;
   until_price?: number;

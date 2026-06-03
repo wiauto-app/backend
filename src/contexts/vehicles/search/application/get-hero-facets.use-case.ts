@@ -11,7 +11,7 @@ export class GetHeroFacetsUseCase {
   constructor(private readonly hero_search_repository: HeroSearchRepository) {}
 
   async execute(dto: GetHeroFacetsDto): Promise<HeroFacetsResult> {
-    if (dto.facet === "models" && !dto.make_slug?.trim()) {
+    if (dto.facet === "models" && !dto.make_slugs?.length) {
       throw new BadRequestException(
         "make_slug es obligatorio cuando facet=models",
       );
@@ -26,8 +26,8 @@ export class GetHeroFacetsUseCase {
     const filter: HeroSearchFacetFilter = {
       facet: dto.facet,
       search: dto.search,
-      make_slug: dto.make_slug,
-      model_slug: dto.model_slug,
+      make_slugs: dto.make_slugs,
+      model_slugs: dto.model_slugs,
       province_slug: dto.province_slug,
       municipality_slug: dto.municipality_slug,
       until_price: dto.until_price,

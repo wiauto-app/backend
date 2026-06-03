@@ -28,6 +28,12 @@ import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/domain/vehicle-price"
 import { applyAdminFilters, applyFilters } from "../validators/filters.applier";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
+import { MakeEntity } from "../../catalog/makes/infrastructure/persistence/make.entity";
+import { CatalogModelEntity } from "../../catalog/models/infrastructure/persistence/catalog-model.entity";
+import {
+  MakeModelFilterMode,
+  resolveMakeModelFilterMode,
+} from "../validators/make-model-filter-mode.utils";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -295,8 +301,44 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     private readonly cuota_repository: Repository<CuotaEntity>,
     @InjectRepository(CategoryEntity)
     private readonly category_repository: Repository<CategoryEntity>,
+    @InjectRepository(CatalogModelEntity)
+    private readonly catalog_model_repository: Repository<CatalogModelEntity>,
   ) {
     super();
+  }
+
+  private trim_slug_array(value: string[] | undefined): string[] {
+    if (!Array.isArray(value) || value.length === 0) {
+      return [];
+    }
+    return value.map((s) => s.trim()).filter((s) => s.length > 0);
+  }
+
+  private async lookupMakeSlugsForModelSlugs(
+    models_slugs: string[],
+  ): Promise<string[]> {
+    if (models_slugs.length === 0) {
+      return [];
+    }
+    const rows = await this.catalog_model_repository
+      .createQueryBuilder("catalog_model")
+      .innerJoin(MakeEntity, "make", "make.id = catalog_model.make_id")
+      .select("make.slug", "make_slug")
+      .where("catalog_model.slug IN (:...models_slugs)", { models_slugs })
+      .getRawMany<{ make_slug: string }>();
+    return [...new Set(rows.map((row) => row.make_slug))];
+  }
+
+  private async resolveMakeModelFilterModeForFilter(
+    filter: VehicleFilter,
+  ): Promise<MakeModelFilterMode | undefined> {
+    const makes_slugs = this.trim_slug_array(filter.makes_slugs);
+    const models_slugs = this.trim_slug_array(filter.models_slugs);
+    if (makes_slugs.length === 0 || models_slugs.length === 0) {
+      return undefined;
+    }
+    const model_make_slugs = await this.lookupMakeSlugsForModelSlugs(models_slugs);
+    return resolveMakeModelFilterMode(makes_slugs, model_make_slugs);
   }
 
   private async assert_feature_ids_exist(feature_ids: string[]): Promise<void> {
@@ -504,7 +546,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
         { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
       );
 
-    applyFilters(qb, filter);
+    const make_model_filter_mode =
+      await this.resolveMakeModelFilterModeForFilter(filter);
+    const apply_filters_options =
+      make_model_filter_mode === undefined
+        ? undefined
+        : { make_model_filter_mode };
+    applyFilters(qb, filter, apply_filters_options);
 
     const count_qb = qb.clone();
     (

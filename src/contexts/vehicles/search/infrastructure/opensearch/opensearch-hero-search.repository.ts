@@ -18,6 +18,10 @@ import {
   vehicle_hero_index_mappings,
   VEHICLE_HERO_INDEX_NAME,
 } from "./vehicle-hero-index.mapping";
+import {
+  mapHeroCatalogFacetBucket,
+  type HeroFacetTermsBucket,
+} from "./map-hero-catalog-facet-bucket";
 import { OPENSEARCH_CLIENT } from "./opensearch-client.factory";
 
 const SLUG_FIELD_BY_FACET = {
@@ -33,18 +37,6 @@ const META_PREFIX_BY_FACET = {
   provinces: "province",
   municipalities: "municipality",
 } as const;
-
-interface TermsBucket {
-  key: string;
-  doc_count: number;
-  meta?: {
-    hits?: {
-      hits?: {
-        _source?: Record<string, unknown>;
-      }[];
-    };
-  };
-};
 
 @Injectable()
 export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
@@ -136,6 +128,15 @@ export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
     const meta_prefix = META_PREFIX_BY_FACET[filter.facet];
     const slug_field = SLUG_FIELD_BY_FACET[filter.facet];
     const search = filter.search?.trim();
+    const source_includes = [
+      `${meta_prefix}_id`,
+      `${meta_prefix}_slug`,
+      `${meta_prefix}_name`,
+    ];
+
+    if (filter.facet === "models") {
+      source_includes.push("make_id");
+    }
 
     const terms_agg = {
       terms: {
@@ -148,11 +149,7 @@ export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
           top_hits: {
             size: 1,
             _source: {
-              includes: [
-                `${meta_prefix}_id`,
-                `${meta_prefix}_slug`,
-                `${meta_prefix}_name`,
-              ],
+              includes: source_includes,
             },
           },
         },
@@ -191,14 +188,17 @@ export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
     });
 
     const facet_agg = response.body.aggregations?.facet_values as
-      | { buckets?: TermsBucket[]; filtered_terms?: { buckets?: TermsBucket[] } }
+      | {
+          buckets?: HeroFacetTermsBucket[];
+          filtered_terms?: { buckets?: HeroFacetTermsBucket[] };
+        }
       | undefined;
 
     const buckets =
       facet_agg?.filtered_terms?.buckets ?? facet_agg?.buckets ?? [];
 
     const items = buckets
-      .map((bucket) => this.mapTermsBucket(meta_prefix, bucket))
+      .map((bucket) => mapHeroCatalogFacetBucket(meta_prefix, bucket))
       .filter((item): item is HeroCatalogFacetItem => item !== null);
 
     return { facet: filter.facet, items };
@@ -213,12 +213,12 @@ export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
       { bool: { must_not: { exists: { field: "deleted_at" } } } },
     ];
 
-    if (filter.make_slug) {
-      clauses.push({ term: { make_slug: filter.make_slug } });
+    if (filter.make_slugs?.length) {
+      clauses.push({ terms: { make_slug: filter.make_slugs } });
     }
 
-    if (filter.model_slug) {
-      clauses.push({ term: { model_slug: filter.model_slug } });
+    if (filter.model_slugs?.length) {
+      clauses.push({ terms: { model_slug: filter.model_slugs } });
     }
 
     if (filter.province_slug) {
@@ -236,32 +236,6 @@ export class OpenSearchHeroSearchRepository extends HeroSearchRepository {
     }
 
     return clauses;
-  }
-
-  private mapTermsBucket(
-    meta_prefix: string,
-    bucket: TermsBucket,
-  ): HeroCatalogFacetItem | null {
-    const hit_source = bucket.meta?.hits?.hits?.[0]?._source;
-
-    if (!hit_source) {
-      return null;
-    }
-
-    const id = hit_source[`${meta_prefix}_id`];
-    const slug = hit_source[`${meta_prefix}_slug`];
-    const name = hit_source[`${meta_prefix}_name`];
-
-    if (typeof id !== "number" || typeof slug !== "string" || typeof name !== "string") {
-      return null;
-    }
-
-    return {
-      id,
-      slug,
-      name,
-      vehicle_count: bucket.doc_count,
-    };
   }
 
   private async getPriceRangeFacets(
