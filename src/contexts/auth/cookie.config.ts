@@ -10,7 +10,7 @@ export const authCookieConfig: Record<string, CookieOptions> = {
   refresh_token: {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none" as const,
     path: "/",
     maxAge: MONTH,
   },
@@ -18,7 +18,7 @@ export const authCookieConfig: Record<string, CookieOptions> = {
   access_token: {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none" as const,
     path: "/",
     maxAge: FIFTEEN_MINUTES,
   },
