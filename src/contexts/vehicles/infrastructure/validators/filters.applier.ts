@@ -350,7 +350,6 @@ export const applyFilters = (
       { cuota_slugs: filters.cuota_slugs },
     );
   }
-
   if (has_non_empty_string(filters.query)) {
     qb.andWhere("(vehicle.title ILIKE :search OR vehicle.description ILIKE :search)", {
       search: `%${filters.query.trim()}%`,
