@@ -12,6 +12,9 @@ export class VehicleTypeEntity implements PrimitiveVehicleType {
   @Column()
   slug: string;
 
+  @Column({ type: "varchar", nullable: true })
+  image_url: string | null;
+
   @CreateDateColumn()
   created_at: Date;
 

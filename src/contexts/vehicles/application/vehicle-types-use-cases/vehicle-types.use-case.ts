@@ -25,7 +25,7 @@ export class VehicleTypesUseCase {
     }
     const previous = vehicle_type.toPrimitives();
     const next_name = update_vehicle_type_dto.name ?? previous.name;
-    const updated_vehicle_type = vehicle_type.update({ name: next_name });
+    const updated_vehicle_type = vehicle_type.update({ name: next_name, image_url: update_vehicle_type_dto.image_url });
     await this.vehicleTypesRepository.update(id, updated_vehicle_type.toPrimitives().name);
     return { vehicleType: updated_vehicle_type.toPrimitives() };
   }

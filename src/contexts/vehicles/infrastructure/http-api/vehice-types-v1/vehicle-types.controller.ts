@@ -18,6 +18,7 @@ export class VehicleTypesController {
   update(@Param("id") id: string, @Body() updateVehicleTypeHttpDto: UpdateVehicleTypeHttpDto) {
     return this.vehicleTypesUseCase.update(id, {
       name: updateVehicleTypeHttpDto.name,
+      image_url: updateVehicleTypeHttpDto.image_url,
     });
   }
 

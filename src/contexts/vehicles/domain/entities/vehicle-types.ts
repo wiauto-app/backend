@@ -4,6 +4,7 @@ export interface PrimitiveVehicleType {
   id: string;
   name: string;
   slug: string;
+  image_url?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -21,7 +22,7 @@ export class VehicleType {
     });
   }
 
-  update(updateVehicleType: { name: string }): VehicleType {
+  update(updateVehicleType: { name: string, image_url?: string | null }): VehicleType {
     return new VehicleType({
       ...this.primitiveVehicleType,
       ...updateVehicleType,
