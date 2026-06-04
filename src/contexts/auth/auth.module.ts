@@ -7,13 +7,17 @@ import { UserModule } from "../users/user.module";
 import { AuthController } from "./api/auth.controller";
 import { AuthService } from "./services/auth.service";
 import { PasswordService } from "./services/password.service";
+
 import { GoogleTokenService } from "./services/google-token.service";
-// import { AppleTokenService } from "./services/apple-token.service";
-import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
-// import { AppleStrategy } from "./strategies/apple.strategy";
-import { JwtGuard } from "./guards/auth.guard";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
+
+import { AppleTokenService } from "./services/apple-token.service";
+import { AppleStrategy } from "./strategies/apple.strategy";
+import { AppleAuthGuard } from "./guards/apple-auth.guard";
+
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { JwtGuard } from "./guards/auth.guard";
 import { MeService } from "./services/me.service";
 import { AccountSettingsService } from "./services/account-settings.service";
 import { MeController } from "./api/me.controller";
@@ -22,7 +26,6 @@ import { PasswordRecoveryService } from "./services/password-recovery.service";
 import { EmailVerificationController } from "./api/email-verification.controller";
 import { EmailVerificationService } from "./services/email-verification.service";
 import { ProfileModule } from "../profiles/profile.module";
-// import { AppleAuthGuard } from "./guards/apple-auth.guard";
 import { User } from "../users/entities/user.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { EmailVerificationQueue } from "./queues/email-verification.queue";
@@ -49,13 +52,13 @@ import { TwoFactorAuthModule } from "../2fa/2fa.module";
     AuthService,
     PasswordService,
     GoogleTokenService,
-    // AppleTokenService,
+    AppleTokenService,
     JwtStrategy,
     GoogleStrategy,
-    // AppleStrategy,
+    AppleStrategy,
     JwtGuard,
     GoogleAuthGuard,
-    // AppleAuthGuard,
+    AppleAuthGuard,
 
     MeService,
     AccountSettingsService,

@@ -23,6 +23,9 @@ import type { SessionPayload } from "../types/auth.types";
 import { PasswordRecoveryRequestDto } from "../dto/password-recovery-request.dto";
 import { PasswordRecoveryChangeDto } from "../dto/password-recovery-change.dto";
 import { PasswordRecoveryService } from "../services/password-recovery.service";
+import { AppleAuthGuard } from "../guards/apple-auth.guard";
+import { AppleMobileDto } from "../dto/apple-mobile.dto";
+import { AppleTokenService } from "../services/apple-token.service";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -34,6 +37,7 @@ export class AuthController {
     private readonly adminLoginService: AdminLoginService,
     private readonly admin_two_factor_login_service: AdminTwoFactorLoginService,
     private readonly password_recovery_service: PasswordRecoveryService,
+    private readonly appleTokenService: AppleTokenService,
   ) { }
 
 
@@ -140,8 +144,9 @@ export class AuthController {
   @Get("google/callback")
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-    const { token } = await this.authService.signInWithOAuthProfile(req.user, req);
-    res.redirect(`${envs.FRONTEND_REDIRECT_URL}?token=${token}`);
+    const { token,refresh_token,type } = await this.authService.signInWithOAuthProfile(req.user, req);
+    const url = `${envs.FRONTEND_REDIRECT_URL}?token=${token}&refresh_token=${refresh_token}&type=${type}`;
+    res.redirect(url);
     return
   }
 
@@ -153,25 +158,26 @@ export class AuthController {
   }
 
   // ---- Apple (deshabilitado hasta tener credenciales) ----
-  // @Get("apple")
-  // @UseGuards(AppleAuthGuard)
-  // appleAuth(): void {
-  //   // passport redirige automáticamente a Apple
-  // }
-  //
-  // @Post("apple/callback")
-  // @UseGuards(AppleAuthGuard)
-  // async appleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-  //   const token = await this.authService.signInWithOAuthProfile(req.user);
-  //   return res.redirect(`${envs.FRONTEND_REDIRECT_URL}?token=${token}`);
-  // }
-  //
-  // @Post("apple/mobile")
-  // async appleMobile(@Body() dto: AppleMobileDto) {
-  //   const profile = await this.appleTokenService.verifyIdentityToken(dto.identity_token);
-  //   const token = await this.authService.signInWithOAuthProfile(profile);
-  //   return { token };
-  // }
+  @Get("apple")
+  @UseGuards(AppleAuthGuard)
+  appleAuth(): void {
+    // passport redirige automáticamente a Apple
+  }
+  
+  @Post("apple/callback")
+  @UseGuards(AppleAuthGuard)
+  async appleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
+    const { token,refresh_token,type } = await this.authService.signInWithOAuthProfile(req.user, req);
+    const url = `${envs.FRONTEND_REDIRECT_URL}?token=${token}&refresh_token=${refresh_token}&type=${type}`;
+    res.redirect(url);
+  }
+  
+  @Post("apple/mobile")
+  async appleMobile(@Body() dto: AppleMobileDto, @Req() req: Request) {
+    const profile = await this.appleTokenService.verifyIdentityToken(dto.identity_token);
+    const token = await this.authService.signInWithOAuthProfile(profile, req);
+    return { token };
+  }
 
   @Post("refresh")
   @UseGuards(RefreshTokenGuard)
