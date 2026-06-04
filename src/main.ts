@@ -5,14 +5,12 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 
 import cookieParser from "cookie-parser";
 import passport from "passport";
-import express from 'express';
-import compression from 'compression';
+import compression from "compression";
 
 import { AppModule } from "@/app/app.module";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 
-    
 const FRONTEND_ORIGINS = (
   process.env.FRONTEND_ORIGINS ??
   "http://localhost:3000,http://localhost:5173"
@@ -22,18 +20,30 @@ const FRONTEND_ORIGINS = (
   .filter(Boolean);
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule,{
+  // Dejamos que Nest maneje los body parsers internamente
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
-    bodyParser: true,
+    bodyParser: true, 
   });
 
+  // 1. Fundamental para leer las cookies de Next.js
+  app.use(cookieParser());
+
+  // 2. CORS Seguro y compatible con credentials: true
   app.enableCors({
-    origin: FRONTEND_ORIGINS.length > 0 ? FRONTEND_ORIGINS : true,
+    origin: (origin, callback) => {
+      if (!origin || FRONTEND_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origen ${origin} no permitido por CORS`));
+      }
+    },
     allowedHeaders: ['Authorization', 'Content-Type'],
     exposedHeaders: ['Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
   });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -44,14 +54,12 @@ async function bootstrap() {
       },
     }),
   );
-  app.use(cookieParser());
+  
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new HttpErrorFilter());
   app.use(compression());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  
   app.use(passport.initialize());
-  // app.use(passport.session());
 
   const configService = app.get(ConfigService);
   const port = configService.get<string>("PORT", "3000");
@@ -65,9 +73,7 @@ async function bootstrap() {
 bootstrap().catch(handleError);
 
 function handleError(error: unknown) {
-  // eslint-disable-next-line no-console
   console.error(error);
-  // eslint-disable-next-line unicorn/no-process-exit
   process.exit(1);
 }
 
