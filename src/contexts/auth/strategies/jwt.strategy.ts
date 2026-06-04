@@ -26,6 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
         (req: Request) => {
           const authorization = req.headers.authorization;
           const cookie_access_token = req.cookies.access_token as string;
+          console.log("cookie_access_token", cookie_access_token);
           if (!authorization && !cookie_access_token) return null;
 
           if (authorization?.startsWith("Bearer")) {
@@ -53,7 +54,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
 
-    const scope = payload.scope ?? "session";
+    const scope = payload.scope
 
     req.auth_session_id = payload.session_id;
     req.auth_scope = scope;
