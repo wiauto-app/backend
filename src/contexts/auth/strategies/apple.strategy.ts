@@ -38,6 +38,9 @@ export class AppleStrategy extends PassportStrategy(Strategy, "apple") {
     profile: AppleRawProfile,
     done: (err: unknown, user?: OAuthProfile) => void,
   ): void {
+    console.log("idToken", idToken);
+    console.log("profile", profile);
+    console.log("done", done);
     if (!idToken.sub) {
       done(new Error("Apple idToken inválido"));
       return;

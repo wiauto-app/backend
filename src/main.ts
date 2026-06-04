@@ -11,13 +11,13 @@ import { AppModule } from "@/app/app.module";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 
-const FRONTEND_ORIGINS = (
+const FRONTEND_ORIGINS = new Set((
   process.env.FRONTEND_ORIGINS ??
   "http://localhost:3000,http://localhost:5173"
 )
   .split(",")
   .map((origin) => origin.trim())
-  .filter(Boolean);
+  .filter(Boolean));
 
 async function bootstrap() {
   // Dejamos que Nest maneje los body parsers internamente
@@ -32,7 +32,7 @@ async function bootstrap() {
   // 2. CORS Seguro y compatible con credentials: true
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || FRONTEND_ORIGINS.includes(origin)) {
+      if (!origin || FRONTEND_ORIGINS.has(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`Origen ${origin} no permitido por CORS`));
@@ -74,7 +74,7 @@ bootstrap().catch(handleError);
 
 function handleError(error: unknown) {
   console.error(error);
-  process.exit(1);
+  throw error;
 }
 
 process.on("uncaughtException", handleError);
