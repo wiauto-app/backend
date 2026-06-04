@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
+import * as jwt from "jsonwebtoken";
+import { Request } from "express";
 import { Strategy } from "passport-apple";
 
 import { envs } from "@/src/common/envs";
@@ -10,51 +12,56 @@ interface AppleIdTokenPayload {
   email?: string;
 }
 
-interface AppleRawProfile {
+interface AppleUserProfile {
   name?: {
     firstName?: string;
     lastName?: string;
   };
 }
 
+type RequestWithAppleProfile = Request & {
+  appleProfile?: AppleUserProfile;
+};
+
 @Injectable()
-export class AppleStrategy extends PassportStrategy(Strategy, "apple") {
+export class AppleStrategy extends PassportStrategy(Strategy, "apple", true) {
   constructor() {
     super({
       clientID: envs.APPLE_CLIENT_ID,
       teamID: envs.APPLE_TEAM_ID,
       keyID: envs.APPLE_KEY_ID,
-      privateKeyString: envs.APPLE_PRIVATE_KEY.replaceAll(/\\n/g, '\n'),
+      privateKeyString: envs.APPLE_PRIVATE_KEY.replaceAll(
+        String.raw`\n`,
+        "\n",
+      ),
       callbackURL: envs.APPLE_CALLBACK_URL,
-      scope: ["email", "name"],
-      passReqToCallback: false,
+      passReqToCallback: true,
     });
   }
 
   validate(
+    req: RequestWithAppleProfile,
     _accessToken: string,
     _refreshToken: string,
-    idToken: AppleIdTokenPayload,
-    profile: AppleRawProfile,
-    done: (err: unknown, user?: OAuthProfile) => void,
-  ): void {
-    console.log("_accessToken",_accessToken);
-    console.log("_refreshToken",_refreshToken);
-    console.log("idToken", idToken);
-    console.log("profile", profile);
-    console.log("done", done);
-    if (!idToken.sub) {
-      done(new Error("Apple idToken inválido"));
-      return;
+    idToken: string,
+    // Requerido por passport-oauth2 (arity 6); el nombre real viene en req.appleProfile
+    profile: AppleUserProfile,
+  ): OAuthProfile {
+    void profile;
+    const payload = jwt.decode(idToken) as AppleIdTokenPayload | null;
+
+    if (!payload?.sub) {
+      throw new Error("Apple idToken inválido");
     }
 
-    const oauthProfile: OAuthProfile = {
+    const appleProfile = req.appleProfile;
+
+    return {
       provider: "apple",
-      provider_id: idToken.sub,
-      email: idToken.email ?? "",
-      first_name: profile.name?.firstName ?? "",
-      last_name: profile.name?.lastName ?? undefined,
+      provider_id: payload.sub,
+      email: payload.email ?? "",
+      first_name: appleProfile?.name?.firstName ?? "",
+      last_name: appleProfile?.name?.lastName ?? undefined,
     };
-    done(null, oauthProfile);
   }
 }
