@@ -10,6 +10,7 @@ const envsSchema = z.object({
 
   ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   
+  /** Callback Next (ej. http://localhost:3000/api/auth/callback) — OAuth y verificación de email */
   FRONTEND_REDIRECT_URL: z.string().default(""),
 
   GOOGLE_CLIENT_ID: z.string().default(""),
@@ -36,8 +37,8 @@ const envsSchema = z.object({
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),
   PASSWORD_RESET_TOKEN_EXPIRES_IN: z.string().default("15m"),
 
-  /** URL del front (ej. https://app.tudominio.com/verify-email) — se añade ?token= */
-  FRONTEND_EMAIL_VERIFICATION_URL: z.string(),
+  /** Override opcional del endpoint GET confirm; por defecto BACKEND_URL/auth/email-verification/confirm */
+  FRONTEND_EMAIL_VERIFICATION_URL: z.string().default(""),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
 
   BACKEND_URL: z.string().default("http://localhost:4000"),

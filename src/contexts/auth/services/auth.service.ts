@@ -13,6 +13,7 @@ import { SessionPayload, SignInResult } from "../types/auth.types";
 import { PasswordService } from "./password.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { SessionService } from "./session.service";
+import { AuthSessionService } from "./auth-session.service";
 import { envs, MONTH } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
 import { RolesService } from "../../roles/services/roles.service";
@@ -20,12 +21,6 @@ import { RefreshTokenEntity } from "../entities/refresh-token.entity";
 import { SessionEntity } from "../entities/session.entity";
 import { generateToken } from "../../shared/token_management/generate_token";
 import { hashToken } from "../../shared/token_management/hash_token";
-
-export interface CreateSessionResult {
-  session_id: string;
-  refresh_token: string;
-  refresh_token_hash: string;
-};
 
 @Injectable()
 export class AuthService {
@@ -37,6 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly authSessionService: AuthSessionService,
     private readonly roleService: RolesService,
     @InjectDataSource()
     private readonly data_source: DataSource,
@@ -67,29 +63,15 @@ export class AuthService {
       );
     }
 
-    await this.suspensionService.assert_session_allowed_by_id(user.id);
-
-    const { session_id, refresh_token, refresh_token_hash } = await this.createSession(user, request);
-
-    await this.userService.update(user.id, {
-      last_sign_in: new Date(),
-    });
-
-    const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({ user, session_id, refresh_token_hash });
-
-    return { type, token, refresh_token };
+    return this.establishSessionForUser(user, request);
   }
 
-  async createSession(user: User, request: Request): Promise<CreateSessionResult> {
-    const session = await this.sessionService.create(user, request);
-    const { entity, raw_token } = await this.refreshTokenService.createForSession(user, session);
+  async establishSessionForUser(user: User, request: Request): Promise<SignInResult> {
+    return this.authSessionService.establishSessionForUser(user, request);
+  }
 
-    return {
-      session_id: session.id,
-      refresh_token: raw_token,
-      refresh_token_hash: entity.token_hash,
-    };
+  async createSession(user: User, request: Request) {
+    return this.authSessionService.createSession(user, request);
   }
 
   async signInWithOAuthProfile(profile: OAuthProfile, request: Request): Promise<SignInResult> {

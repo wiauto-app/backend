@@ -463,6 +463,25 @@
           ]
         },
         {
+          "name": "Registro público (rol por defecto)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Juan\",\n  \"last_name\": \"Pérez\"\n}"
+            },
+            "url": "{{base_url}}/auth/register",
+            "description": "Crea usuario local con el rol `is_default: true`. Envía correo de verificación; no devuelve JWT hasta verificar el email e iniciar sesión."
+          },
+          "response": []
+        },
+        {
           "name": "Admin — iniciar sesión (cookies)",
           "request": {
             "method": "POST",
@@ -1000,50 +1019,26 @@
           "name": "cuenta — verificación y recuperación (referencia)",
           "item": [
             {
-              "name": "confirmar email (token del correo)",
+              "name": "confirmar email (GET enlace del correo)",
               "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"token\": \"<token_del_link>\"\n}"
-                },
-                "url": "{{base_url}}/auth/email-verification/confirm"
-              },
-              "response": [
-                {
-                  "name": "200 OK (ejemplo)",
-                  "originalRequest": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
-                    "url": "{{base_url}}/auth/email-verification/confirm",
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"token\": \"<token_del_link>\"\n}"
-                    }
-                  },
-                  "status": "OK",
-                  "code": 200,
-                  "_postman_previewlanguage": "json",
-                  "header": [
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/email-verification/confirm?token=<token_del_link>&redirectUrl=http://localhost:3000/api/auth/callback",
+                  "host": ["{{base_url}}"],
+                  "path": ["auth", "email-verification", "confirm"],
+                  "query": [
+                    { "key": "token", "value": "<token_del_link>" },
                     {
-                      "key": "Content-Type",
-                      "value": "application/json; charset=utf-8"
+                      "key": "redirectUrl",
+                      "value": "http://localhost:3000/api/auth/callback",
+                      "description": "Debe coincidir con FRONTEND_REDIRECT_URL"
                     }
-                  ],
-                  "body": "{\n  \"message\": \"Correo verificado correctamente. Ya podés iniciar sesión.\"\n}"
-                }
-              ]
+                  ]
+                },
+                "description": "302 al callback de Next con token, refresh_token y type (auto-login). Errores → /iniciar-sesion?error=..."
+              },
+              "response": []
             },
             {
               "name": "reenviar correo de verificación",

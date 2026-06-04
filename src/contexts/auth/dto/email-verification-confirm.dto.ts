@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class EmailVerificationConfirmDto {
   @IsString()
   @IsNotEmpty()
   token!: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  redirectUrl!: string;
+  redirectUrl?: string;
 }

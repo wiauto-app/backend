@@ -14,9 +14,10 @@ Authorization: Bearer <tu_jwt>
 ## Flujo típico: cuenta con email + contraseña
 
 1. **Registro** → `POST /users` con email y contraseña.
-2. El usuario **recibe un correo** con un enlace (lo arma el backend).
-3. Ese enlace lleva al backend **`GET .../confirm?...`**; el servidor marca el correo como verificado y **redirecciona** por ahora al localhost:3000.
-4. **Login** → `POST /auth/login`. Si todo va bien, guardás el JWT y ya podés llamar rutas protegidas (ej. `GET /auth/me`) ubicando el token de autenticacion en la peticion como authotization bearer token.
+2. El usuario **recibe un correo** con un enlace (lo arma el backend apuntando al servidor API).
+3. Ese enlace lleva al backend **`GET /auth/email-verification/confirm?token=...&redirectUrl=...`**: valida el token, marca el correo como verificado, **abre sesión** y **redirecciona** al front (`FRONTEND_REDIRECT_URL`, p. ej. `http://localhost:3000/api/auth/callback`) con `token`, `refresh_token`, `type` y opcionalmente `message`.
+4. El callback del front guarda las cookies de sesión y redirige al home (o a 2FA si aplica). **No hace falta** un login manual después de verificar.
+5. Si el enlace falla o expira, el backend redirige a **`/iniciar-sesion?error=...`** con el mensaje codificado.
 
 ---
 
@@ -42,18 +43,32 @@ Importante: hasta que no confirme el correo **no puede iniciar sesión** con ema
 
 ## 2. Verificar el correo (desde el enlace del mail)
 
-El usuario hace clic y el navegador pega contra el backend (**no es un POST desde tu SPA**, es una URL tipo):
+Un clic en el correo abre el backend (**GET**, no POST desde la SPA):
 
 ```text
 GET /auth/email-verification/confirm?token=...&redirectUrl=...
 ```
 
-- **`token`** — viene en el link del correo.
-- **`redirectUrl`** — **obligatorio**: a dónde quieres llevar al usuario después (ej. página de login o “correo verificado”). Convén con backend una lista de URLs permitidas si te importa seguridad (**open redirect**).
+- **`token`** — JWT de verificación (viene en el link del correo).
+- **`redirectUrl`** — **obligatorio**; debe coincidir con una URL permitida (`FRONTEND_REDIRECT_URL` o `FRONTEND_URL`). El mail usa `FRONTEND_REDIRECT_URL` (ej. `http://localhost:3000/api/auth/callback`).
 
-Respuesta esperada: **redirección 302** al `redirectUrl` si todo salió bien.
+Flujo:
 
-Tu front puede tener una página “processing” pero lo normal es que el mail apunte ya con `redirectUrl` armado por vos.
+1. Backend valida el token, marca `is_email_verified` si aplica (si ya estaba verificado, igual inicia sesión) y crea sesión (JWT + refresh).
+2. **302** al `redirectUrl` con `?token=&refresh_token=&type=session|2fa_challenge&message=...`.
+3. Next.js `/api/auth/callback` guarda cookies httpOnly y redirige a `/?verified=1` (si hay `message`), `/` o `/2fa-challenge`.
+
+Si el token es inválido o expiró: **302** a `{FRONTEND_URL}/iniciar-sesion?error=...`.
+
+Variables de entorno (backend):
+
+| Variable                | Ejemplo dev                               |
+| ----------------------- | ----------------------------------------- |
+| `FRONTEND_REDIRECT_URL` | `http://localhost:3000/api/auth/callback` |
+| `BACKEND_URL`           | `http://localhost:4000`                   |
+| `FRONTEND_URL`          | `http://localhost:3000`                   |
+
+El enlace del correo se arma con `{BACKEND_URL}/auth/email-verification/confirm?token=...&redirectUrl=...`.
 
 ---
 

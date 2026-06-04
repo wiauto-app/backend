@@ -69,6 +69,7 @@ export class CreateProfileUseCase {
     payload.avatar_url = dto.avatar_url;
     payload.image_url = dto.image_url;
     payload.role_id = dto.role_id;
+    payload.id = dto.id;
     return payload;
   }
 

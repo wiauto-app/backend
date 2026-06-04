@@ -26,6 +26,8 @@ import { PasswordRecoveryService } from "../services/password-recovery.service";
 import { AppleAuthGuard } from "../guards/apple-auth.guard";
 import { AppleMobileDto } from "../dto/apple-mobile.dto";
 import { AppleTokenService } from "../services/apple-token.service";
+import { RegisterService } from "../services/register.service";
+import { RegisterDto } from "../dto/register.dto";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -38,9 +40,13 @@ export class AuthController {
     private readonly admin_two_factor_login_service: AdminTwoFactorLoginService,
     private readonly password_recovery_service: PasswordRecoveryService,
     private readonly appleTokenService: AppleTokenService,
+    private readonly registerService: RegisterService,
   ) { }
 
-
+  @Post("register")
+  register(@Body() registerDto: RegisterDto) {
+    return this.registerService.register(registerDto);
+  }
 
   @Post("login")
   login(@Body() loginDto: LoginDto, @Req() req: Request) {

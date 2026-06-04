@@ -3,6 +3,7 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Queue } from "bullmq";
+import { Request } from "express";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
@@ -15,12 +16,16 @@ import {
   EmailVerificationJobData,
 } from "../queues/email-verification.queue.constants";
 import { authResponseConfig } from "../response.config";
+import { SignInResult } from "../types/auth.types";
+import { AuthSessionService } from "./auth-session.service";
 
 export interface EmailVerificationTokenPayload {
   sub: string;
   email: string;
   scope: "email_verification";
 }
+
+export type EmailVerificationConfirmResult = SignInResult & { message: string };
 
 @Injectable()
 export class EmailVerificationService {
@@ -31,6 +36,7 @@ export class EmailVerificationService {
     private readonly userRepository: Repository<User>,
     private readonly userMailService: UserMailService,
     private readonly jwtService: JwtService,
+    private readonly authSessionService: AuthSessionService,
     @InjectQueue(EMAIL_VERIFICATION_QUEUE)
     private readonly emailVerificationQueue: Queue<EmailVerificationJobData>,
   ) { }
@@ -63,10 +69,11 @@ export class EmailVerificationService {
   }
 
   async sendVerificationForUser(userId: string, email: string): Promise<void> {
-    const base = envs.FRONTEND_EMAIL_VERIFICATION_URL.trim();
-    if (!base) {
+    const backendUrl = envs.BACKEND_URL.trim();
+    const redirectUrl = envs.FRONTEND_REDIRECT_URL.trim();
+    if (!backendUrl || !redirectUrl) {
       this.logger.warn(
-        "FRONTEND_EMAIL_VERIFICATION_URL vacío: no se envía correo de verificación",
+        "BACKEND_URL o FRONTEND_REDIRECT_URL vacíos: no se envía correo de verificación",
       );
       return;
     }
@@ -85,7 +92,7 @@ export class EmailVerificationService {
     await this.userMailService.sendEmailVerification(email, link);
   }
 
-  async confirm(token: string): Promise<{ message: string }> {
+  async confirm(token: string, request: Request): Promise<EmailVerificationConfirmResult> {
     const payload = this.verifyToken(token);
     const user = await this.userRepository.findOne({ where: { id: payload.sub } });
 
@@ -95,24 +102,36 @@ export class EmailVerificationService {
       );
     }
 
+    let message: string;
     if (user.is_email_verified) {
-      return {
-        message: authResponseConfig.messages.EMAIL_ALREADY_VERIFIED,
+      message = authResponseConfig.messages.EMAIL_ALREADY_VERIFIED;
+    } else {
+      const updated = await this.userRepository.preload({
+        id: user.id,
+        is_email_verified: true,
+      });
+      if (!updated) {
+        throw new UnauthorizedException(
+          authResponseConfig.messages.EMAIL_VERIFICATION_ERROR,
+        );
       }
+      await this.userRepository.save(updated);
+      user.is_email_verified = true;
+      message = authResponseConfig.messages.EMAIL_VERIFIED;
     }
-    
-    await this.userRepository.update(user.id, {
-      is_email_verified: true,
-      last_sign_in: new Date(),
-    });
 
+    const session: SignInResult = await this.authSessionService.establishSessionForUser(
+      user,
+      request,
+    );
 
     return {
-      message: authResponseConfig.messages.EMAIL_VERIFIED,
-    }
+      message,
+      type: session.type,
+      token: session.token,
+      refresh_token: session.refresh_token,
+    };
   }
-
-
 
   private verifyToken(token: string): EmailVerificationTokenPayload {
     let decoded: unknown;
@@ -145,8 +164,7 @@ export class EmailVerificationService {
   }
 
   private buildVerificationLink(token: string): string {
-    const base = envs.FRONTEND_EMAIL_VERIFICATION_URL.trim();
-    const separator = base.includes("?") ? "&" : "?";
-    return `${base}${separator}token=${encodeURIComponent(token)}&redirectUrl=${encodeURIComponent(envs.FRONTEND_URL)}`;
+    const base = `${envs.BACKEND_URL.replace(/\/$/, "")}/auth/email-verification/confirm`;
+    return `${base}?token=${encodeURIComponent(token)}&redirectUrl=${encodeURIComponent(envs.FRONTEND_REDIRECT_URL)}`;
   }
 }

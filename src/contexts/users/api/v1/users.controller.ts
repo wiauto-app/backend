@@ -16,12 +16,14 @@ import { RegisterUserDto } from "../../dto/register-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
 import { UserService } from "../../services/user.service";
 import { V1_USERS } from "../../route.constants";
+import { AdminOnlyGuard } from "@/src/contexts/roles/guards/admin-only.guard";
 
 @Controller(V1_USERS)
 export class UsersController {
   constructor(private readonly user_service: UserService) {}
 
   @Post()
+  @UseGuards(AdminOnlyGuard)
   @HttpCode(HttpStatus.CREATED)
   create(@Body() create_user_dto: RegisterUserDto) {
     return this.user_service.create(create_user_dto);
@@ -49,7 +51,7 @@ export class UsersController {
   }
 
   @Delete(":id")
-  @UseGuards(JwtGuard)
+  @UseGuards(AdminOnlyGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param("id", ParseUUIDPipe) id: string) {
     await this.user_service.remove(id);

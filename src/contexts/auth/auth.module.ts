@@ -40,6 +40,8 @@ import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scop
 import { FindOneProfileUseCase } from "../profiles/application/profile/find-one-profile-use-case/find-one-profile.use-case";
 import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
+import { RegisterService } from "./services/register.service";
+import { AuthSessionService } from "./services/auth-session.service";
 
 @Module({
   controllers: [
@@ -50,6 +52,7 @@ import { TwoFactorAuthModule } from "../2fa/2fa.module";
   ],
   providers: [
     AuthService,
+    AuthSessionService,
     PasswordService,
     GoogleTokenService,
     AppleTokenService,
@@ -71,7 +74,7 @@ import { TwoFactorAuthModule } from "../2fa/2fa.module";
     AdminTwoFactorLoginService,
     TwoFactorChallengeScopeGuard,
     FindOneProfileUseCase,
-   
+    RegisterService,
   ],
   imports: [
     PassportModule.register({ defaultStrategy: "jwt" }),
