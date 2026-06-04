@@ -38,6 +38,8 @@ export class AppleStrategy extends PassportStrategy(Strategy, "apple") {
     profile: AppleRawProfile,
     done: (err: unknown, user?: OAuthProfile) => void,
   ): void {
+    console.log("_accessToken",_accessToken);
+    console.log("_refreshToken",_refreshToken);
     console.log("idToken", idToken);
     console.log("profile", profile);
     console.log("done", done);
