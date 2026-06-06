@@ -9,7 +9,9 @@ import { VehicleListRepository } from "../../domain/repositories/vehicle-list.re
 import { VehicleListEntity } from "../persistence/vehicle-list.entity";
 import { VehicleListItemEntity } from "../persistence/vehicle-list-item.entity";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
+import type { VehiclePriceEntity } from "../../vehicle-prices/infrastructure/persistence/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/domain/vehicle-price";
+import type { VehicleEntity } from "../persistence/vehicle.entity";
 
 const first_image_url = (images: VehicleImagesEntity[] | undefined): string | null => {
   if (!images || images.length === 0) {
@@ -21,11 +23,43 @@ const first_image_url = (images: VehicleImagesEntity[] | undefined): string | nu
   return sorted[0]?.url ?? null;
 };
 
-const get_active_price = (vehicle: { vehicle_prices?: { status: string; price: number }[] }): number => {
-  const active = vehicle.vehicle_prices?.find(
+const get_active_price = (vehicle_prices: VehiclePriceEntity[] | undefined): number => {
+  const active = vehicle_prices?.find(
     (item) => item.status === VEHICLE_PRICE_STATUS.ACTIVE,
   );
   return active?.price ?? 0;
+};
+
+const get_previous_price = (
+  vehicle_prices: VehiclePriceEntity[] | undefined,
+): number | null => {
+  const previous = [...(vehicle_prices ?? [])]
+    .filter((item) => item.status === VEHICLE_PRICE_STATUS.INACTIVE)
+    .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())[0];
+  return previous?.price ?? null;
+};
+
+const map_vehicle_preview = (vehicle: VehicleEntity) => {
+  const price = get_active_price(vehicle.vehicle_prices);
+  const previous_price = get_previous_price(vehicle.vehicle_prices);
+
+  return {
+    id: vehicle.id,
+    title: vehicle.title,
+    price,
+    image_url: first_image_url(vehicle.images),
+    created_at: vehicle.created_at,
+    condition: vehicle.condition,
+    is_featured: vehicle.is_featured,
+    category: vehicle.category
+      ? { id: vehicle.category.id, name: vehicle.category.name }
+      : null,
+    publisher_id: vehicle.profile.id,
+    publisher_name: vehicle.profile.name,
+    previous_price,
+    price_change:
+      previous_price === null ? null : price - previous_price,
+  };
 };
 
 const entity_to_list = (entity: VehicleListEntity): List =>
@@ -120,12 +154,9 @@ export class TypeOrmVehicleListRepository extends VehicleListRepository {
       .createQueryBuilder("item")
       .leftJoinAndSelect("item.vehicle", "vehicle")
       .leftJoinAndSelect("vehicle.images", "images")
-      .leftJoinAndSelect(
-        "vehicle.vehicle_prices",
-        "vehicle_prices",
-        "vehicle_prices.status = :active_vehicle_price_status",
-        { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
-      )
+      .leftJoinAndSelect("vehicle.category", "category")
+      .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("vehicle.vehicle_prices", "vehicle_prices")
       .where("item.list_id = :list_id", { list_id: id })
       .orderBy("item.created_at", "DESC")
       .getMany();
@@ -142,12 +173,7 @@ export class TypeOrmVehicleListRepository extends VehicleListRepository {
         vehicle_list_id: item.list_id,
         vehicle_id: item.vehicle_id,
         created_at: item.created_at,
-        vehicle: {
-          id: item.vehicle.id,
-          title: item.vehicle.title,
-          price: get_active_price(item.vehicle),
-          image_url: first_image_url(item.vehicle.images),
-        },
+        vehicle: map_vehicle_preview(item.vehicle),
       })),
     };
   }

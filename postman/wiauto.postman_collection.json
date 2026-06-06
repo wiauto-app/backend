@@ -2912,6 +2912,21 @@
               ]
             },
             {
+              "name": "historial de precios vehículo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/prices",
+                "description": "JWT (`JwtGuard`). Devuelve `{ prices: PrimitiveVehiclePrice[] }` ordenado por `created_at` DESC."
+              },
+              "response": []
+            },
+            {
               "name": "registrar compartido vehículo",
               "request": {
                 "method": "POST",
@@ -3995,7 +4010,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}",
-                "description": "JWT (`JwtGuard`). Devuelve la lista con items y preview del vehículo (título, precio, imagen principal). Solo el dueño."
+                "description": "JWT (`JwtGuard`). Devuelve la lista con items y preview enriquecido del vehículo (precio, categoría, publisher, price_change, etc.). Solo el dueño."
               },
               "response": []
             },
@@ -4071,7 +4086,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items",
-                "description": "JWT (`JwtGuard`). Items con preview del vehículo. Solo el dueño de la lista."
+                "description": "JWT (`JwtGuard`). Items con preview enriquecido del vehículo (precio, categoría, publisher, price_change, etc.). Solo el dueño de la lista."
               },
               "response": []
             },

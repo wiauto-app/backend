@@ -3,6 +3,14 @@ export interface VehicleListItemPreview {
   title: string;
   price: number;
   image_url: string | null;
+  created_at: Date;
+  condition: string;
+  is_featured: boolean;
+  category: { id: string; name: string } | null;
+  publisher_id: string;
+  publisher_name: string;
+  previous_price: number | null;
+  price_change: number | null;
 }
 
 export interface VehicleListDetailItem {
