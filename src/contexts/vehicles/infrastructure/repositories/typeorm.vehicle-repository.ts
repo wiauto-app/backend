@@ -9,8 +9,14 @@ import { InvalidVehicleCatalogIdException } from "../../domain/exceptions/invali
 import { VehicleNotFoundException } from "../../domain/exceptions/vehicle-not-found.exception";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
-import { VehicleListItem, AdminVehicleListItem } from "../../domain/read-models/vehicle-list-item";
+import {
+  AdminVehicleListItem,
+  VehicleListItem,
+  VehicleListItemImage,
+} from "../../domain/read-models/vehicle-list-item";
+import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
 import { AdminVehicleDetail } from "../../domain/read-models/admin-vehicle-detail";
+import { VehicleDetail } from "../../domain/read-models/vehicle-detail";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { ColorEntity } from "../persistence/color.entity";
 import { DgtLabelEntity } from "../persistence/dgt-label.entity";
@@ -70,6 +76,13 @@ const vehicle_catalog_relations = {
   profile: true,
 } as const;
 
+const map_vehicle_list_images = (
+  images: VehicleImagesEntity[] | undefined,
+): VehicleListItemImage[] =>
+  [...(images ?? [])]
+    .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
+    .map((image) => ({ id: image.id, url: image.url }));
+
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
@@ -80,7 +93,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     condition: entity.condition,
     title: entity.title,
     created_at: entity.created_at,
-    images: entity.images && entity.images.length > 0 ? (entity.images).map((image) => ({ id: image.id, url: image.url })) : [],
+    images: map_vehicle_list_images(entity.images),
     features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
       id: feature.id,
       name: feature.name,
@@ -150,9 +163,7 @@ const pathname_to_compound_path = (pathname: string): string =>
 
 function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDetail {
   const base = entity_to_primitives(entity);
-  const sorted_images = [...(entity.images ?? [])].sort(
-    (a, b) => a.created_at.getTime() - b.created_at.getTime(),
-  );
+  const sorted_images = map_vehicle_list_images(entity.images);
   const active_price = get_active_price(entity);
 
   return {
@@ -198,6 +209,42 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
       path: pathname_to_compound_path(image.url),
       order: index,
     })),
+  };
+}
+
+function entity_to_vehicle_detail(entity: VehicleEntity): VehicleDetail {
+  const base = entity_to_list_item(entity);
+
+  return {
+    ...base,
+    description: entity.description,
+    publisher_type: entity.publisher_type,
+    status: entity.status,
+    is_featured: entity.is_featured,
+    expires_at: entity.expires_at,
+    views: entity.views,
+    favorites: entity.favorites,
+    shares: entity.shares,
+    updated_at: entity.updated_at,
+    transmission_type: entity.transmission_type,
+    power: entity.power,
+    displacement: entity.displacement,
+    autonomy: entity.autonomy,
+    battery_capacity: entity.battery_capacity,
+    time_to_charge: entity.time_to_charge,
+    license_plate: entity.license_plate,
+    vin_code: entity.vin_code,
+    version_id: entity.version_id,
+    traction: {
+      id: entity.traction.id,
+      name: entity.traction.name,
+      slug: entity.traction.slug,
+    },
+    phone_code: entity.phone_code,
+    phone: entity.phone,
+    email: entity.email,
+    profile_id: entity.profile.id,
+    suggestions: entity.suggestions,
   };
 }
 
@@ -511,15 +558,18 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     await this.vehicle_repository.save(this.vehicle_repository.create(payload));
   }
 
-  async findOne(id: string): Promise<Vehicle | null> {
-    const row = await this.vehicle_repository.findOne({
+  async findOne(id: string): Promise<VehicleDetail | null> {
+    const vehicle = await this.vehicle_repository.findOne({
       where: { id },
-      relations: vehicle_catalog_relations,
+      relations: {
+        ...vehicle_catalog_relations,
+        vehicle_prices: true,
+      },
     });
-    if (!row) {
+    if (!vehicle) {
       return null;
     }
-    return Vehicle.fromPrimitives(entity_to_primitives(row));
+    return entity_to_vehicle_detail(vehicle);
   }
 
   async findAll(

@@ -1,8 +1,9 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { is_temp_storage_path } from "@/src/contexts/shared/file/domain/temp-storage-path";
 
-import { VehicleUpdateFields } from "../../../domain/entities/vehicle";
+import { Vehicle, VehicleUpdateFields } from "../../../domain/entities/vehicle";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
+import { vehicleDetailToPrimitives } from "../../../domain/read-models/vehicle-detail";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/application/attach-vehicle-images-from-temp-use-case/attach-vehicle-images-from-temp.use-case";
 import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
@@ -24,17 +25,17 @@ export class UpdateVehicleUseCase {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
     }
 
-    const prev = existing.toPrimitives();
     const { id, images, price, vehicle_price_id, ...dto_fields } = update_vehicle_dto;
 
-    const patch: VehicleUpdateFields = {
-      ...prev,
-      ...Object.fromEntries(
-        Object.entries(dto_fields).filter(([, value]) => value !== undefined),
+    const patch = Object.fromEntries(
+      Object.entries(dto_fields as Record<string, unknown>).filter(
+        ([, value]) => value !== undefined,
       ),
-    };
+    ) as VehicleUpdateFields;
 
-    const updated = existing.applyUpdates(patch);
+    const updated = Vehicle.fromPrimitives(
+      vehicleDetailToPrimitives(existing),
+    ).applyUpdates(patch);
     await this.vehicle_repository.update(updated);
 
     if (price !== undefined || vehicle_price_id !== undefined) {
