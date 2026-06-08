@@ -7,10 +7,12 @@ import { MailService } from "../mail.service";
 import {
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
+  OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_QUEUE,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
+  OutboundMailLeadNotificationJobData,
   OutboundMailPasswordRecoveryJobData,
 } from "./outbound-mail.queue.constants";
 
@@ -26,6 +28,7 @@ export class OutboundMailProcessor extends WorkerHost {
       | OutboundMailDealershipInvitationJobData
       | OutboundMailPasswordRecoveryJobData
       | OutboundMailDealershipTeamJoinedJobData
+      | OutboundMailLeadNotificationJobData
     >,
   ): Promise<void> {
     if (job.name === OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION) {
@@ -54,6 +57,17 @@ export class OutboundMailProcessor extends WorkerHost {
         to: data.to,
         role: data.role,
         dealership_id: data.dealership_id,
+      });
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION) {
+      const data = job.data as OutboundMailLeadNotificationJobData;
+      console.log("data", data);
+      await this.mail_service.sendLeadNotificationEmail({
+        to: data.to,
+        vehicle_title: data.vehicle_title,
+        lead: data.lead,
       });
       return;
     }

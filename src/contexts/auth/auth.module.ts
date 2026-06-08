@@ -18,6 +18,7 @@ import { AppleAuthGuard } from "./guards/apple-auth.guard";
 
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtGuard } from "./guards/auth.guard";
+import { OptionalJwtGuard } from "./guards/optional-jwt.guard";
 import { MeService } from "./services/me.service";
 import { AccountSettingsService } from "./services/account-settings.service";
 import { MeController } from "./api/me.controller";
@@ -60,6 +61,7 @@ import { AuthSessionService } from "./services/auth-session.service";
     GoogleStrategy,
     AppleStrategy,
     JwtGuard,
+    OptionalJwtGuard,
     GoogleAuthGuard,
     AppleAuthGuard,
 
@@ -96,6 +98,7 @@ import { AuthSessionService } from "./services/auth-session.service";
   ],
   exports: [
     JwtGuard,
+    OptionalJwtGuard,
     GoogleAuthGuard,
     AuthService,
     EmailVerificationService /*, AppleAuthGuard*/,

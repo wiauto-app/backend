@@ -7,7 +7,6 @@ import { GoogleMobileDto } from "../dto/google-mobile.dto";
 import { GoogleAuthGuard } from "../guards/google-auth.guard";
 import { GoogleTokenService } from "../services/google-token.service";
 import { OAuthProfile } from "../strategies/google.strategy";
-import { envs } from "@/src/common/envs";
 import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
@@ -28,6 +27,8 @@ import { AppleMobileDto } from "../dto/apple-mobile.dto";
 import { AppleTokenService } from "../services/apple-token.service";
 import { RegisterService } from "../services/register.service";
 import { RegisterDto } from "../dto/register.dto";
+import { buildOAuthFrontendRedirect } from "../utils/validate-redirect-url";
+import { consumeOAuthPopupCookie } from "../utils/oauth-popup.guard-helper";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
 
@@ -150,10 +151,13 @@ export class AuthController {
   @Get("google/callback")
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-    const { token,refresh_token,type } = await this.authService.signInWithOAuthProfile(req.user, req);
-    const url = `${envs.FRONTEND_REDIRECT_URL}?token=${token}&refresh_token=${refresh_token}&type=${type}`;
+    const isPopup = consumeOAuthPopupCookie(req, res);
+    const { token, refresh_token, type } = await this.authService.signInWithOAuthProfile(req.user, req);
+    const url = buildOAuthFrontendRedirect(
+      { token, refresh_token, type },
+      { popup: isPopup, provider: "google" },
+    );
     res.redirect(url);
-    return
   }
 
   @Post("google/mobile")
@@ -173,8 +177,12 @@ export class AuthController {
   @Post("apple/callback")
   @UseGuards(AppleAuthGuard)
   async appleCallback(@Req() req: RequestWithOAuthUser, @Res() res: Response) {
-    const { token,refresh_token,type } = await this.authService.signInWithOAuthProfile(req.user, req);
-    const url = `${envs.FRONTEND_REDIRECT_URL}?token=${token}&refresh_token=${refresh_token}&type=${type}`;
+    const isPopup = consumeOAuthPopupCookie(req, res);
+    const { token, refresh_token, type } = await this.authService.signInWithOAuthProfile(req.user, req);
+    const url = buildOAuthFrontendRedirect(
+      { token, refresh_token, type },
+      { popup: isPopup, provider: "apple" },
+    );
     res.redirect(url);
   }
   

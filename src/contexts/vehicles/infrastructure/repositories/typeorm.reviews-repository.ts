@@ -7,9 +7,19 @@ import { Repository } from "typeorm";
 import { Review } from "../../domain/entities/reviews";
 import { ReviewFilter } from "../../domain/filters/review.filter";
 import { ReviewsRepository } from "../../domain/repositories/reviews.repository";
+import { ReviewListItem } from "../../domain/read-models/review-list-item";
 import { ReviewEntity } from "../persistence/review.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 
 const list_order_columns = new Set(["id", "rating", "created_at", "updated_at"]);
+
+const format_review_author = (profile: ProfileEntity | null | undefined): string => {
+  if (!profile?.name) {
+    return "Usuario";
+  }
+  const author = `${profile.name} ${profile.last_name ?? ""}`.trim();
+  return author || "Usuario";
+};
 
 @Injectable()
 export class TypeormReviewsRepository implements ReviewsRepository {
@@ -43,9 +53,10 @@ export class TypeormReviewsRepository implements ReviewsRepository {
     await this.review_repository.delete(id);
   }
 
-  async find_all(filter: ReviewFilter): Promise<PaginatedResult<Review>> {
+  async find_all(filter: ReviewFilter): Promise<PaginatedResult<ReviewListItem>> {
     const qb = this.review_repository
       .createQueryBuilder("r")
+      .leftJoinAndSelect("r.profile", "profile")
       .where("r.vehicle_id = :vehicle_id", { vehicle_id: filter.vehicle_id });
 
     if (filter.profile_id) {
@@ -68,10 +79,16 @@ export class TypeormReviewsRepository implements ReviewsRepository {
     const direction = filter.order_direction;
     qb.orderBy(`r.${order_column}`, direction);
 
-    // qb.skip(filter.skip).take(filter.limit);
+    qb.skip((filter.page - 1) * filter.limit).take(filter.limit);
 
     const [rows, total] = await qb.getManyAndCount();
-    const data = rows.map((row) => Review.fromPrimitives(row));
+    const data: ReviewListItem[] = rows.map((row) => ({
+      id: row.id,
+      rating: row.rating,
+      comment: row.comment,
+      created_at: row.created_at,
+      author: format_review_author(row.profile),
+    }));
     return new PaginatedResult(data, total, filter.page, filter.limit);
   }
 

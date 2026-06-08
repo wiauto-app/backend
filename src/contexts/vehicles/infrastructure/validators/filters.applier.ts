@@ -355,6 +355,27 @@ export const applyFilters = (
       search: `%${filters.query.trim()}%`,
     });
   }
+
+  if (has_non_empty_string(filters.condition)) {
+    qb.andWhere("vehicle.condition = :vehicle_condition", {
+      vehicle_condition: filters.condition,
+    });
+  }
+
+  if (has_non_empty_string(filters.status)) {
+    qb.andWhere("vehicle.status = :vehicle_status", {
+      vehicle_status: filters.status,
+    });
+  }
+
+  if (
+    Array.isArray(filters.exclude_vehicle_ids) &&
+    filters.exclude_vehicle_ids.length > 0
+  ) {
+    qb.andWhere("vehicle.id NOT IN (:...exclude_vehicle_ids)", {
+      exclude_vehicle_ids: filters.exclude_vehicle_ids,
+    });
+  }
 };
 
 export const applyAdminFilters = (

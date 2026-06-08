@@ -8,5 +8,9 @@ export abstract class ChatRepository {
   abstract findOne(id: string): Promise<Chat | null>;
   abstract findByParticipantsIds(participants_ids: string[], pagination?: PaginationFilter): Promise<PaginatedResult<Chat>>;
   abstract chatExists(participants_ids: string[], vehicle_id: string | null): Promise<boolean>;
+  abstract findOneByParticipantsAndVehicle(
+    participants_ids: string[],
+    vehicle_id: string | null,
+  ): Promise<Chat | null>;
   abstract delete(id: string): Promise<void>;
 }

@@ -11,6 +11,7 @@ export const V1_WARRANTY_TYPES = "v1/warranty-types";
 export const V1_TRACTIONS = "v1/tractions";
 export const V1_CUOTAS = "v1/cuotas";
 export const V1_REVIEWS = "v1/reviews";
+export const V1_VEHICLE_LEADS = "v1/vehicles/:vehicle_id/leads";
 export const V1_VEHICLE_LISTS = "v1/vehicle-lists";
 export const V1_SEARCH_HERO_FACETS = "v1/search/hero-facets";
 export const V1_ADMIN_SEARCH_REINDEX_HERO = "v1/admin/search/reindex-hero";

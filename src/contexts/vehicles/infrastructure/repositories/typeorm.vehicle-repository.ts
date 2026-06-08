@@ -40,6 +40,7 @@ import {
   MakeModelFilterMode,
   resolveMakeModelFilterMode,
 } from "../validators/make-model-filter-mode.utils";
+import { DealershipMembersEntity } from "@/src/contexts/dealership/infrastructure/persistence/dealership-members.entity";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -212,9 +213,9 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
   };
 }
 
-function entity_to_vehicle_detail(entity: VehicleEntity): VehicleDetail {
+function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
   const base = entity_to_list_item(entity);
-
+  const dealership = dealership_members.find((member) => member.profile_id === entity.profile.id)?.dealership;
   return {
     ...base,
     description: entity.description,
@@ -245,6 +246,18 @@ function entity_to_vehicle_detail(entity: VehicleEntity): VehicleDetail {
     email: entity.email,
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
+    prices: map_vehicle_prices_history(entity.vehicle_prices),
+    dealership:{
+      id: dealership?.id ?? "",
+      name: dealership?.name ?? "",
+      slug: dealership?.slug ?? "",
+      avatar_url: dealership?.avatar_url ?? "",
+      banner_url: dealership?.banner_url ?? "",
+      description: dealership?.description ?? "",
+      website_url: dealership?.website_url ?? "",
+      email: dealership?.email ?? "",
+      phone_code: dealership?.phone_code ?? "",
+    }
   };
 }
 
@@ -317,7 +330,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     dgt_label_id: entity.dgt_label?.id ?? null,
     warranty_type_id: entity.warranty_type?.id ?? null,
     cuota_ids:
-       entity.cuotas.length > 0
+      entity.cuotas.length > 0
         ? entity.cuotas.map((c) => c.id)
         : [],
     suggestions: entity.suggestions,
@@ -350,6 +363,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     private readonly category_repository: Repository<CategoryEntity>,
     @InjectRepository(CatalogModelEntity)
     private readonly catalog_model_repository: Repository<CatalogModelEntity>,
+    @InjectRepository(DealershipMembersEntity)
+    private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
   ) {
     super();
   }
@@ -569,7 +584,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     if (!vehicle) {
       return null;
     }
-    return entity_to_vehicle_detail(vehicle);
+    const dealership_members = await this.dealership_members_repository.find({
+      where: { profile_id: vehicle.profile.id },
+      relations: {
+        dealership: true,
+      },
+    });
+    return entity_to_vehicle_detail(vehicle, dealership_members);
   }
 
   async findAll(
@@ -612,7 +633,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    if(order_by) {
+    if (order_by) {
       qb.orderBy(`vehicle.${order_by}`, order_direction);
     }
     qb.skip(skip).take(limit);
@@ -668,13 +689,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    if(order_by) {
+    if (order_by) {
       qb.orderBy(`vehicle.${order_by}`, order_direction);
     }
     qb.skip(skip).take(limit);
     const rows = await qb.getMany();
     const vehicles = rows.map((row) => entity_to_admin_list_item(row));
-    
+
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
   }
 

@@ -23,3 +23,17 @@ export interface OutboundMailDealershipTeamJoinedJobData {
   role: string;
   dealership_id: string;
 }
+
+export const OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION = "lead_notification";
+
+export interface OutboundMailLeadNotificationJobData {
+  to: string;
+  vehicle_title: string;
+  lead: {
+    name: string;
+    email: string;
+    phone: string | null;
+    phone_code: string | null;
+    message: string;
+  };
+}

@@ -19,6 +19,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeOrmVehicleRepository } from "./infrastructure/repositories/typeorm.vehicle-repository";
 import { FindVehicleController } from "./infrastructure/http-api/v1/find-vehicle/find-vehicle.controller";
 import { GetVehicleUseCase } from "./application/vehicle/get-vehicle-use-case/get-vehicle.use-case";
+import { FindSimilarVehiclesUseCase } from "./application/vehicle/find-similar-vehicles-use-case/find-similar-vehicles.use-case";
 import { UpdateVehicleController } from "./infrastructure/http-api/v1/update-vehicle/update-vehicle.controller";
 
 import { FileModule } from "../shared/file/file.module";
@@ -52,6 +53,7 @@ import { UpdateVehicleUseCase } from "./application/vehicle/update-vehicle-use-c
 import { FindAllVehiclesUseCase } from "./application/vehicle/find-all-vehicles-use-case/find-all-vehicles.use-case";
 import { RemoveVehicleUseCase } from "./application/vehicle/remove-vehicle-use-case/remove-vehicle.use-case";
 import { ValidateVehicleUseCase } from "./application/vehicle/validate-vehicle-use-case/validate-vehicle.use-case";
+import { FindSimilarVehiclesController } from "./infrastructure/http-api/v1/find-similar-vehicles/find-similar-vehicles.controller";
 import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-vehicle/remove-vehicle.controller";
 import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-find-all-vehicles-use-case/admin-find-all-vehicles.use-case";
 import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
@@ -77,15 +79,17 @@ import { TractionsUseCase } from "./application/tractions-use-cases/tractions.us
 import { WarrantyTypesUseCase } from "./application/warranty-types-use-cases/warranty-types.use-case";
 import { ColorsUseCase } from "./application/colors-use-cases/colors.use-case";
 import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.use-case";
+import { DealershipMembersEntity } from "../dealership/infrastructure/persistence/dealership-members.entity";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController, FindActiveFiltersController],
+  controllers: [CreateVehicleController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController, FindActiveFiltersController],
   providers: [
     VehicleCreationGuard,
     ImageValidationPipe,
     /* Use Cases */
     CreateVehicleUseCase,
     GetVehicleUseCase,
+    FindSimilarVehiclesUseCase,
     UpdateVehicleUseCase,
     FindAllVehiclesUseCase,
     RemoveVehicleUseCase,
@@ -143,6 +147,7 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
       Comunity,
       Municipality,
       Roles,
+      DealershipMembersEntity,
     ]),
     VehicleImagesModule,
     VehiclePricesModule,
@@ -159,6 +164,7 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
     AuthModule,
     PermissionModule,
     VehicleSearchModule,
+      
   ],
   exports: [CreateVehicleUseCase, VehicleRepository],
 })

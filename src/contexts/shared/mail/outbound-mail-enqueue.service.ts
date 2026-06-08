@@ -5,10 +5,12 @@ import { Queue } from "bullmq";
 import {
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
+  OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_QUEUE,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
+  OutboundMailLeadNotificationJobData,
   OutboundMailPasswordRecoveryJobData,
 } from "./queues/outbound-mail.queue.constants";
 
@@ -38,5 +40,11 @@ export class OutboundMailEnqueueService {
     data: OutboundMailDealershipTeamJoinedJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED, data);
+  }
+
+  async enqueue_lead_notification(
+    data: OutboundMailLeadNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION as string, data);
   }
 }

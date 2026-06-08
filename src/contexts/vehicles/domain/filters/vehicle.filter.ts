@@ -1,6 +1,11 @@
 import { PaginationFilter } from "@/src/contexts/shared/domain/filters/pagination.filter";
 
-import { PublisherType, TransmissionType } from "../entities/vehicle";
+import {
+  ConditionVehicle,
+  PublisherType,
+  StatusVehicle,
+  TransmissionType,
+} from "../entities/vehicle";
 import { PaginationDto } from "@/src/contexts/shared/application/dtos/pagination.dto";
 
 /** Filtros de catálogo / listado de anuncios (dominio), sin dependencias de aplicación ni HTTP. */
@@ -41,6 +46,9 @@ export interface VehicleFilterOptions extends PaginationDto {
   features_slugs?: string[];
   color_slugs?: string[];
   cuota_slugs?: string[];
+  condition?: ConditionVehicle;
+  status?: StatusVehicle;
+  exclude_vehicle_ids?: string[];
 }
 
 export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilterOptions, "page" | "limit" | "query" | "order_by" | "order_direction"> {
@@ -79,6 +87,9 @@ export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilte
   features_slugs?: string[];
   color_slugs?: string[];
   cuota_slugs?: string[];
+  condition?: ConditionVehicle;
+  status?: StatusVehicle;
+  exclude_vehicle_ids?: string[];
 
   constructor(options: VehicleFilterOptions) {
     const {

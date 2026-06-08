@@ -11,11 +11,11 @@ export class GetVehicleUseCase {
 
   async execute(
     getVehicleDto: GetVehicleDto,
-  ): Promise<{ vehicle: VehicleDetail }> {
+  ): Promise<VehicleDetail> {
     const vehicle = await this.vehicleRepository.findOne(getVehicleDto.id);
     if (!vehicle) {
       throw new VehicleNotFoundException(getVehicleDto.id);
     }
-    return { vehicle };
+    return vehicle;
   }
 }

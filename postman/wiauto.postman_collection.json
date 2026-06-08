@@ -2816,6 +2816,24 @@
               ]
             },
             {
+              "name": "obtener vehículos similares",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/vehicles/{{vehicle_id}}/similar?page=1&limit=4",
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "vehicles", "{{vehicle_id}}", "similar"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "4" }
+                  ]
+                },
+                "description": "Público. Listado paginado de anuncios similares al vehículo indicado. Excluye el anuncio actual y solo devuelve status active. Meta: tier (1|2) y listing_href_slugs (make, model) para CTA del frontend."
+              },
+              "response": []
+            },
+            {
               "name": "actualizar vehículo",
               "request": {
                 "method": "PATCH",
@@ -3917,6 +3935,53 @@
                   "body": ""
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "leads",
+          "item": [
+            {
+              "name": "crear lead (guest)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"612345678\",\n  \"message\": \"Hola, me interesa este vehículo. ¿Sigue disponible?\",\n  \"accepted_terms\": true\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/leads",
+                "description": "Público (`OptionalJwtGuard`). Sin JWT: `phone` y `phone_code` obligatorios. Respuesta: `{ lead, chat_id: null }`. Envía correo al `vehicle.email`."
+              },
+              "response": []
+            },
+            {
+              "name": "crear lead (autenticado)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Usuario autenticado\",\n  \"email\": \"usuario@ejemplo.com\",\n  \"message\": \"Hola, me interesa este vehículo.\",\n  \"accepted_terms\": true\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/leads",
+                "description": "JWT opcional. Con sesión: `profile_id` desde token; teléfono opcional; crea o reutiliza chat y devuelve `{ lead, chat_id }`. `name`/`email` deben coincidir con el perfil."
+              },
+              "response": []
             }
           ]
         },

@@ -135,7 +135,7 @@ export class PasswordRecoveryService {
 
   private sign_reset_token(payload: PasswordResetTokenPayload): string {
     return this.jwtService.sign(payload, {
-      expiresIn: Number(envs.PASSWORD_RESET_TOKEN_EXPIRES_IN),
+      expiresIn: envs.PASSWORD_RESET_TOKEN_EXPIRES_IN as any,
     });
   }
 

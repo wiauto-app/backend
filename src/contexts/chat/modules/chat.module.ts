@@ -114,6 +114,11 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     },
     WsJwtGuard
   ],
-  exports: [ChatRepository, ChatMessageRepository],
+  exports: [
+    ChatRepository,
+    ChatMessageRepository,
+    CreateChatUseCase,
+    CreateChatMessageUseCase,
+  ],
 })
 export class ChatModule {}

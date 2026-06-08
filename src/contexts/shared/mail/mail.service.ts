@@ -66,6 +66,33 @@ export class MailService {
     }
   }
 
+  async sendLeadNotificationEmail(payload: {
+    to: string;
+    vehicle_title: string;
+    lead: {
+      name: string;
+      email: string;
+      phone: string | null;
+      phone_code: string | null;
+      message: string;
+    };
+  }): Promise<void> {
+    const html = this.build_lead_notification_template(payload);
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nueva consulta sobre ${payload.vehicle_title}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de lead a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendDealershipInvitationEmail(payload: {
     to: string;
     invitation_link: string;
@@ -140,6 +167,61 @@ export class MailService {
           </p>
           <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
             Si no solicitaste este cambio, podés ignorar este mensaje. El enlace expira en 15 minutos.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  private build_lead_notification_template(payload: {
+    vehicle_title: string;
+    lead: {
+      name: string;
+      email: string;
+      phone: string | null;
+      phone_code: string | null;
+      message: string;
+    };
+  }): string {
+    const escaped_title = this.escapeHtml(payload.vehicle_title);
+    const escaped_name = this.escapeHtml(payload.lead.name);
+    const escaped_email = this.escapeHtml(payload.lead.email);
+    const escaped_message = this.escapeHtml(payload.lead.message);
+    const phone_display =
+      payload.lead.phone_code && payload.lead.phone
+        ? `${this.escapeHtml(payload.lead.phone_code)} ${this.escapeHtml(payload.lead.phone)}`
+        : "No indicado";
+
+    return `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nueva consulta de vehículo</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+      <tr>
+        <td>
+          <h1 style="color:#111827;font-size:22px;margin:0 0 16px;">Nueva consulta recibida</h1>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 24px;">
+            Recibiste una consulta sobre tu anuncio <strong>${escaped_title}</strong>.
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 8px;">
+            <strong>Nombre:</strong> ${escaped_name}
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 8px;">
+            <strong>Correo:</strong> ${escaped_email}
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 8px;">
+            <strong>Teléfono:</strong> ${phone_display}
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.5;margin:0 0 24px;">
+            <strong>Mensaje:</strong><br />${escaped_message}
+          </p>
+          <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
+            Responde al interesado lo antes posible para no perder la oportunidad.
           </p>
         </td>
       </tr>

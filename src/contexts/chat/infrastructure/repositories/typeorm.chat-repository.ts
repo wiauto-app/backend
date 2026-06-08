@@ -73,18 +73,30 @@ export class TypeOrmChatRepository extends ChatRepository {
   }
 
   async chatExists(participants_ids: string[], vehicle_id: string | null): Promise<boolean> {
-    const qb = this.chat_repository
+    const row = await this.findChatRowByParticipantsAndVehicle(participants_ids, vehicle_id);
+    return row !== null;
+  }
+
+  async findOneByParticipantsAndVehicle(
+    participants_ids: string[],
+    vehicle_id: string | null,
+  ): Promise<Chat | null> {
+    const row = await this.findChatRowByParticipantsAndVehicle(participants_ids, vehicle_id);
+    return row ? this.mapRowToChat(row) : null;
+  }
+
+  private async findChatRowByParticipantsAndVehicle(
+    participants_ids: string[],
+    vehicle_id: string | null,
+  ): Promise<ChatEntity | null> {
+    return this.chat_repository
       .createQueryBuilder("chat")
       .where("chat.participants @> :participants", {
         participants: JSON.stringify(participants_ids),
       })
-      .andWhere("chat.vehicle_id = :vehicle_id", { vehicle_id });
-    const row = await qb.getOne();
-    return row ? true : false;
-
+      .andWhere("chat.vehicle_id = :vehicle_id", { vehicle_id })
+      .getOne();
   }
-
-
 
   async delete(id: string): Promise<void> {
     await this.chat_repository.delete(id);

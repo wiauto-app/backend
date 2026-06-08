@@ -11,6 +11,7 @@ import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
 import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
 import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
+import { LeadsModule } from "../contexts/vehicles/modules/leads.module";
 import { SharesModule } from "../contexts/vehicles/modules/shares.module";
 import { ViewsModule } from "../contexts/vehicles/modules/views.module";
 import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
@@ -42,6 +43,7 @@ import { TicketsModule } from "../contexts/support/modules/tickets.module";
     ProfileModule,
     VehiclesModule,
     ReviewsModule,
+    LeadsModule,
     SharesModule,
     ViewsModule,
     VehicleListsModule,

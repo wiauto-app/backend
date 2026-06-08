@@ -5,10 +5,18 @@ import {
   StatusVehicle,
   TransmissionType,
 } from "../entities/vehicle";
+import { VehiclePriceStatus } from "../../vehicle-prices/domain/vehicle-price";
 import {
   VehicleListItem,
   VehicleListItemCatalogRef,
 } from "./vehicle-list-item";
+
+export interface VehicleDetailPrice {
+  id: string;
+  price: number;
+  status: VehiclePriceStatus;
+  created_at: Date;
+}
 
 /** Detalle público de un anuncio con relaciones cargadas. */
 export interface VehicleDetail extends VehicleListItem {
@@ -36,6 +44,20 @@ export interface VehicleDetail extends VehicleListItem {
   email: string;
   profile_id: string;
   suggestions: string[];
+  prices: VehicleDetailPrice[];
+  dealership?: VehicleDetailDealership;
+}
+
+export interface VehicleDetailDealership {
+  id: string;
+  name: string;
+  slug: string;
+  avatar_url?: string;
+  banner_url?: string;
+  description: string;
+  website_url?: string;
+  email: string;
+  phone_code: string;
 }
 
 export const vehicleDetailToPrimitives = (

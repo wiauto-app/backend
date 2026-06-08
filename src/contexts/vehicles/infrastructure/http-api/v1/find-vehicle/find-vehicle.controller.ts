@@ -5,10 +5,7 @@ import { GetVehicleUseCase } from "@/src/contexts/vehicles/application/vehicle/g
 
 @Controller(V1_VEHICLES)
 export class FindVehicleController {
-
-  constructor(
-    private readonly getVehicleUseCase: GetVehicleUseCase
-  ) { }
+  constructor(private readonly getVehicleUseCase: GetVehicleUseCase) {}
 
   @Get(":id")
   run(@Param() findVehicleHttpDto: FindVehicleHttpDto) {
