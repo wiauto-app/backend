@@ -29,8 +29,8 @@ export class AdminLoginService {
       adminLoginDto.email,
     );
 
-    if (user.provider !== "local" || !user.password) {
-      throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);
+    if (!user.password) {
+      throw new UnauthorizedException(authResponseConfig.messages.DIFFERENT_PROVIDER);
     }
 
     const is_valid_password = await this.passwordService.comparePassword(

@@ -6,7 +6,7 @@ export const authResponseConfig = {
     INVALID_CREDENTIALS: "El email o la contraseña son incorrectos",
     EMAIL_NOT_VERIFIED: "El email no está verificado",
     USER_SUSPENDED: "El usuario está suspendido",
-    NO_ADMIN: "No tenés permisos de administrador para acceder al panel de administración",
+    NO_ADMIN: "No tienes permisos de administrador para acceder al panel de administración",
     DIFFERENT_PROVIDER: "El email se registró con un proveedor diferente",
     SESSION_NOT_FOUND: "Sesión no encontrada",
     INVALID_TOKEN: "Token inválido",
