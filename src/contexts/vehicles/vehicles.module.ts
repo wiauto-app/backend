@@ -1,8 +1,10 @@
 import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { PermissionModule } from "@/src/contexts/users/permissions/permission.module";
+import { ProfileModule } from "@/src/contexts/profiles/profile.module";
+import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { VehicleCreationGuard } from "./infrastructure/guards/vehicleCreation.guard";
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { CreateVehicleController } from "./infrastructure/http-api/v1/create-vehicle/create-vehicle.controller";
 import { CreateVehicleUseCase } from "./application/vehicle/create-vehicle-use-case/create-vehicle.use-case";
 import { VehicleRepository } from "./domain/repositories/vehicle.repository";
@@ -59,6 +61,10 @@ import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-
 import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
 import { AdminGetVehicleUseCase } from "./application/admin-vehicles/admin-get-vehicle-use-case/admin-get-vehicle.use-case";
 import { AdminGetVehicleController } from "./infrastructure/http-api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
+import { AdminUpdateVehicleStatusUseCase } from "./application/admin-vehicles/admin-update-vehicle-status-use-case/admin-update-vehicle-status.use-case";
+import { AdminUpdateVehicleStatusController } from "./infrastructure/http-api/admin-v1/admin-update-vehicle-status/admin-update-vehicle-status.controller";
+import { PublishedVehicleSnapshotPort } from "./application/ports/published-vehicle-snapshot.port";
+import { PublishedVehicleSnapshotService } from "./infrastructure/services/published-vehicle-snapshot.service";
 import { VehicleSearchModule } from "./search/vehicle-search.module";
 import { FindFiltersController } from "./infrastructure/http-api/filters-v1/find-filters.controller";
 import { FindActiveFiltersController } from "./infrastructure/http-api/filters-v1/find-active-filters.controller";
@@ -82,7 +88,7 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
 import { DealershipMembersEntity } from "../dealership/infrastructure/persistence/dealership-members.entity";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, FindFiltersController, FindActiveFiltersController],
+  controllers: [CreateVehicleController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, AdminUpdateVehicleStatusController, FindFiltersController, FindActiveFiltersController],
   providers: [
     VehicleCreationGuard,
     ImageValidationPipe,
@@ -101,6 +107,8 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     FindFeaturesUseCase,
     AdminFindAllVehiclesUseCase,
     AdminGetVehicleUseCase,
+    AdminUpdateVehicleStatusUseCase,
+    PublishedVehicleSnapshotService,
     FindFiltersUseCase,
     FindActiveFiltersUseCase,
     TypeOrmActiveFiltersLookupAdapter,
@@ -126,6 +134,10 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     {
       provide: ActiveFiltersLookupPort,
       useExisting: TypeOrmActiveFiltersLookupAdapter,
+    },
+    {
+      provide: PublishedVehicleSnapshotPort,
+      useExisting: PublishedVehicleSnapshotService,
     },
   ],
   imports: [
@@ -163,9 +175,11 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     CatalogModule,
     AuthModule,
     PermissionModule,
+    ProfileModule,
+    forwardRef(() => AlertsModule),
     VehicleSearchModule,
       
   ],
-  exports: [CreateVehicleUseCase, VehicleRepository],
+  exports: [CreateVehicleUseCase, VehicleRepository, PublishedVehicleSnapshotPort],
 })
 export class VehiclesModule { }

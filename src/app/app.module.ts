@@ -31,6 +31,7 @@ import { ReportCategoriesModule } from "../contexts/reports/modules/report-categ
 import { ReportsModule } from "../contexts/reports/modules/reports.module";
 import { TicketCategoriesModule } from "../contexts/support/modules/ticket-categories.module";
 import { TicketsModule } from "../contexts/support/modules/tickets.module";
+import { AlertsModule } from "../contexts/alerts/alerts.module";
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { TicketsModule } from "../contexts/support/modules/tickets.module";
     TicketsModule,
     ReportCategoriesModule,
     ReportsModule,
+    AlertsModule,
     // ThrottlerModule.forRoot({
     //   throttlers: [
     //     {

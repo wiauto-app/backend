@@ -48,6 +48,7 @@ export interface VehicleListItem {
 /** Proyección admin: listado público + campos de moderación y ficha técnica. */
 export interface AdminVehicleListItem extends VehicleListItem {
   status: StatusVehicle;
+  status_change_message?: string | null;
   publisher_type: PublisherType;
   is_featured: boolean;
   expires_at: Date;

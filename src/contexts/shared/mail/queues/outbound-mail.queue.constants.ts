@@ -37,3 +37,29 @@ export interface OutboundMailLeadNotificationJobData {
     message: string;
   };
 }
+
+export const OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED = "vehicle_status_changed";
+
+export interface OutboundMailVehicleStatusChangedJobData {
+  to: string;
+  vehicle_title: string;
+  previous_status_label: string;
+  new_status_label: string;
+  status_change_message: string | null;
+}
+
+export const OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION = "alert_match_notification";
+
+export interface OutboundMailAlertMatchNotificationJobData {
+  to: string;
+  alert_name: string;
+  vehicle_title: string;
+  vehicle_price: number;
+  vehicle_detail_url: string;
+  vehicle_image_url: string | null;
+  vehicle_year: number;
+  vehicle_mileage: number;
+  vehicle_fuel_label: string;
+  vehicle_transmission_label: string;
+  vehicle_location_label: string;
+}

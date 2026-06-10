@@ -4,6 +4,7 @@ import { BullModule } from "@nestjs/bullmq";
 
 import { MailerConfig } from "@/src/config/nodemailer/mailer.config";
 
+import { MailTemplateRenderer } from "./mail-template.renderer";
 import { MailService } from "./mail.service";
 import { OutboundMailEnqueueService } from "./outbound-mail-enqueue.service";
 import { OutboundMailProcessor } from "./queues/outbound-mail.processor";
@@ -15,7 +16,7 @@ import { OUTBOUND_MAIL_QUEUE } from "./queues/outbound-mail.queue.constants";
     MailerModule.forRoot(MailerConfig),
     BullModule.registerQueue({ name: OUTBOUND_MAIL_QUEUE }),
   ],
-  providers: [MailService, OutboundMailEnqueueService, OutboundMailProcessor],
+  providers: [MailService, MailTemplateRenderer, OutboundMailEnqueueService, OutboundMailProcessor],
   exports: [MailService, OutboundMailEnqueueService],
 })
 export class MailModule {}

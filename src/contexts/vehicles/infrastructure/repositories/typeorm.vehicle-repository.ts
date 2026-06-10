@@ -221,6 +221,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     description: entity.description,
     publisher_type: entity.publisher_type,
     status: entity.status,
+    status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
     expires_at: entity.expires_at,
     views: entity.views,
@@ -265,6 +266,7 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
   return {
     ...entity_to_list_item(entity),
     status: entity.status,
+    status_change_message: entity.status_change_message ?? null,
     publisher_type: entity.publisher_type,
     is_featured: entity.is_featured,
     expires_at: entity.expires_at,
@@ -302,6 +304,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     description: entity.description,
     version_id: entity.version_id,
     status: entity.status,
+    status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
     expires_at: entity.expires_at,
     views: entity.views,
@@ -541,6 +544,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     };
     if (p.status !== undefined) {
       payload.status = p.status;
+    }
+    if (p.status_change_message !== undefined) {
+      payload.status_change_message = p.status_change_message;
     }
     if (p.is_featured !== undefined) {
       payload.is_featured = p.is_featured;

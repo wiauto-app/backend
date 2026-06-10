@@ -5,15 +5,19 @@ import { Job } from "bullmq";
 import { build_dealership_invitation_accept_link } from "../dealership-invitation-link.util";
 import { MailService } from "../mail.service";
 import {
+  OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
+  OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
   OUTBOUND_MAIL_QUEUE,
+  OutboundMailAlertMatchNotificationJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
   OutboundMailLeadNotificationJobData,
   OutboundMailPasswordRecoveryJobData,
+  OutboundMailVehicleStatusChangedJobData,
 } from "./outbound-mail.queue.constants";
 
 @Processor(OUTBOUND_MAIL_QUEUE)
@@ -29,6 +33,8 @@ export class OutboundMailProcessor extends WorkerHost {
       | OutboundMailPasswordRecoveryJobData
       | OutboundMailDealershipTeamJoinedJobData
       | OutboundMailLeadNotificationJobData
+      | OutboundMailVehicleStatusChangedJobData
+      | OutboundMailAlertMatchNotificationJobData
     >,
   ): Promise<void> {
     if (job.name === OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION) {
@@ -63,12 +69,23 @@ export class OutboundMailProcessor extends WorkerHost {
 
     if (job.name === OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION) {
       const data = job.data as OutboundMailLeadNotificationJobData;
-      console.log("data", data);
       await this.mail_service.sendLeadNotificationEmail({
         to: data.to,
         vehicle_title: data.vehicle_title,
         lead: data.lead,
       });
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED) {
+      const data = job.data as OutboundMailVehicleStatusChangedJobData;
+      await this.mail_service.sendVehicleStatusChangedEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION) {
+      const data = job.data as OutboundMailAlertMatchNotificationJobData;
+      await this.mail_service.sendAlertMatchNotificationEmail(data);
       return;
     }
 

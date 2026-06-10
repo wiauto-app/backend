@@ -13,6 +13,10 @@
       {
         "include": "contexts/users/user-templates/**/*.html",
         "watchAssets": true
+      },
+      {
+        "include": "contexts/shared/mail/templates/**/*.html",
+        "watchAssets": true
       }
     ]
   }

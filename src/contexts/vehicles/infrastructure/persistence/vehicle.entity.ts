@@ -53,6 +53,9 @@ export class VehicleEntity {
   @Column({ type: "enum", enum: STATUS_VEHICLE, default: STATUS_VEHICLE.PENDING })
   status: StatusVehicle;
 
+  @Column({ type: "text", nullable: true })
+  status_change_message?: string | null;
+
   @Column({ default: false })
   is_featured: boolean;
 

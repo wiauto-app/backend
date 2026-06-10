@@ -23,6 +23,7 @@ export interface VehicleDetail extends VehicleListItem {
   description: string;
   publisher_type: PublisherType;
   status: StatusVehicle;
+  status_change_message?: string | null;
   is_featured: boolean;
   expires_at: Date;
   views: number;
@@ -95,6 +96,7 @@ export const vehicleDetailToPrimitives = (
   suggestions: detail.suggestions,
   profile_id: detail.profile_id,
   status: detail.status,
+  status_change_message: detail.status_change_message ?? null,
   is_featured: detail.is_featured,
   expires_at: detail.expires_at,
   views: detail.views,

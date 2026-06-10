@@ -40,6 +40,7 @@ export interface PrimitiveVehicle {
   publisher_type: PublisherType;
   version_id: number;
   status?: StatusVehicle;
+  status_change_message?: string | null;
   is_featured?: boolean;
   expires_at?: Date;
   views?: number;
@@ -124,6 +125,8 @@ export class Vehicle {
       warranty_type_id: createVehicle.warranty_type_id ?? null,
       cuota_ids: createVehicle.cuota_ids ?? [],
       profile_id: createVehicle.profile_id,
+      status: STATUS_VEHICLE.PENDING,
+      status_change_message: null,
       expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
     });
   }

@@ -1,6 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import {
   PrimitiveVehicle,
+  STATUS_VEHICLE,
   TRANSMISSION_TYPE,
   Vehicle,
 } from "../../../domain/entities/vehicle";
@@ -85,7 +86,10 @@ export class CreateVehicleUseCase {
       });
     }
 
-    await this.vehicle_search_indexer.indexVehicle(vehicle.toPrimitives().id);
+    await this.vehicle_search_indexer.syncVehicle(
+      vehicle.toPrimitives().id,
+      STATUS_VEHICLE.PENDING,
+    );
 
     return { vehicle: vehicle.toPrimitives() };
   }
