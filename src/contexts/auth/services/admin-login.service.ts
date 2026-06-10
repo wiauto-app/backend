@@ -25,10 +25,9 @@ export class AdminLoginService {
     adminLoginDto: LoginDto;
     request: Request;
   }): Promise<SignInResult> {
-    const user = await this.userService.findOneByEmailWithPasswordAndProfileRole(
+    const user = await this.userService.findOneByEmailWithPassword(
       adminLoginDto.email,
     );
-
     if (!user.password) {
       throw new UnauthorizedException(authResponseConfig.messages.DIFFERENT_PROVIDER);
     }

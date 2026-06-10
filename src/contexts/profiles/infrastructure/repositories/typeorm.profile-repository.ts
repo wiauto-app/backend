@@ -31,6 +31,7 @@ function user_to_primitives(user: User) {
     id: user.id,
     email: user.email,
     last_sign_in: user.last_sign_in,
+    provider: user.provider,
     is_email_verified: user.is_email_verified,
     two_factor_enabled: user.two_factor_enabled,
     is_suspended: user.is_suspended,

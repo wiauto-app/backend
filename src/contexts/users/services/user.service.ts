@@ -143,7 +143,8 @@ export class UserService {
       where: {
         email
       },
-      select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"]
+      select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"],
+      relations:["profile","profile.role"]
     })
     if (!user) {
       throw new NotFoundException("No se encontró el usuario")
@@ -151,22 +152,7 @@ export class UserService {
     return user
   }
 
-  /** Email + contraseña seleccionable + perfil y rol (panel admin / staff). */
-  async findOneByEmailWithPasswordAndProfileRole(email: string): Promise<User> {
-    const user = await this.userRepository
-      .createQueryBuilder("user")
-      .addSelect("user.password")
-      .innerJoinAndSelect("user.profile", "profile")
-      .leftJoinAndSelect("profile.role", "role")
-      .where("user.email = :email", { email })
-      .getOne();
 
-    if (!user) {
-      throw new NotFoundException("No se encontró el usuario");
-    }
-
-    return user;
-  }
 
   async findAll(): Promise<User[]> {
     const users = await this.userRepository.find({

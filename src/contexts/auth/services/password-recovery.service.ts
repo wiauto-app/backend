@@ -67,7 +67,7 @@ export class PasswordRecoveryService {
   async requestAdminRecovery(email: string): Promise<void> {
     let user;
     try {
-      user = await this.userService.findOneByEmailWithPasswordAndProfileRole(email);
+      user = await this.userService.findOneByEmailWithPassword(email);
     } catch (error) {
       if (error instanceof NotFoundException) {
         this.logger.debug(`Admin password recovery requested for unknown email: ${email}`);
