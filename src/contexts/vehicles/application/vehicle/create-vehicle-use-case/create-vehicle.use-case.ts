@@ -12,6 +12,8 @@ import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/appl
 import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { ValidateVehicleUseCase } from "../validate-vehicle-use-case/validate-vehicle.use-case";
 import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
+import { ReverseGeocodingPort } from "../../ports/reverse-geocoding.port";
+import { formatAddressText } from "../../../infrastructure/services/format-vehicle-address";
 
 @Injectable()
 export class CreateVehicleUseCase {
@@ -22,6 +24,7 @@ export class CreateVehicleUseCase {
     private readonly validateVehicleUseCase: ValidateVehicleUseCase,
     private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
+    private readonly reverse_geocoding_port: ReverseGeocodingPort,
   ) {
   }
 
@@ -39,6 +42,10 @@ export class CreateVehicleUseCase {
       mileage: create_vehicle_dto.mileage,
       condition: create_vehicle_dto.condition,
     });
+    const resolved = await this.reverse_geocoding_port.resolve(
+      create_vehicle_dto.lat,
+      create_vehicle_dto.lng,
+    );
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
@@ -71,6 +78,8 @@ export class CreateVehicleUseCase {
       warranty_type_id: create_vehicle_dto.warranty_type_id ?? null,
       cuota_ids: create_vehicle_dto.cuota_ids ?? [],
       suggestions,
+      address: resolved ? formatAddressText(resolved.formatted_lines) : null,
+      address_details: resolved,
     });
     await this.vehicle_repository.save(vehicle);
 

@@ -150,6 +150,11 @@ export const applyFilters = (
       until_price: filters.until_price,
     });
   }
+  if (has_non_empty_string_array(filters.exclude_vehicle_ids)) {
+    qb.andWhere("vehicle.id NOT IN (:...exclude_vehicle_ids)", {
+      exclude_vehicle_ids: filters.exclude_vehicle_ids,
+    });
+  }
 
   // price_offer: sin campo en entidad; ver comentario en cabecera.
 

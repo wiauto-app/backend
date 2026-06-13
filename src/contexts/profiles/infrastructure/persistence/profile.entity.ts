@@ -15,6 +15,7 @@ import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { ReviewEntity } from "@/src/contexts/vehicles/infrastructure/persistence/review.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
+import { VehicleListEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle-list.entity";
 
 @Entity({ name: "profile" })
 export class ProfileEntity {
@@ -60,4 +61,7 @@ export class ProfileEntity {
     (dealership_invitations) => dealership_invitations.invited_by,
   )
   dealership_invitations: Relation<DealershipInvitationsEntity[]>;
+
+  @OneToMany(() => VehicleListEntity, (vehicle_list) => vehicle_list.profile)
+  vehicle_lists: Relation<VehicleListEntity[]>;
 }

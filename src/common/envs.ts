@@ -61,6 +61,8 @@ const envsSchema = z.object({
 
   OPENSEARCH_URL: z.string().default("http://localhost:9200"),
   OPENSEARCH_INDEX_HERO: z.string().default("vehicles_hero_v1"),
+
+  GOOGLE_MAPS_API_KEY: z.string(),
 });
 
 export const envs = envsSchema.parse(process.env);

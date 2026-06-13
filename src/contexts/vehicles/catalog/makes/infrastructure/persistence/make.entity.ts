@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm";
+import { VersionEntity } from "../../../versions/infrastructure/persistence/version.entity";
 
 @Entity({ name: "make" })
 export class MakeEntity {
@@ -13,4 +14,7 @@ export class MakeEntity {
 
   @CreateDateColumn()
   created_at: Date;
+
+  @OneToMany(() => VersionEntity, (version) => version.make)
+  versions: Relation<VersionEntity[]>;
 }

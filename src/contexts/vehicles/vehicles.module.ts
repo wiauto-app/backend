@@ -65,6 +65,10 @@ import { AdminUpdateVehicleStatusUseCase } from "./application/admin-vehicles/ad
 import { AdminUpdateVehicleStatusController } from "./infrastructure/http-api/admin-v1/admin-update-vehicle-status/admin-update-vehicle-status.controller";
 import { PublishedVehicleSnapshotPort } from "./application/ports/published-vehicle-snapshot.port";
 import { PublishedVehicleSnapshotService } from "./infrastructure/services/published-vehicle-snapshot.service";
+import { ReverseGeocodingPort } from "./application/ports/reverse-geocoding.port";
+import { GoogleReverseGeocodingService } from "./infrastructure/services/google-reverse-geocoding.service";
+import { PostgisLocationResolver } from "./infrastructure/services/postgis-location.resolver";
+import { ReverseGeocodingService } from "./infrastructure/services/reverse-geocoding.service";
 import { VehicleSearchModule } from "./search/vehicle-search.module";
 import { FindFiltersController } from "./infrastructure/http-api/filters-v1/find-filters.controller";
 import { FindActiveFiltersController } from "./infrastructure/http-api/filters-v1/find-active-filters.controller";
@@ -109,6 +113,9 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     AdminGetVehicleUseCase,
     AdminUpdateVehicleStatusUseCase,
     PublishedVehicleSnapshotService,
+    GoogleReverseGeocodingService,
+    PostgisLocationResolver,
+    ReverseGeocodingService,
     FindFiltersUseCase,
     FindActiveFiltersUseCase,
     TypeOrmActiveFiltersLookupAdapter,
@@ -138,6 +145,10 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     {
       provide: PublishedVehicleSnapshotPort,
       useExisting: PublishedVehicleSnapshotService,
+    },
+    {
+      provide: ReverseGeocodingPort,
+      useExisting: ReverseGeocodingService,
     },
   ],
   imports: [

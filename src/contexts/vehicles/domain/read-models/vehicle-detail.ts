@@ -5,6 +5,7 @@ import {
   StatusVehicle,
   TransmissionType,
 } from "../entities/vehicle";
+import type { VehicleAddressDetails } from "../value-objects/vehicle-address-details";
 import { VehiclePriceStatus } from "../../vehicle-prices/domain/vehicle-price";
 import {
   VehicleListItem,
@@ -46,7 +47,65 @@ export interface VehicleDetail extends VehicleListItem {
   profile_id: string;
   suggestions: string[];
   prices: VehicleDetailPrice[];
+  version: Version;
+  address?: string | null;
+  address_details?: VehicleAddressDetails | null;
   dealership?: VehicleDetailDealership;
+}
+
+export interface Version {
+  id: number;
+  make_id: number;
+  model_id: number;
+  body_type_id: number;
+  fuel_type_id: number;
+  year_id: number;
+  name: string;
+  slug: string;
+  created_at: Date;
+  make: Make;
+  model: Model;
+  body_type: BodyType;
+  fuel_type: FuelType;
+  year: Year;
+}
+
+export interface Year {
+  id: number;
+  year: number;
+  slug: string;
+  created_at: Date;
+}
+
+export interface Make {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: Date;
+}
+
+export interface Model {
+  id: number;
+  make_id: number;
+  model_id: number;
+  name: string;
+  slug: string;
+  created_at: Date;
+}
+
+export interface BodyType {
+  id: number;
+  name: string;
+  slug: string;
+  doors: number;
+  created_at: Date;
+}
+
+export interface FuelType {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: Date;
 }
 
 export interface VehicleDetailDealership {
@@ -104,4 +163,6 @@ export const vehicleDetailToPrimitives = (
   shares: detail.shares,
   created_at: detail.created_at,
   updated_at: detail.updated_at,
+  address: detail.address ?? null,
+  address_details: detail.address_details ?? null,
 });

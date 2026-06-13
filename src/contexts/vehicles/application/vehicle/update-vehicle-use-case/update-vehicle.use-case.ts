@@ -9,6 +9,8 @@ import { AttachVehicleImagesFromTempUseCase } from "../../../vehicle-images/appl
 import { SetVehiclePriceUseCase } from "../../../vehicle-prices/application/set-vehicle-price-use-case/set-vehicle-price.use-case";
 import { UpdateVehicleDto } from "./update-vehicle.dto";
 import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
+import { ReverseGeocodingPort } from "../../ports/reverse-geocoding.port";
+import { formatAddressText } from "../../../infrastructure/services/format-vehicle-address";
 
 @Injectable()
 export class UpdateVehicleUseCase {
@@ -17,6 +19,7 @@ export class UpdateVehicleUseCase {
     private readonly attach_vehicle_images_from_temp_use_case: AttachVehicleImagesFromTempUseCase,
     private readonly set_vehicle_price_use_case: SetVehiclePriceUseCase,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
+    private readonly reverse_geocoding_port: ReverseGeocodingPort,
   ) {}
 
   async execute(update_vehicle_dto: UpdateVehicleDto) {
@@ -32,6 +35,18 @@ export class UpdateVehicleUseCase {
         ([, value]) => value !== undefined,
       ),
     ) as VehicleUpdateFields;
+
+    const coordinates_changed =
+      (patch.lat !== undefined && patch.lat !== existing.lat) ||
+      (patch.lng !== undefined && patch.lng !== existing.lng);
+
+    if (coordinates_changed) {
+      const lat = patch.lat ?? existing.lat;
+      const lng = patch.lng ?? existing.lng;
+      const resolved = await this.reverse_geocoding_port.resolve(lat, lng);
+      patch.address = resolved ? formatAddressText(resolved.formatted_lines) : null;
+      patch.address_details = resolved;
+    }
 
     const updated = Vehicle.fromPrimitives(
       vehicleDetailToPrimitives(existing),

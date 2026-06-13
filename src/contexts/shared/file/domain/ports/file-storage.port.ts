@@ -3,6 +3,7 @@ export const CONTENT_TYPES = {
   IMAGE_JPG: "image/jpg",
   IMAGE_PNG: "image/png",
   IMAGE_WEBP: "image/webp",
+  IMAGE_AVIF: "image/avif",
   VIDEO_MP4: "video/mp4",
   VIDEO_MOV: "video/mov",
   VIDEO_AVI: "video/avi",

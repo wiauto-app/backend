@@ -5,8 +5,8 @@ import { Job } from "bullmq";
 import { VehicleImage } from "@/src/contexts/vehicles/vehicle-images/domain/vehicle-image";
 import { VehicleImageRepository } from "@/src/contexts/vehicles/vehicle-images/domain/vehicle-imagen.repository";
 
-import { FileStoragePort } from "../../domain/ports/file-storage.port";
 import { UploadJob } from "../../domain/ports/file-queue.port";
+import { UploadImageUseCase } from "../../application/images-use-cases/upload-image.use-case/upload-image.use-case";
 import { UPLOAD_IMAGE_QUEUE } from "../media.constants";
 
 function queuedPayloadsToMulterFiles(job: UploadJob["files"]): Express.Multer.File[] {
@@ -31,7 +31,7 @@ export class ImageProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageProcessor.name);
 
   constructor(
-    private readonly fileStoragePort: FileStoragePort,
+    private readonly upload_image_use_case: UploadImageUseCase,
     private readonly vehicleImageRepository: VehicleImageRepository,
   ) {
     super();
@@ -41,7 +41,7 @@ export class ImageProcessor extends WorkerHost {
     try {
       const { files: payloads, path, entity, entityId } = job.data;
       const files = queuedPayloadsToMulterFiles(payloads);
-      const urls = await this.fileStoragePort.uploadFiles(files, path);
+      const urls = await this.upload_image_use_case.execute(files, path, "queued");
 
       if (entity === "vehicle") {
         this.logger.log(`Saving ${urls.length} vehicle images for vehicle ${entityId}`);

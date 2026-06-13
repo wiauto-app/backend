@@ -137,5 +137,8 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
 
   @OptionalQueryStringArray()
   cuota_slugs: string[] = [];
+
+  @OptionalQueryStringArray()
+  exclude_vehicle_ids: string[] = [];
 }
 

@@ -33,6 +33,7 @@ export interface VehicleListItem {
   condition: string;
   title: string;
   created_at: Date;
+  publisher_type: PublisherType;
   images: VehicleListItemImage[];
   features: VehicleListItemCatalogRef[];
   services: VehicleListItemCatalogRef[];

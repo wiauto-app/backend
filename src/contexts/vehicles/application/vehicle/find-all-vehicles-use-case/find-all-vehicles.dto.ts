@@ -87,6 +87,7 @@ export class FindAllVehiclesDto extends PickType(PaginationDto, [
   //cuota filters
   cuota_slugs: string[];
 
+  exclude_vehicle_ids: string[];
 
 }
 

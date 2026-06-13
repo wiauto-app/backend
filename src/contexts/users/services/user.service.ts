@@ -144,7 +144,7 @@ export class UserService {
         email
       },
       select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"],
-      relations:["profile","profile.role"]
+      relations: ["profile", "profile.role"]
     })
     if (!user) {
       throw new NotFoundException("No se encontró el usuario")
@@ -187,7 +187,7 @@ export class UserService {
         id
       },
       ...(selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
-      relations:["profile","profile.role"]
+      relations: ["profile", "profile.role", "profile.vehicle_lists", "profile.vehicle_lists.items"]
     })
 
     if (!user) {

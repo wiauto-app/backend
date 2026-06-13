@@ -1,4 +1,5 @@
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
+import type { VehicleAddressDetails } from "../value-objects/vehicle-address-details";
 
 export const PUBLISHER_TYPE = {
   PROFESSIONAL: "professional",
@@ -46,6 +47,8 @@ export interface PrimitiveVehicle {
   views?: number;
   favorites?: number;
   shares?: number;
+  address?: string | null;
+  address_details?: VehicleAddressDetails | null;
   transmission_type: TransmissionType;
   traction_id: string;
   power: number;
@@ -113,9 +116,13 @@ export class Vehicle {
     license_plate: string;
     vin_code: string;
     suggestions: string[];
+    address?: string | null;
+    address_details?: VehicleAddressDetails | null;
   }): Vehicle {
     return new Vehicle({
       ...createVehicle,
+      address: createVehicle.address ?? null,
+      address_details: createVehicle.address_details ?? null,
       id: uuidv4(),
       services_ids: createVehicle.services_ids ?? [],
       vehicle_type_id: createVehicle.vehicle_type_id ?? null,
@@ -176,6 +183,8 @@ export class Vehicle {
       views: this.primitiveVehicle.views,
       favorites: this.primitiveVehicle.favorites,
       shares: this.primitiveVehicle.shares,
+      address: this.primitiveVehicle.address ?? null,
+      address_details: this.primitiveVehicle.address_details ?? null,
     };
   }
 }

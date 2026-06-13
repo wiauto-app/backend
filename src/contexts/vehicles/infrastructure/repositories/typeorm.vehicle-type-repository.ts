@@ -21,7 +21,7 @@ export class TypeormVehicleTypeRepository extends VehicleTypesRepository {
   constructor(
     @InjectRepository(VehicleTypeEntity)
     private readonly vehicleTypeRepository: Repository<VehicleTypeEntity>,
-  ){
+  ) {
     super();
   }
 
@@ -47,8 +47,10 @@ export class TypeormVehicleTypeRepository extends VehicleTypesRepository {
     await this.vehicleTypeRepository.save(vehicleType.toPrimitives());
   }
 
-  async update(id: string, name: string): Promise<void> {
-    await this.vehicleTypeRepository.update(id, { name });
+  async update(id: string, vehicleType: VehicleType): Promise<void> {
+    const p = vehicleType.toPrimitives();
+    console.log('p', p);
+    await this.vehicleTypeRepository.update(id, { name: p.name, image_url: p.image_url });
   }
 
   async remove(id: string): Promise<void> {

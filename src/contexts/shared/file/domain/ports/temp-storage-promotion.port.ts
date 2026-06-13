@@ -1,6 +1,7 @@
 /**
  * Promueve objetos subidos a rutas temporales hacia su ubicación definitiva en el bucket.
  * Convención: la ruta incluye el segmento `temp` (p. ej. `vehicles-images/temp/gallery/x.jpg`).
+ * La implementación también optimiza la imagen (WebP, resize, compresión).
  */
 export abstract class TempStoragePromotionPort {
   /**

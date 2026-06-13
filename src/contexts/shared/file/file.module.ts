@@ -8,7 +8,9 @@ import { VideoProcessorPort } from "./domain/ports/video-processor.port";
 import { FileQueueAdapter } from "./infrastructure/adapters/file-queue.adapter";
 import { FfmpegAdapter } from "./infrastructure/adapters/ffmpeg.adapter";
 import { MinioAdapter } from "./infrastructure/adapters/minio.adapter";
-import { MinioTempStoragePromotionAdapter } from "./infrastructure/adapters/minio-temp-storage-promotion.adapter";
+import { MinioImageStorageFinalizationAdapter } from "./infrastructure/adapters/minio-image-storage-finalization.adapter";
+import { FinalizeImageStoragePathUseCase } from "./application/finalize-image-storage-path-use-case/finalize-image-storage-path.use-case";
+import { ImageStorageFinalizationPort } from "./domain/ports/image-storage-finalization.port";
 import { PromoteTempStoragePathsUseCase } from "./application/promote-temp-storage-paths-use-case/promote-temp-storage-paths.use-case";
 import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE } from "./infrastructure/media.constants";
 import { ImageProcessor } from "./infrastructure/processors/image.processor";
@@ -50,10 +52,15 @@ import { RemoveFileController } from "./infrastructure/http-api/remove-file/remo
     GenerateReadFileSignedUrlUseCase,
     RemoveFilesUseCase,
     PromoteTempStoragePathsUseCase,
-    MinioTempStoragePromotionAdapter,
+    FinalizeImageStoragePathUseCase,
+    MinioImageStorageFinalizationAdapter,
     {
       provide: TempStoragePromotionPort,
-      useExisting: MinioTempStoragePromotionAdapter,
+      useExisting: MinioImageStorageFinalizationAdapter,
+    },
+    {
+      provide: ImageStorageFinalizationPort,
+      useExisting: MinioImageStorageFinalizationAdapter,
     },
 
     FileQueueAdapter,
@@ -81,7 +88,9 @@ import { RemoveFileController } from "./infrastructure/http-api/remove-file/remo
     FileQueueAdapter,
     FileQueuePort,
     TempStoragePromotionPort,
+    ImageStorageFinalizationPort,
     PromoteTempStoragePathsUseCase,
+    FinalizeImageStoragePathUseCase,
   ],
 })
 export class FileModule {}

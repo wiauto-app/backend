@@ -5,10 +5,11 @@ import { TypeormVehicleTypeRepository } from "../infrastructure/repositories/typ
 import { VehicleTypesRepository } from "../domain/repositories/vehicle-types.repository";
 import { VehicleTypesController } from "../infrastructure/http-api/vehice-types-v1/vehicle-types.controller";
 import { VehicleTypesUseCase } from "../application/vehicle-types-use-cases/vehicle-types.use-case";
+import { FileModule } from "../../shared/file/file.module";
 
 @Module({
   controllers: [VehicleTypesController],
-  imports: [TypeOrmModule.forFeature([VehicleTypeEntity])],
+  imports: [TypeOrmModule.forFeature([VehicleTypeEntity]), FileModule],
   providers: [
     VehicleTypesUseCase,
     TypeormVehicleTypeRepository,

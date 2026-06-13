@@ -16,7 +16,11 @@ import {
 } from "../../domain/read-models/vehicle-list-item";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
 import { AdminVehicleDetail } from "../../domain/read-models/admin-vehicle-detail";
-import { VehicleDetail } from "../../domain/read-models/vehicle-detail";
+import {
+  VehicleDetail,
+  Version,
+} from "../../domain/read-models/vehicle-detail";
+import { VersionEntity } from "../../catalog/versions/infrastructure/persistence/version.entity";
 import { VehicleRepository } from "../../domain/repositories/vehicle.repository";
 import { ColorEntity } from "../persistence/color.entity";
 import { DgtLabelEntity } from "../persistence/dgt-label.entity";
@@ -94,6 +98,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     condition: entity.condition,
     title: entity.title,
     created_at: entity.created_at,
+    publisher_type: entity.publisher_type,
     images: map_vehicle_list_images(entity.images),
     features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
       id: feature.id,
@@ -213,6 +218,53 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
   };
 }
 
+function entity_to_vehicle_detail_version(entity: VersionEntity): Version {
+  return {
+    id: entity.id,
+    make_id: entity.make_id,
+    model_id: entity.model_id,
+    body_type_id: entity.body_type_id,
+    fuel_type_id: entity.fuel_type_id,
+    year_id: entity.year_id,
+    name: entity.name,
+    slug: entity.slug,
+    created_at: entity.created_at,
+    make: {
+      id: entity.make.id,
+      name: entity.make.name,
+      slug: entity.make.slug,
+      created_at: entity.make.created_at,
+    },
+    model: {
+      id: entity.model.id,
+      make_id: entity.model.make_id,
+      model_id: entity.model.model_id,
+      name: entity.model.name,
+      slug: entity.model.slug,
+      created_at: entity.model.created_at,
+    },
+    body_type: {
+      id: entity.body_type.id,
+      name: entity.body_type.name,
+      slug: entity.body_type.slug,
+      doors: entity.body_type.doors,
+      created_at: entity.body_type.created_at,
+    },
+    fuel_type: {
+      id: entity.fuel_type.id,
+      name: entity.fuel_type.name,
+      slug: entity.fuel_type.slug,
+      created_at: entity.fuel_type.created_at,
+    },
+    year: {
+      id: entity.year.id,
+      year: entity.year.year,
+      slug: entity.year.slug,
+      created_at: entity.year.created_at,
+    },
+  };
+}
+
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find((member) => member.profile_id === entity.profile.id)?.dealership;
@@ -237,6 +289,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     license_plate: entity.license_plate,
     vin_code: entity.vin_code,
     version_id: entity.version_id,
+    version: entity_to_vehicle_detail_version(entity.version),
     traction: {
       id: entity.traction.id,
       name: entity.traction.name,
@@ -248,6 +301,8 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
     prices: map_vehicle_prices_history(entity.vehicle_prices),
+    address: entity.address ?? null,
+    address_details: entity.address_details ?? null,
     dealership:{
       id: dealership?.id ?? "",
       name: dealership?.name ?? "",
@@ -258,7 +313,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
       website_url: dealership?.website_url ?? "",
       email: dealership?.email ?? "",
       phone_code: dealership?.phone_code ?? "",
-    }
+    },
   };
 }
 
@@ -338,6 +393,8 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
         : [],
     suggestions: entity.suggestions,
     profile_id: entity.profile.id,
+    address: entity.address ?? null,
+    address_details: entity.address_details ?? null,
   };
 }
 
@@ -541,6 +598,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       profile: p.profile_id
         ? ({ id: p.profile_id } as ProfileEntity)
         : undefined,
+      address: p.address ?? null,
+      address_details: p.address_details ?? null,
     };
     if (p.status !== undefined) {
       payload.status = p.status;
@@ -585,6 +644,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       relations: {
         ...vehicle_catalog_relations,
         vehicle_prices: true,
+        version:{
+          make: true,
+          model: true,
+          body_type: true,
+          fuel_type: true,
+          year: true,
+        }
       },
     });
     if (!vehicle) {

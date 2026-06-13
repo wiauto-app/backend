@@ -21,7 +21,7 @@ export class MeController {
     private readonly account_settings_service: AccountSettingsService,
     private readonly user_service: UserService,
     private readonly email_verification_service: EmailVerificationService,
-  ) {}
+  ) { }
 
   @Get()
   getMe(@GetUser() user: User, @Req() req: Request): MeResponseDto {
@@ -45,7 +45,6 @@ export class MeController {
 
     void this.email_verification_service
       .enqueueSendVerificationForUser(user_id, me_update_email_http_dto.email)
-      .catch(() => undefined);
 
     return response;
   }

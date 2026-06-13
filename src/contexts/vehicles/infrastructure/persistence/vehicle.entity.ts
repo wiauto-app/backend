@@ -30,6 +30,7 @@ import { CuotaEntity } from "./cuota.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
 import { ReviewEntity } from "./review.entity";
 import { CategoryEntity } from "./category.entity";
+import type { VehicleAddressDetails } from "../../domain/value-objects/vehicle-address-details";
 
 @Entity({ name: "vehicles" })
 export class VehicleEntity {
@@ -55,6 +56,12 @@ export class VehicleEntity {
 
   @Column({ type: "text", nullable: true })
   status_change_message?: string | null;
+
+  @Column({ type: "text", nullable: true })
+  address?: string | null;
+
+  @Column({ type: "jsonb", nullable: true })
+  address_details?: VehicleAddressDetails | null;
 
   @Column({ default: false })
   is_featured: boolean;
@@ -127,10 +134,10 @@ export class VehicleEntity {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: "uuid",nullable: true })
+  @Column({ type: "uuid", nullable: true })
   category_id?: string;
 
-  @ManyToOne(() => CategoryEntity, { nullable: true })
+  @ManyToOne(() => CategoryEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "category_id" })
   category: Relation<CategoryEntity | null>;
 
@@ -143,23 +150,23 @@ export class VehicleEntity {
   version: Relation<VersionEntity>;
 
   // --- Catálogo: tracción y etiquetas ---
-  @ManyToOne(() => TractionEntity, (traction) => traction.vehicles)
+  @ManyToOne(() => TractionEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "traction_id" })
   traction: Relation<TractionEntity>;
 
-  @ManyToOne(() => VehicleTypeEntity, { nullable: true })
+  @ManyToOne(() => VehicleTypeEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "vehicle_type_id" })
   vehicle_type: Relation<VehicleTypeEntity | null>;
 
-  @ManyToOne(() => ColorEntity, { nullable: true })
+  @ManyToOne(() => ColorEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "color_id" })
   color: Relation<ColorEntity | null>;
 
-  @ManyToOne(() => DgtLabelEntity, { nullable: true })
+  @ManyToOne(() => DgtLabelEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "dgt_label_id" })
   dgt_label: Relation<DgtLabelEntity | null>;
 
-  @ManyToOne(() => WarrantyTypeEntity, { nullable: true })
+  @ManyToOne(() => WarrantyTypeEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "warranty_type_id" })
   warranty_type: Relation<WarrantyTypeEntity | null>;
 

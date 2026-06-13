@@ -13,6 +13,7 @@ import { UpdateCategoryController } from "../infrastructure/http-api/category-v1
 import { FindCategoryController } from "../infrastructure/http-api/category-v1/find-category/find-category.controller";
 import { FindAllCategoriesController } from "../infrastructure/http-api/category-v1/find-all-categories/find-all-categories.controller";
 import { DeleteCategoryController } from "../infrastructure/http-api/category-v1/delete-category/delete-category.controller";
+import { FileModule } from "@/src/contexts/shared/file/file.module";
 
 @Module({
   controllers: [
@@ -22,7 +23,7 @@ import { DeleteCategoryController } from "../infrastructure/http-api/category-v1
     FindAllCategoriesController,
     DeleteCategoryController,
   ],
-  imports: [TypeOrmModule.forFeature([CategoryEntity])],
+  imports: [TypeOrmModule.forFeature([CategoryEntity]), FileModule],
   providers: [
     CreateCategoryUseCase,
     UpdateCategoryUseCase,
