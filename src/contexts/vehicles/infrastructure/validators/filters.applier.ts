@@ -65,7 +65,8 @@ export const applyFilters = (
     models_slugs.length > 0 ||
     is_finite_number(filters.since_year) ||
     is_finite_number(filters.until_year) ||
-    has_non_empty_string_array(filters.fuel_type_slugs);
+    has_non_empty_string_array(filters.fuel_type_slugs) ||
+    has_non_empty_string(filters.query);
 
   if (needs_catalog_version) {
     qb.leftJoin("vehicle.version", "catalog_ver");
@@ -356,9 +357,12 @@ export const applyFilters = (
     );
   }
   if (has_non_empty_string(filters.query)) {
-    qb.andWhere("(vehicle.title ILIKE :search OR vehicle.description ILIKE :search)", {
-      search: `%${filters.query.trim()}%`,
-    });
+    qb.leftJoin("make", "search_make", "search_make.id = catalog_ver.make_id")
+      .leftJoin("model", "search_model", "search_model.id = catalog_ver.model_id")
+      .andWhere(
+        "(search_make.name ILIKE :search OR search_model.name ILIKE :search OR catalog_ver.name ILIKE :search OR vehicle.description ILIKE :search)",
+        { search: `%${filters.query.trim()}%` },
+      );
   }
 
   if (has_non_empty_string(filters.condition)) {
@@ -388,10 +392,13 @@ export const applyAdminFilters = (
   filters: AdminVehicleFilter,
 ): void => {
   if (has_non_empty_string(filters.query)) {
-    qb.andWhere(
-      "(vehicle.title ILIKE :admin_search OR vehicle.description ILIKE :admin_search)",
-      { admin_search: `%${filters.query.trim()}%` },
-    );
+    qb.leftJoin("vehicle.version", "admin_catalog_ver")
+      .leftJoin("make", "admin_search_make", "admin_search_make.id = admin_catalog_ver.make_id")
+      .leftJoin("model", "admin_search_model", "admin_search_model.id = admin_catalog_ver.model_id")
+      .andWhere(
+        "(admin_search_make.name ILIKE :admin_search OR admin_search_model.name ILIKE :admin_search OR admin_catalog_ver.name ILIKE :admin_search OR vehicle.description ILIKE :admin_search)",
+        { admin_search: `%${filters.query.trim()}%` },
+      );
   }
 
   if (has_non_empty_string(filters.publisher_name)) {

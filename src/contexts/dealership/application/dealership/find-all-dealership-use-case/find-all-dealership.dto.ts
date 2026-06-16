@@ -4,4 +4,5 @@ export class FindAllDealershipDto extends PaginationDto {
   name?: string;
   slug?: string;
   email?: string;
+  is_featured?: boolean;
 }

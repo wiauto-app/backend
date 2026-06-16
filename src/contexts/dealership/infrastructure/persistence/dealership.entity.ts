@@ -45,6 +45,12 @@ export class DealershipEntity {
   @Column("decimal", { precision: 11, scale: 8, nullable: true })
   lng?: number;
 
+  @Column({ name: "is_featured", type: "boolean", default: false })
+  is_featured: boolean;
+
+  @Column({ name: "rating", type: "decimal", precision: 3, scale: 2, nullable: true })
+  rating?: number | null;
+
   @CreateDateColumn()
   created_at: Date;
 

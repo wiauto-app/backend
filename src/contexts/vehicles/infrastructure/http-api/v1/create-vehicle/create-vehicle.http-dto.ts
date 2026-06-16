@@ -31,8 +31,10 @@ export class CreateVehicleHttpDto {
   @IsString()
   vin_code?: string;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsUUID("4")
-  vehicle_type_id: string;
+  vehicle_type_id?: string | null;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
@@ -63,11 +65,6 @@ export class CreateVehicleHttpDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(5)
-  title: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MinLength(10)
   description: string;
 
@@ -87,24 +84,22 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   email: string;
 
-  @IsEnum(PUBLISHER_TYPE)
-  @IsNotEmpty()
-  publisher_type: PublisherType;
-
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @IsEnum(PUBLISHER_TYPE)
+  publisher_type?: PublisherType;
+
   @IsEnum(TRANSMISSION_TYPE)
-  transmission_type?: TransmissionType;
+  @IsNotEmpty()
+  transmission_type: TransmissionType;
 
   @IsUUID("4")
   @IsNotEmpty()
   traction_id: string;
 
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
-  @Min(0)
-  power?: number;
+  @IsNotEmpty()
+  @Min(1)
+  power: number;
 
   @IsNumber()
   @IsNotEmpty()
@@ -171,5 +166,3 @@ export class CreateVehicleHttpDto {
   @Type(() => ImageHttpDto)
   images?: ImageHttpDto[];
 }
-
-

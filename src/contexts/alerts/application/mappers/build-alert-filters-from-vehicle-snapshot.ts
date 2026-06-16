@@ -46,5 +46,5 @@ export const buildDefaultAlertNameFromVehicleSnapshot = (
     return catalog_label;
   }
 
-  return snapshot.title.trim() || catalog_label;
+  return snapshot.vehicle_label.trim() || catalog_label;
 };

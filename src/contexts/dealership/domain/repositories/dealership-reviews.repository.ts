@@ -11,4 +11,5 @@ export abstract class DealershipReviewsRepository {
     filter: DealershipReviewFilter,
   ): Promise<PaginatedResult<DealershipReview>>;
   abstract find_one(id: string): Promise<DealershipReview | null>;
+  abstract getAverageRating(dealership_id: string): Promise<number | null>;
 }

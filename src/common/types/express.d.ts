@@ -23,6 +23,8 @@ declare global {
       vehicle_listings_used?: number;
       /** Tope del plan (`value` de `vehicles.create`); undefined en admin/developer. */
       vehicle_listings_max?: number;
+      /** Rellena `VehicleOwnerGuard` tras validar ownership. */
+      vehicle_owner_vehicle_id?: string;
     }
 
     

@@ -27,7 +27,6 @@ interface demo_vehicle_row {
   label: string;
   lat: number;
   lng: number;
-  title: string;
   description: string;
   price: number;
   mileage: number;
@@ -186,19 +185,18 @@ async function main(): Promise<void> {
 
       await client.query(
         `INSERT INTO vehicles (
-          id, title, description, price, mileage, lat, lng, condition, status, is_featured, views,
+          id, description, price, mileage, lat, lng, condition, status, is_featured, views,
           publisher_type, expires_at, transmission_type, power, displacement, autonomy, battery_capacity,
           time_to_charge, license_plate, phone_code, phone, email, version_id, traction_id, vehicle_type_id,
           profile_id,
           suggestions, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8::vehicles_condition_enum, $9::vehicles_status_enum, false, 0,
-          $10::vehicles_publisher_type_enum, $11, $12::vehicles_transmission_type_enum, $13, $14, $15, $16,
-          $17, $18, $19, $20, $21, $22::integer, $23::uuid, $24::uuid, $25::uuid, '[]'::jsonb, now(), now()
+          $1, $2, $3, $4, $5, $6, $7::vehicles_condition_enum, $8::vehicles_status_enum, false, 0,
+          $9::vehicles_publisher_type_enum, $10, $11::vehicles_transmission_type_enum, $12, $13, $14, $15,
+          $16, $17, $18, $19, $20, $21::integer, $22::uuid, $23::uuid, $24::uuid, '[]'::jsonb, now(), now()
         )`,
         [
           id,
-          row.title,
           row.description,
           row.price,
           row.mileage,
@@ -225,7 +223,7 @@ async function main(): Promise<void> {
         ],
       );
 
-      console.log(`insertado [${row.label}] ${row.title} → ${id}`);
+      console.log(`insertado [${row.label}] ${row.description.slice(0, 40)} → ${id}`);
     }
 
     console.log(`Listo: ${rows.length} vehículos demo.`);

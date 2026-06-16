@@ -7,6 +7,7 @@ import { SyncDealershipMembersUseCase } from "./application/dealership-members/s
 import { CreateDealershipUseCase } from "./application/dealership/create-dealership-use-case/create-dealership.use-case";
 import { FindAllDealershipUseCase } from "./application/dealership/find-all-dealership-use-case/find-all-dealership.use-case";
 import { FindOneDealershipUseCase } from "./application/dealership/find-one-dealership-use-case/find-one-dealership.use-case";
+import { RecalculateDealershipRatingService } from "./application/dealership/recalculate-dealership-rating/recalculate-dealership-rating.service";
 import { RemoveDealershipUseCase } from "./application/dealership/remove-dealership-use-case/remove-dealership.use-case";
 import { UpdateDealershipUseCase } from "./application/dealership/update-dealership-use-case/update-dealership.use-case";
 import { DealershipRepository } from "./domain/repositories/dealership.repository";
@@ -18,6 +19,7 @@ import { UpdateDealershipController } from "./infrastructure/http-api/v1/update-
 import { DealershipEntity } from "./infrastructure/persistence/dealership.entity";
 import { TypeOrmDealershipRepository } from "./infrastructure/repositories/typeorm.dealership-repository";
 import { DealershipInvitationModule } from "./modules/dealership-invitation.module";
+import { DealershipReviewsModule } from "./modules/dealership-reviews.module";
 import { RemoveFilesUseCase } from "../shared/file/application/images-use-cases/remove-files-use-case/remove-files.use-case";
 import { MinioService } from "../shared/minio-provider/minio.service";
 
@@ -26,6 +28,7 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     TypeOrmModule.forFeature([DealershipEntity]),
     DealershipInvitationModule,
     forwardRef(() => ProfileModule),
+    forwardRef(() => DealershipReviewsModule),
   ],
   controllers: [
     CreateDealershipController,
@@ -43,12 +46,13 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     RemoveDealershipUseCase,
     RemoveFilesUseCase,
     MinioService,
+    RecalculateDealershipRatingService,
     TypeOrmDealershipRepository,
     {
       provide: DealershipRepository,
       useExisting: TypeOrmDealershipRepository,
     },
   ],
-  exports: [DealershipRepository],
+  exports: [DealershipRepository, RecalculateDealershipRatingService],
 })
 export class DealershipModule {}

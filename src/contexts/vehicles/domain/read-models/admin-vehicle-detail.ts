@@ -32,7 +32,6 @@ export interface AdminVehicleDetail {
   vin_code?: string | null;
   vehicle_type_id: string | null;
   category_id: string | null;
-  title: string;
   description: string;
   price: number;
   vehicle_prices: AdminVehiclePriceHistoryItem[];
@@ -42,7 +41,7 @@ export interface AdminVehicleDetail {
   lng: number;
   version_id: number;
   version_catalog: AdminVehicleVersionCatalog;
-  traction_id: string;
+  traction_id: string | null;
   transmission_type: TransmissionType;
   power: number;
   displacement: number;

@@ -1,4 +1,5 @@
 import { DealershipMembersEntity } from "@/src/contexts/dealership/infrastructure/persistence/dealership-members.entity";
+import { formatVehicleDisplayName } from "@/src/contexts/vehicles/domain/utils/format-vehicle-display-name";
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -38,7 +39,14 @@ const resolve_target_label = (row: ReportEntity): string => {
     case ReportTargetType.DEALERSHIP:
       return row.target_dealership?.name ?? "";
     case ReportTargetType.VEHICLE:
-      return row.target_vehicle?.title ?? "";
+      if (!row.target_vehicle?.version) {
+        return "";
+      }
+      return formatVehicleDisplayName({
+        make_name: row.target_vehicle.version.make?.name,
+        model_name: row.target_vehicle.version.model?.name,
+        version_name: row.target_vehicle.version.name,
+      });
   }
 };
 
@@ -139,6 +147,9 @@ export class TypeOrmReportRepository extends ReportRepository {
       .leftJoinAndSelect("target_profile.user", "target_profile_user")
       .leftJoinAndSelect("report.target_dealership", "target_dealership")
       .leftJoinAndSelect("report.target_vehicle", "target_vehicle")
+      .leftJoinAndSelect("target_vehicle.version", "target_vehicle_version")
+      .leftJoinAndSelect("target_vehicle_version.make", "target_vehicle_make")
+      .leftJoinAndSelect("target_vehicle_version.model", "target_vehicle_model")
       .leftJoinAndSelect("target_vehicle.profile", "target_vehicle_profile")
       .leftJoinAndSelect("target_vehicle_profile.user", "target_vehicle_profile_user")
       .leftJoin(

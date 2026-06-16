@@ -11,7 +11,6 @@ import {
 import { ElectricDisplacementException } from "../../../domain/exceptions/electric-displacement.exception";
 import { InvalidateVehicleVersionIdException } from "../../../domain/exceptions/InvalidateVehicleVersionId.exception";
 import { NewVehicleMileageException } from "../../../domain/exceptions/newVehicleMilleage.exception";
-import { VehicleDisplacementException } from "../../../domain/exceptions/vehicle-displacement.exception";
 
 export interface ValidateVehicleInput {
   battery_capacity: number;
@@ -88,9 +87,6 @@ export class ValidateVehicleUseCase {
 
     if (can_charge && displacement > 0) {
       throw new ElectricDisplacementException();
-    }
-    if (!can_charge && displacement <= 0) {
-      throw new VehicleDisplacementException();
     }
 
     return { suggestions };

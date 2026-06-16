@@ -33,6 +33,9 @@ export class Provinces {
   @Column({ nullable: true })
   cartodb_id: number;
 
+  @Column({ name: "image_url", type: "varchar", nullable: true })
+  image_url: string | null;
+
   @Index({ spatial: true })
   @Column({
     type: "geometry",

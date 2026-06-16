@@ -10,6 +10,7 @@ import {
 } from "../../../domain/entities/vehicle";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
 import { vehicleDetailToPrimitives } from "../../../domain/read-models/vehicle-detail";
+import { formatVehicleDisplayName } from "../../../domain/utils/format-vehicle-display-name";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
 import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
 import { AdminUpdateVehicleStatusDto } from "./admin-update-vehicle-status.dto";
@@ -66,7 +67,11 @@ export class AdminUpdateVehicleStatusUseCase {
     if (publisher_email) {
       await this.outbound_mail_enqueue_service.enqueue_vehicle_status_changed({
         to: publisher_email,
-        vehicle_title: existing.title,
+        vehicle_title: formatVehicleDisplayName({
+          make_name: existing.version.make.name,
+          model_name: existing.version.model.name,
+          version_name: existing.version.name,
+        }),
         previous_status_label: STATUS_LABELS[previous_status],
         new_status_label: STATUS_LABELS[new_status],
         status_change_message,

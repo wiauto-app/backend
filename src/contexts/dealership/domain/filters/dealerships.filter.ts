@@ -9,16 +9,17 @@ export interface DealershipsFilterOptions {
   name?: string;
   slug?: string;
   email?: string;
+  is_featured?: boolean;
 }
 
 export class DealershipsFilter extends PaginationFilter {
   name?: string;
   slug?: string;
   email?: string;
+  is_featured?: boolean;
 
   constructor(options: DealershipsFilterOptions = {}) {
     const {
-      
       page = 1,
       limit = 10,
       query,
@@ -27,10 +28,12 @@ export class DealershipsFilter extends PaginationFilter {
       name,
       slug,
       email,
+      is_featured,
     } = options;
     super(page, limit, order_direction, query, order_by);
     this.name = name;
     this.slug = slug;
     this.email = email;
+    this.is_featured = is_featured;
   }
 }

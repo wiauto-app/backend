@@ -12,13 +12,12 @@ export class CreateVehicleDto {
   lat: number;
   lng: number;
   condition: ConditionVehicle;
-  title: string;
   description: string;
   version_id: number;
-  publisher_type: PublisherType;
-  transmission_type?: TransmissionType;
+  publisher_type?: PublisherType;
+  transmission_type: TransmissionType;
   traction_id: string;
-  power?: number;
+  power: number;
   displacement: number;
   autonomy?: number;
   battery_capacity?: number;
@@ -27,7 +26,7 @@ export class CreateVehicleDto {
   phone_code: string;
   phone: string;
   email: string;
-  vehicle_type_id: string;
+  vehicle_type_id?: string | null;
   category_id?: string | null;
   features_ids?: string[];
   services_ids?: string[];

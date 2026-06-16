@@ -11,5 +11,6 @@ export abstract class DealershipRepository {
     filter: DealershipsFilter,
   ): Promise<PaginatedResult<DealershipAdminList>>;
   abstract update(dealership: Dealership): Promise<void>;
+  abstract updateRating(dealership_id: string, rating: number | null): Promise<void>;
   abstract delete(id: string): Promise<void>;
 }

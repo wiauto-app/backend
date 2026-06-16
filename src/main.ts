@@ -13,7 +13,7 @@ import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 
 const FRONTEND_ORIGINS = new Set((
   process.env.FRONTEND_ORIGINS ??
-  "http://localhost:3000,http://localhost:5173"
+  "http://localhost:3000,http://localhost:5174"
 )
   .split(",")
   .map((origin) => origin.trim())

@@ -7,7 +7,7 @@ import type {
 export interface PublishedVehicleSnapshot {
   vehicle_id: string;
   profile_id: string;
-  title: string;
+  vehicle_label: string;
   cover_image_url: string | null;
   price: number;
   mileage: number;

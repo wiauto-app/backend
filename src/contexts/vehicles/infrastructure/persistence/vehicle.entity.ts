@@ -39,9 +39,6 @@ export class VehicleEntity {
 
   // --- Anuncio ---
   @Column()
-  title: string;
-
-  @Column()
   description: string;
 
   @Column()
@@ -80,6 +77,12 @@ export class VehicleEntity {
 
   @Column()
   expires_at: Date;
+
+  @Column({ type: "timestamp", nullable: true })
+  scheduled_publish_at: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  renewed_at: Date | null;
 
   // --- Ubicación ---
   @Column("numeric")

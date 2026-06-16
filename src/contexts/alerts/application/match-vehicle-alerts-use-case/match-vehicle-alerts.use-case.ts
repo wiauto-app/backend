@@ -43,7 +43,7 @@ export class MatchVehicleAlertsUseCase {
         alert_name: primitive.name,
         alert_email: primitive.email,
         vehicle_id: snapshot.vehicle_id,
-        vehicle_title: snapshot.title,
+        vehicle_title: snapshot.vehicle_label,
         vehicle_price: snapshot.price,
         vehicle_image_url: snapshot.cover_image_url,
         vehicle_year: snapshot.year,

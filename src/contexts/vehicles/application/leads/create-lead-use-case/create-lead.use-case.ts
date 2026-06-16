@@ -9,6 +9,7 @@ import { ChatRepository } from "@/src/contexts/chat/domain/repositories/chat.rep
 import { ProfileRepository } from "@/src/contexts/profiles/domain/repositories/profile.repository";
 
 import { STATUS_VEHICLE } from "../../../domain/entities/vehicle";
+import { formatVehicleDisplayName } from "../../../domain/utils/format-vehicle-display-name";
 import { Lead, PrimitiveLead } from "../../../domain/entities/lead";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
 import { LeadRepository } from "../../../domain/repositories/lead.repository";
@@ -68,7 +69,11 @@ export class CreateLeadUseCase {
     await this.lead_notification_email_service.send_notification_email({
       to: vehicle.email,
       lead: lead_primitive,
-      vehicle_title: vehicle.title,
+      vehicle_title: formatVehicleDisplayName({
+        make_name: vehicle.version.make.name,
+        model_name: vehicle.version.model.name,
+        version_name: vehicle.version.name,
+      }),
     });
 
     let chat_id: string | null = null;

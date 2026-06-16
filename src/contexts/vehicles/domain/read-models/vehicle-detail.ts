@@ -40,7 +40,7 @@ export interface VehicleDetail extends VehicleListItem {
   license_plate: string;
   vin_code?: string;
   version_id: number;
-  traction: VehicleListItemCatalogRef;
+  traction: VehicleListItemCatalogRef | null;
   phone_code: string;
   phone: string;
   email: string;
@@ -128,12 +128,11 @@ export const vehicleDetailToPrimitives = (
   lat: detail.lat,
   lng: detail.lng,
   condition: detail.condition as ConditionVehicle,
-  title: detail.title,
   description: detail.description,
   version_id: detail.version_id,
   publisher_type: detail.publisher_type,
   transmission_type: detail.transmission_type,
-  traction_id: detail.traction.id,
+  traction_id: detail.traction?.id ?? null,
   power: detail.power,
   displacement: detail.displacement,
   autonomy: detail.autonomy,

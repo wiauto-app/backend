@@ -14,6 +14,8 @@ export interface DealershipAdminList {
   address: string;
   lat?: number;
   lng?: number;
+  is_featured: boolean;
+  rating: number | null;
   created_at: Date;
   updated_at: Date;
   members_count: number;

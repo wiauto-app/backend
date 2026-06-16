@@ -33,6 +33,9 @@ export class Comunity {
   @Column({ nullable: true })
   cartodb_id: number;
 
+  @Column({ name: "image_url", type: "varchar", nullable: true })
+  image_url: string | null;
+
   @Column({
     type: "geometry",
     spatialFeatureType: "MultiPolygon",

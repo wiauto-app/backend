@@ -87,4 +87,18 @@ export class TypeOrmDealershipReviewsRepository implements DealershipReviewsRepo
     const row = await this.dealership_review_repository.findOne({ where: { id } });
     return row ? DealershipReview.fromPrimitives(row) : null;
   }
+
+  async getAverageRating(dealership_id: string): Promise<number | null> {
+    const result = await this.dealership_review_repository
+      .createQueryBuilder("r")
+      .select("ROUND(AVG(r.rating)::numeric, 2)", "avg_rating")
+      .where("r.dealership_id = :dealership_id", { dealership_id })
+      .getRawOne<{ avg_rating: string | null }>();
+
+    if (result?.avg_rating == null) {
+      return null;
+    }
+
+    return Number(result.avg_rating);
+  }
 }

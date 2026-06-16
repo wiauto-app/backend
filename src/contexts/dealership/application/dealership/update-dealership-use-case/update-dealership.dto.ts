@@ -15,4 +15,5 @@ export class UpdateDealershipDto {
   lat?: number;
   lng?: number;
   members?: DealershipMemberInputDto[];
+  is_featured?: boolean;
 }

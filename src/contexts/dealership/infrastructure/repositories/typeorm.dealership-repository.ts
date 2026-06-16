@@ -18,6 +18,8 @@ const dealership_order_columns = new Set([
   "name",
   "slug",
   "email",
+  "is_featured",
+  "rating",
   "created_at",
   "updated_at",
 ]);
@@ -37,6 +39,8 @@ function entity_to_primitives(entity: DealershipEntity): PrimitiveDealership {
     address: entity.address,
     lat: entity.lat != null ? Number(entity.lat) : undefined,
     lng: entity.lng != null ? Number(entity.lng) : undefined,
+    is_featured: entity.is_featured,
+    rating: entity.rating != null ? Number(entity.rating) : null,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
   };
@@ -57,6 +61,8 @@ function raw_row_to_admin_list(row: Record<string, unknown>): DealershipAdminLis
     address: row.d_address as string,
     lat: row.d_lat != null ? Number(row.d_lat) : undefined,
     lng: row.d_lng != null ? Number(row.d_lng) : undefined,
+    is_featured: Boolean(row.d_is_featured),
+    rating: row.d_rating != null ? Number(row.d_rating) : null,
     created_at: row.d_created_at as Date,
     updated_at: row.d_updated_at as Date,
     members_count: Number(row.members_count ?? 0),
@@ -87,6 +93,8 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       address: p.address,
       lat: p.lat,
       lng: p.lng,
+      is_featured: p.is_featured,
+      rating: p.rating,
       created_at: p.created_at,
       updated_at: p.updated_at,
     });
@@ -114,6 +122,11 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
     }
     if (filter.email) {
       count_qb.andWhere("d.email ILIKE :email", { email: `%${filter.email}%` });
+    }
+    if (filter.is_featured !== undefined) {
+      count_qb.andWhere("d.is_featured = :is_featured", {
+        is_featured: filter.is_featured,
+      });
     }
     if (filter.query) {
       const q = `%${filter.query}%`;
@@ -159,11 +172,15 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       .addSelect("d.address", "d_address")
       .addSelect("d.lat", "d_lat")
       .addSelect("d.lng", "d_lng")
+      .addSelect("d.is_featured", "d_is_featured")
+      .addSelect("d.rating", "d_rating")
       .addSelect("d.created_at", "d_created_at")
       .addSelect("d.updated_at", "d_updated_at")
       .addSelect(`(${members_subquery})`, "members_count")
       .addSelect(`(${reviews_subquery})`, "reviews_count")
-      .orderBy(`d.${order_column}`, direction)
+      .orderBy("d.is_featured", "DESC")
+      .addOrderBy("d.rating", "DESC", "NULLS LAST")
+      .addOrderBy(`d.${order_column}`, direction)
       .offset(getSkip(filter.page, filter.limit))
       .limit(filter.limit);
 
@@ -189,8 +206,20 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       address: p.address,
       lat: p.lat,
       lng: p.lng,
+      is_featured: p.is_featured,
       created_at: p.created_at,
       updated_at: p.updated_at,
+    });
+    if (!preloaded) {
+      return;
+    }
+    await this.dealership_entity_repository.save(preloaded);
+  }
+
+  async updateRating(dealership_id: string, rating: number | null): Promise<void> {
+    const preloaded = await this.dealership_entity_repository.preload({
+      id: dealership_id,
+      rating,
     });
     if (!preloaded) {
       return;

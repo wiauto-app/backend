@@ -2839,6 +2839,10 @@
                 "method": "PATCH",
                 "header": [
                   {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
                     "key": "Content-Type",
                     "value": "application/json"
                   }
@@ -2848,7 +2852,7 @@
                   "raw": "{\n  \"price\": 26000,\n  \"vehicle_price_id\": \"{{vehicle_price_id}}\",\n  \"mileage\": 46000,\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"condition\": \"used\",\n  \"title\": \"Título actualizado mínimo cinco chars\",\n  \"features_ids\": [],\n  \"services_ids\": [],\n  \"vehicle_type_id\": null,\n  \"color_id\": null,\n  \"dgt_label_id\": null,\n  \"warranty_type_id\": null\n}"
                 },
                 "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
-                "description": "Incluye opcionales: `price` (nuevo precio activo), `vehicle_price_id` (reactivar un precio histórico sin crear fila), `features_ids`, `services_ids`, FKs de catálogo (`vehicle_type_id`, `color_id`, `dgt_label_id`, `warranty_type_id`). Usa `null` en un FK para quitar la relación."
+                "description": "JWT (`JwtGuard`) + `VehicleOwnerGuard`. Solo el dueño puede editar. Incluye opcionales: `price`, `vehicle_price_id`, `features_ids`, `services_ids`, FKs de catálogo. Usa `null` en un FK para quitar la relación."
               },
               "response": [
                 {
@@ -2993,12 +2997,115 @@
               ]
             },
             {
+              "name": "mis anuncios — listar",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v1/vehicles/mine?page=1&limit=20",
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "status", "value": "active", "disabled": true }
+                  ]
+                },
+                "description": "JWT (`JwtGuard`). Listado del propietario con stats (visitas, leads, favoritos, compartidos) y tendencias 30d vs 30d anteriores. Query opcional: `status`."
+              },
+              "response": []
+            },
+            {
+              "name": "mis anuncios — duplicar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/duplicate",
+                "description": "JWT + `VehicleOwnerGuard` + `VehicleCreationGuard` (cuota). Clona vehículo, precio e imágenes; resetea contadores y deja `status=pending`. Respuesta: `{ vehicle_id }`."
+              },
+              "response": []
+            },
+            {
+              "name": "mis anuncios — renovar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/renew",
+                "description": "JWT + `VehicleOwnerGuard`. Extiende `expires_at` +90 días (ventana 14d o expirado, cooldown 7d). No consume cuota. Respuesta: `{ expires_at, can_renew, status }`."
+              },
+              "response": []
+            },
+            {
+              "name": "mis anuncios — programar",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"scheduled_publish_at\": \"2026-07-01T09:00:00.000Z\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/schedule",
+                "description": "JWT + `VehicleOwnerGuard`. Fecha futura (máx. 90 días). Pone `status=inactive` y desindexa hasta el worker BullMQ publique."
+              },
+              "response": []
+            },
+            {
+              "name": "mis anuncios — cambiar estado",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"inactive\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/status",
+                "description": "JWT + `VehicleOwnerGuard`. Dueño: `active` ↔ `inactive` (reactivar solo si fue activo antes, sin saltar moderación)."
+              },
+              "response": []
+            },
+            {
               "name": "eliminar vehículo",
               "request": {
                 "method": "DELETE",
-                "header": [],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}",
-                "description": "Borra el vehículo; antes elimina los objetos de imágenes en MinIO asociados a `vehicle_images`. Variable de colección: `vehicle_id` (UUID)."
+                "description": "JWT (`JwtGuard`) + `VehicleOwnerGuard`. Soft delete del vehículo del dueño. Variable: `vehicle_id` (UUID)."
               },
               "response": [
                 {

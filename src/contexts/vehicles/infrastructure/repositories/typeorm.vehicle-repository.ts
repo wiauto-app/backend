@@ -13,8 +13,10 @@ import {
   AdminVehicleListItem,
   VehicleListItem,
   VehicleListItemImage,
+  VehicleVersionSummary,
 } from "../../domain/read-models/vehicle-list-item";
 import type { VehicleImagesEntity } from "../../vehicle-images/infrastructure/persistence/vehicle-images.entity";
+import { get_vehicle_images_entity } from "../persistence/vehicle-images-entity.relation-type";
 import { AdminVehicleDetail } from "../../domain/read-models/admin-vehicle-detail";
 import {
   VehicleDetail,
@@ -45,6 +47,20 @@ import {
   resolveMakeModelFilterMode,
 } from "../validators/make-model-filter-mode.utils";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/infrastructure/persistence/dealership-members.entity";
+import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
+import { OwnerVehicleFilter } from "../../domain/filters/owner-vehicle.filter";
+import { OwnerVehicleListItem } from "../../domain/read-models/owner-vehicle-list-item";
+import { formatVehicleDisplayName } from "../../domain/utils/format-vehicle-display-name";
+import {
+  buildStatTrend,
+  canRenewVehicle,
+  canScheduleVehicle,
+  getDaysUntilExpiry,
+  isVehicleExpired,
+  TREND_PERIOD_MS,
+} from "../../domain/utils/owner-vehicle-rules";
+import { VehicleAnalyticsRepository } from "../../domain/repositories/vehicle-analytics.repository";
+import { STATUS_VEHICLE } from "../../domain/entities/vehicle";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -88,6 +104,12 @@ const map_vehicle_list_images = (
     .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
     .map((image) => ({ id: image.id, url: image.url }));
 
+const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
+  make_name: entity.version?.make?.name ?? "",
+  model_name: entity.version?.model?.name ?? "",
+  version_name: entity.version?.name ?? "",
+});
+
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
@@ -96,7 +118,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     lat: Number(entity.lat),
     lng: Number(entity.lng),
     condition: entity.condition,
-    title: entity.title,
+    version_summary: map_version_summary(entity),
     created_at: entity.created_at,
     publisher_type: entity.publisher_type,
     images: map_vehicle_list_images(entity.images),
@@ -177,7 +199,6 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     vin_code: base.vin_code ?? null,
     vehicle_type_id: base.vehicle_type_id,
     category_id: base.category_id,
-    title: base.title,
     description: base.description,
     price: active_price,
     vehicle_prices: map_vehicle_prices_history(entity.vehicle_prices),
@@ -290,11 +311,13 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     vin_code: entity.vin_code,
     version_id: entity.version_id,
     version: entity_to_vehicle_detail_version(entity.version),
-    traction: {
-      id: entity.traction.id,
-      name: entity.traction.name,
-      slug: entity.traction.slug,
-    },
+    traction: entity.traction
+      ? {
+          id: entity.traction.id,
+          name: entity.traction.name,
+          slug: entity.traction.slug,
+        }
+      : null,
     phone_code: entity.phone_code,
     phone: entity.phone,
     email: entity.email,
@@ -340,11 +363,13 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     phone: entity.phone,
     email: entity.email,
     version_id: entity.version_id,
-    traction: {
-      id: entity.traction.id,
-      name: entity.traction.name,
-      slug: entity.traction.slug,
-    },
+    traction: entity.traction
+      ? {
+          id: entity.traction.id,
+          name: entity.traction.name,
+          slug: entity.traction.slug,
+        }
+      : null,
   };
 }
 
@@ -355,13 +380,14 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     lat: Number(entity.lat),
     lng: Number(entity.lng),
     condition: entity.condition,
-    title: entity.title,
     description: entity.description,
     version_id: entity.version_id,
     status: entity.status,
     status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
     expires_at: entity.expires_at,
+    scheduled_publish_at: entity.scheduled_publish_at ?? null,
+    renewed_at: entity.renewed_at ?? null,
     views: entity.views,
     favorites: entity.favorites,
     shares: entity.shares,
@@ -372,7 +398,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     phone_code: entity.phone_code,
     phone: entity.phone,
     email: entity.email,
-    traction_id: entity.traction.id,
+    traction_id: entity.traction?.id ?? null,
     power: entity.power,
     displacement: entity.displacement,
     autonomy: entity.autonomy,
@@ -425,6 +451,11 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     private readonly catalog_model_repository: Repository<CatalogModelEntity>,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
+    @InjectRepository(VehiclePriceEntity)
+    private readonly vehicle_price_repository: Repository<VehiclePriceEntity>,
+    @InjectRepository(get_vehicle_images_entity())
+    private readonly vehicle_images_repository: Repository<VehicleImagesEntity>,
+    private readonly vehicle_analytics_repository: VehicleAnalyticsRepository,
   ) {
     super();
   }
@@ -562,12 +593,13 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       lat: p.lat,
       lng: p.lng,
       condition: p.condition,
-      title: p.title,
       description: p.description,
       version_id: p.version_id,
       publisher_type: p.publisher_type,
       transmission_type: p.transmission_type,
-      traction: this.traction_repository.create({ id: p.traction_id }),
+      traction: p.traction_id
+        ? this.traction_repository.create({ id: p.traction_id })
+        : undefined,
       power: p.power,
       displacement: p.displacement,
       autonomy: p.autonomy,
@@ -613,6 +645,12 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     if (p.expires_at !== undefined) {
       payload.expires_at = p.expires_at;
     }
+    if (p.scheduled_publish_at !== undefined) {
+      payload.scheduled_publish_at = p.scheduled_publish_at;
+    }
+    if (p.renewed_at !== undefined) {
+      payload.renewed_at = p.renewed_at;
+    }
     if (p.views !== undefined) {
       payload.views = p.views;
     }
@@ -627,7 +665,10 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
 
   async count_active_by_profile_id(profile_id: string): Promise<number> {
     return this.vehicle_repository.count({
-      where: { profile: { id: profile_id } },
+      where: {
+        profile: { id: profile_id },
+        status: STATUS_VEHICLE.ACTIVE,
+      },
     });
   }
 
@@ -682,6 +723,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("vehicle.version", "version")
+      .leftJoinAndSelect("version.make", "version_make")
+      .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect(
         "vehicle.vehicle_prices",
         "vehicle_prices",
@@ -744,6 +788,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("vehicle.version", "version")
+      .leftJoinAndSelect("version.make", "version_make")
+      .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect(
         "vehicle.vehicle_prices",
         "vehicle_prices",
@@ -784,5 +831,306 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       return null;
     }
     return entity_to_admin_vehicle_detail(row);
+  }
+
+  async findById(id: string): Promise<Vehicle | null> {
+    const row = await this.vehicle_repository.findOne({
+      where: { id },
+      relations: {
+        features: true,
+        services: true,
+        cuotas: true,
+        profile: true,
+        traction: true,
+      },
+    });
+    if (!row) {
+      return null;
+    }
+    return Vehicle.fromPrimitives(entity_to_primitives(row));
+  }
+
+  private build_owner_stats_map(
+    rows: { vehicle_id: string; current: number; previous: number }[],
+  ): Map<string, { current: number; previous: number }> {
+    return new Map(
+      rows.map((row) => [
+        row.vehicle_id,
+        { current: row.current, previous: row.previous },
+      ]),
+    );
+  }
+
+  private get_trend_from_map(
+    map: Map<string, { current: number; previous: number }>,
+    vehicle_id: string,
+  ) {
+    const counts = map.get(vehicle_id) ?? { current: 0, previous: 0 };
+    return buildStatTrend(counts.current, counts.previous);
+  }
+
+  async findAllByProfileId(
+    filter: OwnerVehicleFilter,
+  ): Promise<PaginatedResult<OwnerVehicleListItem>> {
+    const { page, limit, order_by, order_direction } = filter;
+    const skip = getSkip(page, limit);
+    const now = new Date();
+    const current_start = new Date(now.getTime() - TREND_PERIOD_MS);
+    const previous_start = new Date(now.getTime() - TREND_PERIOD_MS * 2);
+
+    const qb = this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .leftJoinAndSelect("vehicle.images", "images")
+      .leftJoinAndSelect("vehicle.version", "version")
+      .leftJoinAndSelect("version.make", "version_make")
+      .leftJoinAndSelect("version.model", "version_model")
+      .leftJoinAndSelect(
+        "vehicle.vehicle_prices",
+        "vehicle_prices",
+        "vehicle_prices.status = :active_vehicle_price_status",
+        { active_vehicle_price_status: VEHICLE_PRICE_STATUS.ACTIVE },
+      )
+      .innerJoin("vehicle.profile", "profile")
+      .where("profile.id = :profile_id", { profile_id: filter.profile_id });
+
+    if (filter.status) {
+      qb.andWhere("vehicle.status = :status", { status: filter.status });
+    }
+
+    const count_qb = qb.clone();
+    (
+      count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
+    ).expressionMap.orderBys = [];
+    count_qb.select("COUNT(DISTINCT vehicle.id)", "cnt");
+    const count_row = await count_qb.getRawOne<{ cnt: string }>();
+    const total_count = Number(count_row?.cnt ?? 0);
+
+    const order_field = order_by ?? "created_at";
+    qb.orderBy(`vehicle.${order_field}`, order_direction ?? "DESC");
+    qb.skip(skip).take(limit);
+
+    const rows = await qb.getMany();
+    const vehicle_ids = rows.map((row) => row.id);
+
+    const [views, leads, favorites, shares] = await Promise.all([
+      this.vehicle_analytics_repository.countViewsByVehicleIdsInPeriods(
+        vehicle_ids,
+        current_start,
+        previous_start,
+        now,
+      ),
+      this.vehicle_analytics_repository.countLeadsByVehicleIdsInPeriods(
+        vehicle_ids,
+        current_start,
+        previous_start,
+        now,
+      ),
+      this.vehicle_analytics_repository.countFavoritesByVehicleIdsInPeriods(
+        vehicle_ids,
+        current_start,
+        previous_start,
+        now,
+      ),
+      this.vehicle_analytics_repository.countSharesByVehicleIdsInPeriods(
+        vehicle_ids,
+        current_start,
+        previous_start,
+        now,
+      ),
+    ]);
+
+    const views_map = this.build_owner_stats_map(views);
+    const leads_map = this.build_owner_stats_map(leads);
+    const favorites_map = this.build_owner_stats_map(favorites);
+    const shares_map = this.build_owner_stats_map(shares);
+
+    const items: OwnerVehicleListItem[] = rows.map((entity) => {
+      const images = map_vehicle_list_images(entity.images);
+      const display_name = formatVehicleDisplayName({
+        make_name: entity.version?.make?.name,
+        model_name: entity.version?.model?.name,
+        version_name: entity.version?.name,
+      });
+
+      return {
+        id: entity.id,
+        display_name,
+        price: get_active_price(entity),
+        mileage: entity.mileage,
+        status: entity.status,
+        expires_at: entity.expires_at,
+        is_expired: isVehicleExpired(entity.expires_at, now),
+        days_until_expiry: getDaysUntilExpiry(entity.expires_at, now),
+        can_renew: canRenewVehicle({
+          status: entity.status,
+          expires_at: entity.expires_at,
+          renewed_at: entity.renewed_at ?? null,
+          now,
+        }),
+        can_schedule: canScheduleVehicle(entity.status),
+        scheduled_publish_at: entity.scheduled_publish_at ?? null,
+        renewed_at: entity.renewed_at ?? null,
+        image: images[0] ?? null,
+        stats: {
+          views: this.get_trend_from_map(views_map, entity.id),
+          leads: this.get_trend_from_map(leads_map, entity.id),
+          favorites: this.get_trend_from_map(favorites_map, entity.id),
+          shares: this.get_trend_from_map(shares_map, entity.id),
+        },
+        created_at: entity.created_at,
+        updated_at: entity.updated_at,
+      };
+    });
+
+    return new PaginatedResult(items, total_count, filter.page, filter.limit);
+  }
+
+  async profileHasApprovedAdsBefore(
+    profile_id: string,
+    exclude_vehicle_id?: string,
+  ): Promise<boolean> {
+    const qb = this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .innerJoin("vehicle.profile", "profile")
+      .where("profile.id = :profile_id", { profile_id })
+      .andWhere(
+        `(vehicle.status IN (:...approved_statuses) OR vehicle.renewed_at IS NOT NULL)`,
+        {
+          approved_statuses: [
+            STATUS_VEHICLE.ACTIVE,
+            STATUS_VEHICLE.SOLD,
+            STATUS_VEHICLE.ARCHIVED,
+          ],
+        },
+      );
+
+    if (exclude_vehicle_id) {
+      qb.andWhere("vehicle.id != :exclude_vehicle_id", { exclude_vehicle_id });
+    }
+
+    const count = await qb.getCount();
+    return count > 0;
+  }
+
+  async findScheduledForPublish(now: Date): Promise<Vehicle[]> {
+    const rows = await this.vehicle_repository.find({
+      where: {
+        status: STATUS_VEHICLE.INACTIVE,
+      },
+      relations: {
+        features: true,
+        services: true,
+        cuotas: true,
+        profile: true,
+        traction: true,
+      },
+    });
+
+    return rows
+      .filter(
+        (row) =>
+          row.scheduled_publish_at !== null &&
+          row.scheduled_publish_at.getTime() <= now.getTime(),
+      )
+      .map((row) => Vehicle.fromPrimitives(entity_to_primitives(row)));
+  }
+
+  async duplicate(source_vehicle_id: string): Promise<string> {
+    const source = await this.vehicle_repository.findOne({
+      where: { id: source_vehicle_id },
+      relations: {
+        features: true,
+        services: true,
+        cuotas: true,
+        images: true,
+        profile: true,
+        traction: true,
+        vehicle_prices: true,
+        vehicle_type: true,
+        color: true,
+        dgt_label: true,
+        warranty_type: true,
+        category: true,
+      },
+    });
+
+    if (!source) {
+      throw new VehicleNotFoundException(source_vehicle_id);
+    }
+
+    const new_id = uuidv4();
+    const active_price = get_active_price(source);
+    const now = new Date();
+
+    const duplicate_entity = this.vehicle_repository.create({
+      id: new_id,
+      description: source.description,
+      mileage: source.mileage,
+      condition: source.condition,
+      status: STATUS_VEHICLE.PENDING,
+      status_change_message: null,
+      address: source.address ?? null,
+      address_details: source.address_details ?? null,
+      is_featured: false,
+      views: 0,
+      favorites: 0,
+      shares: 0,
+      publisher_type: source.publisher_type,
+      expires_at: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+      scheduled_publish_at: null,
+      renewed_at: null,
+      lat: source.lat,
+      lng: source.lng,
+      transmission_type: source.transmission_type,
+      power: source.power,
+      displacement: source.displacement,
+      license_plate: source.license_plate,
+      vin_code: source.vin_code,
+      autonomy: source.autonomy,
+      battery_capacity: source.battery_capacity,
+      time_to_charge: source.time_to_charge,
+      phone_code: source.phone_code,
+      phone: source.phone,
+      email: source.email,
+      category_id: source.category_id,
+      version_id: source.version_id,
+      traction: source.traction,
+      vehicle_type: source.vehicle_type,
+      color: source.color,
+      dgt_label: source.dgt_label,
+      warranty_type: source.warranty_type,
+      features: source.features ?? [],
+      services: source.services ?? [],
+      cuotas: source.cuotas ?? [],
+      suggestions: source.suggestions,
+      profile: source.profile,
+    });
+
+    await this.vehicle_repository.save(duplicate_entity);
+
+    if (source.images?.length) {
+      for (const image of source.images) {
+        await this.vehicle_images_repository.save(
+          this.vehicle_images_repository.create({
+            id: uuidv4(),
+            url: image.url,
+            vehicle_id: new_id,
+          }),
+        );
+      }
+    }
+
+    if (active_price > 0) {
+      await this.vehicle_price_repository.save(
+        this.vehicle_price_repository.create({
+          id: uuidv4(),
+          price: active_price,
+          status: VEHICLE_PRICE_STATUS.ACTIVE,
+          vehicle_id: new_id,
+        }),
+      );
+    }
+
+    return new_id;
   }
 }

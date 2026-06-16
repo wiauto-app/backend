@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { CreateDealershipReviewUseCase } from "../application/dealership-reviews-use-cases/create-dealership-review-use-case/create-dealership-review.use-case";
@@ -12,7 +12,7 @@ import { DealershipModule } from "../dealership.module";
 @Module({
   imports: [
     TypeOrmModule.forFeature([DealershipReviewEntity]),
-    DealershipModule,
+    forwardRef(() => DealershipModule),
   ],
   controllers: [DealershipReviewsController],
   providers: [

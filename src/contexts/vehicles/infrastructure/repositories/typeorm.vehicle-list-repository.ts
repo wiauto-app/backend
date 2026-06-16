@@ -45,7 +45,11 @@ const map_vehicle_preview = (vehicle: VehicleEntity) => {
 
   return {
     id: vehicle.id,
-    title: vehicle.title,
+    version_summary: {
+      make_name: vehicle.version?.make?.name ?? "",
+      model_name: vehicle.version?.model?.name ?? "",
+      version_name: vehicle.version?.name ?? "",
+    },
     price,
     image_url: first_image_url(vehicle.images),
     created_at: vehicle.created_at,
@@ -156,6 +160,9 @@ export class TypeOrmVehicleListRepository extends VehicleListRepository {
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.category", "category")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("vehicle.version", "version")
+      .leftJoinAndSelect("version.make", "version_make")
+      .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect("vehicle.vehicle_prices", "vehicle_prices")
       .where("item.list_id = :list_id", { list_id: id })
       .orderBy("item.created_at", "DESC")

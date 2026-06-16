@@ -4,7 +4,9 @@ import { PermissionModule } from "@/src/contexts/users/permissions/permission.mo
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { VehicleCreationGuard } from "./infrastructure/guards/vehicleCreation.guard";
+import { VehicleOwnerGuard } from "./infrastructure/guards/vehicle-owner.guard";
 import { Module, forwardRef } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
 import { CreateVehicleController } from "./infrastructure/http-api/v1/create-vehicle/create-vehicle.controller";
 import { CreateVehicleUseCase } from "./application/vehicle/create-vehicle-use-case/create-vehicle.use-case";
 import { VehicleRepository } from "./domain/repositories/vehicle.repository";
@@ -57,6 +59,24 @@ import { RemoveVehicleUseCase } from "./application/vehicle/remove-vehicle-use-c
 import { ValidateVehicleUseCase } from "./application/vehicle/validate-vehicle-use-case/validate-vehicle.use-case";
 import { FindSimilarVehiclesController } from "./infrastructure/http-api/v1/find-similar-vehicles/find-similar-vehicles.controller";
 import { RemoveVehicleController } from "./infrastructure/http-api/v1/remove-vehicle/remove-vehicle.controller";
+import { FindOwnerVehiclesController } from "./infrastructure/http-api/v1/find-owner-vehicles/find-owner-vehicles.controller";
+import { DuplicateVehicleController } from "./infrastructure/http-api/v1/duplicate-vehicle/duplicate-vehicle.controller";
+import { RenewVehicleController } from "./infrastructure/http-api/v1/renew-vehicle/renew-vehicle.controller";
+import { ScheduleVehicleController } from "./infrastructure/http-api/v1/schedule-vehicle/schedule-vehicle.controller";
+import { UpdateOwnerVehicleStatusController } from "./infrastructure/http-api/v1/update-owner-vehicle-status/update-owner-vehicle-status.controller";
+import { FindOwnerVehiclesUseCase } from "./application/vehicle/find-owner-vehicles-use-case/find-owner-vehicles.use-case";
+import { DuplicateVehicleUseCase } from "./application/vehicle/duplicate-vehicle-use-case/duplicate-vehicle.use-case";
+import { RenewVehicleUseCase } from "./application/vehicle/renew-vehicle-use-case/renew-vehicle.use-case";
+import { ScheduleVehicleUseCase } from "./application/vehicle/schedule-vehicle-use-case/schedule-vehicle.use-case";
+import { UpdateOwnerVehicleStatusUseCase } from "./application/vehicle/update-owner-vehicle-status-use-case/update-owner-vehicle-status.use-case";
+import { ProcessScheduledVehiclePublishUseCase } from "./application/vehicle/process-scheduled-vehicle-publish-use-case/process-scheduled-vehicle-publish.use-case";
+import { VehicleAnalyticsRepository } from "./domain/repositories/vehicle-analytics.repository";
+import { TypeOrmVehicleAnalyticsRepository } from "./infrastructure/repositories/typeorm.vehicle-analytics-repository";
+import { SCHEDULED_VEHICLE_PUBLISH_QUEUE } from "./infrastructure/queues/scheduled-vehicle-publish.queue.constants";
+import { ScheduledVehiclePublishProcessor } from "./infrastructure/queues/scheduled-vehicle-publish.processor";
+import { ScheduledVehiclePublishBootstrapService } from "./infrastructure/queues/scheduled-vehicle-publish-bootstrap.service";
+import { VehiclePriceEntity } from "./vehicle-prices/infrastructure/persistence/vehicle-price.entity";
+import { get_vehicle_images_entity } from "./infrastructure/persistence/vehicle-images-entity.relation-type";
 import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-find-all-vehicles-use-case/admin-find-all-vehicles.use-case";
 import { AdminFindAllVehiclesController } from "./infrastructure/http-api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
 import { AdminGetVehicleUseCase } from "./application/admin-vehicles/admin-get-vehicle-use-case/admin-get-vehicle.use-case";
@@ -79,9 +99,7 @@ import { TypeOrmActiveFiltersLookupAdapter } from "./infrastructure/adapters/typ
 import { MakeEntity } from "./catalog/makes/infrastructure/persistence/make.entity";
 import { CatalogModelEntity } from "./catalog/models/infrastructure/persistence/catalog-model.entity";
 import { CatalogFuelTypeEntity } from "./catalog/fuel_types/infrastructure/persistence/catalog-fuel-type.entity";
-import { Provinces } from "@/src/contexts/locations/provinces/entities/province.entity";
-import { Comunity } from "@/src/contexts/locations/comunities/entities/comunity.entity";
-import { Municipality } from "@/src/contexts/locations/municipalities/entities/municipality.entity";
+import { LocationsModule } from "@/src/contexts/locations/locations.module";
 import { VehicleTypesUseCase } from "./application/vehicle-types-use-cases/vehicle-types.use-case";
 import { ServicesUseCase } from "./application/services-use-cases/services.use-case";
 import { CuotasUseCase } from "./application/cuotas-use-cases/cuotas.use-case";
@@ -92,9 +110,10 @@ import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.
 import { DealershipMembersEntity } from "../dealership/infrastructure/persistence/dealership-members.entity";
 
 @Module({
-  controllers: [CreateVehicleController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, AdminUpdateVehicleStatusController, FindFiltersController, FindActiveFiltersController],
+  controllers: [CreateVehicleController, FindOwnerVehiclesController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, DuplicateVehicleController, RenewVehicleController, ScheduleVehicleController, UpdateOwnerVehicleStatusController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, AdminUpdateVehicleStatusController, FindFiltersController, FindActiveFiltersController],
   providers: [
     VehicleCreationGuard,
+    VehicleOwnerGuard,
     ImageValidationPipe,
     /* Use Cases */
     CreateVehicleUseCase,
@@ -104,6 +123,14 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     FindAllVehiclesUseCase,
     RemoveVehicleUseCase,
     ValidateVehicleUseCase,
+    FindOwnerVehiclesUseCase,
+    DuplicateVehicleUseCase,
+    RenewVehicleUseCase,
+    ScheduleVehicleUseCase,
+    UpdateOwnerVehicleStatusUseCase,
+    ProcessScheduledVehiclePublishUseCase,
+    ScheduledVehiclePublishProcessor,
+    ScheduledVehiclePublishBootstrapService,
     CreateFeatureUseCase,
     RemoveFeatureUseCase,
     UpdateFeatureUseCase,
@@ -128,11 +155,16 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     DgtLabelsUseCase,
     /* Repositories */
     TypeOrmVehicleRepository,
+    TypeOrmVehicleAnalyticsRepository,
     TypeOrmFeatureRepository,
     /* Domain */
     {
       provide: VehicleRepository,
       useExisting: TypeOrmVehicleRepository,
+    },
+    {
+      provide: VehicleAnalyticsRepository,
+      useExisting: TypeOrmVehicleAnalyticsRepository,
     },
     {
       provide: FeatureRepository,
@@ -166,12 +198,13 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
       MakeEntity,
       CatalogModelEntity,
       CatalogFuelTypeEntity,
-      Provinces,
-      Comunity,
-      Municipality,
       Roles,
       DealershipMembersEntity,
+      VehiclePriceEntity,
+      get_vehicle_images_entity(),
     ]),
+    BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
+    LocationsModule,
     VehicleImagesModule,
     VehiclePricesModule,
     FileModule,
@@ -189,7 +222,6 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     ProfileModule,
     forwardRef(() => AlertsModule),
     VehicleSearchModule,
-      
   ],
   exports: [CreateVehicleUseCase, VehicleRepository, PublishedVehicleSnapshotPort],
 })

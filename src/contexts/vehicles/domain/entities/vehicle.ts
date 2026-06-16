@@ -36,7 +36,6 @@ export interface PrimitiveVehicle {
   lat: number;
   lng: number;
   condition: ConditionVehicle;
-  title: string;
   description: string;
   publisher_type: PublisherType;
   version_id: number;
@@ -44,13 +43,15 @@ export interface PrimitiveVehicle {
   status_change_message?: string | null;
   is_featured?: boolean;
   expires_at?: Date;
+  scheduled_publish_at?: Date | null;
+  renewed_at?: Date | null;
   views?: number;
   favorites?: number;
   shares?: number;
   address?: string | null;
   address_details?: VehicleAddressDetails | null;
   transmission_type: TransmissionType;
-  traction_id: string;
+  traction_id: string | null;
   power: number;
   displacement: number;
   autonomy: number;
@@ -90,7 +91,6 @@ export class Vehicle {
     lat: number;
     lng: number;
     condition: ConditionVehicle;
-    title: string;
     description: string;
     publisher_type: PublisherType;
     version_id: number;
@@ -106,7 +106,7 @@ export class Vehicle {
     warranty_type_id?: string | null;
     cuota_ids?: string[];
     profile_id: string;
-    traction_id: string;
+    traction_id?: string | null;
     transmission_type: TransmissionType;
     power: number;
     displacement: number;
@@ -121,6 +121,7 @@ export class Vehicle {
   }): Vehicle {
     return new Vehicle({
       ...createVehicle,
+      traction_id: createVehicle.traction_id ?? null,
       address: createVehicle.address ?? null,
       address_details: createVehicle.address_details ?? null,
       id: uuidv4(),
@@ -135,6 +136,8 @@ export class Vehicle {
       status: STATUS_VEHICLE.PENDING,
       status_change_message: null,
       expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
+      scheduled_publish_at: null,
+      renewed_at: null,
     });
   }
 
@@ -154,7 +157,6 @@ export class Vehicle {
       lat: this.primitiveVehicle.lat,
       lng: this.primitiveVehicle.lng,
       condition: this.primitiveVehicle.condition,
-      title: this.primitiveVehicle.title,
       description: this.primitiveVehicle.description,
       version_id: this.primitiveVehicle.version_id,
       publisher_type: this.primitiveVehicle.publisher_type,
@@ -183,6 +185,8 @@ export class Vehicle {
       views: this.primitiveVehicle.views,
       favorites: this.primitiveVehicle.favorites,
       shares: this.primitiveVehicle.shares,
+      scheduled_publish_at: this.primitiveVehicle.scheduled_publish_at ?? null,
+      renewed_at: this.primitiveVehicle.renewed_at ?? null,
       address: this.primitiveVehicle.address ?? null,
       address_details: this.primitiveVehicle.address_details ?? null,
     };

@@ -11,11 +11,14 @@ import {
   PublisherType,
   TransmissionType,
 } from "../../domain/entities/vehicle";
+import { formatVehicleDisplayName } from "../../domain/utils/format-vehicle-display-name";
 
 interface SnapshotRow {
   vehicle_id: string;
   profile_id: string;
-  title: string;
+  make_name: string;
+  model_name: string;
+  version_name: string;
   cover_image_url: string | null;
   mileage: number;
   lat: string;
@@ -65,7 +68,9 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
       SELECT
         v.id AS vehicle_id,
         v.profile_id AS profile_id,
-        v.title AS title,
+        mk.name AS make_name,
+        md.name AS model_name,
+        ver.name AS version_name,
         (
           SELECT vi.url
           FROM vehicle_images vi
@@ -155,7 +160,11 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
     return {
       vehicle_id: row.vehicle_id,
       profile_id: row.profile_id,
-      title: row.title,
+      vehicle_label: formatVehicleDisplayName({
+        make_name: row.make_name,
+        model_name: row.model_name,
+        version_name: row.version_name,
+      }),
       cover_image_url: row.cover_image_url,
       price: row.active_price ? Number(row.active_price) : 0,
       mileage: Number(row.mileage),

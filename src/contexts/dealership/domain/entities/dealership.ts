@@ -17,6 +17,8 @@ export interface PrimitiveDealership {
   address: string;
   lat?: number;
   lng?: number;
+  is_featured: boolean;
+  rating: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -40,6 +42,8 @@ export class Dealership {
       address: payload.address,
       lat: payload.lat,
       lng: payload.lng,
+      is_featured: false,
+      rating: null,
       created_at: today,
       updated_at: today,
     });

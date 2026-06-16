@@ -1,8 +1,8 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import {
+  PUBLISHER_TYPE,
   PrimitiveVehicle,
   STATUS_VEHICLE,
-  TRANSMISSION_TYPE,
   Vehicle,
 } from "../../../domain/entities/vehicle";
 
@@ -33,12 +33,13 @@ export class CreateVehicleUseCase {
     publisher_profile_id: string,
   ): Promise<{ vehicle: PrimitiveVehicle }> {
     const { battery_capacity, time_to_charge, autonomy } = create_vehicle_dto;
+    const displacement = create_vehicle_dto.displacement;
     const { suggestions } = await this.validateVehicleUseCase.execute({
       battery_capacity: battery_capacity ?? 0,
       time_to_charge: time_to_charge ?? 0,
       autonomy: autonomy ?? 0,
       version_id: create_vehicle_dto.version_id,
-      displacement: create_vehicle_dto.displacement,
+      displacement,
       mileage: create_vehicle_dto.mileage,
       condition: create_vehicle_dto.condition,
     });
@@ -46,6 +47,7 @@ export class CreateVehicleUseCase {
       create_vehicle_dto.lat,
       create_vehicle_dto.lng,
     );
+
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
@@ -53,15 +55,14 @@ export class CreateVehicleUseCase {
       lat: create_vehicle_dto.lat,
       lng: create_vehicle_dto.lng,
       condition: create_vehicle_dto.condition,
-      title: create_vehicle_dto.title,
-      description: create_vehicle_dto.description,
+      description: create_vehicle_dto.description.trim(),
       version_id: create_vehicle_dto.version_id,
-      publisher_type: create_vehicle_dto.publisher_type,
-      transmission_type:
-        create_vehicle_dto.transmission_type ?? TRANSMISSION_TYPE.MANUAL,
+      publisher_type:
+        create_vehicle_dto.publisher_type ?? PUBLISHER_TYPE.PARTICULAR,
+      transmission_type: create_vehicle_dto.transmission_type,
       traction_id: create_vehicle_dto.traction_id,
-      power: create_vehicle_dto.power ?? 0,
-      displacement: create_vehicle_dto.displacement,
+      power: create_vehicle_dto.power,
+      displacement,
       autonomy: create_vehicle_dto.autonomy ?? 0,
       battery_capacity: create_vehicle_dto.battery_capacity ?? 0,
       time_to_charge: create_vehicle_dto.time_to_charge ?? 0,
@@ -71,7 +72,7 @@ export class CreateVehicleUseCase {
       email: create_vehicle_dto.email,
       features_ids: create_vehicle_dto.features_ids ?? [],
       services_ids: create_vehicle_dto.services_ids ?? [],
-      vehicle_type_id: create_vehicle_dto.vehicle_type_id,
+      vehicle_type_id: create_vehicle_dto.vehicle_type_id ?? null,
       category_id: create_vehicle_dto.category_id ?? null,
       color_id: create_vehicle_dto.color_id ?? null,
       dgt_label_id: create_vehicle_dto.dgt_label_id ?? null,

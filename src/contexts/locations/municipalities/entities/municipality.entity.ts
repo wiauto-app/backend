@@ -33,6 +33,9 @@ export class Municipality {
   @Column({ type: "varchar" })
   slug: string;
 
+  @Column({ name: "image_url", type: "varchar", nullable: true })
+  image_url: string | null;
+
   @Index({ spatial: true })
   @Column({ type: "geometry", spatialFeatureType: "MultiPolygon", srid: 4326 })
   geom: string;

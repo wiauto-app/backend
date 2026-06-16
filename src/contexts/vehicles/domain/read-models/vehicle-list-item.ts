@@ -15,6 +15,12 @@ export interface VehicleListItemImage {
   url: string;
 }
 
+export interface VehicleVersionSummary {
+  make_name: string;
+  model_name: string;
+  version_name: string;
+}
+
 export interface VehicleListItemPublisher {
   id: string;
   name: string;
@@ -31,7 +37,7 @@ export interface VehicleListItem {
   lat: number;
   lng: number;
   condition: string;
-  title: string;
+  version_summary: VehicleVersionSummary;
   created_at: Date;
   publisher_type: PublisherType;
   images: VehicleListItemImage[];
@@ -68,5 +74,5 @@ export interface AdminVehicleListItem extends VehicleListItem {
   phone: string;
   email: string;
   version_id: number;
-  traction: VehicleListItemCatalogRef;
+  traction: VehicleListItemCatalogRef | null;
 }

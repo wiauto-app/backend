@@ -1,6 +1,10 @@
 export interface VehicleListItemPreview {
   id: string;
-  title: string;
+  version_summary: {
+    make_name: string;
+    model_name: string;
+    version_name: string;
+  };
   price: number;
   image_url: string | null;
   created_at: Date;
