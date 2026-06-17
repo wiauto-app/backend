@@ -28,7 +28,6 @@ export class VehicleTypesUseCase {
   }
 
   async update(id: string, update_vehicle_type_dto: UpdateVehicleTypeDto): Promise<{ vehicleType: PrimitiveVehicleType }> {
-    console.log('update_vehicle_type_dto', update_vehicle_type_dto);
     const vehicle_type = await this.vehicleTypesRepository.findOne(id);
     if (!vehicle_type) {
       throw new VehicleTypeNotFoundException(id);

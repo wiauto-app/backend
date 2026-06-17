@@ -1,6 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.service";
+import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/domain/enums/alert-event-type.enum";
 
 import { STATUS_VEHICLE, Vehicle } from "../../../domain/entities/vehicle";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
@@ -45,8 +46,9 @@ export class ProcessScheduledVehiclePublishUseCase {
       await this.vehicle_repository.update(updated);
 
       if (next_status === STATUS_VEHICLE.ACTIVE) {
-        await this.alert_processing_enqueue_service.enqueue_vehicle_published({
+        await this.alert_processing_enqueue_service.enqueue_vehicle_event({
           vehicle_id: primitive.id,
+          event_type: ALERT_EVENT_TYPE.NEW_LISTING,
         });
       }
 

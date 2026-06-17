@@ -25,7 +25,18 @@ export class TypeOrmAdminProfileRepository implements AdminProfileRepository {
     if (!profile) {
       return null;
     }
-    return Profile.fromPrimitives(profile);
+    return Profile.fromPrimitives({
+      id: profile.id,
+      name: profile.name,
+      last_name: profile.last_name ?? undefined,
+      dni: profile.dni ?? undefined,
+      phone: profile.phone ?? undefined,
+      phone_code: profile.phone_code ?? undefined,
+      avatar_url: profile.avatar_url ?? undefined,
+      image_url: profile.image_url ?? undefined,
+      role_id: profile.role_id,
+      user: profile.user ?? undefined,
+    });
   }
 
   async update(profile: Profile): Promise<void> {

@@ -49,7 +49,6 @@ export class TypeormVehicleTypeRepository extends VehicleTypesRepository {
 
   async update(id: string, vehicleType: VehicleType): Promise<void> {
     const p = vehicleType.toPrimitives();
-    console.log('p', p);
     await this.vehicleTypeRepository.update(id, { name: p.name, image_url: p.image_url });
   }
 

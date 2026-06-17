@@ -167,6 +167,9 @@ export class TypeOrmProfileRepository implements ProfileRepository {
       avatar_url: p.avatar_url ?? "",
       image_url: p.image_url ?? "",
       role_id: p.role_id,
+      phone_code: p.phone_code ?? undefined,
+      phone: p.phone ?? undefined,
+      dni: p.dni ?? undefined,
     });
 
     if (!preloaded) {

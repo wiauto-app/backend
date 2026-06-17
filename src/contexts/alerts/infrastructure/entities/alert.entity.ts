@@ -49,4 +49,25 @@ export class AlertEntity implements PrimitiveAlert {
 
   @Column({ type: "timestamp", nullable: true })
   last_sent_at: Date | null;
+
+  @Column({ default: true })
+  is_active: boolean;
+
+  @Column({ default: true })
+  notify_new_listings: boolean;
+
+  @Column({ default: true })
+  notify_price_drops: boolean;
+
+  @Column({ default: false })
+  notify_sold_removed: boolean;
+
+  @Column({ default: false })
+  notify_featured: boolean;
+
+  @Column({ default: false })
+  notify_recently_updated: boolean;
+
+  @Column({ type: "timestamp", nullable: true })
+  last_viewed_at: Date | null;
 }

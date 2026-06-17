@@ -7,4 +7,8 @@ export abstract class VehicleListItemRepository {
   abstract findAllByListId(list_id: string): Promise<VehicleListDetailItem[]>;
   abstract exists(list_id: string, vehicle_id: string): Promise<boolean>;
   abstract decrementFavoritesByListId(list_id: string): Promise<void>;
+  abstract findProfileIdsByVehicleId(vehicle_id: string): Promise<string[]>;
+  abstract findStaleFavoriteReminders(params: {
+    older_than_days: number;
+  }): Promise<Array<{ profile_id: string; vehicle_id: string; added_at: Date }>>;
 }

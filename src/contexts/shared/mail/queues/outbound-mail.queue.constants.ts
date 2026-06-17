@@ -49,6 +49,8 @@ export interface OutboundMailVehicleStatusChangedJobData {
 }
 
 export const OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION = "alert_match_notification";
+export const OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION = "alert_event_notification";
+export const OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION = "alert_digest_notification";
 
 export interface OutboundMailAlertMatchNotificationJobData {
   to: string;
@@ -62,4 +64,25 @@ export interface OutboundMailAlertMatchNotificationJobData {
   vehicle_fuel_label: string;
   vehicle_transmission_label: string;
   vehicle_location_label: string;
+}
+
+export interface OutboundMailAlertEventNotificationJobData {
+  to: string;
+  event_type: string;
+  title: string;
+  body_summary: string;
+  vehicle_detail_url: string;
+  vehicle_image_url: string | null;
+  alert_name: string | null;
+}
+
+export interface OutboundMailAlertDigestNotificationJobData {
+  to: string;
+  frequency: "daily" | "weekly";
+  events_count: number;
+  events: Array<{
+    event_type: string;
+    title: string;
+    summary: string;
+  }>;
 }

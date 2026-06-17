@@ -292,6 +292,61 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderAlertEvent(payload: {
+    event_type: string;
+    title: string;
+    body_summary: string;
+    vehicle_detail_url: string;
+    vehicle_image_url: string | null;
+    alert_name: string | null;
+  }): string {
+    const alert_line = payload.alert_name
+      ? `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#374151;">Alerta: <strong>${this.escapeHtml(payload.alert_name)}</strong></p>`
+      : "";
+
+    const body = `${alert_line}
+      <p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${this.escapeHtml(payload.body_summary)}
+      </p>
+      ${this.buildVehicleImageBlock(payload.vehicle_image_url)}`;
+
+    return this.renderBase({
+      preheader: payload.body_summary,
+      title: this.escapeHtml(payload.title),
+      body,
+      cta_label: "Ver detalle",
+      cta_href: payload.vehicle_detail_url,
+    });
+  }
+
+  renderAlertDigest(payload: {
+    frequency: "daily" | "weekly";
+    events_count: number;
+    events: Array<{ event_type: string; title: string; summary: string }>;
+  }): string {
+    const items = payload.events
+      .map(
+        (event) => `<li style="margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#374151;">
+          <strong>${this.escapeHtml(event.title)}</strong><br />
+          ${this.escapeHtml(event.summary)}
+        </li>`,
+      )
+      .join("");
+
+    const body = `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#374151;">
+        Tienes ${payload.events_count} notificaciones pendientes.
+      </p>
+      <ul style="margin:0;padding-left:20px;">${items}</ul>`;
+
+    const frequency_label = payload.frequency === "daily" ? "diario" : "semanal";
+
+    return this.renderBase({
+      preheader: `Resumen ${frequency_label} de alertas`,
+      title: `Resumen ${frequency_label} de alertas`,
+      body,
+    });
+  }
+
   buildLocationLabelFromSlugs(
     municipalities_slugs: string[],
     province_slugs: string[],

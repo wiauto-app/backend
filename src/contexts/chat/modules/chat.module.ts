@@ -1,9 +1,11 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { FileModule } from "@/src/contexts/shared/file/file.module";
+import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 
 import { CreateChatUseCase } from "../application/chat-use-cases/create-chat-use-case/create-chat.use-case";
 import { DeleteChatUseCase } from "../application/chat-use-cases/delete-chat-use-case/delete-chat.use-case";
@@ -66,6 +68,8 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     AuthModule,
     ProfileModule,
     FileModule,
+    forwardRef(() => AlertsModule),
+    forwardRef(() => VehiclesModule),
     TypeOrmModule.forFeature([
       ChatEntity,
       ChatMessageEntity,

@@ -33,6 +33,7 @@ export class MeController {
     return this.account_settings_service.getAccountSettings(user_id);
   }
 
+
   @Patch("email")
   async updateEmail(
     @GetUserId() user_id: string,

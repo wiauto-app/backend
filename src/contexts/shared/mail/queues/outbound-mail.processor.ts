@@ -5,6 +5,8 @@ import { Job } from "bullmq";
 import { build_dealership_invitation_accept_link } from "../dealership-invitation-link.util";
 import { MailService } from "../mail.service";
 import {
+  OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
@@ -12,6 +14,8 @@ import {
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
   OUTBOUND_MAIL_QUEUE,
+  OutboundMailAlertDigestNotificationJobData,
+  OutboundMailAlertEventNotificationJobData,
   OutboundMailAlertMatchNotificationJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
@@ -35,6 +39,10 @@ export class OutboundMailProcessor extends WorkerHost {
       | OutboundMailLeadNotificationJobData
       | OutboundMailVehicleStatusChangedJobData
       | OutboundMailAlertMatchNotificationJobData
+      | OutboundMailAlertEventNotificationJobData
+      | OutboundMailAlertDigestNotificationJobData
+      | OutboundMailAlertEventNotificationJobData
+      | OutboundMailAlertDigestNotificationJobData
     >,
   ): Promise<void> {
     if (job.name === OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION) {
@@ -86,6 +94,18 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION) {
       const data = job.data as OutboundMailAlertMatchNotificationJobData;
       await this.mail_service.sendAlertMatchNotificationEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION) {
+      const data = job.data as OutboundMailAlertEventNotificationJobData;
+      await this.mail_service.sendAlertEventNotificationEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION) {
+      const data = job.data as OutboundMailAlertDigestNotificationJobData;
+      await this.mail_service.sendAlertDigestNotificationEmail(data);
       return;
     }
 

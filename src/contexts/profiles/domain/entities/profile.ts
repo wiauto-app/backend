@@ -30,6 +30,9 @@ export interface PrimitiveProfile {
   role_id: string ;
   role?: PrimitiveProfileRole | null;
   user?: PrimitiveUser | null;
+  phone_code?: string;
+  phone?: string;
+  dni?: string;
 }
 
 export class Profile {

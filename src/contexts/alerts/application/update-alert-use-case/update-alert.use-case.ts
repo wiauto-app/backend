@@ -25,8 +25,15 @@ export class UpdateAlertUseCase {
 
     const mapped_filters = mapToAlertFilters(dto);
     const has_filter_updates = Object.keys(mapped_filters).length > 0;
+    const has_preference_updates =
+      dto.is_active !== undefined ||
+      dto.notify_new_listings !== undefined ||
+      dto.notify_price_drops !== undefined ||
+      dto.notify_sold_removed !== undefined ||
+      dto.notify_featured !== undefined ||
+      dto.notify_recently_updated !== undefined;
 
-    if (dto.name === undefined && !has_filter_updates) {
+    if (dto.name === undefined && !has_filter_updates && !has_preference_updates) {
       throw new ValidationException("Debes enviar al menos un campo para actualizar");
     }
 
@@ -35,6 +42,12 @@ export class UpdateAlertUseCase {
       filters: has_filter_updates
         ? { ...primitive.filters, ...mapped_filters }
         : undefined,
+      is_active: dto.is_active,
+      notify_new_listings: dto.notify_new_listings,
+      notify_price_drops: dto.notify_price_drops,
+      notify_sold_removed: dto.notify_sold_removed,
+      notify_featured: dto.notify_featured,
+      notify_recently_updated: dto.notify_recently_updated,
     });
 
     await this.alert_repository.update(updated);

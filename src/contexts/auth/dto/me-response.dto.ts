@@ -9,6 +9,10 @@ export class MeResponseDto {
   name?: string;
   last_name?: string;
   avatar_url?: string;
+  image_url?: string;
+  phone_code?: string;
+  phone?: string;
+  dni?: string | null;
   last_sign_in: Date | null;
   vehicle_lists: VehicleListEntity[];
   role: Roles;
@@ -29,6 +33,10 @@ export class MeResponseDto {
     dto.name = profile.name;
     dto.last_name = profile.last_name;
     dto.avatar_url = profile.avatar_url;
+    dto.image_url = profile.image_url;
+    dto.phone_code = profile.phone_code ?? undefined;
+    dto.phone = profile.phone ?? undefined;
+    dto.dni = profile.dni ?? undefined;
     dto.type = scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.vehicle_lists = profile.vehicle_lists;
     return dto;

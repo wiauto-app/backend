@@ -13,6 +13,13 @@ export interface PrimitiveAlert {
   phone_code: string;
   filters: AlertFilters;
   last_sent_at: Date | null;
+  is_active: boolean;
+  notify_new_listings: boolean;
+  notify_price_drops: boolean;
+  notify_sold_removed: boolean;
+  notify_featured: boolean;
+  notify_recently_updated: boolean;
+  last_viewed_at: Date | null;
 }
 
 export class Alert {
@@ -26,6 +33,13 @@ export class Alert {
     phone_code: string;
     filters: AlertFilters;
     last_sent_at?: Date | null;
+    is_active?: boolean;
+    notify_new_listings?: boolean;
+    notify_price_drops?: boolean;
+    notify_sold_removed?: boolean;
+    notify_featured?: boolean;
+    notify_recently_updated?: boolean;
+    last_viewed_at?: Date | null;
   }): Alert {
     return new Alert({
       id: uuidv4(),
@@ -38,6 +52,13 @@ export class Alert {
       phone_code: payload.phone_code,
       filters: payload.filters,
       last_sent_at: payload.last_sent_at ?? null,
+      is_active: payload.is_active ?? true,
+      notify_new_listings: payload.notify_new_listings ?? true,
+      notify_price_drops: payload.notify_price_drops ?? true,
+      notify_sold_removed: payload.notify_sold_removed ?? false,
+      notify_featured: payload.notify_featured ?? false,
+      notify_recently_updated: payload.notify_recently_updated ?? false,
+      last_viewed_at: payload.last_viewed_at ?? null,
     });
   }
 
@@ -45,6 +66,13 @@ export class Alert {
     name?: string;
     filters?: AlertFilters;
     last_sent_at?: Date | null;
+    is_active?: boolean;
+    notify_new_listings?: boolean;
+    notify_price_drops?: boolean;
+    notify_sold_removed?: boolean;
+    notify_featured?: boolean;
+    notify_recently_updated?: boolean;
+    last_viewed_at?: Date | null;
   }): Alert {
     return new Alert({
       ...this.primitive_alert,
@@ -60,4 +88,8 @@ export class Alert {
   toPrimitives(): PrimitiveAlert {
     return { ...this.primitive_alert };
   }
+}
+
+export interface AlertWithNewMatchesCount extends PrimitiveAlert {
+  new_matches_count: number;
 }

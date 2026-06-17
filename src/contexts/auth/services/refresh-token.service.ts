@@ -11,7 +11,7 @@ import { SessionEntity } from "../entities/session.entity";
 import { MONTH } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
 
-export type CreateRefreshTokenResult = {
+export interface CreateRefreshTokenResult {
   entity: RefreshTokenEntity;
   raw_token: string;
 };

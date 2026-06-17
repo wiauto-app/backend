@@ -31,11 +31,20 @@ export class ProfileEntity {
   @Column()
   name: string;
 
+  @Column({ type: "varchar", nullable: true })
+  dni: string | null;
+
   @Column({ name: "role_id", nullable: true })
   role_id: string;
-  
+
   @Column({ nullable: true })
   last_name?: string;
+
+  @Column({ type: "varchar", nullable: true })
+  phone_code: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  phone: string | null;
 
   @Column({ nullable: true })
   avatar_url?: string;
@@ -46,7 +55,7 @@ export class ProfileEntity {
   @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
   vehicles: Relation<VehicleEntity[]>;
 
-  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true,onDelete: "SET NULL" })
+  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "role_id" })
   role: Relation<Roles | null>;
 

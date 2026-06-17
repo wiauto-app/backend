@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { AlertProcessingEnqueueModule } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.module";
 
 import { FindVehiclePricesByVehicleIdUseCase } from "./application/find-vehicle-prices-by-vehicle-id-use-case/find-vehicle-prices-by-vehicle-id.use-case";
 import { SetVehiclePriceUseCase } from "./application/set-vehicle-price-use-case/set-vehicle-price.use-case";
@@ -9,7 +10,12 @@ import { VehiclePricesPersistenceModule } from "./vehicle-prices-persistence.mod
 import { VehicleSearchModule } from "../search/vehicle-search.module";
 
 @Module({
-  imports: [VehiclePricesPersistenceModule, VehicleSearchModule, AuthModule],
+  imports: [
+    VehiclePricesPersistenceModule,
+    VehicleSearchModule,
+    AuthModule,
+    AlertProcessingEnqueueModule,
+  ],
   controllers: [FindVehiclePricesByVehicleIdController],
   providers: [SetVehiclePriceUseCase, FindVehiclePricesByVehicleIdUseCase],
   exports: [

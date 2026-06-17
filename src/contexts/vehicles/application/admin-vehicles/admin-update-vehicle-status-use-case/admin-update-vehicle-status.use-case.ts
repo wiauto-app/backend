@@ -2,6 +2,7 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
 import { ProfileUserRepository } from "@/src/contexts/profiles/domain/repositories/profile-user.repository";
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.service";
+import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/domain/enums/alert-event-type.enum";
 
 import {
   STATUS_VEHICLE,
@@ -79,8 +80,28 @@ export class AdminUpdateVehicleStatusUseCase {
     }
 
     if (new_status === STATUS_VEHICLE.ACTIVE) {
-      await this.alert_processing_enqueue_service.enqueue_vehicle_published({
+      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
         vehicle_id: dto.vehicle_id,
+        event_type: ALERT_EVENT_TYPE.NEW_LISTING,
+      });
+
+      const updated_primitive = updated.toPrimitives();
+      if (updated_primitive.is_featured) {
+        await this.alert_processing_enqueue_service.enqueue_vehicle_event({
+          vehicle_id: dto.vehicle_id,
+          event_type: ALERT_EVENT_TYPE.FEATURED,
+        });
+      }
+    }
+
+    if (
+      new_status === STATUS_VEHICLE.SOLD ||
+      new_status === STATUS_VEHICLE.ARCHIVED ||
+      new_status === STATUS_VEHICLE.INACTIVE
+    ) {
+      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
+        vehicle_id: dto.vehicle_id,
+        event_type: ALERT_EVENT_TYPE.SOLD_REMOVED,
       });
     }
 

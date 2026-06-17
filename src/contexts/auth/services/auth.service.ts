@@ -63,12 +63,10 @@ export class AuthService {
       );
     }
 
-    return this.establishSessionForUser(user, request);
-  }
-
-  async establishSessionForUser(user: User, request: Request): Promise<SignInResult> {
     return this.authSessionService.establishSessionForUser(user, request);
   }
+
+
 
   async createSession(user: User, request: Request) {
     return this.authSessionService.createSession(user, request);

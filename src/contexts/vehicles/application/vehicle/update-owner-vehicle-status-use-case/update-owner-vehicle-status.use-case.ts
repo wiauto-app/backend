@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.service";
+import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/domain/enums/alert-event-type.enum";
 
 import {
   STATUS_VEHICLE,
@@ -46,6 +47,10 @@ export class UpdateOwnerVehicleStatusUseCase {
         status_change_message: null,
       });
       await this.vehicle_repository.update(updated);
+      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
+        vehicle_id: dto.vehicle_id,
+        event_type: ALERT_EVENT_TYPE.SOLD_REMOVED,
+      });
       await this.vehicle_search_indexer.syncVehicle(
         dto.vehicle_id,
         STATUS_VEHICLE.INACTIVE,
@@ -76,8 +81,9 @@ export class UpdateOwnerVehicleStatusUseCase {
       status_change_message: null,
     });
     await this.vehicle_repository.update(updated);
-    await this.alert_processing_enqueue_service.enqueue_vehicle_published({
+    await this.alert_processing_enqueue_service.enqueue_vehicle_event({
       vehicle_id: dto.vehicle_id,
+      event_type: ALERT_EVENT_TYPE.NEW_LISTING,
     });
     await this.vehicle_search_indexer.syncVehicle(
       dto.vehicle_id,

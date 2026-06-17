@@ -43,6 +43,7 @@ import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
 import { AuthSessionService } from "./services/auth-session.service";
+import { ProfileEntity } from "../profiles/infrastructure/persistence/profile.entity";
 
 @Module({
   controllers: [
@@ -91,7 +92,7 @@ import { AuthSessionService } from "./services/auth-session.service";
     RolesModule,
     forwardRef(() => TwoFactorAuthModule),
 
-    TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity]),
+    TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity, ProfileEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
 
 

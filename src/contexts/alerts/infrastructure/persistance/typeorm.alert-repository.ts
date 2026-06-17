@@ -21,6 +21,13 @@ const entity_to_alert = (entity: AlertEntity): Alert =>
     phone_code: entity.phone_code,
     filters: entity.filters,
     last_sent_at: entity.last_sent_at,
+    is_active: entity.is_active,
+    notify_new_listings: entity.notify_new_listings,
+    notify_price_drops: entity.notify_price_drops,
+    notify_sold_removed: entity.notify_sold_removed,
+    notify_featured: entity.notify_featured,
+    notify_recently_updated: entity.notify_recently_updated,
+    last_viewed_at: entity.last_viewed_at,
   });
 
 @Injectable()
@@ -46,6 +53,13 @@ export class TypeOrmAlertRepository extends AlertRepository {
         phone_code: primitive.phone_code,
         filters: primitive.filters,
         last_sent_at: primitive.last_sent_at,
+        is_active: primitive.is_active,
+        notify_new_listings: primitive.notify_new_listings,
+        notify_price_drops: primitive.notify_price_drops,
+        notify_sold_removed: primitive.notify_sold_removed,
+        notify_featured: primitive.notify_featured,
+        notify_recently_updated: primitive.notify_recently_updated,
+        last_viewed_at: primitive.last_viewed_at,
       }),
     );
   }
@@ -117,6 +131,7 @@ export class TypeOrmAlertRepository extends AlertRepository {
       .where("alert.profile_id != :exclude_profile_id", {
         exclude_profile_id: params.exclude_profile_id,
       })
+      .andWhere("alert.is_active = true")
       .andWhere(
         `(
           alert.filters->'makes_slugs' IS NULL
@@ -151,6 +166,13 @@ export class TypeOrmAlertRepository extends AlertRepository {
       phone_code: primitive.phone_code,
       filters: primitive.filters,
       last_sent_at: primitive.last_sent_at,
+      is_active: primitive.is_active,
+      notify_new_listings: primitive.notify_new_listings,
+      notify_price_drops: primitive.notify_price_drops,
+      notify_sold_removed: primitive.notify_sold_removed,
+      notify_featured: primitive.notify_featured,
+      notify_recently_updated: primitive.notify_recently_updated,
+      last_viewed_at: primitive.last_viewed_at,
       updated_at: primitive.updated_at,
     });
 

@@ -153,6 +153,60 @@ export class MailService {
     }
   }
 
+  async sendAlertEventNotificationEmail(payload: {
+    to: string;
+    event_type: string;
+    title: string;
+    body_summary: string;
+    vehicle_detail_url: string;
+    vehicle_image_url: string | null;
+    alert_name: string | null;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderAlertEvent(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: payload.title,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de evento a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendAlertDigestNotificationEmail(payload: {
+    to: string;
+    frequency: "daily" | "weekly";
+    events_count: number;
+    events: Array<{
+      event_type: string;
+      title: string;
+      summary: string;
+    }>;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderAlertDigest(payload);
+    const frequency_label = payload.frequency === "daily" ? "diario" : "semanal";
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Resumen ${frequency_label} de alertas (${payload.events_count})`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el digest de alertas a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendDealershipInvitationEmail(payload: {
     to: string;
     invitation_link: string;

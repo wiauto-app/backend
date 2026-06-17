@@ -3,6 +3,8 @@ import { Injectable } from "@nestjs/common";
 import { Queue } from "bullmq";
 
 import {
+  OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
@@ -10,6 +12,8 @@ import {
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
   OUTBOUND_MAIL_QUEUE,
+  OutboundMailAlertDigestNotificationJobData,
+  OutboundMailAlertEventNotificationJobData,
   OutboundMailAlertMatchNotificationJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
@@ -66,6 +70,24 @@ export class OutboundMailEnqueueService {
   ): Promise<void> {
     await this.outbound_mail_queue.add(
       OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
+      data,
+    );
+  }
+
+  async enqueue_alert_event_notification(
+    data: OutboundMailAlertEventNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION,
+      data,
+    );
+  }
+
+  async enqueue_alert_digest_notification(
+    data: OutboundMailAlertDigestNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
       data,
     );
   }

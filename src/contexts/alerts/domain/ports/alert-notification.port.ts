@@ -1,3 +1,6 @@
+import type { AlertEventType } from "../enums/alert-event-type.enum";
+import type { AlertNotificationChannel } from "../enums/alert-notification-channel.enum";
+
 export interface AlertMatchNotificationPayload {
   alert_id: string;
   alert_name: string;
@@ -13,8 +16,36 @@ export interface AlertMatchNotificationPayload {
   vehicle_location_label: string;
 }
 
+export interface AlertEventNotificationPayload {
+  to: string;
+  event_type: AlertEventType;
+  channel: AlertNotificationChannel;
+  payload: Record<string, unknown>;
+}
+
+export interface AlertDigestNotificationPayload {
+  to: string;
+  frequency: "daily" | "weekly";
+  events: Array<{
+    event_type: AlertEventType;
+    payload: Record<string, unknown>;
+  }>;
+}
+
 export abstract class AlertNotificationDispatcher {
   abstract notifyMatch(
     payload: AlertMatchNotificationPayload,
   ): Promise<void>;
+
+  abstract notifyEvent(payload: AlertEventNotificationPayload): Promise<void>;
+
+  abstract notifyDigest(payload: AlertDigestNotificationPayload): Promise<void>;
+}
+
+export abstract class AlertPushNotificationPort {
+  abstract notify(payload: AlertEventNotificationPayload): Promise<void>;
+}
+
+export abstract class AlertSmsNotificationPort {
+  abstract notify(payload: AlertEventNotificationPayload): Promise<void>;
 }
