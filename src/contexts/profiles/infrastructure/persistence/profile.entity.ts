@@ -16,6 +16,7 @@ import { ReviewEntity } from "@/src/contexts/vehicles/infrastructure/persistence
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle-list.entity";
+import { PUBLISHER_TYPE, PublisherType } from "@/src/contexts/vehicles/domain/entities/vehicle";
 
 @Entity({ name: "profile" })
 export class ProfileEntity {
@@ -42,6 +43,9 @@ export class ProfileEntity {
 
   @Column({ type: "varchar", nullable: true })
   phone_code: string | null;
+
+  @Column({ type: "enum", enum: PUBLISHER_TYPE, default: PUBLISHER_TYPE.PARTICULAR })
+  type: PublisherType;
 
   @Column({ type: "varchar", nullable: true })
   phone: string | null;

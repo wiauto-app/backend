@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { getSkip } from "@/src/contexts/shared/getSkip";
 
 import { Dealership, PrimitiveDealership } from "../../domain/entities/dealership";
 import { DealershipsFilter } from "../../domain/filters/dealerships.filter";
@@ -11,9 +12,9 @@ import { DealershipAdminList } from "../../domain/read-models/dealership-admin-l
 import { DealershipEntity } from "../persistence/dealership.entity";
 import { DealershipMembersEntity } from "../persistence/dealership-members.entity";
 import { DealershipReviewEntity } from "../persistence/dealership-review.entity";
-import { getSkip } from "@/src/contexts/shared/getSkip";
+import { applyDealershipGeoFilters, applyDealershipRatingSinceFilter, applyDealershipVehiclesNumberFilter, sql_active_vehicles_count_subquery } from "./dealership-geo-filter.applier";
 
-const dealership_order_columns = new Set([
+const dealership_scalar_order_columns = new Set([
   "id",
   "name",
   "slug",
@@ -22,6 +23,12 @@ const dealership_order_columns = new Set([
   "rating",
   "created_at",
   "updated_at",
+]);
+
+const dealership_aggregate_order_columns = new Set([
+  "reviews_count",
+  "vehicles_count",
+  "distance",
 ]);
 
 function entity_to_primitives(entity: DealershipEntity): PrimitiveDealership {
@@ -67,6 +74,7 @@ function raw_row_to_admin_list(row: Record<string, unknown>): DealershipAdminLis
     updated_at: row.d_updated_at as Date,
     members_count: Number(row.members_count ?? 0),
     reviews_count: Number(row.reviews_count ?? 0),
+    vehicles_count: Number(row.vehicles_count ?? 0),
   };
 }
 
@@ -128,6 +136,7 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
         is_featured: filter.is_featured,
       });
     }
+    applyDealershipRatingSinceFilter(count_qb, filter.rating_since);
     if (filter.query) {
       const q = `%${filter.query}%`;
       count_qb.andWhere(
@@ -136,7 +145,7 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       );
     }
 
-    const total = await count_qb.getCount();
+    const geo_context = applyDealershipGeoFilters(count_qb, filter);
 
     const members_subquery = count_qb
       .subQuery()
@@ -152,11 +161,12 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       .where("r.dealership_id = d.id")
       .getQuery();
 
-    const order_column =
-      filter.order_by && dealership_order_columns.has(filter.order_by)
-        ? filter.order_by
-        : "created_at";
-    const direction = filter.order_direction;
+    applyDealershipVehiclesNumberFilter(count_qb, filter.vehicles_number);
+
+    const total = await count_qb.getCount();
+
+    const direction = filter.order_direction ?? "DESC";
+    const order_by = filter.order_by;
 
     const data_qb = count_qb
       .select("d.id", "d_id")
@@ -178,11 +188,33 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       .addSelect("d.updated_at", "d_updated_at")
       .addSelect(`(${members_subquery})`, "members_count")
       .addSelect(`(${reviews_subquery})`, "reviews_count")
-      .orderBy("d.is_featured", "DESC")
-      .addOrderBy("d.rating", "DESC", "NULLS LAST")
-      .addOrderBy(`d.${order_column}`, direction)
-      .offset(getSkip(filter.page, filter.limit))
-      .limit(filter.limit);
+      .addSelect(sql_active_vehicles_count_subquery, "vehicles_count");
+
+    if (order_by === "distance" && geo_context.distanceOrderSql) {
+      if (geo_context.distanceOrderParams) {
+        data_qb.setParameters(geo_context.distanceOrderParams);
+      }
+      data_qb
+        .orderBy(geo_context.distanceOrderSql, direction === "ASC" ? "ASC" : "DESC")
+        .addOrderBy("d.is_featured", "DESC")
+        .addOrderBy("d.rating", "DESC", "NULLS LAST");
+    } else if (order_by && dealership_aggregate_order_columns.has(order_by)) {
+      if (order_by === "reviews_count") {
+        data_qb.orderBy(`(${reviews_subquery})`, direction);
+      } else if (order_by === "vehicles_count") {
+        data_qb.orderBy(sql_active_vehicles_count_subquery, direction);
+      } else {
+        data_qb.orderBy(order_by, direction);
+      }
+    } else if (order_by && dealership_scalar_order_columns.has(order_by)) {
+      data_qb.orderBy(`d.${order_by}`, direction);
+    } else {
+      data_qb
+        .orderBy("d.is_featured", "DESC")
+        .addOrderBy("d.rating", "DESC", "NULLS LAST");
+    }
+
+    data_qb.offset(getSkip(filter.page, filter.limit)).limit(filter.limit);
 
     const rows = await data_qb.getRawMany();
     const data = rows.map((row) => raw_row_to_admin_list(row));

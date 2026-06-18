@@ -20,4 +20,5 @@ export interface DealershipAdminList {
   updated_at: Date;
   members_count: number;
   reviews_count: number;
+  vehicles_count: number;
 }

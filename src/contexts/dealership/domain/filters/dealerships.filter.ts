@@ -10,6 +10,12 @@ export interface DealershipsFilterOptions {
   slug?: string;
   email?: string;
   is_featured?: boolean;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  province_slug?: string;
+  rating_since?: number;
+  vehicles_number?: number;
 }
 
 export class DealershipsFilter extends PaginationFilter {
@@ -17,6 +23,12 @@ export class DealershipsFilter extends PaginationFilter {
   slug?: string;
   email?: string;
   is_featured?: boolean;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  province_slug?: string;
+  rating_since?: number;
+  vehicles_number?: number;
 
   constructor(options: DealershipsFilterOptions = {}) {
     const {
@@ -29,11 +41,23 @@ export class DealershipsFilter extends PaginationFilter {
       slug,
       email,
       is_featured,
+      lat,
+      lng,
+      radius,
+      province_slug,
+      rating_since,
+      vehicles_number,
     } = options;
     super(page, limit, order_direction, query, order_by);
     this.name = name;
     this.slug = slug;
     this.email = email;
     this.is_featured = is_featured;
+    this.lat = lat;
+    this.lng = lng;
+    this.radius = radius;
+    this.province_slug = province_slug;
+    this.rating_since = rating_since;
+    this.vehicles_number = vehicles_number;
   }
 }
