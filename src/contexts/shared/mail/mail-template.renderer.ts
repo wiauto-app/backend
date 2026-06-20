@@ -153,6 +153,208 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderPlanLeadRequestNotification(payload: {
+    lead: {
+      name: string;
+      email: string;
+      phone: string;
+      message: string | null;
+    };
+    created_at: string;
+  }): string {
+    const escaped_name = this.escapeHtml(payload.lead.name);
+    const escaped_email = this.escapeHtml(payload.lead.email);
+    const escaped_phone = this.escapeHtml(payload.lead.phone);
+    const escaped_message = payload.lead.message
+      ? this.escapeHtml(payload.lead.message)
+      : "Sin mensaje";
+    const escaped_created_at = this.escapeHtml(
+      new Date(payload.created_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Recibiste una nueva solicitud de información sobre planes profesionales.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Nombre</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_name}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Correo</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_email}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Teléfono</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_phone}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Mensaje</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${escaped_message}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Fecha</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_created_at}</p>
+          </td>
+        </tr>
+      </table>`;
+
+    return this.renderBase({
+      preheader: "Nueva solicitud de información sobre planes profesionales.",
+      title: "Nueva solicitud de plan",
+      body,
+      footer_note: "Contacta al interesado lo antes posible.",
+    });
+  }
+
+  renderSubscriptionWelcome(payload: {
+    plan_name: string;
+    is_new_guest_user: boolean;
+    temporary_password?: string;
+    login_url: string;
+  }): string {
+    const escaped_plan = this.escapeHtml(payload.plan_name);
+    const credentials_block =
+      payload.is_new_guest_user && payload.temporary_password
+        ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:24px 0;border:1px solid #e5e7eb;border-radius:8px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Contraseña temporal</p>
+                <p style="margin:0;font-family:monospace;font-size:16px;color:#111827;">${this.escapeHtml(payload.temporary_password)}</p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+            Te recomendamos cambiar tu contraseña después de iniciar sesión.
+          </p>`
+        : `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+            Ya puedes disfrutar de las ventajas de tu plan desde tu cuenta.
+          </p>`;
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tu suscripción al plan <strong style="color:#111827;">${escaped_plan}</strong> está activa.
+      </p>
+      ${credentials_block}`;
+
+    return this.renderBase({
+      preheader: `Tu plan ${payload.plan_name} ya está activo.`,
+      title: "Suscripción activada",
+      body,
+      cta_label: "Iniciar sesión",
+      cta_href: payload.login_url,
+      footer_note: "Gracias por confiar en WiAuto.",
+    });
+  }
+
+  renderSubscriptionCancelScheduled(payload: {
+    plan_name: string;
+    period_end: string;
+    portal_url: string;
+  }): string {
+    const escaped_plan = this.escapeHtml(payload.plan_name);
+    const escaped_period_end = this.escapeHtml(payload.period_end);
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Has programado la cancelación de tu plan <strong style="color:#111827;">${escaped_plan}</strong>.
+        Mantendrás el acceso premium hasta el <strong style="color:#111827;">${escaped_period_end}</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Si cambias de opinión, puedes reactivar tu suscripción desde el portal de facturación.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Tu plan ${payload.plan_name} se cancelará al final del periodo.`,
+      title: "Cancelación programada",
+      body,
+      cta_label: "Gestionar suscripción",
+      cta_href: payload.portal_url,
+      footer_note: "Conservarás tu rol premium hasta la fecha indicada.",
+    });
+  }
+
+  renderSubscriptionEnded(payload: { plan_name: string }): string {
+    const escaped_plan = this.escapeHtml(payload.plan_name);
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tu suscripción al plan <strong style="color:#111827;">${escaped_plan}</strong> ha finalizado.
+        Tu cuenta volvió al perfil particular y al rol gratuito.
+      </p>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Puedes contratar un plan de nuevo cuando quieras desde la sección de planes.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Tu plan ${payload.plan_name} ha finalizado.`,
+      title: "Suscripción finalizada",
+      body,
+      footer_note: "Gracias por haber sido cliente premium de WiAuto.",
+    });
+  }
+
+  renderCheckoutAbandoned(payload: {
+    plan_name: string | null;
+    plans_url: string;
+  }): string {
+    const plan_line = payload.plan_name
+      ? ` el plan <strong style="color:#111827;">${this.escapeHtml(payload.plan_name)}</strong>`
+      : " un plan profesional";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Notamos que no completaste la contratación de${plan_line}.
+      </p>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Puedes retomar el proceso cuando quieras.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Retoma tu contratación de plan en WiAuto.",
+      title: "¿Seguimos con tu plan?",
+      body,
+      cta_label: "Ver planes",
+      cta_href: payload.plans_url,
+      footer_note: "Si ya completaste el pago, ignora este mensaje.",
+    });
+  }
+
+  renderSubscriptionPaymentFailed(payload: {
+    plan_name: string | null;
+    portal_url: string | null;
+  }): string {
+    const plan_line = payload.plan_name
+      ? ` del plan <strong style="color:#111827;">${this.escapeHtml(payload.plan_name)}</strong>`
+      : " de tu suscripción";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        No pudimos procesar el último pago${plan_line}.
+      </p>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Actualiza tu método de pago lo antes posible para evitar interrupciones.
+        Mantendrás tu acceso premium mientras Stripe reintenta el cobro.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Acción requerida: revisa tu método de pago.",
+      title: "Problema con tu pago",
+      body,
+      ...(payload.portal_url
+        ? { cta_label: "Actualizar método de pago", cta_href: payload.portal_url }
+        : {}),
+      footer_note: "Si ya resolviste el pago, puedes ignorar este aviso.",
+    });
+  }
+
   renderVehicleStatusChanged(payload: {
     vehicle_title: string;
     previous_status_label: string;
@@ -185,12 +387,14 @@ export class MailTemplateRenderer {
   renderDealershipInvitation(payload: {
     to: string;
     invitation_link: string;
+    reject_link: string;
     role: string;
     dealership_id: string;
   }): string {
     const escaped_email = this.escapeHtml(payload.to);
     const escaped_role = this.escapeHtml(payload.role);
     const escaped_dealership_id = this.escapeHtml(payload.dealership_id);
+    const escaped_reject_link = this.escapeHtml(payload.reject_link);
 
     const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
         Te invitaron a formar parte de una concesionaria en WiAuto.
@@ -214,7 +418,11 @@ export class MailTemplateRenderer {
             <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_dealership_id}</p>
           </td>
         </tr>
-      </table>`;
+      </table>
+      <p style="margin:24px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.6;color:#6b7280;">
+        Si no deseas unirte, puedes
+        <a href="${escaped_reject_link}" style="color:#2563eb;text-decoration:underline;">rechazar la invitación</a>.
+      </p>`;
 
     return this.renderBase({
       preheader: "Te invitaron a unirte a una concesionaria en WiAuto.",
@@ -223,7 +431,7 @@ export class MailTemplateRenderer {
       cta_label: "Aceptar invitación",
       cta_href: payload.invitation_link,
       footer_note:
-        "Si no esperabas este correo, puedes ignorarlo. El enlace expira según la política de invitaciones.",
+        "Si no esperabas este correo, puedes ignorarlo o rechazar la invitación. El enlace expira según la política de invitaciones.",
     });
   }
 

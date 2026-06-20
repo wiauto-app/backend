@@ -36,9 +36,9 @@ export class AcceptDealershipInvitationController {
     }
 
     if (must_create) {
-      res.redirect(HttpStatus.FOUND, `${getFrontendUrl("REGISTER")}?email=${email}`);
+      res.redirect(HttpStatus.FOUND, `${getFrontendUrl("REGISTER")}?email=${encodeURIComponent(email)}`);
     } else {
-      res.redirect(HttpStatus.FOUND, getFrontendUrl("HOME"));
+      res.redirect(HttpStatus.FOUND, `${getFrontendUrl("TEAM")}?joined=1`);
     }
 
   }

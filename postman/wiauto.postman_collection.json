@@ -60,6 +60,14 @@
       "value": ""
     },
     {
+      "key": "subscription_plan_id",
+      "value": ""
+    },
+    {
+      "key": "plan_price_id",
+      "value": ""
+    },
+    {
       "key": "traction_id",
       "value": ""
     },
@@ -89,6 +97,16 @@
       "key": "dealership_invitation_token",
       "value": "",
       "description": "Token plano del enlace `GET /v1/dealership-invitations/accept?token=`."
+    },
+    {
+      "key": "dealership_invitation_id",
+      "value": "",
+      "description": "UUID de invitación (`DELETE /v1/dealership-invitations/:id`)."
+    },
+    {
+      "key": "dealership_member_id",
+      "value": "",
+      "description": "UUID de miembro (`PATCH|DELETE /v1/dealerships/:id/members/:member_id`)."
     },
     {
       "key": "suspension_duration_type_id",
@@ -1955,10 +1973,108 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"vendedor@ejemplo.com\",\n  \"role\": \"seller\",\n  \"dealership_id\": \"{{dealership_id}}\"\n}"
+              "raw": "{\n  \"email\": \"vendedor@ejemplo.com\",\n  \"role\": \"member\",\n  \"dealership_id\": \"{{dealership_id}}\"\n}"
             },
             "url": "{{base_url}}/v1/dealership-invitations",
-            "description": "JWT + permiso `dealership_invitations.create`. `invited_by_id` se toma del usuario autenticado, no va en el body."
+            "description": "JWT + permiso `dealership_invitations.create` + guard owner/admin. `role` solo `admin` o `member`. `invited_by_id` se toma del usuario autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "listar invitaciones de concesionario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealership-invitations?dealership_id={{dealership_id}}&status=pending",
+            "description": "JWT + permiso `dealership_invitations.create` + guard owner/admin. Query: `dealership_id` (obligatorio), `status` opcional (`pending|accepted|revoked|expired`), paginación estándar."
+          },
+          "response": []
+        },
+        {
+          "name": "revocar invitación de concesionario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealership-invitations/{{dealership_invitation_id}}",
+            "description": "JWT + permiso `dealership_invitations.delete` + guard owner/admin. Solo invitaciones `pending`. 204 sin cuerpo."
+          },
+          "response": []
+        },
+        {
+          "name": "listar equipo de concesionario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/team",
+            "description": "JWT + membership en el concesionario. Devuelve miembros con perfil (nombre, email, rol)."
+          },
+          "response": []
+        },
+        {
+          "name": "cambiar rol de miembro",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/members/{{dealership_member_id}}",
+            "description": "JWT + guard owner/admin. `role`: `admin` o `member`. No permite cambiar al owner."
+          },
+          "response": []
+        },
+        {
+          "name": "eliminar miembro del equipo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/members/{{dealership_member_id}}",
+            "description": "JWT + guard owner/admin. No permite eliminar al único owner."
+          },
+          "response": []
+        },
+        {
+          "name": "salir del equipo (member)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/members/me",
+            "description": "JWT + guard self. Solo usuarios con rol `member` en el concesionario."
           },
           "response": []
         },
@@ -6544,6 +6660,226 @@
               "response": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "billing",
+      "item": [
+        {
+          "name": "admin plans",
+          "item": [
+            {
+              "name": "crear plan",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"slug\": \"pro-mensual\",\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"15 anuncios activos\", \"included\": true}]\n}"
+                },
+                "url": "{{base_url}}/v1/billing/plans",
+                "description": "JWT + permiso billing.manage. CRUD admin de planes."
+              },
+              "response": []
+            },
+            {
+              "name": "listar planes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/plans?page=1&limit=10",
+                "description": "JWT + billing.manage."
+              },
+              "response": []
+            },
+            {
+              "name": "sync stripe plan",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/sync-stripe",
+                "description": "Crea/actualiza Product y Prices en Stripe."
+              },
+              "response": []
+            },
+            {
+              "name": "listar solicitudes plan lead",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                ],
+                "url": "{{base_url}}/v1/admin/plan-lead-requests?page=1&limit=10",
+                "description": "JWT + billing.manage. Listado paginado de solicitudes de planes."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "publico",
+          "item": [
+            {
+              "name": "catalogo planes publico",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/public/billing/plans/catalog?audience=professional",
+                "description": "Catálogo público de suscripciones activas (sin JWT). Solo planes recurring."
+              },
+              "response": []
+            },
+            {
+              "name": "crear solicitud plan lead",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ana García\",\n  \"email\": \"ana@ejemplo.com\",\n  \"phone\": \"+34 612345678\",\n  \"message\": \"Quiero información sobre planes profesionales\"\n}"
+                },
+                "url": "{{base_url}}/v1/public/billing/plan-lead-requests",
+                "description": "Formulario público de solicitud de información sobre planes (sin JWT)."
+              },
+              "response": []
+            },
+            {
+              "name": "checkout subscription publico",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/public/billing/checkout/subscription",
+                "description": "Checkout Stripe unificado. Sin JWT crea sesión guest; con cookies de sesión reutiliza el customer del perfil."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "usuario",
+          "item": [
+            {
+              "name": "catalogo planes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/catalog?audience=professional",
+                "description": "Planes activos + precios + features."
+              },
+              "response": []
+            },
+            {
+              "name": "billing me",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/me",
+                "description": "Suscripción activa, rol efectivo y cuota de anuncios."
+              },
+              "response": []
+            },
+            {
+              "name": "checkout subscription",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/billing/checkout/subscription",
+                "description": "Devuelve checkout_url de Stripe Checkout (mode subscription)."
+              },
+              "response": []
+            },
+            {
+              "name": "checkout one-time",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\",\n  \"metadata\": {\"vehicle_id\": \"{{vehicle_id}}\"}\n}"
+                },
+                "url": "{{base_url}}/v1/billing/checkout/one-time",
+                "description": "Devuelve checkout_url de Stripe Checkout (mode payment)."
+              },
+              "response": []
+            },
+            {
+              "name": "customer portal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/portal",
+                "description": "Devuelve portal_url del Customer Portal de Stripe."
+              },
+              "response": []
+            },
+            {
+              "name": "facturas",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                ],
+                "url": "{{base_url}}/v1/billing/invoices",
+                "description": "Historial de facturas del perfil autenticado."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "webhook stripe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "stripe-signature", "value": "whsec_test" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{base_url}}/v1/billing/webhooks/stripe",
+            "description": "Sin JWT. Verificación por firma Stripe (raw body). Usar Stripe CLI en local."
+          },
+          "response": []
         }
       ]
     },

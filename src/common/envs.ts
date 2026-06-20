@@ -63,6 +63,21 @@ const envsSchema = z.object({
   OPENSEARCH_INDEX_HERO: z.string().default("vehicles_hero_v1"),
 
   GOOGLE_MAPS_API_KEY: z.string(),
+
+  STRIPE_SECRET_KEY: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string().default(""),
+  
+  IA_API_KEY: z.string(),
 });
 
-export const envs = envsSchema.parse(process.env);
+const parsed_envs = envsSchema.parse(process.env);
+
+export const envs = {
+  ...parsed_envs,
+  STRIPE_SUCCESS_URL:
+    process.env.STRIPE_SUCCESS_URL?.trim() ||
+    `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=success`,
+  STRIPE_CANCEL_URL:
+    process.env.STRIPE_CANCEL_URL?.trim() ||
+    `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=cancel`,
+};

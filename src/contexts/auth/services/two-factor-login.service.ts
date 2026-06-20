@@ -7,7 +7,7 @@ import { AuthService } from "./auth.service";
 import { UserService } from "../../users/services/user.service";
 
 @Injectable()
-export class AdminTwoFactorLoginService {
+export class TwoFactorLoginService {
   constructor(
     private readonly auth_service: AuthService,
     private readonly two_factor_auth_service: TwoFactorAuthService,

@@ -1,5 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
-
+import { IsIn, IsNotEmpty, IsString } from "class-validator";
 
 export class CreateDealershipInvitationHttpDto {
   @IsString()
@@ -8,7 +7,8 @@ export class CreateDealershipInvitationHttpDto {
 
   @IsString()
   @IsNotEmpty()
-  role: string;
+  @IsIn(["admin", "member"])
+  role: "admin" | "member";
 
   @IsString()
   @IsNotEmpty()

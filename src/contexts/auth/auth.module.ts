@@ -36,7 +36,7 @@ import { SessionEntity } from "./entities/session.entity";
 import { RefreshTokenService } from "./services/refresh-token.service";
 import { SessionService } from "./services/session.service";
 import { AdminLoginService } from "./services/admin-login.service";
-import { AdminTwoFactorLoginService } from "./services/admin-two-factor-login.service";
+import { TwoFactorLoginService } from "./services/two-factor-login.service";
 import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scope.guard";
 import { FindOneProfileUseCase } from "../profiles/application/profile/find-one-profile-use-case/find-one-profile.use-case";
 import { RolesModule } from "../roles/roles.module";
@@ -44,6 +44,7 @@ import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
 import { AuthSessionService } from "./services/auth-session.service";
 import { ProfileEntity } from "../profiles/infrastructure/persistence/profile.entity";
+import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 
 @Module({
   controllers: [
@@ -74,7 +75,7 @@ import { ProfileEntity } from "../profiles/infrastructure/persistence/profile.en
     SessionService,
     RefreshTokenService,
     AdminLoginService,
-    AdminTwoFactorLoginService,
+    TwoFactorLoginService,
     TwoFactorChallengeScopeGuard,
     FindOneProfileUseCase,
     RegisterService,
@@ -91,6 +92,7 @@ import { ProfileEntity } from "../profiles/infrastructure/persistence/profile.en
     ProfileModule,
     RolesModule,
     forwardRef(() => TwoFactorAuthModule),
+    DealershipInvitationModule,
 
     TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity, ProfileEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),

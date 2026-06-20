@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { MailerService } from "@nestjs-modules/mailer";
 
+import { getFrontendUrl } from "@/src/common/frontend-routes";
 import { MailTemplateRenderer } from "./mail-template.renderer";
 
 @Injectable()
@@ -93,6 +94,149 @@ export class MailService {
     } catch (error) {
       this.logger.error(
         `No se pudo enviar la notificación de lead a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendPlanLeadRequestNotificationEmail(payload: {
+    to: string;
+    lead: {
+      name: string;
+      email: string;
+      phone: string;
+      message: string | null;
+    };
+    created_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderPlanLeadRequestNotification(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Nueva solicitud de información sobre planes",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de solicitud de plan a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionWelcomeEmail(payload: {
+    to: string;
+    plan_name: string;
+    is_new_guest_user: boolean;
+    temporary_password?: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderSubscriptionWelcome({
+      plan_name: payload.plan_name,
+      is_new_guest_user: payload.is_new_guest_user,
+      temporary_password: payload.temporary_password,
+      login_url: getFrontendUrl("SIGNIN"),
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Tu plan ${payload.plan_name} ya está activo`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de bienvenida de suscripción a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionCancelScheduledEmail(payload: {
+    to: string;
+    plan_name: string;
+    period_end: string;
+    portal_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderSubscriptionCancelScheduled(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Cancelación programada de ${payload.plan_name}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de cancelación programada a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionEndedEmail(payload: {
+    to: string;
+    plan_name: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderSubscriptionEnded(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Tu suscripción a ${payload.plan_name} ha finalizado`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de suscripción finalizada a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendCheckoutAbandonedEmail(payload: {
+    to: string;
+    plan_name: string | null;
+    plans_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderCheckoutAbandoned(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "¿Seguimos con tu plan en WiAuto?",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de checkout abandonado a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionPaymentFailedEmail(payload: {
+    to: string;
+    plan_name: string | null;
+    portal_url: string | null;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderSubscriptionPaymentFailed(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Problema con el pago de tu suscripción",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de pago fallido a ${payload.to}`,
         error as Error,
       );
       throw error;
@@ -210,6 +354,7 @@ export class MailService {
   async sendDealershipInvitationEmail(payload: {
     to: string;
     invitation_link: string;
+    reject_link: string;
     role: string;
     dealership_id: string;
   }): Promise<void> {

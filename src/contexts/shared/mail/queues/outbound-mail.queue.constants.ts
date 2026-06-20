@@ -38,6 +38,63 @@ export interface OutboundMailLeadNotificationJobData {
   };
 }
 
+export const OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION =
+  "plan_lead_request_notification";
+
+export interface OutboundMailPlanLeadRequestNotificationJobData {
+  to: string;
+  lead: {
+    name: string;
+    email: string;
+    phone: string;
+    message: string | null;
+  };
+  created_at: string;
+}
+
+export const OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME = "subscription_welcome";
+
+export interface OutboundMailSubscriptionWelcomeJobData {
+  to: string;
+  plan_name: string;
+  is_new_guest_user: boolean;
+  temporary_password?: string;
+}
+
+export const OUTBOUND_MAIL_JOB_SUBSCRIPTION_CANCEL_SCHEDULED =
+  "subscription_cancel_scheduled";
+
+export interface OutboundMailSubscriptionCancelScheduledJobData {
+  to: string;
+  plan_name: string;
+  period_end: string;
+  portal_url: string;
+}
+
+export const OUTBOUND_MAIL_JOB_SUBSCRIPTION_ENDED = "subscription_ended";
+
+export interface OutboundMailSubscriptionEndedJobData {
+  to: string;
+  plan_name: string;
+}
+
+export const OUTBOUND_MAIL_JOB_CHECKOUT_ABANDONED = "checkout_abandoned";
+
+export interface OutboundMailCheckoutAbandonedJobData {
+  to: string;
+  plan_name: string | null;
+  plans_url: string;
+}
+
+export const OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_FAILED =
+  "subscription_payment_failed";
+
+export interface OutboundMailSubscriptionPaymentFailedJobData {
+  to: string;
+  plan_name: string | null;
+  portal_url: string | null;
+}
+
 export const OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED = "vehicle_status_changed";
 
 export interface OutboundMailVehicleStatusChangedJobData {

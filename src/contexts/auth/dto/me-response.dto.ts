@@ -1,6 +1,15 @@
 import { Roles } from "../../roles/entities/roles.entity";
 import { AuthProvider, User } from "../../users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle-list.entity";
+import { PublisherType } from "../../vehicles/domain/entities/vehicle";
+import { DealershipMembershipDetail } from "@/src/contexts/dealership/domain/read-models/dealership-membership-detail";
+
+export class MeDealershipMembershipDto {
+  dealership_id: string;
+  dealership_name: string;
+  member_id: string;
+  role: "owner" | "admin" | "member";
+}
 
 export class MeResponseDto {
   id: string;
@@ -18,10 +27,12 @@ export class MeResponseDto {
   role: Roles;
   created_at: string;
   type: "session" | "2fa_challenge";
-
+  userType: PublisherType;
+  dealership_membership?: MeDealershipMembershipDto | null;
   static fromUser(
     user: User,
     scope?: "session" | "2fa_challenge",
+    dealership_membership?: DealershipMembershipDetail | null,
   ): MeResponseDto {
     const { profile } = user;
     const dto = new MeResponseDto();
@@ -39,6 +50,15 @@ export class MeResponseDto {
     dto.dni = profile.dni ?? undefined;
     dto.type = scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.vehicle_lists = profile.vehicle_lists;
+    dto.userType = profile.type;
+    dto.dealership_membership = dealership_membership
+      ? {
+          dealership_id: dealership_membership.dealership_id,
+          dealership_name: dealership_membership.dealership_name,
+          member_id: dealership_membership.member_id,
+          role: dealership_membership.role,
+        }
+      : null;
     return dto;
   }
 }

@@ -15,10 +15,22 @@ export class CreateDealershipInvitationUseCase {
   ) { }
 
   async execute(create_dealership_invitation_dto: CreateDealershipInvitationDto): Promise<void> {
-
-    const accepted_invitation = await this.dealership_invitation_repository.findAcceptedByEmail(create_dealership_invitation_dto.email);
+    const accepted_invitation = await this.dealership_invitation_repository.findAcceptedByEmail(
+      create_dealership_invitation_dto.email,
+    );
     if (accepted_invitation) {
       throw new InvitationAlreadyAcceptedException();
+    }
+
+    const pending_invitation =
+      await this.dealership_invitation_repository.findPendingByEmailAndDealershipId(
+        create_dealership_invitation_dto.email,
+        create_dealership_invitation_dto.dealership_id,
+      );
+
+    if (pending_invitation) {
+      const revoked = pending_invitation.update({ status: "revoked" });
+      await this.dealership_invitation_repository.update(revoked);
     }
 
     const token = generateToken();

@@ -24,7 +24,7 @@ export class MeController {
   ) { }
 
   @Get()
-  getMe(@GetUser() user: User, @Req() req: Request): MeResponseDto {
+  async getMe(@GetUser() user: User, @Req() req: Request): Promise<MeResponseDto> {
     return this.me_service.getMe(user, req.auth_scope);
   }
 

@@ -1,19 +1,21 @@
 import { Injectable } from "@nestjs/common";
 
-import { MeResponseDto } from "../dto/me-response.dto";
+import { DealershipMemberRepository } from "@/src/contexts/dealership/domain/repositories/dealership-member.repository";
+
+import { MeDealershipMembershipDto, MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
-import { ProfileEntity } from "../../profiles/infrastructure/persistence/profile.entity";
-import { Repository } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
 
 @Injectable()
 export class MeService {
   constructor(
-    @InjectRepository(ProfileEntity)
-    private readonly profileRepository: Repository<ProfileEntity>,
-  ) { }
-  getMe(user: User, scope?: "session" | "2fa_challenge"): MeResponseDto {
-    return MeResponseDto.fromUser(user, scope);
-  }
+    private readonly dealership_member_repository: DealershipMemberRepository,
+  ) {}
 
+  async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {
+    const membership_detail = user.profile?.id
+      ? await this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
+      : null;
+
+    return MeResponseDto.fromUser(user, scope, membership_detail);
+  }
 }

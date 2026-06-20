@@ -181,4 +181,23 @@ export class TypeOrmDealershipInvitationRepository extends DealershipInvitationR
 
     return DealershipInvitation.fromPrimitives(entity_to_primitives(entity));
   }
+
+  async findPendingByEmailAndDealershipId(
+    email: string,
+    dealership_id: string,
+  ): Promise<DealershipInvitation | null> {
+    const entity = await this.dealership_invitation_entity_repository.findOne({
+      where: {
+        email,
+        dealership_id,
+        status: "pending",
+      },
+      order: { created_at: "DESC" },
+    });
+    if (!entity) {
+      return null;
+    }
+
+    return DealershipInvitation.fromPrimitives(entity_to_primitives(entity));
+  }
 }

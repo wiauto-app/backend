@@ -1,8 +1,9 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { DataSource, In, Repository } from "typeorm";
 import { Injectable } from "../../shared/dependency-injectable/injectable";
 import { Permissions } from "../../users/permissions/entities/permissions.entity";
+import { RolesPermissionsEntity } from "../../users/roles-permissions/entities/roles-permissions.entity";
 import { CreateRoleDto } from "../dto/create-role.dto";
 import { Roles } from "../entities/roles.entity";
 import { UpdateRoleDto } from "../dto/update-role.dto";
@@ -16,6 +17,7 @@ export class RolesService {
     private readonly rolesRepository: Repository<Roles>,
     @InjectRepository(Permissions)
     private readonly permissionsRepository: Repository<Permissions>,
+    private readonly dataSource: DataSource,
   ) { }
 
   async create(createRoleDto: CreateRoleDto) {
@@ -76,20 +78,16 @@ export class RolesService {
     role_id: string,
     permission_ids: string[],
   ): Promise<Roles> {
-    const role = await this.rolesRepository.findOne({
+    const roleExists = await this.rolesRepository.exists({
       where: { id: role_id },
-      relations: { roles_permissions: true },
     });
-    if (!role) {
+    if (!roleExists) {
       throw new NotFoundException("Rol no encontrado");
     }
 
     const unique_ids = [...new Set(permission_ids)];
 
-    if (unique_ids.length === 0) {
-      role.roles_permissions = [];
-      await this.rolesRepository.save(role);
-    } else {
+    if (unique_ids.length > 0) {
       const permissions = await this.permissionsRepository.find({
         where: { id: In(unique_ids) },
       });
@@ -99,9 +97,44 @@ export class RolesService {
           "Uno o más permission_ids no existen o están duplicados de forma inválida",
         );
       }
-
-      await this.rolesRepository.save(role);
     }
+
+    await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(RolesPermissionsEntity);
+
+      const currentPermissions = await repository.find({
+        where: { role_id },
+        select: { permission_id: true },
+      });
+
+      const currentPermissionIds = currentPermissions.map(
+        (permission) => permission.permission_id,
+      );
+
+      const toAdd = unique_ids.filter(
+        (permissionId) => !currentPermissionIds.includes(permissionId),
+      );
+
+      const toRemove = currentPermissionIds.filter(
+        (permissionId) => !unique_ids.includes(permissionId),
+      );
+
+      if (toAdd.length > 0) {
+        await repository.insert(
+          toAdd.map((permission_id) => ({
+            role_id,
+            permission_id,
+          })),
+        );
+      }
+
+      if (toRemove.length > 0) {
+        await repository.delete({
+          role_id,
+          permission_id: In(toRemove),
+        });
+      }
+    });
 
     const updated = await this.rolesRepository.findOne({
       where: { id: role_id },

@@ -3,6 +3,7 @@ import { envs } from "./envs";
 
 export const FRONTEND_ROUTES = {
   HOME: "/",
+  TEAM: "/equipo",
   SIGNIN: "/iniciar-sesion",
   REGISTER: "/registro",
   INVITATION_REJECTED: "/invitacion/rechazada",

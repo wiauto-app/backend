@@ -11,7 +11,7 @@ import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 import { AdminLoginService } from "../services/admin-login.service";
-import { AdminTwoFactorLoginService } from "../services/admin-two-factor-login.service";
+import { TwoFactorLoginService } from "../services/two-factor-login.service";
 import { ACCESS_TOKEN_NAME, authCookieConfig, REFRESH_TOKEN_NAME } from "../cookie.config";
 import { GetSessionId } from "../decorators/GetSessionId.decorator";
 import { TwoFactorChallengeScopeGuard } from "../guards/two-factor-challenge-scope.guard";
@@ -38,7 +38,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly googleTokenService: GoogleTokenService,
     private readonly adminLoginService: AdminLoginService,
-    private readonly admin_two_factor_login_service: AdminTwoFactorLoginService,
+    private readonly two_factor_login_service: TwoFactorLoginService,
     private readonly password_recovery_service: PasswordRecoveryService,
     private readonly appleTokenService: AppleTokenService,
     private readonly registerService: RegisterService,
@@ -79,20 +79,20 @@ export class AuthController {
 
   @Get("admin/two-factor/challenge")
   @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
-  getTwoFactorChallenge(@GetSessionPayload() session_payload: SessionPayload) {
-    return this.admin_two_factor_login_service.getChallengeStatus(
+  getAdminTwoFactorChallenge(@GetSessionPayload() session_payload: SessionPayload) {
+    return this.two_factor_login_service.getChallengeStatus(
       session_payload.email,
     );
   }
 
   @Post("admin/verify-2fa")
   @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
-  async verifyTwoFactorLogin(
+  async verifyAdminTwoFactorLogin(
     @GetSessionPayload() session_payload: SessionPayload,
     @Body() twofa_dto: TwofaDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.admin_two_factor_login_service.verifyTotpChallenge(
+    const result = await this.two_factor_login_service.verifyTotpChallenge(
       session_payload.id,
       twofa_dto,
       session_payload,
@@ -102,19 +102,19 @@ export class AuthController {
 
     return {
       message: "Verificación completada correctamente",
-      data: { type: result.type },
+      data: { type: result.type, token: result.token },
     };
   }
 
   @Post("admin/verify-backup-code")
   @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
-  async verifyBackupCodeLogin(
+  async verifyAdminBackupCodeLogin(
     @GetSessionPayload() session_payload: SessionPayload,
     @Body() verify_backup_code_login_http_dto: VerifyBackupCodeLoginHttpDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result =
-      await this.admin_two_factor_login_service.verifyBackupCodeChallenge(
+      await this.two_factor_login_service.verifyBackupCodeChallenge(
         session_payload.id,
         verify_backup_code_login_http_dto.code.toUpperCase(),
         session_payload,
@@ -124,7 +124,58 @@ export class AuthController {
 
     return {
       message: "Código de respaldo validado correctamente",
-      data: { type: result.type },
+      data: { type: result.type, token: result.token },
+    };
+  }
+
+  @Get("two-factor/challenge")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  getTwoFactorChallenge(@GetSessionPayload() session_payload: SessionPayload) {
+    return this.two_factor_login_service.getChallengeStatus(
+      session_payload.email,
+    );
+  }
+
+  @Post("verify-2fa")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  async verifyTwoFactorLogin(
+    @GetSessionPayload() session_payload: SessionPayload,
+    @Body() twofa_dto: TwofaDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.two_factor_login_service.verifyTotpChallenge(
+      session_payload.id,
+      twofa_dto,
+      session_payload,
+    );
+
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+
+    return {
+      message: "Verificación completada correctamente",
+      data: { type: result.type, token: result.token },
+    };
+  }
+
+  @Post("verify-backup-code")
+  @UseGuards(JwtGuard, TwoFactorChallengeScopeGuard)
+  async verifyBackupCodeLogin(
+    @GetSessionPayload() session_payload: SessionPayload,
+    @Body() verify_backup_code_login_http_dto: VerifyBackupCodeLoginHttpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result =
+      await this.two_factor_login_service.verifyBackupCodeChallenge(
+        session_payload.id,
+        verify_backup_code_login_http_dto.code.toUpperCase(),
+        session_payload,
+      );
+
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+
+    return {
+      message: "Código de respaldo validado correctamente",
+      data: { type: result.type, token: result.token },
     };
   }
 

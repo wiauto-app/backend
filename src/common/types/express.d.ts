@@ -25,6 +25,14 @@ declare global {
       vehicle_listings_max?: number;
       /** Rellena `VehicleOwnerGuard` tras validar ownership. */
       vehicle_owner_vehicle_id?: string;
+      /** Rellena guards de membresía de concesionario. */
+      dealership_membership?: {
+        id: string;
+        dealership_id: string;
+        profile_id: string;
+        role: "owner" | "admin" | "member";
+      };
+      dealership_member_id?: string;
     }
 
     

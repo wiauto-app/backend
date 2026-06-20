@@ -23,7 +23,6 @@ async function bootstrap() {
   // Dejamos que Nest maneje los body parsers internamente
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
-    bodyParser: true, 
   });
 
   // 1. Fundamental para leer las cookies de Next.js

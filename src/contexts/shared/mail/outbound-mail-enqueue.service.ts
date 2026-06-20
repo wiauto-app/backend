@@ -9,16 +9,28 @@ import {
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_CANCEL_SCHEDULED,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_ENDED,
+  OUTBOUND_MAIL_JOB_CHECKOUT_ABANDONED,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_FAILED,
   OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
   OUTBOUND_MAIL_QUEUE,
   OutboundMailAlertDigestNotificationJobData,
   OutboundMailAlertEventNotificationJobData,
   OutboundMailAlertMatchNotificationJobData,
+  OutboundMailCheckoutAbandonedJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
   OutboundMailLeadNotificationJobData,
+  OutboundMailPlanLeadRequestNotificationJobData,
   OutboundMailPasswordRecoveryJobData,
+  OutboundMailSubscriptionCancelScheduledJobData,
+  OutboundMailSubscriptionEndedJobData,
+  OutboundMailSubscriptionPaymentFailedJobData,
+  OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./queues/outbound-mail.queue.constants";
 
@@ -54,6 +66,51 @@ export class OutboundMailEnqueueService {
     data: OutboundMailLeadNotificationJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION as string, data);
+  }
+
+  async enqueue_plan_lead_request_notification(
+    data: OutboundMailPlanLeadRequestNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
+      data,
+    );
+  }
+
+  async enqueue_subscription_welcome(
+    data: OutboundMailSubscriptionWelcomeJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME, data);
+  }
+
+  async enqueue_subscription_cancel_scheduled(
+    data: OutboundMailSubscriptionCancelScheduledJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_SUBSCRIPTION_CANCEL_SCHEDULED,
+      data,
+    );
+  }
+
+  async enqueue_subscription_ended(
+    data: OutboundMailSubscriptionEndedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_SUBSCRIPTION_ENDED, data);
+  }
+
+  async enqueue_checkout_abandoned(
+    data: OutboundMailCheckoutAbandonedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_CHECKOUT_ABANDONED, data);
+  }
+
+  async enqueue_subscription_payment_failed(
+    data: OutboundMailSubscriptionPaymentFailedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_FAILED,
+      data,
+    );
   }
 
   async enqueue_vehicle_status_changed(

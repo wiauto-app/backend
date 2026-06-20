@@ -11,6 +11,7 @@ import {
   DealershipMemberDetail,
   DealershipMemberProfileSummary,
 } from "../../domain/read-models/dealership-detail";
+import { DealershipMembershipDetail } from "../../domain/read-models/dealership-membership-detail";
 import { DealershipMembersEntity } from "../persistence/dealership-members.entity";
 
 function entity_to_primitives(entity: DealershipMembersEntity): PrimitiveDealershipMember {
@@ -127,6 +128,18 @@ export class TypeOrmDealershipMemberRepository implements DealershipMemberReposi
     });
   }
 
+  async findOneByProfileId(profile_id: string): Promise<DealershipMember | null> {
+    const entity = await this.dealership_member_entity_repository.findOne({
+      where: { profile_id },
+    });
+
+    if (!entity) {
+      return null;
+    }
+
+    return DealershipMember.fromPrimitives(entity_to_primitives(entity));
+  }
+
   async findOneByDealershipIdAndProfileId(
     dealership_id: string,
     profile_id: string,
@@ -156,5 +169,25 @@ export class TypeOrmDealershipMemberRepository implements DealershipMemberReposi
     });
 
     return entities.map(entity_to_member_detail);
+  }
+
+  async findMembershipDetailByProfileId(
+    profile_id: string,
+  ): Promise<DealershipMembershipDetail | null> {
+    const entity = await this.dealership_member_entity_repository.findOne({
+      where: { profile_id },
+      relations: { dealership: true },
+    });
+
+    if (!entity) {
+      return null;
+    }
+
+    return {
+      dealership_id: entity.dealership_id,
+      dealership_name: entity.dealership.name,
+      member_id: entity.id,
+      role: entity.role,
+    };
   }
 }

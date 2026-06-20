@@ -18,6 +18,12 @@ export const PermissionKeys = {
   SUSPENSION_MANAGE: "suspension.manage",
   USERS_CREATE: "users.create",
   VEHICLES_CREATE: "vehicles.create",
+  VEHICLES_FEATURED_MONTHLY: "vehicles.featured_monthly",
+  VEHICLES_MAX_PHOTOS: "vehicles.max_photos",
+  ALERTS_MAX_ACTIVE: "alerts.max_active",
+  ANALYTICS_VIEW: "analytics.view",
+  VEHICLES_BOOST: "vehicles.boost",
+  BILLING_MANAGE: "billing.manage",
 } as const;
 
 export type PermissionKey =

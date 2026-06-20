@@ -3,6 +3,11 @@ export const TWO_FACTOR_CHALLENGE_ALLOWED_PATHS = [
   "/auth/admin/verify-backup-code",
   "/auth/admin/two-factor/challenge",
   "/auth/admin/logout",
+  "/auth/two-factor/challenge",
+  "/auth/verify-2fa",
+  "/auth/verify-backup-code",
+  "/auth/logout",
+  "/auth/refresh",
 ] as const;
 
 export const isTwoFactorChallengeAllowedPath = (path: string): boolean => {

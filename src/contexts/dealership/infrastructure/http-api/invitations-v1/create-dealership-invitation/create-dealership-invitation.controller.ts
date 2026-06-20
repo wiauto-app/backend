@@ -6,7 +6,7 @@ import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
 import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
 import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
 import { CreateDealershipInvitationHttpDto } from "./create-dealership-invitation.http-dto";
-import { DealerShipOwnerGuard } from "../../../guards/dealer-ship-owner.guard.ts";
+import { DealershipTeamManagerGuard } from "../../../guards/dealership-team-manager.guard";
 
 @Controller(V1_DEALERSHIP_INVITATIONS)
 export class CreateDealershipInvitationController {
@@ -15,7 +15,7 @@ export class CreateDealershipInvitationController {
   @Post()
   @AuthPermissions({
     permissions: [PermissionKeys.DEALERSHIPINVITATIONS_CREATE],
-    extraGuards: [DealerShipOwnerGuard],
+    extraGuards: [DealershipTeamManagerGuard],
   })
   run(
     @Body() create_dealership_invitation_http_dto: CreateDealershipInvitationHttpDto,

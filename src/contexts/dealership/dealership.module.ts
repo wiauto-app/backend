@@ -4,6 +4,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 
 import { SyncDealershipMembersUseCase } from "./application/dealership-members/sync-dealership-members-use-case/sync-dealership-members.use-case";
+import { FindDealershipTeamUseCase } from "./application/dealership-members/find-dealership-team-use-case/find-dealership-team.use-case";
+import { LeaveDealershipTeamUseCase } from "./application/dealership-members/leave-dealership-team-use-case/leave-dealership-team.use-case";
+import { RemoveDealershipMemberUseCase } from "./application/dealership-members/remove-dealership-member-use-case/remove-dealership-member.use-case";
+import { UpdateDealershipMemberRoleUseCase } from "./application/dealership-members/update-dealership-member-role-use-case/update-dealership-member-role.use-case";
 import { CreateDealershipUseCase } from "./application/dealership/create-dealership-use-case/create-dealership.use-case";
 import { FindAllDealershipUseCase } from "./application/dealership/find-all-dealership-use-case/find-all-dealership.use-case";
 import { FindOneDealershipUseCase } from "./application/dealership/find-one-dealership-use-case/find-one-dealership.use-case";
@@ -11,6 +15,7 @@ import { RecalculateDealershipRatingService } from "./application/dealership/rec
 import { RemoveDealershipUseCase } from "./application/dealership/remove-dealership-use-case/remove-dealership.use-case";
 import { UpdateDealershipUseCase } from "./application/dealership/update-dealership-use-case/update-dealership.use-case";
 import { DealershipRepository } from "./domain/repositories/dealership.repository";
+import { DealershipTeamController } from "./infrastructure/http-api/v1/dealership-team/dealership-team.controller";
 import { CreateDealershipController } from "./infrastructure/http-api/v1/create-dealership/create-dealership.controller";
 import { FindAllDealershipsController } from "./infrastructure/http-api/v1/find-all-dealerships/find-all-dealerships.controller";
 import { FindDealershipController } from "./infrastructure/http-api/v1/find-one-dealership/find-one-dealership.controller";
@@ -34,11 +39,16 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     CreateDealershipController,
     FindAllDealershipsController,
     FindDealershipController,
+    DealershipTeamController,
     UpdateDealershipController,
     RemoveDealershipController,
   ],
   providers: [
     SyncDealershipMembersUseCase,
+    FindDealershipTeamUseCase,
+    UpdateDealershipMemberRoleUseCase,
+    RemoveDealershipMemberUseCase,
+    LeaveDealershipTeamUseCase,
     CreateDealershipUseCase,
     FindAllDealershipUseCase,
     FindOneDealershipUseCase,
@@ -53,6 +63,6 @@ import { MinioService } from "../shared/minio-provider/minio.service";
       useExisting: TypeOrmDealershipRepository,
     },
   ],
-  exports: [DealershipRepository, RecalculateDealershipRatingService],
+  exports: [DealershipRepository, RecalculateDealershipRatingService, DealershipInvitationModule],
 })
 export class DealershipModule {}

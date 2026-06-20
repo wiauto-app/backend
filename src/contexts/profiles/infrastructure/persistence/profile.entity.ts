@@ -38,6 +38,9 @@ export class ProfileEntity {
   @Column({ name: "role_id", nullable: true })
   role_id: string;
 
+  @Column({ name: "stripe_customer_id", type: "varchar", nullable: true })
+  stripe_customer_id: string | null;
+
   @Column({ nullable: true })
   last_name?: string;
 

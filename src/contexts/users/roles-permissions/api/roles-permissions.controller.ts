@@ -65,7 +65,7 @@ export class RolesPermissionsController {
 
     return {
       success: true,
-      message: "Permisos sincronizados correctamente",
+      message: "Permisos asignados al rol correctamente",
     };
   }
 

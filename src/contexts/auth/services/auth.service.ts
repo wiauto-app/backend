@@ -85,17 +85,8 @@ export class AuthService {
       ...profile,
       role_id: role.id,
     });
-    await this.suspensionService.assert_session_allowed_by_id(user.id);
-    await this.userService.update(user.id, {
-      last_sign_in: new Date(),
-    });
 
-    const { session_id, refresh_token, refresh_token_hash } = await this.createSession(user, request);
-    return {
-      type: "session",
-      token: this.createToken({ user, session_id, refresh_token_hash }),
-      refresh_token,
-    };
+    return this.authSessionService.establishSessionForUser(user, request);
   }
 
   createToken({

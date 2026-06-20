@@ -30,6 +30,7 @@ export class PermissionsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() create_permission_dto: CreatePermissionDto) {
+    console.log("create_permission_dto", create_permission_dto);
     return this.permission_service.create(create_permission_dto);
   }
 
