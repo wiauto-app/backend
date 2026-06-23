@@ -123,6 +123,7 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     ChatMessageRepository,
     CreateChatUseCase,
     CreateChatMessageUseCase,
+    GetChatUnreadTotalUseCase,
   ],
 })
 export class ChatModule {}

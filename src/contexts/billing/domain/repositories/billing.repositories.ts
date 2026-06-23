@@ -5,21 +5,21 @@ import {
   SubscriptionPlan,
 } from "../entities/subscription-plan";
 
-export type PlanCatalogPrice = {
+export interface PlanCatalogPrice {
   id: string;
   interval: string;
   amount_cents: number;
   currency: string;
 };
 
-export type PlanCatalogFeature = {
+export interface PlanCatalogFeature {
   id: string;
   label: string;
   description: string | null;
   included: boolean;
 };
 
-export type PlanCatalogItem = {
+export interface PlanCatalogItem {
   id: string;
   slug: string;
   name: string;
@@ -32,7 +32,7 @@ export type PlanCatalogItem = {
   features: PlanCatalogFeature[];
 };
 
-export type BillingMeSummary = {
+export interface BillingMeSummary {
   subscription: {
     id: string;
     plan_id: string;
@@ -108,7 +108,7 @@ export abstract class BillingInvoiceRepository {
     hosted_invoice_url: string | null;
     paid_at: Date | null;
   }): Promise<void>;
-  abstract findByProfileId(profile_id: string): Promise<Array<{
+  abstract findByProfileId(profile_id: string): Promise<{
     id: string;
     stripe_invoice_id: string;
     amount_paid_cents: number;
@@ -118,7 +118,7 @@ export abstract class BillingInvoiceRepository {
     hosted_invoice_url: string | null;
     paid_at: Date | null;
     created_at: Date;
-  }>>;
+  } | null>;
 }
 
 export abstract class OneTimePurchaseRepository {

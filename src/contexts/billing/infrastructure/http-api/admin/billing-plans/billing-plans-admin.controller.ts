@@ -41,6 +41,7 @@ export class BillingPlansAdminController {
 
   @Get(":id")
   findOne(@Param("id", ParseUUIDPipe) id: string) {
+    
     return this.billing_plans_service.findOne(id);
   }
 

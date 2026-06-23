@@ -11,6 +11,7 @@ export class FindByEmailUseCase {
 
   async execute(find_by_email_dto: FindByEmailDto): Promise<PrimitiveProfile> {
     const profile = await this.profile_repository.findByEmail(find_by_email_dto.email);
+    
     if (!profile) {
       throw new ProfileNotFoundException(find_by_email_dto.email);
     }

@@ -135,14 +135,14 @@ export class TypeOrmProfileRepository implements ProfileRepository {
   async findByEmail(email: string): Promise<Profile | null> {
     const entity = await this.profileRepository.findOne({
       where: { user: { email } },
-      relations: { role: true },
+      relations: { role: true, user: true },
     });
 
     if (!entity) {
       return null;
     }
-
-    return Profile.fromPrimitives(entity_to_primitives(entity));
+    const prifile = Profile.fromPrimitives(entity_to_primitives(entity));
+    return prifile;
   }
 
   async findByIds(ids: string[]): Promise<Profile[]> {

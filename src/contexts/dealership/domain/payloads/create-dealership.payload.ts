@@ -11,4 +11,5 @@ export class CreateDealershipPayload {
   address: string;
   lat?: number;
   lng?: number;
+  show_phone?: boolean;
 }

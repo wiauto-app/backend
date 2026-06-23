@@ -7,6 +7,7 @@ import { DealershipAdminList } from "../read-models/dealership-admin-list";
 export abstract class DealershipRepository {
   abstract save(dealership: Dealership): Promise<void>;
   abstract findOne(id: string): Promise<Dealership | null>;
+  abstract findOneBySlug(slug: string): Promise<Dealership | null>;
   abstract findAll(
     filter: DealershipsFilter,
   ): Promise<PaginatedResult<DealershipAdminList>>;

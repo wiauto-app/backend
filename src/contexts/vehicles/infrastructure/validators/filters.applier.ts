@@ -237,9 +237,17 @@ export const applyFilters = (
   }
 
   if (typeof filters.is_seller_featured === "boolean") {
-    qb.andWhere("vehicle.is_featured = :is_seller_featured", {
-      is_seller_featured: filters.is_seller_featured,
-    });
+    if (filters.is_seller_featured) {
+      qb.andWhere(
+        "vehicle.is_featured = :is_seller_featured AND (vehicle.featured_expires_at IS NULL OR vehicle.featured_expires_at > NOW())",
+        { is_seller_featured: true },
+      );
+    } else {
+      qb.andWhere(
+        "(vehicle.is_featured = :is_seller_featured OR (vehicle.is_featured = true AND vehicle.featured_expires_at IS NOT NULL AND vehicle.featured_expires_at <= NOW()))",
+        { is_seller_featured: false },
+      );
+    }
   }
 
   if (has_non_empty_string_array(filters.warranty_slugs)) {
@@ -354,6 +362,17 @@ export const applyFilters = (
         WHERE vc.vehicle_id = vehicle.id AND c.slug IN (:...cuota_slugs)
       )`,
       { cuota_slugs: filters.cuota_slugs },
+    );
+  }
+
+  if (has_non_empty_string_array(filters.dealership_ids)) {
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM dealership_members dm
+        WHERE dm.profile_id = profile.id
+          AND dm.dealership_id IN (:...dealership_ids)
+      )`,
+      { dealership_ids: filters.dealership_ids },
     );
   }
   if (has_non_empty_string(filters.query)) {

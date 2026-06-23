@@ -29,7 +29,7 @@ export class AcceptDealershipInvitationUseCase {
     private readonly dealership_member_repository: DealershipMemberRepository,
     private readonly find_profile_by_email_use_case: FindByEmailUseCase,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
-  ) {}
+  ) { }
 
   async execute(accept_dealership_invitation_dto: AcceptDealershipInvitationDto): Promise<{
     must_create: boolean;
@@ -52,7 +52,6 @@ export class AcceptDealershipInvitationUseCase {
     }
     const email = dealership_invitation.toPrimitives().email;
     const profile_exists = await this.profile_user_repository.existsByEmail(email);
-
     let added_to_team = false;
 
     if (profile_exists) {

@@ -25,6 +25,7 @@ export abstract class VehicleRepository {
     exclude_vehicle_id?: string,
   ): Promise<boolean>;
   abstract findScheduledForPublish(now: Date): Promise<Vehicle[]>;
+  abstract findExpiredFeatured(now: Date): Promise<Vehicle[]>;
   abstract duplicate(source_vehicle_id: string): Promise<string>;
   abstract update(vehicle: Vehicle): Promise<void>;
   abstract remove(id: string): Promise<void>;

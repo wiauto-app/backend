@@ -1,4 +1,4 @@
-import type { StatusVehicle } from "../entities/vehicle";
+import type { StatusVehicle, TransmissionType } from "../entities/vehicle";
 
 export interface OwnerVehicleStatTrend {
   current: number;
@@ -19,6 +19,12 @@ export interface OwnerVehicleListItem {
   can_schedule: boolean;
   scheduled_publish_at: Date | null;
   renewed_at: Date | null;
+  is_featured: boolean;
+  featured_expires_at: Date | null;
+  is_featured_active: boolean;
+  can_feature: boolean;
+  transmission_type: TransmissionType;
+  fuel_type: string | null;
   image: { id: string; url: string } | null;
   stats: {
     views: OwnerVehicleStatTrend;

@@ -3113,6 +3113,28 @@
               ]
             },
             {
+              "name": "dashboard propietario",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v1/owner/dashboard?period=30d",
+                  "query": [
+                    { "key": "period", "value": "30d" },
+                    { "key": "period", "value": "7d", "disabled": true },
+                    { "key": "period", "value": "90d", "disabled": true }
+                  ]
+                },
+                "description": "JWT (`JwtGuard`). Dashboard analítico del propietario: KPIs, serie de vistas, actividad semanal, oportunidades, inventario y datos de concesionario. Query `period`: `7d` | `30d` | `90d` (default `30d`)."
+              },
+              "response": []
+            },
+            {
               "name": "mis anuncios — listar",
               "request": {
                 "method": "GET",

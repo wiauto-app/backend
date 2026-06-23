@@ -6,6 +6,8 @@ import { Repository } from "typeorm";
 import { envs } from "@/src/common/envs";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
+import { FEATURED_DURATION_MS } from "@/src/contexts/vehicles/domain/utils/owner-vehicle-rules";
+import { VehicleSearchIndexer } from "@/src/contexts/vehicles/search/infrastructure/indexing/vehicle-search-indexer.service";
 import {
   BILLING_INVOICE_STATUS,
   ONE_TIME_PURCHASE_STATUS,
@@ -39,6 +41,7 @@ export class StripeWebhookService {
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     @InjectRepository(VehicleEntity)
     private readonly vehicle_repository: Repository<VehicleEntity>,
+    private readonly vehicle_search_indexer: VehicleSearchIndexer,
   ) {}
 
   async handle(payload: Buffer, signature: string | undefined): Promise<{ received: boolean }> {
@@ -373,7 +376,7 @@ export class StripeWebhookService {
 
   private async applyOneTimeEffect(
     profile_id: string,
-    _plan_id: string,
+    plan_id: string,
     metadata: Record<string, unknown>,
   ) {
     const vehicle_id = metadata.vehicle_id;
@@ -381,15 +384,35 @@ export class StripeWebhookService {
       return;
     }
 
-    const preloaded = await this.vehicle_repository.findOne({
+    const plan = await this.plan_repository.findOne(plan_id);
+    if (!plan || plan.toPrimitives().slug !== "destacar-vehiculo") {
+      return;
+    }
+
+    const existing = await this.vehicle_repository.findOne({
       where: { id: vehicle_id },
       relations: { profile: true },
     });
 
-    if (preloaded && preloaded.profile.id === profile_id) {
-      preloaded.is_featured = true;
-      await this.vehicle_repository.save(preloaded);
+    if (!existing || existing.profile.id !== profile_id) {
+      return;
     }
+
+    const now = new Date();
+    const featured_expires_at = new Date(now.getTime() + FEATURED_DURATION_MS);
+
+    const preloaded = await this.vehicle_repository.preload({
+      id: vehicle_id,
+      is_featured: true,
+      featured_expires_at,
+    });
+
+    if (!preloaded) {
+      return;
+    }
+
+    await this.vehicle_repository.save(preloaded);
+    await this.vehicle_search_indexer.syncVehicle(vehicle_id, preloaded.status);
   }
 
   private async findProfileByStripeCustomerId(customer_id: string) {

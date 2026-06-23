@@ -27,6 +27,7 @@ interface SnapshotRow {
   transmission_type: TransmissionType;
   publisher_type: PublisherType;
   is_featured: boolean;
+  featured_expires_at: Date | null;
   make_slug: string;
   model_slug: string;
   year: number;
@@ -85,6 +86,7 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
         v.transmission_type AS transmission_type,
         v.publisher_type AS publisher_type,
         v.is_featured AS is_featured,
+        v.featured_expires_at AS featured_expires_at,
         mk.slug AS make_slug,
         md.slug AS model_slug,
         yr.year AS year,
@@ -157,6 +159,13 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
         this.resolve_location_slugs("communities", row.lng, row.lat),
       ]);
 
+    const featured_expires_at = row.featured_expires_at
+      ? new Date(row.featured_expires_at)
+      : null;
+    const is_featured_active =
+      row.is_featured &&
+      (!featured_expires_at || featured_expires_at.getTime() > Date.now());
+
     return {
       vehicle_id: row.vehicle_id,
       profile_id: row.profile_id,
@@ -173,7 +182,8 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
       condition: row.condition,
       transmission_type: row.transmission_type,
       publisher_type: row.publisher_type,
-      is_featured: row.is_featured,
+      is_featured: is_featured_active,
+      featured_expires_at,
       make_slug: row.make_slug,
       model_slug: row.model_slug,
       year: Number(row.year),

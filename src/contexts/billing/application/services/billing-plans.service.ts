@@ -287,6 +287,10 @@ export class BillingCheckoutService {
     profile_id: string,
     plan_price_id: string,
     metadata?: Record<string, string>,
+    checkout_urls?: {
+      success_url?: string;
+      cancel_url?: string;
+    },
   ) {
     const price = await this.plan_repository.findPriceById(plan_price_id);
     if (!price?.stripe_price_id) {
@@ -306,6 +310,8 @@ export class BillingCheckoutService {
       plan_id: price.plan_id,
       plan_price_id,
       metadata,
+      success_url: checkout_urls?.success_url,
+      cancel_url: checkout_urls?.cancel_url,
     });
 
     return { checkout_url };

@@ -22,6 +22,10 @@ export class CreateOneTimeCheckoutController {
       profile_id,
       body.plan_price_id,
       body.metadata,
+      {
+        success_url: body.success_url,
+        cancel_url: body.cancel_url,
+      },
     );
   }
 }

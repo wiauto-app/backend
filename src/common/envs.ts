@@ -68,6 +68,9 @@ const envsSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().default(""),
   
   IA_API_KEY: z.string(),
+
+  WIAUTO_SUPPORT_PHONE: z.string().default("+34 900 000 000"),
+  WIAUTO_FAQ_URL: z.string().default(""),
 });
 
 const parsed_envs = envsSchema.parse(process.env);

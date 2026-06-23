@@ -9,16 +9,20 @@ import { LeaveDealershipTeamUseCase } from "./application/dealership-members/lea
 import { RemoveDealershipMemberUseCase } from "./application/dealership-members/remove-dealership-member-use-case/remove-dealership-member.use-case";
 import { UpdateDealershipMemberRoleUseCase } from "./application/dealership-members/update-dealership-member-role-use-case/update-dealership-member-role.use-case";
 import { CreateDealershipUseCase } from "./application/dealership/create-dealership-use-case/create-dealership.use-case";
+import { CreateMyDealershipUseCase } from "./application/dealership/create-my-dealership-use-case/create-my-dealership.use-case";
 import { FindAllDealershipUseCase } from "./application/dealership/find-all-dealership-use-case/find-all-dealership.use-case";
 import { FindOneDealershipUseCase } from "./application/dealership/find-one-dealership-use-case/find-one-dealership.use-case";
+import { FindOneDealershipBySlugUseCase } from "./application/dealership/find-one-dealership-by-slug-use-case/find-one-dealership-by-slug.use-case";
 import { RecalculateDealershipRatingService } from "./application/dealership/recalculate-dealership-rating/recalculate-dealership-rating.service";
 import { RemoveDealershipUseCase } from "./application/dealership/remove-dealership-use-case/remove-dealership.use-case";
 import { UpdateDealershipUseCase } from "./application/dealership/update-dealership-use-case/update-dealership.use-case";
 import { DealershipRepository } from "./domain/repositories/dealership.repository";
 import { DealershipTeamController } from "./infrastructure/http-api/v1/dealership-team/dealership-team.controller";
 import { CreateDealershipController } from "./infrastructure/http-api/v1/create-dealership/create-dealership.controller";
+import { CreateMyDealershipController } from "./infrastructure/http-api/v1/create-my-dealership/create-my-dealership.controller";
 import { FindAllDealershipsController } from "./infrastructure/http-api/v1/find-all-dealerships/find-all-dealerships.controller";
 import { FindDealershipController } from "./infrastructure/http-api/v1/find-one-dealership/find-one-dealership.controller";
+import { FindDealershipBySlugController } from "./infrastructure/http-api/v1/find-one-dealership-by-slug/find-one-dealership-by-slug.controller";
 import { RemoveDealershipController } from "./infrastructure/http-api/v1/remove-dealership/remove-dealership.controller";
 import { UpdateDealershipController } from "./infrastructure/http-api/v1/update-dealership/update-dealership.controller";
 import { DealershipEntity } from "./infrastructure/persistence/dealership.entity";
@@ -37,7 +41,9 @@ import { MinioService } from "../shared/minio-provider/minio.service";
   ],
   controllers: [
     CreateDealershipController,
+    CreateMyDealershipController,
     FindAllDealershipsController,
+    FindDealershipBySlugController,
     FindDealershipController,
     DealershipTeamController,
     UpdateDealershipController,
@@ -50,7 +56,9 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     RemoveDealershipMemberUseCase,
     LeaveDealershipTeamUseCase,
     CreateDealershipUseCase,
+    CreateMyDealershipUseCase,
     FindAllDealershipUseCase,
+    FindOneDealershipBySlugUseCase,
     FindOneDealershipUseCase,
     UpdateDealershipUseCase,
     RemoveDealershipUseCase,

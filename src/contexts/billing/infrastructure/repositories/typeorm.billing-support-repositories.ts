@@ -66,7 +66,7 @@ export class TypeOrmBillingInvoiceRepository extends BillingInvoiceRepository {
     });
   }
 
-  async findByProfileId(profile_id: string) {
+  async findByProfileId(profile_id: string): Promise<any> {
     const rows = await this.invoice_repository.find({
       where: { profile_id },
       order: { created_at: "DESC" },

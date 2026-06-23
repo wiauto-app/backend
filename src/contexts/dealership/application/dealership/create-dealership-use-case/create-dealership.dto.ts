@@ -14,5 +14,6 @@ export class CreateDealershipDto {
   address: string;
   lat?: number;
   lng?: number;
+  show_phone?: boolean;
   members: DealershipMemberInputDto[];
 }

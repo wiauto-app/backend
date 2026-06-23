@@ -48,6 +48,9 @@ export class DealershipEntity {
   @Column({ name: "is_featured", type: "boolean", default: false })
   is_featured: boolean;
 
+  @Column({ name: "show_phone", type: "boolean", default: true })
+  show_phone: boolean;
+
   @Column({ name: "rating", type: "decimal", precision: 3, scale: 2, nullable: true })
   rating?: number | null;
 

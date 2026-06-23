@@ -16,4 +16,5 @@ export class UpdateDealershipDto {
   lng?: number;
   members?: DealershipMemberInputDto[];
   is_featured?: boolean;
+  show_phone?: boolean;
 }

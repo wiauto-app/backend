@@ -9,6 +9,7 @@ import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistenc
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
+import { VehicleSearchModule } from "@/src/contexts/vehicles/search/vehicle-search.module";
 
 import {
   BillingPlansService,
@@ -80,15 +81,18 @@ import { StripeBillingAdapter } from "./infrastructure/stripe/stripe-billing.ada
       PlanLeadRequestEntity,
     ]),
     VehiclesModule,
+    VehicleSearchModule,
   ],
   controllers: [
     FindPublicPlansCatalogController,
     CreatePlanLeadRequestController,
     CreatePublicSubscriptionCheckoutController,
+    // Must register before BillingPlansAdminController so GET /plans/catalog
+    // is not captured by GET /plans/:id (ParseUUIDPipe rejects "catalog").
+    FindBillingCatalogController,
     BillingPlansAdminController,
     BillingSubscriptionsAdminController,
     PlanLeadRequestsAdminController,
-    FindBillingCatalogController,
     GetBillingMeController,
     CreateSubscriptionCheckoutController,
     CreateOneTimeCheckoutController,

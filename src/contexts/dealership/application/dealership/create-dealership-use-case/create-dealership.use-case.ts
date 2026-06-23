@@ -41,6 +41,7 @@ export class CreateDealershipUseCase {
     payload.address = dto.address;
     payload.lat = dto.lat;
     payload.lng = dto.lng;
+    payload.show_phone = dto.show_phone;
     return payload;
   }
 }

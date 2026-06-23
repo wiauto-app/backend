@@ -200,13 +200,21 @@ export class StripeBillingAdapter {
     plan_id: string;
     plan_price_id: string;
     metadata?: Record<string, string>;
+    success_url?: string;
+    cancel_url?: string;
   }): Promise<string> {
     const session = await this.stripe.checkout.sessions.create({
       mode: "payment",
       customer: params.customer_id,
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
-      success_url: envs.STRIPE_SUCCESS_URL,
-      cancel_url: envs.STRIPE_CANCEL_URL,
+      success_url: this.resolveCheckoutUrl(
+        params.success_url,
+        envs.STRIPE_SUCCESS_URL,
+      ),
+      cancel_url: this.resolveCheckoutUrl(
+        params.cancel_url,
+        envs.STRIPE_CANCEL_URL,
+      ),
       metadata: {
         profile_id: params.profile_id,
         plan_id: params.plan_id,
@@ -220,6 +228,21 @@ export class StripeBillingAdapter {
     }
 
     return session.url;
+  }
+
+  private resolveCheckoutUrl(
+    url: string | undefined,
+    fallback: string,
+  ): string {
+    if (!url) {
+      return fallback;
+    }
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    return `${envs.FRONTEND_URL}${url.startsWith("/") ? url : `/${url}`}`;
   }
 
   async createPortalSession(customer_id: string): Promise<string> {

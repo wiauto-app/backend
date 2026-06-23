@@ -2,8 +2,8 @@ import { STATUS_VEHICLE, type StatusVehicle } from "../entities/vehicle";
 import type { OwnerVehicleStatTrend } from "../read-models/owner-vehicle-list-item";
 
 export const RENEW_EXTENSION_MS = 90 * 24 * 60 * 60 * 1000;
-export const RENEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 export const RENEW_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+export const FEATURED_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 export const SCHEDULE_MAX_FUTURE_MS = 90 * 24 * 60 * 60 * 1000;
 export const TREND_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -37,18 +37,37 @@ export const getDaysUntilExpiry = (
 ): number =>
   Math.ceil((expires_at.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
 
+export const isFeaturedActive = (params: {
+  is_featured: boolean;
+  featured_expires_at: Date | null;
+  now?: Date;
+}): boolean => {
+  if (!params.is_featured) {
+    return false;
+  }
+
+  if (!params.featured_expires_at) {
+    return true;
+  }
+
+  const now = params.now ?? new Date();
+  return params.featured_expires_at.getTime() > now.getTime();
+};
+
+export const canFeatureVehicle = (params: {
+  status: StatusVehicle;
+  is_featured_active: boolean;
+}): boolean =>
+  params.status === STATUS_VEHICLE.ACTIVE && !params.is_featured_active;
+
 export const canRenewVehicle = (params: {
   status: StatusVehicle;
-  expires_at: Date;
   renewed_at: Date | null;
   now?: Date;
 }): boolean => {
   const now = params.now ?? new Date();
 
-  if (
-    params.status !== STATUS_VEHICLE.ACTIVE &&
-    params.status !== STATUS_VEHICLE.INACTIVE
-  ) {
+  if (params.status !== STATUS_VEHICLE.ACTIVE) {
     return false;
   }
 
@@ -57,10 +76,6 @@ export const canRenewVehicle = (params: {
     if (now.getTime() < cooldown_end) {
       return false;
     }
-  }
-
-  if (params.expires_at.getTime() > now.getTime() + RENEW_WINDOW_MS) {
-    return false;
   }
 
   return true;

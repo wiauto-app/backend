@@ -89,6 +89,8 @@ export class FindAllVehiclesDto extends PickType(PaginationDto, [
 
   exclude_vehicle_ids: string[];
 
+  dealership_ids: string[];
+
 }
 
 /** Alias usado por el caso de uso */

@@ -38,6 +38,7 @@ import { CategoryEntity } from "../persistence/category.entity";
 import { VehiclePriceEntity } from "../../vehicle-prices/infrastructure/persistence/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/domain/vehicle-price";
 import { applyAdminFilters, applyFilters } from "../validators/filters.applier";
+import { apply_vehicle_created_at_listing_order } from "../validators/vehicle-listing-order.utils";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
 import { MakeEntity } from "../../catalog/makes/infrastructure/persistence/make.entity";
@@ -53,9 +54,11 @@ import { OwnerVehicleListItem } from "../../domain/read-models/owner-vehicle-lis
 import { formatVehicleDisplayName } from "../../domain/utils/format-vehicle-display-name";
 import {
   buildStatTrend,
+  canFeatureVehicle,
   canRenewVehicle,
   canScheduleVehicle,
   getDaysUntilExpiry,
+  isFeaturedActive,
   isVehicleExpired,
   TREND_PERIOD_MS,
 } from "../../domain/utils/owner-vehicle-rules";
@@ -385,6 +388,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     status: entity.status,
     status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
+    featured_expires_at: entity.featured_expires_at ?? null,
     expires_at: entity.expires_at,
     scheduled_publish_at: entity.scheduled_publish_at ?? null,
     renewed_at: entity.renewed_at ?? null,
@@ -642,6 +646,9 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     if (p.is_featured !== undefined) {
       payload.is_featured = p.is_featured;
     }
+    if (p.featured_expires_at !== undefined) {
+      payload.featured_expires_at = p.featured_expires_at;
+    }
     if (p.expires_at !== undefined) {
       payload.expires_at = p.expires_at;
     }
@@ -749,9 +756,15 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    if (order_by) {
-      qb.orderBy(`vehicle.${order_by}`, order_direction);
+    const order_field = order_by ?? "created_at";
+    const direction = order_direction ?? "DESC";
+
+    if (order_field === "created_at") {
+      apply_vehicle_created_at_listing_order(qb, direction, new Date());
+    } else {
+      qb.orderBy(`vehicle.${order_field}`, direction);
     }
+
     qb.skip(skip).take(limit);
     const rows = await qb.getMany();
     const vehicles = rows.map((row) => entity_to_list_item(row));
@@ -884,6 +897,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .leftJoinAndSelect("vehicle.version", "version")
       .leftJoinAndSelect("version.make", "version_make")
       .leftJoinAndSelect("version.model", "version_model")
+      .leftJoinAndSelect("version.fuel_type", "fuel_type")
       .leftJoinAndSelect(
         "vehicle.vehicle_prices",
         "vehicle_prices",
@@ -951,6 +965,11 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
         model_name: entity.version?.model?.name,
         version_name: entity.version?.name,
       });
+      const is_featured_active = isFeaturedActive({
+        is_featured: entity.is_featured,
+        featured_expires_at: entity.featured_expires_at ?? null,
+        now,
+      });
 
       return {
         id: entity.id,
@@ -963,13 +982,21 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
         days_until_expiry: getDaysUntilExpiry(entity.expires_at, now),
         can_renew: canRenewVehicle({
           status: entity.status,
-          expires_at: entity.expires_at,
           renewed_at: entity.renewed_at ?? null,
           now,
         }),
         can_schedule: canScheduleVehicle(entity.status),
         scheduled_publish_at: entity.scheduled_publish_at ?? null,
         renewed_at: entity.renewed_at ?? null,
+        is_featured: entity.is_featured,
+        featured_expires_at: entity.featured_expires_at ?? null,
+        is_featured_active,
+        can_feature: canFeatureVehicle({
+          status: entity.status,
+          is_featured_active,
+        }),
+        transmission_type: entity.transmission_type,
+        fuel_type: entity.version?.fuel_type?.slug ?? null,
         image: images[0] ?? null,
         stats: {
           views: this.get_trend_from_map(views_map, entity.id),
@@ -1035,6 +1062,17 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       .map((row) => Vehicle.fromPrimitives(entity_to_primitives(row)));
   }
 
+  async findExpiredFeatured(now: Date): Promise<Vehicle[]> {
+    const rows = await this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .where("vehicle.is_featured = :is_featured", { is_featured: true })
+      .andWhere("vehicle.featured_expires_at IS NOT NULL")
+      .andWhere("vehicle.featured_expires_at <= :now", { now })
+      .getMany();
+
+    return rows.map((row) => Vehicle.fromPrimitives(entity_to_primitives(row)));
+  }
+
   async duplicate(source_vehicle_id: string): Promise<string> {
     const source = await this.vehicle_repository.findOne({
       where: { id: source_vehicle_id },
@@ -1072,6 +1110,7 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       address: source.address ?? null,
       address_details: source.address_details ?? null,
       is_featured: false,
+      featured_expires_at: null,
       views: 0,
       favorites: 0,
       shares: 0,

@@ -17,6 +17,7 @@ export interface PublishedVehicleSnapshot {
   transmission_type: TransmissionType;
   publisher_type: PublisherType;
   is_featured: boolean;
+  featured_expires_at: Date | null;
   make_slug: string;
   model_slug: string;
   year: number;

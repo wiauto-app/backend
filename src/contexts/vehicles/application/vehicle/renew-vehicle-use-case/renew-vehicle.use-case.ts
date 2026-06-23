@@ -7,14 +7,8 @@ import {
 } from "../../../domain/entities/vehicle";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
-import {
-  canRenewVehicle,
-  computeRenewedExpiresAt,
-  isVehicleExpired,
-} from "../../../domain/utils/owner-vehicle-rules";
+import { canRenewVehicle } from "../../../domain/utils/owner-vehicle-rules";
 import { VehicleSearchIndexer } from "../../../search/infrastructure/indexing/vehicle-search-indexer.service";
-import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.service";
-import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/domain/enums/alert-event-type.enum";
 import { RenewVehicleDto } from "./renew-vehicle.dto";
 
 @Injectable()
@@ -22,7 +16,6 @@ export class RenewVehicleUseCase {
   constructor(
     private readonly vehicle_repository: VehicleRepository,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
-    private readonly alert_processing_enqueue_service: AlertProcessingEnqueueService,
   ) {}
 
   async execute(dto: RenewVehicleDto) {
@@ -37,7 +30,6 @@ export class RenewVehicleUseCase {
     if (
       !canRenewVehicle({
         status: primitive.status ?? STATUS_VEHICLE.PENDING,
-        expires_at: primitive.expires_at ?? now,
         renewed_at: primitive.renewed_at ?? null,
         now,
       })
@@ -47,42 +39,19 @@ export class RenewVehicleUseCase {
       );
     }
 
-    const was_expired = isVehicleExpired(primitive.expires_at ?? now, now);
-    const new_expires_at = computeRenewedExpiresAt(
-      primitive.expires_at ?? now,
-      now,
-    );
-
-    let next_status = primitive.status ?? STATUS_VEHICLE.INACTIVE;
-    if (
-      was_expired &&
-      next_status === STATUS_VEHICLE.INACTIVE &&
-      primitive.status_change_message === null
-    ) {
-      next_status = STATUS_VEHICLE.ACTIVE;
-    }
-
     const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
-      expires_at: new_expires_at,
       renewed_at: now,
-      status: next_status,
     });
 
     await this.vehicle_repository.update(updated);
-
-    if (next_status === STATUS_VEHICLE.ACTIVE) {
-      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-        vehicle_id: dto.vehicle_id,
-        event_type: ALERT_EVENT_TYPE.NEW_LISTING,
-      });
-    }
-
-    await this.vehicle_search_indexer.syncVehicle(dto.vehicle_id, next_status);
+    await this.vehicle_search_indexer.syncVehicle(
+      dto.vehicle_id,
+      primitive.status,
+    );
 
     return {
-      expires_at: new_expires_at,
+      renewed_at: now,
       can_renew: false,
-      status: next_status,
     };
   }
 }

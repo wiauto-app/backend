@@ -47,6 +47,7 @@ function entity_to_primitives(entity: DealershipEntity): PrimitiveDealership {
     lat: entity.lat != null ? Number(entity.lat) : undefined,
     lng: entity.lng != null ? Number(entity.lng) : undefined,
     is_featured: entity.is_featured,
+    show_phone: entity.show_phone,
     rating: entity.rating != null ? Number(entity.rating) : null,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
@@ -102,6 +103,7 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       lat: p.lat,
       lng: p.lng,
       is_featured: p.is_featured,
+      show_phone: p.show_phone,
       rating: p.rating,
       created_at: p.created_at,
       updated_at: p.updated_at,
@@ -111,6 +113,16 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
 
   async findOne(id: string): Promise<Dealership | null> {
     const entity = await this.dealership_entity_repository.findOne({ where: { id } });
+    if (!entity) {
+      return null;
+    }
+    return Dealership.fromPrimitives(entity_to_primitives(entity));
+  }
+
+  async findOneBySlug(slug: string): Promise<Dealership | null> {
+    const entity = await this.dealership_entity_repository.findOne({
+      where: { slug },
+    });
     if (!entity) {
       return null;
     }
@@ -239,6 +251,7 @@ export class TypeOrmDealershipRepository implements DealershipRepository {
       lat: p.lat,
       lng: p.lng,
       is_featured: p.is_featured,
+      show_phone: p.show_phone,
       created_at: p.created_at,
       updated_at: p.updated_at,
     });

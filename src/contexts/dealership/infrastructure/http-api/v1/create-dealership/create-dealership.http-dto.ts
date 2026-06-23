@@ -2,9 +2,11 @@ import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from "class-validator";
@@ -57,6 +59,10 @@ export class CreateDealershipHttpDto {
 
   @IsNumber()
   lng: number;
+
+  @IsOptional()
+  @IsBoolean()
+  show_phone?: boolean;
 
   @IsArray()
   @ArrayMinSize(1)

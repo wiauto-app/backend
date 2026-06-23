@@ -42,6 +42,7 @@ export interface PrimitiveVehicle {
   status?: StatusVehicle;
   status_change_message?: string | null;
   is_featured?: boolean;
+  featured_expires_at?: Date | null;
   expires_at?: Date;
   scheduled_publish_at?: Date | null;
   renewed_at?: Date | null;
@@ -138,6 +139,7 @@ export class Vehicle {
       expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
       scheduled_publish_at: null,
       renewed_at: null,
+      featured_expires_at: null,
     });
   }
 

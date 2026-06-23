@@ -63,6 +63,9 @@ export class VehicleEntity {
   @Column({ default: false })
   is_featured: boolean;
 
+  @Column({ name: "featured_expires_at", type: "timestamp", nullable: true })
+  featured_expires_at: Date | null;
+
   @Column({ default: 0 })
   views: number;
 

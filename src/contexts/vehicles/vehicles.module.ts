@@ -70,11 +70,15 @@ import { RenewVehicleUseCase } from "./application/vehicle/renew-vehicle-use-cas
 import { ScheduleVehicleUseCase } from "./application/vehicle/schedule-vehicle-use-case/schedule-vehicle.use-case";
 import { UpdateOwnerVehicleStatusUseCase } from "./application/vehicle/update-owner-vehicle-status-use-case/update-owner-vehicle-status.use-case";
 import { ProcessScheduledVehiclePublishUseCase } from "./application/vehicle/process-scheduled-vehicle-publish-use-case/process-scheduled-vehicle-publish.use-case";
+import { ExpireFeaturedVehiclesUseCase } from "./application/vehicle/expire-featured-vehicles-use-case/expire-featured-vehicles.use-case";
 import { VehicleAnalyticsRepository } from "./domain/repositories/vehicle-analytics.repository";
 import { TypeOrmVehicleAnalyticsRepository } from "./infrastructure/repositories/typeorm.vehicle-analytics-repository";
 import { SCHEDULED_VEHICLE_PUBLISH_QUEUE } from "./infrastructure/queues/scheduled-vehicle-publish.queue.constants";
 import { ScheduledVehiclePublishProcessor } from "./infrastructure/queues/scheduled-vehicle-publish.processor";
 import { ScheduledVehiclePublishBootstrapService } from "./infrastructure/queues/scheduled-vehicle-publish-bootstrap.service";
+import { FEATURED_VEHICLE_EXPIRY_QUEUE } from "./infrastructure/queues/featured-vehicle-expiry.queue.constants";
+import { FeaturedVehicleExpiryProcessor } from "./infrastructure/queues/featured-vehicle-expiry.processor";
+import { FeaturedVehicleExpiryBootstrapService } from "./infrastructure/queues/featured-vehicle-expiry-bootstrap.service";
 import { VehiclePriceEntity } from "./vehicle-prices/infrastructure/persistence/vehicle-price.entity";
 import { get_vehicle_images_entity } from "./infrastructure/persistence/vehicle-images-entity.relation-type";
 import { AdminFindAllVehiclesUseCase } from "./application/admin-vehicles/admin-find-all-vehicles-use-case/admin-find-all-vehicles.use-case";
@@ -108,9 +112,16 @@ import { WarrantyTypesUseCase } from "./application/warranty-types-use-cases/war
 import { ColorsUseCase } from "./application/colors-use-cases/colors.use-case";
 import { DgtLabelsUseCase } from "./application/dgt-labels-use-cases/dgt-labels.use-case";
 import { DealershipMembersEntity } from "../dealership/infrastructure/persistence/dealership-members.entity";
+import { DealershipModule } from "../dealership/dealership.module";
+import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
+import { ChatModule } from "../chat/modules/chat.module";
+import { GetOwnerDashboardController } from "./infrastructure/http-api/v1/get-owner-dashboard/get-owner-dashboard.controller";
+import { GetOwnerDashboardUseCase } from "./application/owner-dashboard/get-owner-dashboard-use-case/get-owner-dashboard.use-case";
+import { OwnerDashboardRepository } from "./domain/repositories/owner-dashboard.repository";
+import { TypeOrmOwnerDashboardRepository } from "./infrastructure/repositories/typeorm.owner-dashboard-repository";
 
 @Module({
-  controllers: [CreateVehicleController, FindOwnerVehiclesController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, DuplicateVehicleController, RenewVehicleController, ScheduleVehicleController, UpdateOwnerVehicleStatusController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, AdminUpdateVehicleStatusController, FindFiltersController, FindActiveFiltersController],
+  controllers: [CreateVehicleController, FindOwnerVehiclesController, GetOwnerDashboardController, FindVehicleController, FindSimilarVehiclesController, UpdateVehicleController, RemoveVehicleController, DuplicateVehicleController, RenewVehicleController, ScheduleVehicleController, UpdateOwnerVehicleStatusController, CreateFeatureController, RemoveFeatureController, UpdateFeatureController, FindFeatureController, FindFeaturesController, FindAllVehiclesController, AdminFindAllVehiclesController, AdminGetVehicleController, AdminUpdateVehicleStatusController, FindFiltersController, FindActiveFiltersController],
   providers: [
     VehicleCreationGuard,
     VehicleOwnerGuard,
@@ -129,8 +140,12 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     ScheduleVehicleUseCase,
     UpdateOwnerVehicleStatusUseCase,
     ProcessScheduledVehiclePublishUseCase,
+    ExpireFeaturedVehiclesUseCase,
+    GetOwnerDashboardUseCase,
     ScheduledVehiclePublishProcessor,
     ScheduledVehiclePublishBootstrapService,
+    FeaturedVehicleExpiryProcessor,
+    FeaturedVehicleExpiryBootstrapService,
     CreateFeatureUseCase,
     RemoveFeatureUseCase,
     UpdateFeatureUseCase,
@@ -156,6 +171,7 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     /* Repositories */
     TypeOrmVehicleRepository,
     TypeOrmVehicleAnalyticsRepository,
+    TypeOrmOwnerDashboardRepository,
     TypeOrmFeatureRepository,
     /* Domain */
     {
@@ -165,6 +181,10 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     {
       provide: VehicleAnalyticsRepository,
       useExisting: TypeOrmVehicleAnalyticsRepository,
+    },
+    {
+      provide: OwnerDashboardRepository,
+      useExisting: TypeOrmOwnerDashboardRepository,
     },
     {
       provide: FeatureRepository,
@@ -204,6 +224,7 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
       get_vehicle_images_entity(),
     ]),
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
+    BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
     LocationsModule,
     VehicleImagesModule,
     VehiclePricesModule,
@@ -220,6 +241,9 @@ import { DealershipMembersEntity } from "../dealership/infrastructure/persistenc
     AuthModule,
     PermissionModule,
     ProfileModule,
+    DealershipModule,
+    DealershipInvitationModule,
+    forwardRef(() => ChatModule),
     forwardRef(() => AlertsModule),
     VehicleSearchModule,
   ],

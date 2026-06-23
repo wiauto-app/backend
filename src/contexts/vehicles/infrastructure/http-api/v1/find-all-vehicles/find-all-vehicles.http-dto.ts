@@ -140,5 +140,8 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
 
   @OptionalQueryStringArray()
   exclude_vehicle_ids: string[] = [];
+
+  @OptionalQueryStringArray()
+  dealership_ids: string[] = [];
 }
 
