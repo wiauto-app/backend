@@ -18,6 +18,6 @@ import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistenc
       useExisting: TypeormMakeRepository,
     },
   ],
-  exports: [MakesRepository],
+  exports: [MakesRepository, MakesUseCase],
 })
 export class MakesModule {}

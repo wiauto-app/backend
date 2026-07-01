@@ -247,6 +247,19 @@ import { TypeOrmOwnerDashboardRepository } from "./infrastructure/repositories/t
     forwardRef(() => AlertsModule),
     VehicleSearchModule,
   ],
-  exports: [CreateVehicleUseCase, VehicleRepository, PublishedVehicleSnapshotPort],
+  exports: [
+    CreateVehicleUseCase,
+    VehicleRepository,
+    PublishedVehicleSnapshotPort,
+    FindAllVehiclesUseCase,
+    VehicleTypesUseCase,
+    ServicesUseCase,
+    CuotasUseCase,
+    TractionsUseCase,
+    WarrantyTypesUseCase,
+    ColorsUseCase,
+    DgtLabelsUseCase,
+    FindFeaturesUseCase,
+  ],
 })
 export class VehiclesModule { }

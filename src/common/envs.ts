@@ -69,6 +69,9 @@ const envsSchema = z.object({
   
   IA_API_KEY: z.string(),
 
+  DEEPSEEK_API_KEY: z.string(),
+  DEEPSEEK_MODEL: z.string().default("deepseek-chat"),
+
   WIAUTO_SUPPORT_PHONE: z.string().default("+34 900 000 000"),
   WIAUTO_FAQ_URL: z.string().default(""),
 });

@@ -18,6 +18,6 @@ import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistenc
       useExisting: TypeormCatalogModelRepository,
     },
   ],
-  exports: [CatalogModelsRepository],
+  exports: [CatalogModelsRepository, CatalogModelsUseCase],
 })
 export class CatalogModelsModule {}
