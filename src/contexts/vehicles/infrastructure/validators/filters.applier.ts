@@ -1,5 +1,6 @@
 import { SelectQueryBuilder } from "typeorm";
 
+import { STATUS_VEHICLE } from "../../domain/entities/vehicle";
 import { VehicleFilter } from "../../domain/filters/vehicle.filter";
 import { VehicleEntity } from "../persistence/vehicle.entity";
 import { AdminVehicleFilter } from "../../domain/filters/admin-vehicle.filter";
@@ -393,6 +394,10 @@ export const applyFilters = (
   if (has_non_empty_string(filters.status)) {
     qb.andWhere("vehicle.status = :vehicle_status", {
       vehicle_status: filters.status,
+    });
+  } else {
+    qb.andWhere("vehicle.status = :vehicle_status", {
+      vehicle_status: STATUS_VEHICLE.ACTIVE,
     });
   }
 

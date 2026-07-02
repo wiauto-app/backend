@@ -96,14 +96,12 @@ export class CreateVehicleHttpDto {
   @IsNotEmpty()
   traction_id: string;
 
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
-  @Min(1)
   power: number;
 
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
   displacement: number;
 
   @IsOptional()

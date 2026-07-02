@@ -1,0 +1,47 @@
+---
+description: Preferir interface sobre type en TypeScript
+alwaysApply: true
+---
+
+# Preferir `interface` sobre `type`
+
+Usar **`interface`** para definir la forma de objetos, DTOs, opciones de servicios, respuestas y contratos entre capas.
+
+## Reglas
+
+1. **Objetos y contratos** → `interface`
+2. **Unions, primitivos, tuplas, mapped/conditional types** → `type` (cuando `interface` no aplique)
+3. **Extender** → `interface` con `extends`; evitar intersection types (`A & B`) si se puede modelar con herencia
+4. **Opciones de use cases / servicios** → `interface` (ej. `StreamChatOptions`)
+
+## Ejemplos
+
+```typescript
+// ✅ BIEN
+interface CreateVehicleDto {
+  title: string;
+  price: number;
+}
+
+interface StreamChatOptions {
+  messages: UIMessage[];
+  userId: string;
+}
+
+// ✅ BIEN — type cuando interface no encaja
+type VehicleStatus = "active" | "sold" | "pending";
+type FindResult<T> = { items: T[]; total: number };
+
+// ❌ EVITAR — objeto definido con type
+type StreamChatOptions = {
+  messages: UIMessage[];
+  userId: string;
+};
+```
+
+## Excepciones válidas para `type`
+
+- Uniones y literales
+- `Pick`, `Omit`, `Partial`, `Record`, tipos condicionales
+- Funciones como alias: `type Handler = (id: string) => void`
+- Tipos derivados de genéricos complejos que no son un objeto nombrable

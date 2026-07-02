@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { STATUS_VEHICLE } from "@/src/contexts/vehicles/domain/entities/vehicle";
 import { FindAllVehiclesUseCase } from "@/src/contexts/vehicles/application/vehicle/find-all-vehicles-use-case/find-all-vehicles.use-case";
 import { FindAllVehiclesUseCaseDto } from "@/src/contexts/vehicles/application/vehicle/find-all-vehicles-use-case/find-all-vehicles.dto";
 import {
@@ -153,6 +154,7 @@ export class AssistantSearchExecutorService {
 
     const result = await this.findAllVehiclesUseCase.execute({
       ...filters,
+      status: STATUS_VEHICLE.ACTIVE,
       page: 1,
       limit: SEARCH_RESULT_LIMIT,
       makes_slugs: filters.makes_slugs ?? [],

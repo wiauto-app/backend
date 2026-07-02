@@ -76,6 +76,10 @@
       "value": ""
     },
     {
+      "key": "assistant_conversation_id",
+      "value": ""
+    },
+    {
       "key": "user_id",
       "value": ""
     },
@@ -152,6 +156,11 @@
       "key": "chat_message_id",
       "value": "",
       "description": "UUID del mensaje (`GET /v1/chat-messages/:id`)."
+    },
+    {
+      "key": "assistant_conversation_id",
+      "value": "",
+      "description": "UUID de conversación del asistente (`GET /v1/assistant/conversations/:id`)."
     },
     {
       "key": "list_id",
@@ -6294,6 +6303,94 @@
       ]
     },
     {
+      "name": "assistant",
+      "item": [
+        {
+          "name": "chat con asistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/assistant/chat",
+            "description": "Stream SSE del asistente (JWT). `conversation_id` opcional para persistir historial.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversation_id\": \"{{assistant_conversation_id}}\",\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Busco un SUV híbrido en Madrid\"\n        }\n      ]\n    }\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "listar conversaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations",
+            "description": "Lista conversaciones del usuario autenticado (JWT)."
+          },
+          "response": []
+        },
+        {
+          "name": "crear conversación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations",
+            "description": "Crea una conversación vacía (JWT)."
+          },
+          "response": []
+        },
+        {
+          "name": "obtener conversación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
+            "description": "Obtiene mensajes de una conversación (JWT). Solo el propietario."
+          },
+          "response": []
+        },
+        {
+          "name": "eliminar conversación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
+            "description": "Elimina una conversación (JWT). Solo el propietario."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "support",
       "item": [
         {
@@ -6900,6 +6997,76 @@
             },
             "url": "{{base_url}}/v1/billing/webhooks/stripe",
             "description": "Sin JWT. Verificación por firma Stripe (raw body). Usar Stripe CLI en local."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "assistant",
+      "item": [
+        {
+          "name": "chat (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Busco un SUV híbrido en Madrid\"\n        }\n      ]\n    }\n  ],\n  \"conversation_id\": \"{{assistant_conversation_id}}\"\n}"
+            },
+            "url": "{{base_url}}/v1/assistant/chat",
+            "description": "Stream de chat del asistente. JWT opcional; con token persiste historial si se envía conversation_id."
+          },
+          "response": []
+        },
+        {
+          "name": "conversations list (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations",
+            "description": "Lista conversaciones del usuario autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "conversations create (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations",
+            "description": "Crea una conversación vacía."
+          },
+          "response": []
+        },
+        {
+          "name": "conversations get (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
+            "description": "Obtiene mensajes de una conversación."
+          },
+          "response": []
+        },
+        {
+          "name": "conversations delete (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
+            "description": "Elimina una conversación del usuario."
           },
           "response": []
         }

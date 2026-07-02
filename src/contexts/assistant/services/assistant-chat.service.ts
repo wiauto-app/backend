@@ -16,6 +16,14 @@ import { AssistantIntentExtractorService } from "./assistant-intent-extractor.se
 import { AssistantSearchExecutorService } from "./assistant-search-executor.service";
 import { AssistantSearchFiltersBuilderService } from "./assistant-search-filters-builder.service";
 import { AssistantSystemPromptService } from "./assistant-system-prompt.service";
+import { AssistantConversationService } from "./assistant-conversation.service";
+
+interface StreamChatOptions {
+  messages: UIMessage[];
+  conversationId?: string;
+  userId: string;
+  response: Response;
+};
 
 @Injectable()
 export class AssistantChatService {
@@ -26,9 +34,21 @@ export class AssistantChatService {
     private readonly entityResolver: AssistantEntityResolverService,
     private readonly searchFiltersBuilder: AssistantSearchFiltersBuilderService,
     private readonly searchExecutor: AssistantSearchExecutorService,
+    private readonly conversationService: AssistantConversationService,
   ) {}
 
-  async streamChat(messages: UIMessage[], response: Response): Promise<void> {
+  async streamChat({
+    messages,
+    conversationId,
+    userId,
+    response,
+  }: StreamChatOptions): Promise<void> {
+    const resolvedConversationId =
+      await this.conversationService.resolveConversationId(
+        userId,
+        conversationId,
+      );
+
     const intent = await this.intentExtractor.extract(messages);
     const resolved = await this.entityResolver.resolve(intent);
     const catalog = await this.filterCatalogService.getCatalog();
@@ -49,6 +69,13 @@ export class AssistantChatService {
 
     const stream = createUIMessageStream({
       originalMessages: messages,
+      onEnd: async ({ messages: updatedMessages }) => {
+        await this.conversationService.saveMessages(
+          userId,
+          resolvedConversationId,
+          updatedMessages,
+        );
+      },
       execute: async ({ writer }) => {
         const toolCallId = generateId();
 
@@ -75,12 +102,20 @@ export class AssistantChatService {
           messages: await convertToModelMessages(messages),
         });
 
-        writer.merge(summary.toUIMessageStream());
+        writer.merge(
+          summary.toUIMessageStream({
+            sendStart: false,
+            originalMessages: messages,
+          }),
+        );
       },
     });
 
     pipeUIMessageStreamToResponse({
       response,
+      headers: {
+        "X-Conversation-Id": resolvedConversationId,
+      },
       stream,
     });
   }
