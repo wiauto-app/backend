@@ -1,13 +1,12 @@
-import swc from "unplugin-swc";
 import { defineConfig } from "vitest/config";
 
 import { createVitestTestConfig } from "./create-vitest-test-config";
+import { vitestPathAliases, vitestSwcPlugins } from "./vitest.shared";
 
 export default defineConfig({
   test: createVitestTestConfig("unit"),
-  plugins: [
-    swc.vite({
-      module: { type: "es6" },
-    }),
-  ],
+  resolve: {
+    alias: vitestPathAliases,
+  },
+  plugins: vitestSwcPlugins(),
 });
