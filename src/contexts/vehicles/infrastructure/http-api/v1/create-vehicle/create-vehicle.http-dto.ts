@@ -9,6 +9,7 @@ import {
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -79,6 +80,14 @@ export class CreateVehicleHttpDto {
   @IsString()
   @IsNotEmpty()
   phone: string;
+
+  @IsOptional()
+  @IsBoolean()
+  has_whatsapp?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  show_phone?: boolean;
 
   @IsEmail()
   @IsNotEmpty()

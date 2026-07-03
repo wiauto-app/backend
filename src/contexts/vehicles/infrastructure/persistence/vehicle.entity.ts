@@ -130,6 +130,12 @@ export class VehicleEntity {
   @Column()
   phone: string;
 
+  @Column({ name: "has_whatsapp", type: "boolean", default: false })
+  has_whatsapp: boolean;
+
+  @Column({ name: "show_phone", type: "boolean", default: true })
+  show_phone: boolean;
+
   @Column()
   email: string;
 

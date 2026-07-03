@@ -52,6 +52,8 @@ export interface AdminVehicleDetail {
   publisher_type: PublisherType;
   phone_code: string;
   phone: string;
+  has_whatsapp: boolean;
+  show_phone: boolean;
   email: string;
   features_ids: string[];
   services_ids: string[];

@@ -98,24 +98,66 @@ export class MailTemplateRenderer {
   renderLeadNotification(payload: {
     vehicle_title: string;
     lead: {
+      type: string;
       name: string;
-      email: string;
+      email: string | null;
       phone: string | null;
       phone_code: string | null;
-      message: string;
+      message: string | null;
+      callback_scheduled_at: string | null;
     };
   }): string {
+    const is_call_me = payload.lead.type === "call_me";
     const escaped_title = this.escapeHtml(payload.vehicle_title);
     const escaped_name = this.escapeHtml(payload.lead.name);
-    const escaped_email = this.escapeHtml(payload.lead.email);
-    const escaped_message = this.escapeHtml(payload.lead.message);
+    const escaped_message = payload.lead.message
+      ? this.escapeHtml(payload.lead.message)
+      : null;
     const phone_display =
       payload.lead.phone_code && payload.lead.phone
         ? `${this.escapeHtml(payload.lead.phone_code)} ${this.escapeHtml(payload.lead.phone)}`
         : "No indicado";
 
+    const email_row = payload.lead.email
+      ? `<tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Correo</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${this.escapeHtml(payload.lead.email)}</p>
+          </td>
+        </tr>`
+      : "";
+
+    const callback_row =
+      is_call_me && payload.lead.callback_scheduled_at
+        ? `<tr>
+            <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Fecha preferida de llamada</p>
+              <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${this.escapeHtml(
+                new Date(`${payload.lead.callback_scheduled_at}T00:00:00`).toLocaleDateString(
+                  "es-ES",
+                  { dateStyle: "long" },
+                ),
+              )}</p>
+            </td>
+          </tr>`
+        : "";
+
+    const message_row =
+      !is_call_me && escaped_message
+        ? `<tr>
+            <td style="padding:16px 20px;">
+              <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Mensaje</p>
+              <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${escaped_message}</p>
+            </td>
+          </tr>`
+        : "";
+
+    const intro_text = is_call_me
+      ? `Recibiste una solicitud de llamada sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`
+      : `Recibiste una consulta sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`;
+
     const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
-        Recibiste una consulta sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.
+        ${intro_text}
       </p>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
         <tr>
@@ -124,32 +166,26 @@ export class MailTemplateRenderer {
             <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_name}</p>
           </td>
         </tr>
-        <tr>
-          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
-            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Correo</p>
-            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_email}</p>
-          </td>
-        </tr>
+        ${email_row}
         <tr>
           <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
             <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Teléfono</p>
             <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${phone_display}</p>
           </td>
         </tr>
-        <tr>
-          <td style="padding:16px 20px;">
-            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Mensaje</p>
-            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${escaped_message}</p>
-          </td>
-        </tr>
+        ${callback_row}
+        ${message_row}
       </table>`;
 
     return this.renderBase({
-      preheader: `Nueva consulta sobre ${payload.vehicle_title}.`,
-      title: "Nueva consulta recibida",
+      preheader: is_call_me
+        ? `Solicitud de llamada sobre ${payload.vehicle_title}.`
+        : `Nueva consulta sobre ${payload.vehicle_title}.`,
+      title: is_call_me ? "Nueva solicitud de llamada" : "Nueva consulta recibida",
       body,
-      footer_note:
-        "Responde al interesado lo antes posible para no perder la oportunidad.",
+      footer_note: is_call_me
+        ? "Contacta al interesado en la fecha indicada para no perder la oportunidad."
+        : "Responde al interesado lo antes posible para no perder la oportunidad.",
     });
   }
 

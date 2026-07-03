@@ -6,6 +6,7 @@ import {
 
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import {
+  PlanEffectConfig,
   PrimitiveSubscriptionPlan,
   SubscriptionPlan,
 } from "../../domain/entities/subscription-plan";
@@ -40,12 +41,40 @@ export type CreatePlanPayload = {
     included?: boolean;
     sort_order?: number;
   }>;
+  effect_config?: PlanEffectConfig | { type?: string; credits?: number };
 };
 
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;
 
 const serializePlan = (plan: SubscriptionPlan): PrimitiveSubscriptionPlan =>
   plan.toPrimitives();
+
+const normalizeEffectConfig = (
+  effect_config?: PlanEffectConfig | { type?: string; credits?: number },
+): PlanEffectConfig => {
+  if (!effect_config?.type) {
+    return {};
+  }
+
+  if (effect_config.type === "assistant_credits") {
+    if (!effect_config.credits || effect_config.credits <= 0) {
+      throw new BadRequestException(
+        "Las consultas incluidas deben ser mayores a 0",
+      );
+    }
+
+    return {
+      type: "assistant_credits",
+      credits: effect_config.credits,
+    };
+  }
+
+  if (effect_config.type === "feature_vehicle") {
+    return { type: "feature_vehicle" };
+  }
+
+  return {};
+};
 
 @HexInjectable()
 export class BillingPlansService {
@@ -55,6 +84,8 @@ export class BillingPlansService {
   ) {}
 
   async create(payload: CreatePlanPayload) {
+    const effect_config = normalizeEffectConfig(payload.effect_config);
+
     const plan = SubscriptionPlan.create({
       slug: payload.slug,
       name: payload.name,
@@ -65,6 +96,7 @@ export class BillingPlansService {
       is_active: payload.is_active ?? true,
       is_featured: payload.is_featured ?? false,
       sort_order: payload.sort_order ?? 0,
+      effect_config,
       prices: payload.prices?.map((price) => ({
         interval: price.interval,
         amount_cents: price.amount_cents,
@@ -115,6 +147,10 @@ export class BillingPlansService {
       is_active: payload.is_active ?? current.is_active,
       is_featured: payload.is_featured ?? current.is_featured,
       sort_order: payload.sort_order ?? current.sort_order,
+      effect_config:
+        payload.effect_config !== undefined
+          ? normalizeEffectConfig(payload.effect_config)
+          : current.effect_config,
       prices: payload.prices
         ? payload.prices.map((price) => ({
             interval: price.interval,
@@ -186,6 +222,7 @@ export class BillingPlansService {
         billing_type: p.billing_type,
         is_featured: p.is_featured,
         sort_order: p.sort_order,
+        effect_config: p.effect_config ?? {},
         prices: (p.prices ?? [])
           .filter((price) => price.is_active)
           .map((price) => ({

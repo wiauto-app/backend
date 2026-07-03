@@ -74,6 +74,8 @@ const envsSchema = z.object({
 
   WIAUTO_SUPPORT_PHONE: z.string().default("+34 900 000 000"),
   WIAUTO_FAQ_URL: z.string().default(""),
+
+  ASSISTANT_MONTHLY_FREE_QUOTA: z.coerce.number().default(30),
 });
 
 const parsed_envs = envsSchema.parse(process.env);

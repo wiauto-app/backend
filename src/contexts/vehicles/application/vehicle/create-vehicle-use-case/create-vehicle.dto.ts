@@ -25,6 +25,8 @@ export class CreateVehicleDto {
   license_plate?: string;
   phone_code: string;
   phone: string;
+  has_whatsapp?: boolean;
+  show_phone?: boolean;
   email: string;
   vehicle_type_id?: string | null;
   category_id?: string | null;

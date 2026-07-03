@@ -43,6 +43,8 @@ export interface VehicleDetail extends VehicleListItem {
   traction: VehicleListItemCatalogRef | null;
   phone_code: string;
   phone: string;
+  has_whatsapp: boolean;
+  show_phone: boolean;
   email: string;
   profile_id: string;
   suggestions: string[];
@@ -142,6 +144,8 @@ export const vehicleDetailToPrimitives = (
   vin_code: detail.vin_code,
   phone_code: detail.phone_code,
   phone: detail.phone,
+  has_whatsapp: detail.has_whatsapp,
+  show_phone: detail.show_phone,
   email: detail.email,
   features_ids: detail.features.map((feature) => feature.id),
   services_ids: detail.services.map((service) => service.id),

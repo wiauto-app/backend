@@ -2,6 +2,7 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 
+import type { ContactClickType } from "../../domain/entities/contact-click";
 import {
   VehicleAnalyticsRepository,
   VehiclePeriodCounts,
@@ -130,6 +131,38 @@ export class TypeOrmVehicleAnalyticsRepository extends VehicleAnalyticsRepositor
         GROUP BY vehicle_id
       `,
       [vehicle_ids, current_start, previous_start, period_end],
+    );
+
+    return map_period_rows(rows);
+  }
+
+  async countContactClicksByVehicleIdsInPeriods(
+    vehicle_ids: string[],
+    type: ContactClickType,
+    current_start: Date,
+    previous_start: Date,
+    period_end: Date,
+  ): Promise<VehiclePeriodCounts[]> {
+    if (vehicle_ids.length === 0) {
+      return [];
+    }
+
+    const rows = await this.data_source.query<PeriodCountRow[]>(
+      `
+        SELECT
+          vehicle_id,
+          COUNT(*) FILTER (
+            WHERE created_at >= $2 AND created_at < $5
+          )::int AS current,
+          COUNT(*) FILTER (
+            WHERE created_at >= $3 AND created_at < $2
+          )::int AS previous
+        FROM vehicle_contact_clicks
+        WHERE vehicle_id = ANY($1::uuid[])
+          AND type = $4
+        GROUP BY vehicle_id
+      `,
+      [vehicle_ids, current_start, previous_start, type, period_end],
     );
 
     return map_period_rows(rows);

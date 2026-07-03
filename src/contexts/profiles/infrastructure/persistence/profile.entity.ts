@@ -41,6 +41,15 @@ export class ProfileEntity {
   @Column({ name: "stripe_customer_id", type: "varchar", nullable: true })
   stripe_customer_id: string | null;
 
+  @Column({ name: "assistant_purchased_credits", type: "int", default: 0 })
+  assistant_purchased_credits: number;
+
+  @Column({ name: "assistant_monthly_free_used", type: "int", default: 0 })
+  assistant_monthly_free_used: number;
+
+  @Column({ name: "assistant_quota_period_start", type: "timestamptz", nullable: true })
+  assistant_quota_period_start: Date | null;
+
   @Column({ nullable: true })
   last_name?: string;
 

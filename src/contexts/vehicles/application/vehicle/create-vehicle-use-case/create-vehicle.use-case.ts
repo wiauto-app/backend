@@ -69,6 +69,8 @@ export class CreateVehicleUseCase {
       license_plate: create_vehicle_dto.license_plate ?? "",
       phone_code: create_vehicle_dto.phone_code,
       phone: create_vehicle_dto.phone,
+      has_whatsapp: create_vehicle_dto.has_whatsapp ?? false,
+      show_phone: create_vehicle_dto.show_phone ?? true,
       email: create_vehicle_dto.email,
       features_ids: create_vehicle_dto.features_ids ?? [],
       services_ids: create_vehicle_dto.services_ids ?? [],

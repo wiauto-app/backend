@@ -225,4 +225,66 @@ export class TypeormCatalogModelRepository extends CatalogModelsRepository {
       vehicle_count: vehicle_count_by_model_id.get(row.id) ?? 0,
     })).filter((model) => model.vehicle_count > 0);
   }
+
+  async findGlobalSearchModels(
+    search: string,
+    limit: number,
+  ): Promise<CatalogModelSearchItem[]> {
+    const query = search.trim();
+    if (!query) {
+      return [];
+    }
+
+    const slugifiedQuery = query.toLowerCase().replace(/\s+/g, "-");
+    const search_query = this.repo
+      .createQueryBuilder("model")
+      .orderBy("model.name", "ASC")
+      .take(limit);
+
+    search_query.andWhere(
+      "(model.name ILIKE :search OR model.slug ILIKE :slugSearch)",
+      {
+        search: `%${query}%`,
+        slugSearch: `%${slugifiedQuery}%`,
+      },
+    );
+
+    const rows = await search_query.getMany();
+    const models_by_make = new Map<number, typeof rows>();
+
+    for (const row of rows) {
+      const group = models_by_make.get(row.make_id) ?? [];
+      group.push(row);
+      models_by_make.set(row.make_id, group);
+    }
+
+    const results: CatalogModelSearchItem[] = [];
+
+    for (const [make_id, make_rows] of models_by_make) {
+      const model_ids = make_rows.map((row) => row.id);
+      const vehicle_count_by_model_id = await this.find_vehicle_count_by_model_ids(
+        make_id,
+        model_ids,
+      );
+
+      for (const row of make_rows) {
+        const vehicle_count = vehicle_count_by_model_id.get(row.id) ?? 0;
+        if (vehicle_count === 0) {
+          continue;
+        }
+
+        results.push({
+          id: row.id,
+          make_id: row.make_id,
+          model_id: row.model_id,
+          name: row.name,
+          slug: row.slug,
+          created_at: row.created_at,
+          vehicle_count,
+        });
+      }
+    }
+
+    return results;
+  }
 }

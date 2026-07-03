@@ -30,11 +30,13 @@ export interface OutboundMailLeadNotificationJobData {
   to: string;
   vehicle_title: string;
   lead: {
+    type: string;
     name: string;
-    email: string;
+    email: string | null;
     phone: string | null;
     phone_code: string | null;
-    message: string;
+    message: string | null;
+    callback_scheduled_at: string | null;
   };
 }
 

@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 
 import { PrimitiveVehicle, Vehicle } from "../../domain/entities/vehicle";
+import { toPublicVehicleContact } from "../../helpers/public-vehicle-contact";
 import { InvalidVehicleFeatureIdsException } from "../../domain/exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../../domain/exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../../domain/exceptions/invalid-vehicle-catalog-id.exception";
@@ -51,6 +52,7 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/infrastructur
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import { OwnerVehicleFilter } from "../../domain/filters/owner-vehicle.filter";
 import { OwnerVehicleListItem } from "../../domain/read-models/owner-vehicle-list-item";
+import { CONTACT_CLICK_TYPE } from "../../domain/entities/contact-click";
 import { formatVehicleDisplayName } from "../../domain/utils/format-vehicle-display-name";
 import {
   buildStatTrend,
@@ -228,6 +230,8 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     publisher_type: base.publisher_type,
     phone_code: base.phone_code,
     phone: base.phone,
+    has_whatsapp: base.has_whatsapp ?? false,
+    show_phone: base.show_phone ?? true,
     email: base.email,
     features_ids: base.features_ids,
     services_ids: base.services_ids,
@@ -292,6 +296,12 @@ function entity_to_vehicle_detail_version(entity: VersionEntity): Version {
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find((member) => member.profile_id === entity.profile.id)?.dealership;
+  const public_contact = toPublicVehicleContact({
+    show_phone: entity.show_phone,
+    has_whatsapp: entity.has_whatsapp,
+    phone_code: entity.phone_code,
+    phone: entity.phone,
+  });
   return {
     ...base,
     description: entity.description,
@@ -321,8 +331,10 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
           slug: entity.traction.slug,
         }
       : null,
-    phone_code: entity.phone_code,
-    phone: entity.phone,
+    phone_code: public_contact.phone_code,
+    phone: public_contact.phone,
+    has_whatsapp: public_contact.has_whatsapp,
+    show_phone: public_contact.show_phone,
     email: entity.email,
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
@@ -401,6 +413,8 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     transmission_type: entity.transmission_type,
     phone_code: entity.phone_code,
     phone: entity.phone,
+    has_whatsapp: entity.has_whatsapp,
+    show_phone: entity.show_phone,
     email: entity.email,
     traction_id: entity.traction?.id ?? null,
     power: entity.power,
@@ -612,6 +626,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
       license_plate: p.license_plate,
       phone_code: p.phone_code,
       phone: p.phone,
+      has_whatsapp: p.has_whatsapp ?? false,
+      show_phone: p.show_phone ?? true,
       email: p.email,
       features: feature_ids.map((id) => this.features_repository.create({ id })),
       services: service_ids.map((id) => this.service_repository.create({ id })),
@@ -926,37 +942,54 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
     const rows = await qb.getMany();
     const vehicle_ids = rows.map((row) => row.id);
 
-    const [views, leads, favorites, shares] = await Promise.all([
-      this.vehicle_analytics_repository.countViewsByVehicleIdsInPeriods(
-        vehicle_ids,
-        current_start,
-        previous_start,
-        now,
-      ),
-      this.vehicle_analytics_repository.countLeadsByVehicleIdsInPeriods(
-        vehicle_ids,
-        current_start,
-        previous_start,
-        now,
-      ),
-      this.vehicle_analytics_repository.countFavoritesByVehicleIdsInPeriods(
-        vehicle_ids,
-        current_start,
-        previous_start,
-        now,
-      ),
-      this.vehicle_analytics_repository.countSharesByVehicleIdsInPeriods(
-        vehicle_ids,
-        current_start,
-        previous_start,
-        now,
-      ),
-    ]);
+    const [views, leads, favorites, shares, phone_clicks, whatsapp_clicks] =
+      await Promise.all([
+        this.vehicle_analytics_repository.countViewsByVehicleIdsInPeriods(
+          vehicle_ids,
+          current_start,
+          previous_start,
+          now,
+        ),
+        this.vehicle_analytics_repository.countLeadsByVehicleIdsInPeriods(
+          vehicle_ids,
+          current_start,
+          previous_start,
+          now,
+        ),
+        this.vehicle_analytics_repository.countFavoritesByVehicleIdsInPeriods(
+          vehicle_ids,
+          current_start,
+          previous_start,
+          now,
+        ),
+        this.vehicle_analytics_repository.countSharesByVehicleIdsInPeriods(
+          vehicle_ids,
+          current_start,
+          previous_start,
+          now,
+        ),
+        this.vehicle_analytics_repository.countContactClicksByVehicleIdsInPeriods(
+          vehicle_ids,
+          CONTACT_CLICK_TYPE.PHONE,
+          current_start,
+          previous_start,
+          now,
+        ),
+        this.vehicle_analytics_repository.countContactClicksByVehicleIdsInPeriods(
+          vehicle_ids,
+          CONTACT_CLICK_TYPE.WHATSAPP,
+          current_start,
+          previous_start,
+          now,
+        ),
+      ]);
 
     const views_map = this.build_owner_stats_map(views);
     const leads_map = this.build_owner_stats_map(leads);
     const favorites_map = this.build_owner_stats_map(favorites);
     const shares_map = this.build_owner_stats_map(shares);
+    const phone_clicks_map = this.build_owner_stats_map(phone_clicks);
+    const whatsapp_clicks_map = this.build_owner_stats_map(whatsapp_clicks);
 
     const items: OwnerVehicleListItem[] = rows.map((entity) => {
       const images = map_vehicle_list_images(entity.images);
@@ -1003,6 +1036,8 @@ export class TypeOrmVehicleRepository extends VehicleRepository {
           leads: this.get_trend_from_map(leads_map, entity.id),
           favorites: this.get_trend_from_map(favorites_map, entity.id),
           shares: this.get_trend_from_map(shares_map, entity.id),
+          phone_clicks: this.get_trend_from_map(phone_clicks_map, entity.id),
+          whatsapp_clicks: this.get_trend_from_map(whatsapp_clicks_map, entity.id),
         },
         created_at: entity.created_at,
         updated_at: entity.updated_at,

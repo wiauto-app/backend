@@ -102,6 +102,16 @@ export class TypeOrmOneTimePurchaseRepository extends OneTimePurchaseRepository 
     status: string;
     metadata: Record<string, unknown>;
   }): Promise<void> {
+    if (data.stripe_payment_intent_id) {
+      const existing = await this.findByStripePaymentIntentId(
+        data.stripe_payment_intent_id,
+      );
+
+      if (existing) {
+        return;
+      }
+    }
+
     await this.purchase_repository.save({
       profile_id: data.profile_id,
       plan_id: data.plan_id,
@@ -109,6 +119,45 @@ export class TypeOrmOneTimePurchaseRepository extends OneTimePurchaseRepository 
       status: data.status as OneTimePurchaseEntity["status"],
       metadata: data.metadata,
     });
+  }
+
+  async findByStripePaymentIntentId(stripe_payment_intent_id: string) {
+    const purchase = await this.purchase_repository.findOne({
+      where: { stripe_payment_intent_id },
+      order: { created_at: "DESC" },
+    });
+
+    if (!purchase) {
+      return null;
+    }
+
+    return {
+      id: purchase.id,
+      metadata: purchase.metadata ?? {},
+    };
+  }
+
+  async markEffectApplied(stripe_payment_intent_id: string): Promise<void> {
+    const purchase = await this.purchase_repository.findOne({
+      where: { stripe_payment_intent_id },
+      order: { created_at: "DESC" },
+    });
+
+    if (!purchase) {
+      return;
+    }
+
+    const preloaded = await this.purchase_repository.preload({
+      id: purchase.id,
+      metadata: {
+        ...purchase.metadata,
+        effect_applied: true,
+      },
+    });
+
+    if (preloaded) {
+      await this.purchase_repository.save(preloaded);
+    }
   }
 }
 

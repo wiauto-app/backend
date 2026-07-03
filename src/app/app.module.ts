@@ -13,6 +13,7 @@ import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
 import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
 import { LeadsModule } from "../contexts/vehicles/modules/leads.module";
 import { SharesModule } from "../contexts/vehicles/modules/shares.module";
+import { ContactClicksModule } from "../contexts/vehicles/modules/contact-clicks.module";
 import { ViewsModule } from "../contexts/vehicles/modules/views.module";
 import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
@@ -49,6 +50,7 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
     ReviewsModule,
     LeadsModule,
     SharesModule,
+    ContactClicksModule,
     ViewsModule,
     VehicleListsModule,
     MailModule,

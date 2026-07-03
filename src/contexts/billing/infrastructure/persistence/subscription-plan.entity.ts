@@ -55,6 +55,9 @@ export class SubscriptionPlanEntity {
   @Column({ name: "sort_order", default: 0 })
   sort_order!: number;
 
+  @Column({ name: "effect_config", type: "jsonb", default: {} })
+  effect_config!: Record<string, unknown>;
+
   @CreateDateColumn({ name: "created_at" })
   created_at!: Date;
 

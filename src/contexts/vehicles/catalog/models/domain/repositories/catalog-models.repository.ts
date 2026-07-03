@@ -11,4 +11,8 @@ export abstract class CatalogModelsRepository {
   abstract save(row: CatalogModel): Promise<CatalogModel>;
   abstract remove(id: number): Promise<void>;
   abstract findSearchModels(filter: SearchModelsFilter): Promise<CatalogModelSearchItem[]>;
+  abstract findGlobalSearchModels(
+    search: string,
+    limit: number,
+  ): Promise<CatalogModelSearchItem[]>;
 }

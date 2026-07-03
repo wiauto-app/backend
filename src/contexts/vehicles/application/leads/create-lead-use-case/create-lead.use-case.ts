@@ -10,7 +10,7 @@ import { ProfileRepository } from "@/src/contexts/profiles/domain/repositories/p
 
 import { STATUS_VEHICLE } from "../../../domain/entities/vehicle";
 import { formatVehicleDisplayName } from "../../../domain/utils/format-vehicle-display-name";
-import { Lead, PrimitiveLead } from "../../../domain/entities/lead";
+import { LEAD_TYPE, Lead, PrimitiveLead } from "../../../domain/entities/lead";
 import { VehicleNotFoundException } from "../../../domain/exceptions/vehicle-not-found.exception";
 import { LeadRepository } from "../../../domain/repositories/lead.repository";
 import { VehicleRepository } from "../../../domain/repositories/vehicle.repository";
@@ -54,6 +54,7 @@ export class CreateLeadUseCase {
 
     const lead = Lead.create({
       vehicle_id: create_lead_dto.vehicle_id,
+      type: LEAD_TYPE.CONTACT,
       name: create_lead_dto.name.trim(),
       email: create_lead_dto.email.trim(),
       phone,

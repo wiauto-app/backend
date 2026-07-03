@@ -4,6 +4,8 @@ import Stripe from "stripe";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
+import { AssistantQuotaService } from "@/src/contexts/assistant/services/assistant-quota.service";
+import type { PlanEffectConfig } from "@/src/contexts/billing/domain/entities/subscription-plan";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { VehicleEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle.entity";
 import { FEATURED_DURATION_MS } from "@/src/contexts/vehicles/domain/utils/owner-vehicle-rules";
@@ -42,6 +44,7 @@ export class StripeWebhookService {
     @InjectRepository(VehicleEntity)
     private readonly vehicle_repository: Repository<VehicleEntity>,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
+    private readonly assistant_quota_service: AssistantQuotaService,
   ) {}
 
   async handle(payload: Buffer, signature: string | undefined): Promise<{ received: boolean }> {
@@ -110,18 +113,17 @@ export class StripeWebhookService {
     }
 
     if (session.mode === "payment") {
-      await this.purchase_repository.create({
+      const payment_intent_id =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id ?? null;
+
+      await this.handleOneTimePurchase({
         profile_id,
         plan_id,
-        stripe_payment_intent_id:
-          typeof session.payment_intent === "string"
-            ? session.payment_intent
-            : session.payment_intent?.id ?? null,
-        status: ONE_TIME_PURCHASE_STATUS.COMPLETED,
+        payment_intent_id,
         metadata: session.metadata ?? {},
       });
-
-      await this.applyOneTimeEffect(profile_id, plan_id, session.metadata ?? {});
     }
   }
 
@@ -319,15 +321,45 @@ export class StripeWebhookService {
       return;
     }
 
+    await this.handleOneTimePurchase({
+      profile_id,
+      plan_id,
+      payment_intent_id: payment_intent.id,
+      metadata: payment_intent.metadata,
+    });
+  }
+
+  private async handleOneTimePurchase(params: {
+    profile_id: string;
+    plan_id: string;
+    payment_intent_id: string | null;
+    metadata: Record<string, unknown>;
+  }) {
+    const { profile_id, plan_id, payment_intent_id, metadata } = params;
+
+    if (payment_intent_id) {
+      const existing = await this.purchase_repository.findByStripePaymentIntentId(
+        payment_intent_id,
+      );
+
+      if (existing?.metadata?.effect_applied === true) {
+        return;
+      }
+    }
+
     await this.purchase_repository.create({
       profile_id,
       plan_id,
-      stripe_payment_intent_id: payment_intent.id,
+      stripe_payment_intent_id: payment_intent_id,
       status: ONE_TIME_PURCHASE_STATUS.COMPLETED,
-      metadata: payment_intent.metadata,
+      metadata,
     });
 
-    await this.applyOneTimeEffect(profile_id, plan_id, payment_intent.metadata);
+    await this.applyOneTimeEffect(profile_id, plan_id, metadata);
+
+    if (payment_intent_id) {
+      await this.purchase_repository.markEffectApplied(payment_intent_id);
+    }
   }
 
   private async sendCancelScheduledEmail(
@@ -379,13 +411,37 @@ export class StripeWebhookService {
     plan_id: string,
     metadata: Record<string, unknown>,
   ) {
-    const vehicle_id = metadata.vehicle_id;
-    if (typeof vehicle_id !== "string" || !vehicle_id) {
+    const plan = await this.plan_repository.findOne(plan_id);
+    if (!plan) {
       return;
     }
 
-    const plan = await this.plan_repository.findOne(plan_id);
-    if (!plan || plan.toPrimitives().slug !== "destacar-vehiculo") {
+    const primitives = plan.toPrimitives();
+    const effect_config = (primitives.effect_config ?? {}) as PlanEffectConfig;
+    const effect_type = effect_config.type;
+
+    if (effect_type === "assistant_credits") {
+      const credits = effect_config.credits;
+      if (!credits || credits <= 0) {
+        this.logger.warn(
+          `Plan ${plan_id} con assistant_credits sin créditos válidos`,
+        );
+        return;
+      }
+
+      await this.assistant_quota_service.addPurchasedCredits(profile_id, credits);
+      return;
+    }
+
+    const is_feature_vehicle =
+      effect_type === "feature_vehicle" || primitives.slug === "destacar-vehiculo";
+
+    if (!is_feature_vehicle) {
+      return;
+    }
+
+    const vehicle_id = metadata.vehicle_id;
+    if (typeof vehicle_id !== "string" || !vehicle_id) {
       return;
     }
 

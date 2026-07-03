@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { AssistantModule } from "@/src/contexts/assistant/assistant.module";
 import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { Roles } from "@/src/contexts/roles/entities/roles.entity";
@@ -65,6 +66,7 @@ import { StripeBillingAdapter } from "./infrastructure/stripe/stripe-billing.ada
 @Module({
   imports: [
     AuthModule,
+    AssistantModule,
     ProfileModule,
     TypeOrmModule.forFeature([
       SubscriptionPlanEntity,

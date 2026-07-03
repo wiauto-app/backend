@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -19,6 +20,12 @@ import {
 
 import { PlanFeatureHttpDto } from "./plan-feature.http-dto";
 import { PlanPriceHttpDto } from "./plan-price.http-dto";
+import {
+  normalizePlanEffectConfig,
+  PlanEffectConfigHttpDto,
+} from "./plan-effect-config.http-dto";
+
+export { normalizePlanEffectConfig };
 
 export class CreateSubscriptionPlanHttpDto {
   @IsString()
@@ -64,4 +71,10 @@ export class CreateSubscriptionPlanHttpDto {
   @ValidateNested({ each: true })
   @Type(() => PlanFeatureHttpDto)
   features?: PlanFeatureHttpDto[];
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PlanEffectConfigHttpDto)
+  effect_config?: PlanEffectConfigHttpDto;
 }

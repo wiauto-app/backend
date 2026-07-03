@@ -17,7 +17,17 @@ export class LeadNotificationMailService implements LeadNotificationEmailService
   ): Promise<void> {
     await this.outbound_mail_enqueue_service.enqueue_lead_notification({
       to: payload.to,
-      lead: payload.lead,
+      lead: {
+        type: payload.lead.type,
+        name: payload.lead.name,
+        email: payload.lead.email,
+        phone: payload.lead.phone,
+        phone_code: payload.lead.phone_code,
+        message: payload.lead.message,
+        callback_scheduled_at: payload.lead.callback_scheduled_at
+          ? new Date(payload.lead.callback_scheduled_at).toISOString().slice(0, 10)
+          : null,
+      },
       vehicle_title: payload.vehicle_title,
     });
   }

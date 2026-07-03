@@ -1,3 +1,5 @@
+import type { ContactClickType } from "../entities/contact-click";
+
 export interface VehiclePeriodCounts {
   vehicle_id: string;
   current: number;
@@ -28,6 +30,14 @@ export abstract class VehicleAnalyticsRepository {
 
   abstract countFavoritesByVehicleIdsInPeriods(
     vehicle_ids: string[],
+    current_start: Date,
+    previous_start: Date,
+    period_end: Date,
+  ): Promise<VehiclePeriodCounts[]>;
+
+  abstract countContactClicksByVehicleIdsInPeriods(
+    vehicle_ids: string[],
+    type: ContactClickType,
     current_start: Date,
     previous_start: Date,
     period_end: Date,

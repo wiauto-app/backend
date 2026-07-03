@@ -1,3 +1,19 @@
+export type PlanEffectConfigType = "assistant_credits" | "feature_vehicle";
+
+export interface AssistantCreditsEffectConfig {
+  type: "assistant_credits";
+  credits: number;
+}
+
+export interface FeatureVehicleEffectConfig {
+  type: "feature_vehicle";
+}
+
+export type PlanEffectConfig =
+  | AssistantCreditsEffectConfig
+  | FeatureVehicleEffectConfig
+  | Record<string, never>;
+
 export type PrimitivePlanFeature = {
   id?: string;
   plan_id?: string;
@@ -29,6 +45,7 @@ export type PrimitiveSubscriptionPlan = {
   is_active: boolean;
   is_featured: boolean;
   sort_order: number;
+  effect_config?: PlanEffectConfig;
   prices?: PrimitivePlanPrice[];
   features?: PrimitivePlanFeature[];
   created_at?: Date;

@@ -80,4 +80,12 @@ export class CatalogModelsUseCase {
     const models = await this.repository.findSearchModels(filter);
     return { models };
   }
+
+  async findGlobalSearchModels(
+    search: string,
+    limit = 15,
+  ): Promise<{ models: CatalogModelSearchItem[] }> {
+    const models = await this.repository.findGlobalSearchModels(search, limit);
+    return { models };
+  }
 }

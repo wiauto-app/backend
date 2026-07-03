@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 
 import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
-import { PrimitiveLead } from "../../domain/entities/lead";
+import { LEAD_TYPE, LeadType, PrimitiveLead } from "../../domain/entities/lead";
 import { VehicleEntity } from "./vehicle.entity";
 
 @Entity({ name: "leads" })
@@ -21,20 +21,27 @@ export class LeadEntity implements PrimitiveLead {
   @Column()
   vehicle_id: string;
 
+  @Column({ type: "enum", enum: LEAD_TYPE, default: LEAD_TYPE.CONTACT })
+  type: LeadType;
+
   @Column()
   name: string;
 
-  @Column()
-  email: string;
+  @Column({ type: "varchar", nullable: true })
+  email: string | null;
 
+  
   @Column({ type: "varchar", nullable: true })
   phone: string | null;
 
   @Column({ type: "varchar", nullable: true })
   phone_code: string | null;
 
-  @Column()
-  message: string;
+  @Column({ type: "varchar", nullable: true })
+  message: string | null;
+
+  @Column({ type: "date", nullable: true })
+  callback_scheduled_at: Date | null;
 
   @Column({ type: "uuid", nullable: true })
   profile_id: string | null;

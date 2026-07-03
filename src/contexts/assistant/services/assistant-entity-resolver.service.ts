@@ -65,14 +65,15 @@ export class AssistantEntityResolverService {
     const make_slug = intent.make
       ? await this.resolveMakeSlug(intent.make)
       : undefined;
-    const model_slug =
-      intent.model && make_slug
+    const model_slug = intent.model
+      ? make_slug
         ? await this.resolveModelSlug(intent.model, make_slug)
-        : undefined;
+        : await this.resolveModelSlugGlobal(intent.model)
+      : undefined;
 
     return {
-      make_slug,
-      model_slug,
+      make_slug: intent.make ? make_slug : undefined,
+      model_slug: intent.model ? model_slug : undefined,
       lat: intent.lat,
       lng: intent.lng,
     };
@@ -135,6 +136,19 @@ export class AssistantEntityResolverService {
     ]);
 
     const candidates = mergeUniqueBySlug([...byText.models, ...bySlug.models]);
+    return rankCandidate(candidates, query, slugifiedQuery)?.slug;
+  }
+
+  private async resolveModelSlugGlobal(text: string): Promise<string | undefined> {
+    const query = text.trim();
+    const slugifiedQuery = slugify(query);
+
+    const { models } = await this.catalogModelsUseCase.findGlobalSearchModels(
+      query,
+      SEARCH_LIMIT,
+    );
+
+    const candidates = mergeUniqueBySlug(models);
     return rankCandidate(candidates, query, slugifiedQuery)?.slug;
   }
 

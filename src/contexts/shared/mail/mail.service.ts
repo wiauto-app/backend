@@ -76,19 +76,38 @@ export class MailService {
     to: string;
     vehicle_title: string;
     lead: {
+      type: string;
       name: string;
-      email: string;
+      email: string | null;
       phone: string | null;
       phone_code: string | null;
-      message: string;
+      message: string | null;
+      callback_scheduled_at: Date | string | null;
     };
   }): Promise<void> {
-    const html = this.mail_template_renderer.renderLeadNotification(payload);
+    const html = this.mail_template_renderer.renderLeadNotification({
+      vehicle_title: payload.vehicle_title,
+      lead: {
+        type: payload.lead.type,
+        name: payload.lead.name,
+        email: payload.lead.email,
+        phone: payload.lead.phone,
+        phone_code: payload.lead.phone_code,
+        message: payload.lead.message,
+        callback_scheduled_at: payload.lead.callback_scheduled_at
+          ? new Date(payload.lead.callback_scheduled_at).toISOString().slice(0, 10)
+          : null,
+      },
+    });
+
+    const is_call_me = payload.lead.type === "call_me";
 
     try {
       await this.mailerService.sendMail({
         to: payload.to,
-        subject: `Nueva consulta sobre ${payload.vehicle_title}`,
+        subject: is_call_me
+          ? `Solicitud de llamada sobre ${payload.vehicle_title}`
+          : `Nueva consulta sobre ${payload.vehicle_title}`,
         html,
       });
     } catch (error) {

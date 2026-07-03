@@ -5,9 +5,11 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { ChatModule } from "@/src/contexts/chat/modules/chat.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 
+import { CreateCallMeLeadUseCase } from "../application/leads/create-call-me-lead-use-case/create-call-me-lead.use-case";
 import { CreateLeadUseCase } from "../application/leads/create-lead-use-case/create-lead.use-case";
 import { LeadNotificationEmailService } from "../application/ports/lead-notification-email.port";
 import { LeadRepository } from "../domain/repositories/lead.repository";
+import { CreateCallMeLeadController } from "../infrastructure/http-api/v1/leads/create-call-me-lead.controller";
 import { CreateLeadController } from "../infrastructure/http-api/v1/leads/create-lead.controller";
 import { LeadEntity } from "../infrastructure/persistence/lead.entity";
 import { TypeOrmLeadRepository } from "../infrastructure/repositories/typeorm.lead-repository";
@@ -22,9 +24,10 @@ import { VehiclesModule } from "../vehicles.module";
     ProfileModule,
     AuthModule,
   ],
-  controllers: [CreateLeadController],
+  controllers: [CreateLeadController, CreateCallMeLeadController],
   providers: [
     CreateLeadUseCase,
+    CreateCallMeLeadUseCase,
     TypeOrmLeadRepository,
     LeadNotificationMailService,
     {
@@ -36,6 +39,6 @@ import { VehiclesModule } from "../vehicles.module";
       useExisting: LeadNotificationMailService,
     },
   ],
-  exports: [LeadRepository, CreateLeadUseCase],
+  exports: [LeadRepository, CreateLeadUseCase, CreateCallMeLeadUseCase],
 })
 export class LeadsModule {}

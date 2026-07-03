@@ -62,6 +62,8 @@ export interface PrimitiveVehicle {
   vin_code?: string;
   phone_code: string;
   phone: string;
+  has_whatsapp?: boolean;
+  show_phone?: boolean;
   email: string;
   created_at?: Date;
   updated_at?: Date;
@@ -97,6 +99,8 @@ export class Vehicle {
     version_id: number;
     phone_code: string;
     phone: string;
+    has_whatsapp?: boolean;
+    show_phone?: boolean;
     email: string;
     features_ids: string[];
     services_ids?: string[];
@@ -122,6 +126,8 @@ export class Vehicle {
   }): Vehicle {
     return new Vehicle({
       ...createVehicle,
+      has_whatsapp: createVehicle.has_whatsapp ?? false,
+      show_phone: createVehicle.show_phone ?? true,
       traction_id: createVehicle.traction_id ?? null,
       address: createVehicle.address ?? null,
       address_details: createVehicle.address_details ?? null,
@@ -173,6 +179,8 @@ export class Vehicle {
       vin_code: this.primitiveVehicle.vin_code,
       phone_code: this.primitiveVehicle.phone_code,
       phone: this.primitiveVehicle.phone,
+      has_whatsapp: this.primitiveVehicle.has_whatsapp ?? false,
+      show_phone: this.primitiveVehicle.show_phone ?? true,
       email: this.primitiveVehicle.email,
       features_ids: this.primitiveVehicle.features_ids,
       services_ids: this.primitiveVehicle.services_ids,

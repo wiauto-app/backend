@@ -28,6 +28,7 @@ export interface PlanCatalogItem {
   billing_type: string;
   is_featured: boolean;
   sort_order: number;
+  effect_config?: Record<string, unknown>;
   prices: PlanCatalogPrice[];
   features: PlanCatalogFeature[];
 };
@@ -129,6 +130,15 @@ export abstract class OneTimePurchaseRepository {
     status: string;
     metadata: Record<string, unknown>;
   }): Promise<void>;
+  abstract findByStripePaymentIntentId(
+    stripe_payment_intent_id: string,
+  ): Promise<{
+    id: string;
+    metadata: Record<string, unknown>;
+  } | null>;
+  abstract markEffectApplied(
+    stripe_payment_intent_id: string,
+  ): Promise<void>;
 }
 
 export abstract class StripeWebhookEventRepository {

@@ -28,6 +28,7 @@ const entity_to_plan = (entity: SubscriptionPlanEntity): SubscriptionPlan =>
     is_active: entity.is_active,
     is_featured: entity.is_featured,
     sort_order: entity.sort_order,
+    effect_config: (entity.effect_config ?? {}) as PrimitiveSubscriptionPlan["effect_config"],
     created_at: entity.created_at,
     updated_at: entity.updated_at,
     prices: entity.prices?.map((price) => ({
@@ -75,6 +76,7 @@ export class TypeOrmSubscriptionPlanRepository extends SubscriptionPlanRepositor
       is_active: p.is_active,
       is_featured: p.is_featured,
       sort_order: p.sort_order,
+      effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
     });
 
     if (p.prices?.length) {
@@ -101,6 +103,7 @@ export class TypeOrmSubscriptionPlanRepository extends SubscriptionPlanRepositor
       is_active: p.is_active,
       is_featured: p.is_featured,
       sort_order: p.sort_order,
+      effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
     });
 
     if (!preloaded) {
