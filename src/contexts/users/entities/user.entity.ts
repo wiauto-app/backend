@@ -6,12 +6,14 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { SuspensionDurationType } from "./suspension_duration_type.entity";
+import { UserAuthProvider } from "./user-auth-provider.entity";
 
 export type AuthProvider = "local" | "google" | "apple";
 
@@ -26,12 +28,6 @@ export class User {
 
   @Column({ type: "varchar", nullable: true,select: false })
   password: string | null;
-
-  @Column({ type: "varchar", default: "local" })
-  provider: AuthProvider;
-
-  @Column({ type: "varchar", nullable: true })
-  provider_id: string | null;
 
   @Column("timestamp", { nullable: true })
   last_sign_in: Date;
@@ -79,4 +75,7 @@ export class User {
 
   @OneToOne(() => ProfileEntity, (profile) => profile.user, { onDelete: "CASCADE" })
   profile: Relation<ProfileEntity>;
+
+  @OneToMany(() => UserAuthProvider, (authProvider) => authProvider.user)
+  auth_providers: Relation<UserAuthProvider[]>;
 }

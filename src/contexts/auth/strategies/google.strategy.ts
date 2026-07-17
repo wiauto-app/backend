@@ -7,7 +7,7 @@ import { envs } from "@/src/common/envs";
 export interface OAuthProfile {
   provider: "google" | "apple";
   provider_id: string;
-  email: string;
+  email?: string | null;
   first_name: string;
   last_name?: string;
 }

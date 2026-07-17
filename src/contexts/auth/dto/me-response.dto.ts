@@ -11,10 +11,18 @@ export class MeDealershipMembershipDto {
   role: "owner" | "admin" | "member";
 }
 
+interface MeResponseFromUserOptions {
+  providers: AuthProvider[];
+  has_password: boolean;
+  scope?: "session" | "2fa_challenge";
+  dealership_membership?: DealershipMembershipDetail | null;
+}
+
 export class MeResponseDto {
   id: string;
   email: string;
-  provider: AuthProvider;
+  providers: AuthProvider[];
+  has_password: boolean;
   name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -31,14 +39,14 @@ export class MeResponseDto {
   dealership_membership?: MeDealershipMembershipDto | null;
   static fromUser(
     user: User,
-    scope?: "session" | "2fa_challenge",
-    dealership_membership?: DealershipMembershipDetail | null,
+    options: MeResponseFromUserOptions,
   ): MeResponseDto {
     const { profile } = user;
     const dto = new MeResponseDto();
     dto.id = user.id;
     dto.email = user.email;
-    dto.provider = user.provider;
+    dto.providers = options.providers;
+    dto.has_password = options.has_password;
     dto.last_sign_in = user.last_sign_in;
     dto.created_at = user.created_at;
     dto.name = profile.name;
@@ -48,15 +56,15 @@ export class MeResponseDto {
     dto.phone_code = profile.phone_code ?? undefined;
     dto.phone = profile.phone ?? undefined;
     dto.dni = profile.dni ?? undefined;
-    dto.type = scope === "2fa_challenge" ? "2fa_challenge" : "session";
+    dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.vehicle_lists = profile.vehicle_lists;
     dto.userType = profile.type;
-    dto.dealership_membership = dealership_membership
+    dto.dealership_membership = options.dealership_membership
       ? {
-          dealership_id: dealership_membership.dealership_id,
-          dealership_name: dealership_membership.dealership_name,
-          member_id: dealership_membership.member_id,
-          role: dealership_membership.role,
+          dealership_id: options.dealership_membership.dealership_id,
+          dealership_name: options.dealership_membership.dealership_name,
+          member_id: options.dealership_membership.member_id,
+          role: options.dealership_membership.role,
         }
       : null;
     return dto;

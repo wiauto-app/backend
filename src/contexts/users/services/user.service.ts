@@ -12,7 +12,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { VehicleEntity } from "../../vehicles/entities/vehicle.entity";
-import { AuthProvider, User } from "../entities/user.entity";
+import { User } from "../entities/user.entity";
+import { OAuthProvider } from "../entities/user-auth-provider.entity";
 import { RegisterUserDto } from '../dto/register-user.dto'
 import { PasswordService } from "../../auth/services/password.service";
 import { UpdateEmailDto } from "../dto/update-email.dto";
@@ -23,6 +24,17 @@ import { ProfileService } from "../../profiles/services/profile.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { EmailVerificationService } from "../../auth/services/email-verification.service";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
+import { UserAuthProviderService } from "./user-auth-provider.service";
+import { authResponseConfig } from "../../auth/response.config";
+
+interface FindOrCreateOAuthUserProfile {
+  provider: OAuthProvider;
+  provider_id: string;
+  email?: string | null;
+  first_name: string;
+  last_name?: string | null;
+  role_id: string;
+}
 
 @Injectable()
 export class UserService {
@@ -36,6 +48,7 @@ export class UserService {
     private readonly passwordService: PasswordService,
     private readonly profileService: ProfileService,
     private readonly profileRepository: TypeOrmProfileRepository,
+    private readonly userAuthProviderService: UserAuthProviderService,
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
   ) { }
@@ -77,39 +90,47 @@ export class UserService {
     user.password = null;
     user.two_factor_backup_codes = null;
     user.two_factor_secret = null;
-    user.provider_id = null;
     return {
       message: "Te enviamos un correo con el enlace de verificación.",
       data: user,
     };
   }
 
-  async findOrCreateOAuthUser(profile: {
-    provider: Exclude<AuthProvider, "local">;
-    provider_id: string;
-    email: string;
-    first_name: string;
-    last_name?: string | null;
-    role_id: string;
-  }): Promise<User> {
-    const existing = await this.userRepository.findOne({ where: { email: profile.email } });
+  async findOrCreateOAuthUser(
+    profile: FindOrCreateOAuthUserProfile,
+  ): Promise<User> {
+    const existingByProvider = await this.userAuthProviderService.findByProvider(
+      profile.provider,
+      profile.provider_id,
+    );
+    if (existingByProvider) {
+      return existingByProvider;
+    }
 
-    if (existing) {
-      const shouldLink = existing.provider === "local" || existing.provider_id !== profile.provider_id;
-      if (shouldLink) {
-        existing.provider = profile.provider;
-        existing.provider_id = profile.provider_id;
-        await this.userRepository.save(existing);
+    const email = profile.email?.trim();
+    if (!email) {
+      throw new UnauthorizedException(
+        authResponseConfig.messages.OAUTH_EMAIL_REQUIRED,
+      );
+    }
 
-      }
-      return existing;
+    const existingByEmail = await this.userRepository.findOne({
+      where: { email },
+      relations: ["profile", "profile.role"],
+    });
+
+    if (existingByEmail) {
+      await this.userAuthProviderService.linkProvider(
+        existingByEmail.id,
+        profile.provider,
+        profile.provider_id,
+      );
+      return existingByEmail;
     }
 
     const created = this.userRepository.create({
-      email: profile.email,
+      email,
       password: null,
-      provider: profile.provider,
-      provider_id: profile.provider_id,
       is_email_verified: true,
     });
     const saved = await this.userRepository.save(created);
@@ -119,6 +140,11 @@ export class UserService {
       last_name: profile.last_name ?? undefined,
       role_id: profile.role_id,
     });
+    await this.userAuthProviderService.linkProvider(
+      saved.id,
+      profile.provider,
+      profile.provider_id,
+    );
     saved.password = null;
     return saved;
   }
@@ -128,7 +154,7 @@ export class UserService {
       where: {
         email: getUserByEmailDto.email
       },
-      ...(getUserByEmailDto.selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] })
+      ...(getUserByEmailDto.selectPrivateFields && { select: ["id", "email", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] })
     })
 
     if (!user) {
@@ -143,7 +169,7 @@ export class UserService {
       where: {
         email
       },
-      select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"],
+      select: ["id", "email", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password", "is_suspended"],
       relations: ["profile", "profile.role"]
     })
     if (!user) {
@@ -186,7 +212,7 @@ export class UserService {
       where: {
         id
       },
-      ...(selectPrivateFields && { select: ["id", "email", "provider", "provider_id", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
+      ...(selectPrivateFields && { select: ["id", "email", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
       relations: ["profile", "profile.role", "profile.vehicle_lists", "profile.vehicle_lists.items"]
     })
 
@@ -253,20 +279,31 @@ export class UserService {
   }
 
   async resetPassword(id: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository
+      .createQueryBuilder("user")
+      .addSelect("user.password")
+      .where("user.id = :id", { id })
+      .getOne();
 
     if (!user) {
       throw new NotFoundException("No se ha encontrado el usuario");
     }
 
-    if (user.provider !== "local") {
+    if (!user.password) {
       throw new UnauthorizedException(
         "Este usuario se autentica con un proveedor externo y no tiene contraseña que restablecer"
       );
     }
 
     const hashedPassword = await this.passwordService.hashPassword(newPassword);
-    await this.userRepository.update(id, { password: hashedPassword });
+    const updated = await this.userRepository.preload({
+      id,
+      password: hashedPassword,
+    });
+    if (!updated) {
+      throw new NotFoundException("No se ha encontrado el usuario");
+    }
+    await this.userRepository.save(updated);
   }
 
   async updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): Promise<ApiResponse<null>> {
@@ -280,14 +317,10 @@ export class UserService {
       throw new NotFoundException("No se ha encontrado el usuario");
     }
 
-    if (user.provider !== "local") {
+    if (!user.password) {
       throw new UnauthorizedException(
         "Este usuario se autentica con un proveedor externo y no tiene contraseña que cambiar",
       );
-    }
-
-    if (!user.password) {
-      throw new UnauthorizedException("La contraseña ingresada no es correcta");
     }
 
     const is_valid_password = await this.passwordService.comparePassword(
@@ -302,9 +335,14 @@ export class UserService {
       updatePasswordDto.password,
     );
 
-    await this.userRepository.update(id, {
+    const updated = await this.userRepository.preload({
+      id,
       password: hashed_password,
     });
+    if (!updated) {
+      throw new NotFoundException("No se ha encontrado el usuario");
+    }
+    await this.userRepository.save(updated);
 
     return {
       message: "Contraseña actualizada correctamente",

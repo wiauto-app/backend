@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { Request } from "express";
@@ -24,7 +24,6 @@ import { hashToken } from "../../shared/token_management/hash_token";
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly userService: UserService,
     private readonly suspensionService: SuspensionService,
@@ -45,7 +44,7 @@ export class AuthService {
     ignorePassword?: boolean
   }): Promise<SignInResult> {
     const user = await this.userService.findOneByEmailWithPassword(loginDto.email);
-    if (user.provider !== "local" || !user.password) {
+    if (!user.password) {
       throw new UnauthorizedException(
         authResponseConfig.messages.DIFFERENT_PROVIDER,
       );
@@ -73,10 +72,6 @@ export class AuthService {
   }
 
   async signInWithOAuthProfile(profile: OAuthProfile, request: Request): Promise<SignInResult> {
-    if (!profile.email) {
-      this.logger.error("El proveedor no devolvió un email");
-      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
-    }
     const role = await this.roleService.findDefault();
     if (!role) {
       throw new UnauthorizedException(authResponseConfig.messages.ROLE_NOT_FOUND);

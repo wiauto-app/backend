@@ -1,14 +1,14 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 
-import { Profile, PrimitiveProfile, PrimitiveProfileRole } from "../types/profile";
+import { Profile, PrimitiveProfile, PrimitiveProfileRole, PrimitiveUser } from "../types/profile";
 import { ProfileEntity } from "../entities/profile.entity";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { ProfileFilter } from "../types/profile.filter";
-import { User } from "@/src/contexts/users/entities/user.entity";
+import { AuthProvider, User } from "@/src/contexts/users/entities/user.entity";
 
 function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole | null {
   if (!role) {
@@ -24,13 +24,30 @@ function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole |
   };
 }
 
+function resolve_user_providers(user: User): Pick<PrimitiveUser, "providers" | "has_password"> {
+  const has_password = Boolean(user.password);
+  const providers: AuthProvider[] = [];
 
-function user_to_primitives(user: User) {
+  if (has_password) {
+    providers.push("local");
+  }
+
+  for (const identity of user.auth_providers ?? []) {
+    providers.push(identity.provider);
+  }
+
+  return { providers, has_password };
+}
+
+function user_to_primitives(user: User): PrimitiveUser {
+  const identity = resolve_user_providers(user);
+
   return {
     id: user.id,
     email: user.email,
+    providers: identity.providers,
+    has_password: identity.has_password,
     last_sign_in: user.last_sign_in,
-    provider: user.provider,
     is_email_verified: user.is_email_verified,
     two_factor_enabled: user.two_factor_enabled,
     is_suspended: user.is_suspended,
@@ -83,6 +100,8 @@ export class TypeOrmProfileRepository {
     const qb = this.profileRepository.createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
+      .leftJoinAndSelect("user.auth_providers", "auth_providers")
+      .addSelect("user.password")
       .skip(skip)
       .take(filter.limit);
 
@@ -110,38 +129,36 @@ export class TypeOrmProfileRepository {
   }
 
   async findOne(id: string): Promise<Profile | null> {
-    const entity = await this.profileRepository.findOne({
-      where: { id },
-      relations: { role: true, user: true },
-    });
+    const entity = await this.profileRepository
+      .createQueryBuilder("p")
+      .leftJoinAndSelect("p.role", "role")
+      .leftJoinAndSelect("p.user", "user")
+      .leftJoinAndSelect("user.auth_providers", "auth_providers")
+      .addSelect("user.password")
+      .where("p.id = :id", { id })
+      .getOne();
 
     if (!entity) {
       return null;
     }
 
-    return Profile.fromPrimitives({
-      id: entity.id,
-      name: entity.name,
-      last_name: entity.last_name ?? undefined,
-      avatar_url: entity.avatar_url ,
-      image_url: entity.image_url,
-      role_id: entity.role?.id ?? "",
-      role: entity.role,
-      user: entity.user,
-    });
+    return Profile.fromPrimitives(entity_to_primitives(entity));
   }
 
   async findByEmail(email: string): Promise<Profile | null> {
-    const entity = await this.profileRepository.findOne({
-      where: { user: { email } },
-      relations: { role: true, user: true },
-    });
+    const entity = await this.profileRepository
+      .createQueryBuilder("p")
+      .leftJoinAndSelect("p.role", "role")
+      .leftJoinAndSelect("p.user", "user")
+      .leftJoinAndSelect("user.auth_providers", "auth_providers")
+      .addSelect("user.password")
+      .where("user.email = :email", { email })
+      .getOne();
 
     if (!entity) {
       return null;
     }
-    const prifile = Profile.fromPrimitives(entity_to_primitives(entity));
-    return prifile;
+    return Profile.fromPrimitives(entity_to_primitives(entity));
   }
 
   async findByIds(ids: string[]): Promise<Profile[]> {
@@ -149,10 +166,14 @@ export class TypeOrmProfileRepository {
       return [];
     }
 
-    const rows = await this.profileRepository.find({
-      where: { id: In(ids) },
-      relations: { role: true, user: true },
-    });
+    const rows = await this.profileRepository
+      .createQueryBuilder("p")
+      .leftJoinAndSelect("p.role", "role")
+      .leftJoinAndSelect("p.user", "user")
+      .leftJoinAndSelect("user.auth_providers", "auth_providers")
+      .addSelect("user.password")
+      .where("p.id IN (:...ids)", { ids })
+      .getMany();
 
     return rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row)));
   }

@@ -37,7 +37,6 @@ export class AdminUserService {
         email: createUserDto.email,
         password: hashed_password,
         is_email_verified: true,
-        provider: "local",
       });
       const saved_user = await user_repository.save(created_user);
 

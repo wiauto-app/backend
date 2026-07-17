@@ -219,7 +219,6 @@ export class BillingSubscriptionProvisioningService {
       email,
       password: hashed_password,
       is_email_verified: true,
-      provider: "local",
     });
     const saved_user = await this.user_repository.save(created_user);
 

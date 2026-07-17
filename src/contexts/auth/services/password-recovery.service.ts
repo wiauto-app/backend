@@ -30,7 +30,10 @@ export class PasswordRecoveryService {
   async requestRecovery(email: string): Promise<void> {
     let user;
     try {
-      user = await this.userService.getUserByEmail({ email });
+      user = await this.userService.getUserByEmail({
+        email,
+        selectPrivateFields: true,
+      });
     } catch (error) {
       if (error instanceof NotFoundException) {
         this.logger.debug(`Password recovery requested for unknown email: ${email}`);
@@ -39,8 +42,8 @@ export class PasswordRecoveryService {
       throw error;
     }
 
-    if (user.provider !== "local") {
-      this.logger.debug(`Password recovery requested for non-local email: ${email}`);
+    if (!user.password) {
+      this.logger.debug(`Password recovery requested for account without password: ${email}`);
       return;
     }
 
@@ -76,7 +79,7 @@ export class PasswordRecoveryService {
       throw error;
     }
 
-    if (user.provider !== "local" || !user.profile.role) {
+    if (!user.password || !user.profile.role) {
       this.logger.debug(`Admin password recovery requested for invalid account: ${email}`);
       return;
     }
@@ -106,11 +109,7 @@ export class PasswordRecoveryService {
 
     const user = await this.userService.findOne(payload.sub);
     const role = user.profile.role;
-    if (
-      user.provider !== "local" ||
-      !role ||
-      (!role.is_admin && !role.is_developer)
-    ) {
+    if (!role || (!role.is_admin && !role.is_developer)) {
       throw new UnauthorizedException(authResponseConfig.messages.NO_ADMIN);
     }
 

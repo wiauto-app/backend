@@ -55,11 +55,15 @@ export class EmailVerificationService {
       return;
     }
 
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user || user.provider !== "local" || user.is_email_verified) {
+    const user = await this.userRepository
+      .createQueryBuilder("user")
+      .addSelect("user.password")
+      .where("user.email = :email", { email })
+      .getOne();
+    if (!user || !user.password || user.is_email_verified) {
       this.logger.debug(
         user
-          ? `Reenvío de verificación no aplicable (provider=${user.provider}, verificado=${user.is_email_verified})`
+          ? `Reenvío de verificación no aplicable (has_password=${Boolean(user.password)}, verificado=${user.is_email_verified})`
           : `Reenvío de verificación solicitado para correo no registrado`,
       );
       return;

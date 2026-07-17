@@ -1,3 +1,5 @@
+import type { AuthProvider } from "@/src/contexts/users/entities/user.entity";
+
 import { CreateProfilePayload } from "../types/create-profile.payload";
 import { UpdateProfilePayload } from "../types/update-profile.payload";
 
@@ -12,6 +14,8 @@ export interface PrimitiveProfileRole {
 export interface PrimitiveUser {
   id: string;
   email: string;
+  providers: AuthProvider[];
+  has_password: boolean;
   last_sign_in: Date;
   is_email_verified: boolean;
   two_factor_enabled: boolean;
