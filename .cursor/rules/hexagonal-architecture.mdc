@@ -1,113 +1,18 @@
 ---
-description: Arquitectura hexagonal (ports & adapters) en bounded contexts de wiauto-backend
+description: OBSOLETO — usar Nest lite. No reintroducir capas hexagonales.
 globs: src/contexts/**/*
 alwaysApply: false
 ---
 
-# Arquitectura hexagonal en wiauto-backend
+# Obsoleto: arquitectura hexagonal
 
-El backend organiza cada **bounded context** bajo `src/contexts/<nombre>/`. La dependencia apunta siempre hacia el dominio: infraestructura y aplicación dependen del dominio, nunca al revés.
+Esta regla quedó **obsoleta**. El backend migró a **Nest lite**.
 
-## Capas y carpetas
+Seguir: [`docs/architecture-nest-lite.md`](../../docs/architecture-nest-lite.md)
 
-| Capa | Carpeta | Responsabilidad |
-|------|---------|-----------------|
-| Dominio | `domain/` | Entidades, reglas, puertos (repos abstractos), excepciones, read-models, filtros |
-| Aplicación | `application/` | Casos de uso: orquestan dominio + puertos |
-| Infraestructura | `infrastructure/` | Adaptadores: HTTP, TypeORM, guards, etc. |
-| Composición | `modules/*.module.ts` | Wiring NestJS (DI, controllers, providers) |
+## No hacer
 
-```text
-src/contexts/vehicles/
-  domain/
-    entities/vehicle.ts
-    repositories/vehicle.repository.ts      # puerto (abstract)
-    exceptions/vehicle-not-found.exception.ts
-    read-models/admin-vehicle-detail.ts
-  application/
-    vehicle/create-vehicle-use-case/
-      create-vehicle.dto.ts                   # DTO aplicación (sin class-validator)
-      create-vehicle.use-case.ts
-  infrastructure/
-    persistence/vehicle.entity.ts           # adaptador BD
-    repositories/typeorm.vehicle-repository.ts
-    http-api/v1/create-vehicle/               # adaptador HTTP
-  vehicles.module.ts
-```
-
-## Puertos y adaptadores
-
-- **Puerto saliente**: clase `abstract` en `domain/repositories/*.repository.ts`. El caso de uso solo conoce el abstracto.
-- **Adaptador saliente**: `TypeOrm*Repository` en `infrastructure/repositories/`, registrado con `provide: XRepository, useExisting: TypeOrmXRepository`.
-- **Adaptador entrante**: controllers en `infrastructure/http-api/`; convierten HTTP DTO → DTO de aplicación → `useCase.execute(...)`.
-- **Validación**: `class-validator` en HTTP DTOs (`*.http-dto.ts`), no en DTOs de aplicación.
-
-## Casos de uso
-
-- Un caso de uso = una carpeta `*-use-case/` con `*.dto.ts` + `*.use-case.ts`.
-- Clase `@Injectable()` desde `@/src/contexts/shared/dependency-injectable/injectable`.
-- Método público: `execute(dto)` (camelCase).
-- Orquestación: crear/actualizar entidad de dominio, llamar repositorio, lanzar excepción de dominio si no existe.
-- Listados paginados: construir `PaginationFilter` y retornar `PaginatedResult<T>` del repositorio.
-
-```typescript
-// ✅ Caso de uso: solo puertos y dominio
-@Injectable()
-export class FindChatUseCase {
-  constructor(private readonly chat_repository: ChatRepository) {}
-
-  async execute(dto: FindChatDto): Promise<Chat> {
-    const chat = await this.chat_repository.findOne(dto.id);
-    if (!chat) throw new ChatNotFoundException(dto.id);
-    return chat;
-  }
-}
-```
-
-## Entidades de dominio
-
-Dos estilos coexisten; al añadir código, **imita el contexto vecino**:
-
-1. **Inmutable + primitivos** (`vehicles`, `categories`): `PrimitiveX`, `create`, `fromPrimitives`, `toPrimitives`, `update`/`applyUpdates`.
-2. **Mutable con factory** (`chat`): propiedades públicas, `static create`, `update` que devuelve nueva instancia.
-
-El dominio **no importa** NestJS, TypeORM ni HTTP.
-
-## Infraestructura TypeORM
-
-- Entidades en `infrastructure/persistence/` (`@Entity`, columnas snake_case).
-- Actualizar filas: **`preload` + `save`** (no `repository.update()` salvo patrón ya existente en ese archivo).
-- Mapeo fila ↔ dominio en el repositorio concreto (`entity_to_primitives`, `fromPrimitives`, etc.).
-
-## Read models y filtros
-
-- Proyecciones de lectura (listados, detalle admin): `domain/read-models/`.
-- Filtros de consulta: `domain/filters/`; paginación compartida: `PaginationFilter` + `PaginationHttpDto` en el borde HTTP.
-
-## Reglas de dependencia (no romper)
-
-```text
-infrastructure/http-api  →  application  →  domain
-infrastructure/repositories  →  domain
-domain  →  (solo shared/domain puro: PaginatedResult, filtros genéricos)
-```
-
-- ❌ Dominio que importe `VehicleEntity` o un controller.
-- ❌ Caso de uso que importe TypeORM o DTOs HTTP.
-- ❌ Lógica de negocio en controllers o repositorios (solo mapeo y persistencia).
-
-## Convenciones de nombres
-
-- **snake_case**: propiedades, columnas, variables de datos, campos de DTO.
-- **camelCase**: métodos (`execute`, `findOne`, `create`).
-- Rutas API: `infrastructure/http-api/route.constants.ts` (p. ej. `V1_CATEGORIES = "v1/categories"`).
-
-## Tests
-
-- No co-localizar tests en `src/`. Espejar ruta en `tests/unit/` o `tests/e2e/`.
-- Casos de uso: unit tests con repositorios fake que implementen el abstracto.
-
-## Relación con otras reglas
-
-- Checklist CRUD nuevo: regla **`new-entity-bounded-context`**.
-- Colección Postman: regla **`postman-collection-sync`**.
+- No crear carpetas `domain/`, `application/`, `infrastructure/`, ni `*-use-case/`.
+- No crear `abstract class XxxRepository` ni `provide`/`useExisting` para repos TypeORM.
+- Controllers van en `api/`; entities TypeORM en `entities/`; lógica en `services/`.
+- `clients/` / `ports/` solo para APIs externas (Minio, Stripe, OpenSearch, etc.).

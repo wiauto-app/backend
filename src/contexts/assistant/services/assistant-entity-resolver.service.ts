@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
-import { MakesUseCase } from "@/src/contexts/vehicles/catalog/makes/application/makes-use-cases/makes.use-case";
-import { CatalogModelsUseCase } from "@/src/contexts/vehicles/catalog/models/application/catalog-models-use-cases/catalog-models.use-case";
+import { MakesService } from "@/src/contexts/vehicles/catalog/makes/services/makes.service";
+import { CatalogModelsService } from "@/src/contexts/vehicles/catalog/models/services/catalog-models.service";
 import { AssistantIntent } from "../types/assistant-intent";
 import { AssistantResolvedEntities } from "../types/assistant-resolved-entities";
 
@@ -57,8 +57,8 @@ const rankCandidate = (
 @Injectable()
 export class AssistantEntityResolverService {
   constructor(
-    private readonly makesUseCase: MakesUseCase,
-    private readonly catalogModelsUseCase: CatalogModelsUseCase,
+    private readonly makesService: MakesService,
+    private readonly catalogModelsService: CatalogModelsService,
   ) {}
 
   async resolve(intent: AssistantIntent): Promise<AssistantResolvedEntities> {
@@ -84,7 +84,7 @@ export class AssistantEntityResolverService {
     const slugifiedQuery = slugify(query);
 
     const [byText, bySlug] = await Promise.all([
-      this.makesUseCase.findSearchMakes({
+      this.makesService.findSearchMakes({
         search: query,
         limit: SEARCH_LIMIT,
         page: 1,
@@ -92,7 +92,7 @@ export class AssistantEntityResolverService {
       }),
       query === slugifiedQuery
         ? Promise.resolve({ makes: [] as SlugNameCandidate[] })
-        : this.makesUseCase.findSearchMakes({
+        : this.makesService.findSearchMakes({
             search: slugifiedQuery,
             limit: SEARCH_LIMIT,
             page: 1,
@@ -117,7 +117,7 @@ export class AssistantEntityResolverService {
     const slugifiedQuery = slugify(query);
 
     const [byText, bySlug] = await Promise.all([
-      this.catalogModelsUseCase.findSearchModels({
+      this.catalogModelsService.findSearchModels({
         make_id,
         search: query,
         limit: SEARCH_LIMIT,
@@ -126,7 +126,7 @@ export class AssistantEntityResolverService {
       }),
       query === slugifiedQuery
         ? Promise.resolve({ models: [] as SlugNameCandidate[] })
-        : this.catalogModelsUseCase.findSearchModels({
+        : this.catalogModelsService.findSearchModels({
             make_id,
             search: slugifiedQuery,
             limit: SEARCH_LIMIT,
@@ -143,7 +143,7 @@ export class AssistantEntityResolverService {
     const query = text.trim();
     const slugifiedQuery = slugify(query);
 
-    const { models } = await this.catalogModelsUseCase.findGlobalSearchModels(
+    const { models } = await this.catalogModelsService.findGlobalSearchModels(
       query,
       SEARCH_LIMIT,
     );
@@ -156,7 +156,7 @@ export class AssistantEntityResolverService {
     const slugifiedQuery = slugify(make_slug);
 
     const [byText, bySlug] = await Promise.all([
-      this.makesUseCase.findSearchMakes({
+      this.makesService.findSearchMakes({
         search: make_slug,
         limit: SEARCH_LIMIT,
         page: 1,
@@ -164,7 +164,7 @@ export class AssistantEntityResolverService {
       }),
       make_slug === slugifiedQuery
         ? Promise.resolve({ makes: [] as SlugNameCandidate[] })
-        : this.makesUseCase.findSearchMakes({
+        : this.makesService.findSearchMakes({
             search: slugifiedQuery,
             limit: SEARCH_LIMIT,
             page: 1,

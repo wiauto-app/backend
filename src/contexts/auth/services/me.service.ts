@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { DealershipMemberRepository } from "@/src/contexts/dealership/domain/repositories/dealership-member.repository";
+import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 
 import { MeDealershipMembershipDto, MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
@@ -8,7 +8,7 @@ import { User } from "../../users/entities/user.entity";
 @Injectable()
 export class MeService {
   constructor(
-    private readonly dealership_member_repository: DealershipMemberRepository,
+    private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
   ) {}
 
   async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {

@@ -5,15 +5,12 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { ChatModule } from "@/src/contexts/chat/modules/chat.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 
-import { CreateCallMeLeadUseCase } from "../application/leads/create-call-me-lead-use-case/create-call-me-lead.use-case";
-import { CreateLeadUseCase } from "../application/leads/create-lead-use-case/create-lead.use-case";
-import { LeadNotificationEmailService } from "../application/ports/lead-notification-email.port";
-import { LeadRepository } from "../domain/repositories/lead.repository";
-import { CreateCallMeLeadController } from "../infrastructure/http-api/v1/leads/create-call-me-lead.controller";
-import { CreateLeadController } from "../infrastructure/http-api/v1/leads/create-lead.controller";
-import { LeadEntity } from "../infrastructure/persistence/lead.entity";
-import { TypeOrmLeadRepository } from "../infrastructure/repositories/typeorm.lead-repository";
-import { LeadNotificationMailService } from "../infrastructure/services/lead-notification-mail.service";
+import { CreateCallMeLeadController } from "../api/v1/leads/create-call-me-lead.controller";
+import { CreateLeadController } from "../api/v1/leads/create-lead.controller";
+import { LeadEntity } from "../entities/lead.entity";
+import { TypeOrmLeadRepository } from "../repositories/typeorm.lead-repository";
+import { LeadNotificationMailService } from "../services/lead-notification-mail.service";
+import { LeadsService } from "../services/leads.service";
 import { VehiclesModule } from "../vehicles.module";
 
 @Module({
@@ -26,19 +23,10 @@ import { VehiclesModule } from "../vehicles.module";
   ],
   controllers: [CreateLeadController, CreateCallMeLeadController],
   providers: [
-    CreateLeadUseCase,
-    CreateCallMeLeadUseCase,
+    LeadsService,
     TypeOrmLeadRepository,
     LeadNotificationMailService,
-    {
-      provide: LeadRepository,
-      useExisting: TypeOrmLeadRepository,
-    },
-    {
-      provide: LeadNotificationEmailService,
-      useExisting: LeadNotificationMailService,
-    },
   ],
-  exports: [LeadRepository, CreateLeadUseCase, CreateCallMeLeadUseCase],
+  exports: [LeadsService, TypeOrmLeadRepository],
 })
 export class LeadsModule {}

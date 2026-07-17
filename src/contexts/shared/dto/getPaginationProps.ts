@@ -1,4 +1,4 @@
-import { PaginationDto } from "../application/dtos/pagination.dto";
+import { PaginationDto } from "./pagination.dto";
 
 interface PaginationProps {
   skip: number;
@@ -17,8 +17,8 @@ export const getPaginationProps = (
   paginationDto: PaginationPropsInput,
   fallback_order_column = "created_at",
 ): PaginationProps => {
-  const page = paginationDto.page;
-  const limit = paginationDto.limit;
+  const page = paginationDto.page ?? 1;
+  const limit = paginationDto.limit ?? 10;
   const { order_by, order_direction } = paginationDto;
   const skip = (page - 1) * limit;
   const order_column =

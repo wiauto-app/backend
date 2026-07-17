@@ -20,8 +20,7 @@ import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { FileModule } from "../contexts/shared/file/file.module";
 import { RolesModule } from "../contexts/roles/roles.module";
 import { PermissionModule } from "../contexts/users/permissions/permission.module";
@@ -69,14 +68,25 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
     LocationsModule,
     BillingModule,
     AssistantModule,
-    // ThrottlerModule.forRoot({
-    //   throttlers: [
-    //     {
-    //       ttl: 60_000,
-    //       limit: 200,
-    //     },
-    //   ],
-    // }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: "vehicle-ai",
+          ttl: envs.VEHICLE_AI_THROTTLE_TTL_MS,
+          limit: envs.VEHICLE_AI_THROTTLE_LIMIT,
+        },
+        {
+          name: "ai-search-filters",
+          ttl: envs.AI_SEARCH_FILTERS_THROTTLE_TTL_MS,
+          limit: envs.AI_SEARCH_FILTERS_THROTTLE_LIMIT,
+        },
+        {
+          name: "vehicle-identification",
+          ttl: envs.VEHICLE_IDENTIFICATION_THROTTLE_TTL_MS,
+          limit: envs.VEHICLE_IDENTIFICATION_THROTTLE_LIMIT,
+        },
+      ],
+    }),
     BullModule.forRoot({
       connection: {
         url: envs.REDIS_URL,
@@ -88,11 +98,5 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
       },
     }),
   ],
-  // providers: [
-  //   {
-  //     provide: APP_GUARD,
-  //     useClass: ThrottlerGuard
-  //   }
-  // ],
 })
 export class AppModule { }

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { V1_ADMIN_SUSPENSION } from "../../route.constants";
 import { AdminSuspensionService } from "../../services/admin-suspension.service";
 import { FindAllSuspensionDurationTypesDto } from "../../dto/admin/find-all-suspension.dto";
-import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { SuspensionDurationType } from "../../entities/suspension_duration_type.entity";
 import { FindOneSuspensionDurationTypeDto } from "../../dto/admin/find-one-suspension.dto";
 import { CreateSuspensionDurationTypeDto } from "../../dto/admin/create-suspension.dto";

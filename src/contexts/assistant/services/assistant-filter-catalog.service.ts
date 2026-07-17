@@ -1,14 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { ONE_HOUR } from "@/src/common/envs";
-import { VehicleTypesUseCase } from "@/src/contexts/vehicles/application/vehicle-types-use-cases/vehicle-types.use-case";
-import { ServicesUseCase } from "@/src/contexts/vehicles/application/services-use-cases/services.use-case";
-import { CuotasUseCase } from "@/src/contexts/vehicles/application/cuotas-use-cases/cuotas.use-case";
-import { TractionsUseCase } from "@/src/contexts/vehicles/application/tractions-use-cases/tractions.use-case";
-import { WarrantyTypesUseCase } from "@/src/contexts/vehicles/application/warranty-types-use-cases/warranty-types.use-case";
-import { ColorsUseCase } from "@/src/contexts/vehicles/application/colors-use-cases/colors.use-case";
-import { DgtLabelsUseCase } from "@/src/contexts/vehicles/application/dgt-labels-use-cases/dgt-labels.use-case";
-import { FindFeaturesUseCase } from "@/src/contexts/vehicles/application/features/find-features-use-case/find-features.use-case";
-import { CatalogFuelTypesUseCase } from "@/src/contexts/vehicles/catalog/fuel_types/application/catalog-fuel-types-use-cases/catalog-fuel-types.use-case";
+import { VehicleTypesService } from "@/src/contexts/vehicles/services/vehicle-types.service";
+import { ServicesService } from "@/src/contexts/vehicles/services/services.service";
+import { CuotasService } from "@/src/contexts/vehicles/services/cuotas.service";
+import { TractionsService } from "@/src/contexts/vehicles/services/tractions.service";
+import { WarrantyTypesService } from "@/src/contexts/vehicles/services/warranty-types.service";
+import { ColorsService } from "@/src/contexts/vehicles/services/colors.service";
+import { DgtLabelsService } from "@/src/contexts/vehicles/services/dgt-labels.service";
+import { FeaturesService } from "@/src/contexts/vehicles/services/features.service";
+import { CatalogFuelTypesService } from "@/src/contexts/vehicles/catalog/fuel_types/services/catalog-fuel-types.service";
 import { fetchAllPages } from "../helpers/fetch-all-pages";
 import { AssistantFilterCatalog } from "../types/assistant-filter-catalog";
 
@@ -28,15 +28,15 @@ export class AssistantFilterCatalogService {
   private cache_expires_at = 0;
 
   constructor(
-    private readonly vehicleTypesUseCase: VehicleTypesUseCase,
-    private readonly servicesUseCase: ServicesUseCase,
-    private readonly cuotasUseCase: CuotasUseCase,
-    private readonly tractionsUseCase: TractionsUseCase,
-    private readonly warrantiesUseCase: WarrantyTypesUseCase,
-    private readonly colorsUseCase: ColorsUseCase,
-    private readonly dgtLabelsUseCase: DgtLabelsUseCase,
-    private readonly featuresUseCase: FindFeaturesUseCase,
-    private readonly fuelTypesUseCase: CatalogFuelTypesUseCase,
+    private readonly vehicleTypesService: VehicleTypesService,
+    private readonly servicesService: ServicesService,
+    private readonly cuotasService: CuotasService,
+    private readonly tractionsService: TractionsService,
+    private readonly warrantiesService: WarrantyTypesService,
+    private readonly colorsService: ColorsService,
+    private readonly dgtLabelsService: DgtLabelsService,
+    private readonly featuresService: FeaturesService,
+    private readonly fuelTypesService: CatalogFuelTypesService,
   ) {}
 
   async getCatalog(): Promise<AssistantFilterCatalog> {
@@ -97,7 +97,7 @@ export class AssistantFilterCatalogService {
   private async loadVehicleTypes() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.vehicleTypesUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.vehicleTypesService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -112,7 +112,7 @@ export class AssistantFilterCatalogService {
   private async loadColors() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.colorsUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.colorsService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -127,9 +127,10 @@ export class AssistantFilterCatalogService {
   private async loadFeatures() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.featuresUseCase.execute({
+        this.featuresService.findAll({
           page,
           limit,
+          skip: (page - 1) * limit,
           ...DEFAULT_ORDER,
         }),
       CATALOG_PAGE_LIMIT,
@@ -145,7 +146,7 @@ export class AssistantFilterCatalogService {
   private async loadServices() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.servicesUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.servicesService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -160,7 +161,7 @@ export class AssistantFilterCatalogService {
   private async loadCuotas() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.cuotasUseCase.findAll({
+        this.cuotasService.findAll({
           ...buildCatalogPageQuery(page, limit),
           order_by: "value",
         }),
@@ -178,7 +179,7 @@ export class AssistantFilterCatalogService {
   private async loadTractions() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.tractionsUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.tractionsService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -192,7 +193,7 @@ export class AssistantFilterCatalogService {
   private async loadWarranties() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.warrantiesUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.warrantiesService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -207,7 +208,7 @@ export class AssistantFilterCatalogService {
   private async loadDgtLabels() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.dgtLabelsUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.dgtLabelsService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 
@@ -223,7 +224,7 @@ export class AssistantFilterCatalogService {
   private async loadFuels() {
     const rows = await fetchAllPages(
       (page, limit) =>
-        this.fuelTypesUseCase.findAll(buildCatalogPageQuery(page, limit)),
+        this.fuelTypesService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 

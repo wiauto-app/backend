@@ -76,6 +76,18 @@ const envsSchema = z.object({
   WIAUTO_FAQ_URL: z.string().default(""),
 
   ASSISTANT_MONTHLY_FREE_QUOTA: z.coerce.number().default(30),
+
+  VEHICLE_AI_THROTTLE_LIMIT: z.coerce.number().default(5),
+  VEHICLE_AI_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
+
+  AI_SEARCH_FILTERS_THROTTLE_LIMIT: z.coerce.number().default(10),
+  AI_SEARCH_FILTERS_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
+
+  APIVEHICULO_API_KEY: z.string(),
+  APIVEHICULO_BASE_URL: z
+    .string(),
+  VEHICLE_IDENTIFICATION_THROTTLE_LIMIT: z.coerce.number().default(10),
+  VEHICLE_IDENTIFICATION_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
 });
 
 const parsed_envs = envsSchema.parse(process.env);
@@ -83,9 +95,9 @@ const parsed_envs = envsSchema.parse(process.env);
 export const envs = {
   ...parsed_envs,
   STRIPE_SUCCESS_URL:
-    process.env.STRIPE_SUCCESS_URL?.trim() ||
+    process.env.STRIPE_SUCCESS_URL?.trim() ??
     `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=success`,
   STRIPE_CANCEL_URL:
-    process.env.STRIPE_CANCEL_URL?.trim() ||
+    process.env.STRIPE_CANCEL_URL?.trim() ??
     `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=cancel`,
 };

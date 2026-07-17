@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## languaje
+
 Always respond in neutral Spanish. Avoid regional slang (especially Argentinian voseo).
 
 ## Common Commands
@@ -10,11 +11,13 @@ Always respond in neutral Spanish. Avoid regional slang (especially Argentinian 
 Package manager is `pnpm@9`. Scripts are invoked via `node --run <script>` (Node 22 native runner) or `pnpm <script>`.
 
 ### Development
+
 - `pnpm dev` — start Nest in watch mode with debug on `0.0.0.0:9229`
 - `pnpm build` — clean `dist/` and compile with SWC using `tsconfig.prod.json`
 - `pnpm start` — run compiled output from `dist/main.js`
 
 ### Testing
+
 - `pnpm test` — runs unit + e2e in parallel (concurrently) and merges coverage
 - `pnpm test:unit` — Vitest on `tests/unit/**/*.test.ts`
 - `pnpm test:e2e` — Vitest on `tests/e2e/**/*.test.ts`
@@ -24,16 +27,19 @@ Package manager is `pnpm@9`. Scripts are invoked via `node --run <script>` (Node
 Tests live in `tests/` at the **root**, NOT co-located with source. The mapping is `tests/{unit,e2e}/<mirror-of-src-path>`.
 
 ### Linting & quality
+
 - `pnpm lint` / `pnpm lint:fix`
 - `pnpm typos` — spell check via `_typos.toml`
 - Husky runs lint-staged + commitlint (conventional commits) on commit
 
 ### Database migrations (TypeORM)
+
 - `pnpm migration:generate src/database/migrations/<Name>` — diff entities against DB
 - `pnpm migration:create src/database/migrations/<Name>` — empty migration
 - `pnpm migration:run` / `pnpm migration:revert` / `pnpm migration:show`
 
 ### Infrastructure (docker-compose)
+
 Only `postgres`, `redis`, and `opensearch` services are active. The `my-service-dev/prod` and `k6` services are commented out — the Node app runs on the host, not in a container.
 
 ```bash
@@ -43,25 +49,25 @@ docker-compose up -d postgres redis opensearch
 ## Architecture
 
 ### NestJS + Fastify + SWC
+
 - Web framework: **Fastify** (not Express) via `@nestjs/platform-fastify`
 - Compiler: **SWC** (configured in `.swcrc` with `decoratorMetadata: true`) — ~20x faster than tsc, used by both Nest CLI (`nest-cli.json` → `builder: "swc"`) and Vitest (`unplugin-swc`)
 - Global API prefix: `/api` (set in `main.ts`)
 - Global `ValidationPipe` with `whitelist`, `forbidUnknownValues`, `transform: true`
 
 ### Module organization — contexts pattern
-Source is organized by bounded context under `src/contexts/<name>/`, each containing:
-- `api/` — controllers
-- `services/` — business logic
-- `entities/` — TypeORM entities
-- `dto/` — request/response DTOs
-- `guards/` — Nest guards (auth only)
-- `<name>.module.ts` — the Nest module
 
-Current contexts: `auth`, `users`, `profiles`, `shared` (cross-cutting: `logger`).
+Source is organized by bounded context under `src/contexts/<name>/`. El estilo objetivo es **Nest lite** (como `auth/`): `api/` + `services/` + `entities/` + `dto/` (+ `clients/` solo para HTTP externo). Parte de `vehicles/` aún es hexagonal (`domain/` + `application/*-use-case/` + `infrastructure/`) y se migra gradualmente.
+
+- Convención, checklist y backlog: [`docs/architecture-nest-lite.md`](docs/architecture-nest-lite.md)
+- **Congelar:** no crear nuevas carpetas `*-use-case/`; features nuevas en Nest lite.
+
+Current contexts: `auth`, `users`, `profiles`, `vehicles`, `shared` (cross-cutting: `logger`), etc.
 
 `src/app/` holds the root `AppModule` and generic cross-cutting modules like `health`. `src/common/envs.ts` validates `process.env` with Zod at boot — import `envs` from here instead of reading `process.env` directly.
 
 ### Path aliases
+
 ```
 @/src/*      → src/*
 @/app/*      → src/app/*
@@ -71,6 +77,7 @@ Current contexts: `auth`, `users`, `profiles`, `shared` (cross-cutting: `logger`
 ```
 
 ### Database — dual TypeORM setup (IMPORTANT)
+
 There are **two** DataSource files with different jobs. Do not unify them.
 
 - `src/database/data-source.ts` — used by `AppModule` at runtime. Uses `__dirname + '/../**/*.entity{.ts,.js}'` globs so it resolves correctly against both `src/` (dev) and `dist/` (prod).
@@ -79,6 +86,7 @@ There are **two** DataSource files with different jobs. Do not unify them.
 The CLI runs as CommonJS (via `typeorm-ts-node-commonjs`), while the rest of the codebase is compiled to ESM by SWC. To make this work, `tsconfig.json` has a `ts-node` override block that forces `module: commonjs` + `moduleResolution: node` **only** for ts-node. Keep that override intact.
 
 ### Auth
+
 JWT + Passport. `AuthModule` registers `JwtModule` with `envs.JWT_SECRET` and 30-day expiry. `PasswordService` is shared between `AuthModule` and `UserModule` (both register it as a provider — note this duplication exists).
 
 ## Conventions & Gotchas

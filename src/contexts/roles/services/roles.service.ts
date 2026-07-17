@@ -8,7 +8,7 @@ import { CreateRoleDto } from "../dto/create-role.dto";
 import { Roles } from "../entities/roles.entity";
 import { UpdateRoleDto } from "../dto/update-role.dto";
 import { FindAllRolesDto } from "../dto/find-all-roles.dto";
-import { runPaginatedTypeormFind } from "../../shared/infrastructure/typeorm/run-paginated-typeorm-find";
+import { runPaginatedTypeormFind } from "../../shared/typeorm/run-paginated-typeorm-find";
 
 @Injectable()
 export class RolesService {

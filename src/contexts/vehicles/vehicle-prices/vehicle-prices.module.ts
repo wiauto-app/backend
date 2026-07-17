@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "@/src/contexts/auth/auth.module";
-import { AlertProcessingEnqueueModule } from "@/src/contexts/alerts/infrastructure/queues/alert-processing-enqueue.module";
+import { AlertProcessingEnqueueModule } from "@/src/contexts/alerts/queues/alert-processing-enqueue.module";
 
-import { FindVehiclePricesByVehicleIdUseCase } from "./application/find-vehicle-prices-by-vehicle-id-use-case/find-vehicle-prices-by-vehicle-id.use-case";
-import { SetVehiclePriceUseCase } from "./application/set-vehicle-price-use-case/set-vehicle-price.use-case";
-import { FindVehiclePricesByVehicleIdController } from "./infrastructure/http-api/v1/find-vehicle-prices-by-vehicle-id/find-vehicle-prices-by-vehicle-id.controller";
+import { FindVehiclePricesByVehicleIdService } from "./services/find-vehicle-prices-by-vehicle-id.service";
+import { SetVehiclePriceService } from "./services/set-vehicle-price.service";
+import { FindVehiclePricesByVehicleIdController } from "./api/v1/find-vehicle-prices-by-vehicle-id/find-vehicle-prices-by-vehicle-id.controller";
 import { VehiclePricesPersistenceModule } from "./vehicle-prices-persistence.module";
 import { VehicleSearchModule } from "../search/vehicle-search.module";
 
@@ -17,10 +17,10 @@ import { VehicleSearchModule } from "../search/vehicle-search.module";
     AlertProcessingEnqueueModule,
   ],
   controllers: [FindVehiclePricesByVehicleIdController],
-  providers: [SetVehiclePriceUseCase, FindVehiclePricesByVehicleIdUseCase],
+  providers: [SetVehiclePriceService, FindVehiclePricesByVehicleIdService],
   exports: [
-    SetVehiclePriceUseCase,
-    FindVehiclePricesByVehicleIdUseCase,
+    SetVehiclePriceService,
+    FindVehiclePricesByVehicleIdService,
     VehiclePricesPersistenceModule,
   ],
 })

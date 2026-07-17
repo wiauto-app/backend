@@ -1,4 +1,4 @@
-import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 
 export const fetchAllPages = async <T>(
   fetchPage: (page: number, limit: number) => Promise<PaginatedResult<T>>,

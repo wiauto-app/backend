@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
-import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { AssistantQuotaExceededException } from "../exceptions/assistant-quota-exceeded.exception";
 import type { AssistantQuotaBalance } from "../types/assistant-quota";
 

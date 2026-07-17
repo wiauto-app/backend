@@ -1,9 +1,10 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
-import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { CatalogModule } from "@/src/contexts/vehicles/catalog/catalog.module";
+import { AiSearchFiltersController } from "./api/ai-search-filters.controller";
 import { AssistantChatController } from "./api/assistant-chat.controller";
 import { AssistantConversationsController } from "./api/assistant-conversations.controller";
 import { AssistantQuotaController } from "./api/assistant-quota.controller";
@@ -18,6 +19,7 @@ import { AssistantQuotaService } from "./services/assistant-quota.service";
 import { AssistantSearchExecutorService } from "./services/assistant-search-executor.service";
 import { AssistantSearchFiltersBuilderService } from "./services/assistant-search-filters-builder.service";
 import { AssistantSearchFiltersPromptService } from "./services/assistant-search-filters-prompt.service";
+import { AssistantSearchFromMessageService } from "./services/assistant-search-from-message.service";
 import { AssistantSystemPromptService } from "./services/assistant-system-prompt.service";
 
 @Module({
@@ -28,6 +30,7 @@ import { AssistantSystemPromptService } from "./services/assistant-system-prompt
     TypeOrmModule.forFeature([AssistantConversationEntity, ProfileEntity]),
   ],
   controllers: [
+    AiSearchFiltersController,
     AssistantChatController,
     AssistantConversationsController,
     AssistantQuotaController,
@@ -42,9 +45,10 @@ import { AssistantSystemPromptService } from "./services/assistant-system-prompt
     AssistantEntityResolverService,
     AssistantSearchFiltersPromptService,
     AssistantSearchFiltersBuilderService,
+    AssistantSearchFromMessageService,
     AssistantSearchExecutorService,
     AssistantQuotaService,
   ],
-  exports: [AssistantQuotaService],
+  exports: [AssistantQuotaService, AssistantSearchFromMessageService],
 })
 export class AssistantModule {}

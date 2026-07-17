@@ -1,4 +1,4 @@
-import { PaginationHttpDto } from "../../shared/infrastructure/http-dtos/pagination.http-dto";
+import { PaginationHttpDto } from "../../shared/dto/pagination.http-dto";
 import { IsOptional, IsString, IsBoolean } from "class-validator";
 
 

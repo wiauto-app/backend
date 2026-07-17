@@ -7,7 +7,7 @@ import { UpdateSuspensionDurationTypeDto } from "../dto/admin/update-suspension.
 import { NotFoundException } from "@nestjs/common";
 import { userResponseConfig } from "../response.config";
 import { FindAllSuspensionDurationTypesDto } from "../dto/admin/find-all-suspension.dto";
-import { PaginatedResult } from "../../shared/domain/value-objects/paginated-result.vo";
+import { PaginatedResult } from "../../shared/types/paginated-result.vo";
 import { FindOneSuspensionDurationTypeDto } from "../dto/admin/find-one-suspension.dto";
 import { DeleteSuspensionDurationTypeDto } from "../dto/admin/delete-suspension.dto";
 import { getSkip } from "../../shared/getSkip";

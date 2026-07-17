@@ -11,7 +11,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 
 import { Repository } from "typeorm";
 
-import { VehicleEntity } from "../../vehicles/infrastructure/persistence/vehicle.entity";
+import { VehicleEntity } from "../../vehicles/entities/vehicle.entity";
 import { AuthProvider, User } from "../entities/user.entity";
 import { RegisterUserDto } from '../dto/register-user.dto'
 import { PasswordService } from "../../auth/services/password.service";
@@ -22,7 +22,7 @@ import { GetUserByEmailDto } from "../dto/get-user-by-email.dto";
 import { ProfileService } from "../../profiles/services/profile.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { EmailVerificationService } from "../../auth/services/email-verification.service";
-import { ProfileRepository } from "../../profiles/domain/repositories/profile.repository";
+import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 
 @Injectable()
 export class UserService {
@@ -35,7 +35,7 @@ export class UserService {
     private readonly vehicleRepository: Repository<VehicleEntity>,
     private readonly passwordService: PasswordService,
     private readonly profileService: ProfileService,
-    private readonly profileRepository: ProfileRepository,
+    private readonly profileRepository: TypeOrmProfileRepository,
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
   ) { }

@@ -3,7 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { PasswordService } from "../auth/services/password.service";
 import { AuthModule } from "../auth/auth.module";
-import { VehicleEntity } from "../vehicles/infrastructure/persistence/vehicle.entity";
+import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 import { ProfileModule } from "../profiles/profile.module";
 import { RolesModule } from "../roles/roles.module";
 import { UsersController } from "./api/v1/users.controller";

@@ -38,12 +38,11 @@ import { SessionService } from "./services/session.service";
 import { AdminLoginService } from "./services/admin-login.service";
 import { TwoFactorLoginService } from "./services/two-factor-login.service";
 import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scope.guard";
-import { FindOneProfileUseCase } from "../profiles/application/profile/find-one-profile-use-case/find-one-profile.use-case";
 import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
 import { AuthSessionService } from "./services/auth-session.service";
-import { ProfileEntity } from "../profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "../profiles/entities/profile.entity";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 
 @Module({
@@ -77,7 +76,6 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     AdminLoginService,
     TwoFactorLoginService,
     TwoFactorChallengeScopeGuard,
-    FindOneProfileUseCase,
     RegisterService,
   ],
   imports: [

@@ -1,23 +1,16 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { CatalogYearEntity } from "../infrastructure/persistence/catalog-year.entity";
-import { TypeormCatalogYearRepository } from "../infrastructure/repositories/typeorm.catalog-year-repository";
-import { CatalogYearsRepository } from "../domain/repositories/catalog-years.repository";
-import { CatalogYearsController } from "../infrastructure/http-api/catalog-years-v1/catalog-years.controller";
-import { CatalogYearsUseCase } from "../application/catalog-years-use-cases/catalog-years.use-case";
-import { VersionEntity } from "../../versions/infrastructure/persistence/version.entity";
+
+import { VersionEntity } from "../../versions/entities/version.entity";
+import { CatalogYearEntity } from "../entities/catalog-year.entity";
+import { TypeormCatalogYearRepository } from "../repositories/typeorm.catalog-year-repository";
+import { CatalogYearsController } from "../api/catalog-years-v1/catalog-years.controller";
+import { CatalogYearsService } from "../services/catalog-years.service";
 
 @Module({
   controllers: [CatalogYearsController],
   imports: [TypeOrmModule.forFeature([CatalogYearEntity, VersionEntity])],
-  providers: [
-    CatalogYearsUseCase,
-    TypeormCatalogYearRepository,
-    {
-      provide: CatalogYearsRepository,
-      useExisting: TypeormCatalogYearRepository,
-    },
-  ],
-  exports: [CatalogYearsRepository],
+  providers: [CatalogYearsService, TypeormCatalogYearRepository],
+  exports: [CatalogYearsService],
 })
 export class CatalogYearsModule {}

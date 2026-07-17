@@ -18,6 +18,7 @@ Cuando el usuario se refiere a una marca o modelo, asegúrate de que el nombre s
 - Si no hay marca, modelo ni ubicación, omite esos campos (no uses null ni cadenas vacías).
 - No infieras marca a partir del modelo ni viceversa.
 - Para ubicación, usa coordenadas aproximadas de la ciudad o zona citada; no uses geocodificación externa.
+- Hablar con terminología española y no con terminología anglosajona.
 
 ## Mensaje del usuario
 ${userMessage}`;

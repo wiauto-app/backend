@@ -8,8 +8,8 @@ import { CreatePermissionDto } from "../dto/create-permission.dto";
 import { UpdatePermissionDto } from "../dto/update-permission.dto";
 import { Permissions } from "../entities/permissions.entity";
 import { FindAllPermissionsDto } from "../dto/find-all-permissions.dto";
-import { runPaginatedTypeormFind } from "@/src/contexts/shared/infrastructure/typeorm/run-paginated-typeorm-find";
-import { PaginatedResult } from "@/src/contexts/shared/domain/value-objects/paginated-result.vo";
+import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
+import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 
 const available_permission_file_relative = path.join(
   "src",

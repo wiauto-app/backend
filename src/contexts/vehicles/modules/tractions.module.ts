@@ -1,22 +1,14 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { TractionEntity } from "../infrastructure/persistence/traction.entity";
-import { TypeormTractionRepository } from "../infrastructure/repositories/typeorm.traction-repository";
-import { TractionsRepository } from "../domain/repositories/tractions.repository";
-import { TractionsController } from "../infrastructure/http-api/tractions-v1/tractions.controller";
-import { TractionsUseCase } from "../application/tractions-use-cases/tractions.use-case";
+
+import { TractionEntity } from "../entities/traction.entity";
+import { TractionsController } from "../api/tractions-v1/tractions.controller";
+import { TractionsService } from "../services/tractions.service";
 
 @Module({
   controllers: [TractionsController],
   imports: [TypeOrmModule.forFeature([TractionEntity])],
-  providers: [
-    TractionsUseCase,
-    TypeormTractionRepository,
-    {
-      provide: TractionsRepository,
-      useExisting: TypeormTractionRepository,
-    },
-  ],
-  exports: [TractionsRepository],
+  providers: [TractionsService],
+  exports: [TractionsService],
 })
 export class TractionsModule {}

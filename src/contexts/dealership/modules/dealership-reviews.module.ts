@@ -1,33 +1,21 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { CreateDealershipReviewUseCase } from "../application/dealership-reviews-use-cases/create-dealership-review-use-case/create-dealership-review.use-case";
-import { FindAllDealershipReviewsUseCase } from "../application/dealership-reviews-use-cases/find-all-dealership-reviews-use-case/find-all-dealership-reviews.use-case";
-import { DealershipReviewsRepository } from "../domain/repositories/dealership-reviews.repository";
-import { DealershipReviewsController } from "../infrastructure/http-api/dealership-reviews-v1/dealership-reviews.controller";
-import { DealershipReviewEntity } from "../infrastructure/persistence/dealership-review.entity";
-import { TypeOrmDealershipReviewsRepository } from "../infrastructure/repositories/typeorm.dealership-reviews-repository";
 import { DealershipModule } from "../dealership.module";
+import { TypeOrmDealershipReviewsRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-reviews-repository";
+import { DealershipReviewsController } from "../api/dealership-reviews-v1/dealership-reviews.controller";
+import { DealershipReviewEntity } from "../entities/dealership-review.entity";
+import { DealershipReviewsService } from "../services/dealership-reviews.service";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DealershipReviewEntity]),
-    forwardRef(() => DealershipModule),
-  ],
+    forwardRef(() => DealershipModule)],
   controllers: [DealershipReviewsController],
   providers: [
-    CreateDealershipReviewUseCase,
-    FindAllDealershipReviewsUseCase,
-    TypeOrmDealershipReviewsRepository,
-    {
-      provide: DealershipReviewsRepository,
-      useExisting: TypeOrmDealershipReviewsRepository,
-    },
+    DealershipReviewsService,
+    TypeOrmDealershipReviewsRepository
   ],
-  exports: [
-    DealershipReviewsRepository,
-    CreateDealershipReviewUseCase,
-    FindAllDealershipReviewsUseCase,
-  ],
+  exports: [TypeOrmDealershipReviewsRepository, DealershipReviewsService],
 })
 export class DealershipReviewsModule {}

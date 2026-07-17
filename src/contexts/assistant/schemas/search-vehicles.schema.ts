@@ -2,12 +2,13 @@ import { z } from "zod";
 import {
   PUBLISHER_TYPE,
   TRANSMISSION_TYPE,
-} from "@/src/contexts/vehicles/domain/entities/vehicle";
+} from "@/src/contexts/vehicles/types/vehicle";
 
 export const searchVehiclesInputSchema = z.object({
   type_slug: z.string().optional(),
   makes_slugs: z.array(z.string()).optional(),
   models_slugs: z.array(z.string()).optional(),
+  categories_slugs: z.array(z.string()).optional(),
   since_price: z.number().optional(),
   until_price: z.number().optional(),
   price_offer: z.boolean().optional(),

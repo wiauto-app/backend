@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
-import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { RolesPermissionsEntity } from "../../users/roles-permissions/entities/roles-permissions.entity";
 
 @Entity('roles')

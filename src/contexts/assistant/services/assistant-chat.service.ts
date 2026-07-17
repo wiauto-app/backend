@@ -10,13 +10,9 @@ import {
 } from "ai";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import type { Response } from "express";
-import { sanitizeAssistantIntent } from "../helpers/sanitize-assistant-intent";
 import { extractLastUserMessage } from "../helpers/extract-last-user-message";
-import { AssistantEntityResolverService } from "./assistant-entity-resolver.service";
-import { AssistantFilterCatalogService } from "./assistant-filter-catalog.service";
-import { AssistantIntentExtractorService } from "./assistant-intent-extractor.service";
 import { AssistantSearchExecutorService } from "./assistant-search-executor.service";
-import { AssistantSearchFiltersBuilderService } from "./assistant-search-filters-builder.service";
+import { AssistantSearchFromMessageService } from "./assistant-search-from-message.service";
 import { AssistantSystemPromptService } from "./assistant-system-prompt.service";
 import { AssistantConversationService } from "./assistant-conversation.service";
 import { AssistantQuotaService } from "./assistant-quota.service";
@@ -26,16 +22,13 @@ interface StreamChatOptions {
   conversationId?: string;
   userId: string;
   response: Response;
-};
+}
 
 @Injectable()
 export class AssistantChatService {
   constructor(
-    private readonly filterCatalogService: AssistantFilterCatalogService,
     private readonly systemPromptService: AssistantSystemPromptService,
-    private readonly intentExtractor: AssistantIntentExtractorService,
-    private readonly entityResolver: AssistantEntityResolverService,
-    private readonly searchFiltersBuilder: AssistantSearchFiltersBuilderService,
+    private readonly searchFromMessageService: AssistantSearchFromMessageService,
     private readonly searchExecutor: AssistantSearchExecutorService,
     private readonly conversationService: AssistantConversationService,
     private readonly quotaService: AssistantQuotaService,
@@ -56,16 +49,10 @@ export class AssistantChatService {
       );
 
     const userMessage = extractLastUserMessage(messages);
-    const rawIntent = await this.intentExtractor.extract(messages);
-    const intent = sanitizeAssistantIntent(rawIntent, userMessage);
-    const resolved = await this.entityResolver.resolve(intent);
-    const catalog = await this.filterCatalogService.getCatalog();
-    const filters = await this.searchFiltersBuilder.build({
-      messages,
-      catalog,
-      intent,
-      resolved,
-    });
+    const { filters, catalog, resolved } =
+      await this.searchFromMessageService.resolveFromMessage({
+        message: userMessage,
+      });
     const searchResult = await this.searchExecutor.execute(
       filters,
       catalog,

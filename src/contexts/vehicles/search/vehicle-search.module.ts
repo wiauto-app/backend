@@ -1,20 +1,19 @@
 import { Module } from "@nestjs/common";
 import type { Client } from "@opensearch-project/opensearch";
 
-import { BulkReindexHeroSearchUseCase } from "./application/bulk-reindex-hero-search.use-case";
-import { GetHeroFacetsUseCase } from "./application/get-hero-facets.use-case";
-import { IndexVehicleSearchDocUseCase } from "./application/index-vehicle-search-doc.use-case";
-import { HeroSearchRepository } from "./domain/ports/hero-search.repository";
-import { VehicleHeroDocumentBuilder } from "./infrastructure/builders/vehicle-hero-document.builder";
-import { AdminReindexHeroSearchController } from "./infrastructure/http-api/v1/admin-reindex-hero-search/admin-reindex-hero-search.controller";
-import { HeroFacetsController } from "./infrastructure/http-api/v1/hero-facets/hero-facets.controller";
-import { VehicleSearchIndexer } from "./infrastructure/indexing/vehicle-search-indexer.service";
+import { BulkReindexHeroSearchService } from "./services/bulk-reindex-hero-search.service";
+import { GetHeroFacetsService } from "./services/get-hero-facets.service";
+import { IndexVehicleSearchDocService } from "./services/index-vehicle-search-doc.service";
+import { VehicleHeroDocumentBuilder } from "./builders/vehicle-hero-document.builder";
+import { AdminReindexHeroSearchController } from "./api/v1/admin-reindex-hero-search/admin-reindex-hero-search.controller";
+import { HeroFacetsController } from "./api/v1/hero-facets/hero-facets.controller";
+import { VehicleSearchIndexer } from "./indexing/vehicle-search-indexer.service";
 import {
   create_opensearch_client,
   OPENSEARCH_CLIENT,
-} from "./infrastructure/opensearch/opensearch-client.factory";
-import { HeroSearchIndexBootstrapService } from "./infrastructure/opensearch/hero-search-index-bootstrap.service";
-import { OpenSearchHeroSearchRepository } from "./infrastructure/opensearch/opensearch-hero-search.repository";
+} from "./clients/opensearch/opensearch-client.factory";
+import { HeroSearchIndexBootstrapService } from "./clients/opensearch/hero-search-index-bootstrap.service";
+import { OpenSearchHeroSearchRepository } from "./clients/opensearch/opensearch-hero-search.repository";
 
 @Module({
   controllers: [HeroFacetsController, AdminReindexHeroSearchController],
@@ -24,17 +23,13 @@ import { OpenSearchHeroSearchRepository } from "./infrastructure/opensearch/open
       useFactory: (): Client => create_opensearch_client(),
     },
     OpenSearchHeroSearchRepository,
-    {
-      provide: HeroSearchRepository,
-      useExisting: OpenSearchHeroSearchRepository,
-    },
     VehicleHeroDocumentBuilder,
     VehicleSearchIndexer,
-    GetHeroFacetsUseCase,
-    IndexVehicleSearchDocUseCase,
-    BulkReindexHeroSearchUseCase,
+    GetHeroFacetsService,
+    IndexVehicleSearchDocService,
+    BulkReindexHeroSearchService,
     HeroSearchIndexBootstrapService,
   ],
-  exports: [VehicleSearchIndexer, BulkReindexHeroSearchUseCase],
+  exports: [VehicleSearchIndexer, BulkReindexHeroSearchService],
 })
 export class VehicleSearchModule {}

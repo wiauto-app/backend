@@ -6,7 +6,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { ConflictException, NotFoundException } from "@nestjs/common";
 import { PasswordService } from "../../auth/services/password.service";
 import { AdminUpdateUserDto } from "../dto/admin/update-user.dto";
-import { ProfileEntity } from "../../profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "../../profiles/entities/profile.entity";
 
 @Injectable()
 export class AdminUserService {

@@ -9,7 +9,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { envs } from '@/src/common/envs';
-import { split_storage_compound_path } from '@/src/contexts/shared/file/domain/temp-storage-path';
+import { split_storage_compound_path } from '@/src/contexts/shared/file/types/temp-storage-path';
 import { s3, s3_for_presign } from './s3.client';
 import { Injectable } from '../dependency-injectable/injectable';
 

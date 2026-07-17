@@ -2,47 +2,31 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { Comunity } from "./comunities/entities/comunity.entity";
-import { CommunitiesUseCase } from "./communities/application/communities-use-cases/communities.use-case";
-import { CommunitiesRepository } from "./communities/domain/repositories/communities.repository";
-import { CommunitiesController } from "./communities/infrastructure/http-api/v1/communities-v1/communities.controller";
-import { TypeormCommunitiesRepository } from "./communities/infrastructure/repositories/typeorm.communities-repository";
-import { MunicipalitiesUseCase } from "./municipalities/application/municipalities-use-cases/municipalities.use-case";
-import { MunicipalitiesRepository } from "./municipalities/domain/repositories/municipalities.repository";
+import { CommunitiesService } from "./communities/services/communities.service";
+import { TypeormCommunitiesRepository } from "@/src/contexts/locations/communities/repositories/typeorm.communities-repository";
+import { CommunitiesController } from "./communities/api/v1/communities-v1/communities.controller";
+import { MunicipalitiesService } from "./municipalities/services/municipalities.service";
+import { TypeormMunicipalitiesRepository } from "@/src/contexts/locations/municipalities/repositories/typeorm.municipalities-repository";
 import { Municipality } from "./municipalities/entities/municipality.entity";
-import { MunicipalitiesController } from "./municipalities/infrastructure/http-api/v1/municipalities-v1/municipalities.controller";
-import { TypeormMunicipalitiesRepository } from "./municipalities/infrastructure/repositories/typeorm.municipalities-repository";
-import { ProvincesUseCase } from "./provinces/application/provinces-use-cases/provinces.use-case";
-import { ProvincesRepository } from "./provinces/domain/repositories/provinces.repository";
+import { MunicipalitiesController } from "./municipalities/api/v1/municipalities-v1/municipalities.controller";
+import { ProvincesService } from "./provinces/services/provinces.service";
+import { TypeormProvincesRepository } from "@/src/contexts/locations/provinces/repositories/typeorm.provinces-repository";
 import { Provinces } from "./provinces/entities/province.entity";
-import { ProvincesController } from "./provinces/infrastructure/http-api/v1/provinces-v1/provinces.controller";
-import { TypeormProvincesRepository } from "./provinces/infrastructure/repositories/typeorm.provinces-repository";
+import { ProvincesController } from "./provinces/api/v1/provinces-v1/provinces.controller";
 
 @Module({
   controllers: [
     ProvincesController,
     CommunitiesController,
-    MunicipalitiesController,
-  ],
+    MunicipalitiesController],
   imports: [TypeOrmModule.forFeature([Provinces, Comunity, Municipality])],
   providers: [
-    ProvincesUseCase,
+    ProvincesService,
     TypeormProvincesRepository,
-    {
-      provide: ProvincesRepository,
-      useExisting: TypeormProvincesRepository,
-    },
-    CommunitiesUseCase,
+    CommunitiesService,
     TypeormCommunitiesRepository,
-    {
-      provide: CommunitiesRepository,
-      useExisting: TypeormCommunitiesRepository,
-    },
-    MunicipalitiesUseCase,
-    TypeormMunicipalitiesRepository,
-    {
-      provide: MunicipalitiesRepository,
-      useExisting: TypeormMunicipalitiesRepository,
-    },
+    MunicipalitiesService,
+    TypeormMunicipalitiesRepository
   ],
   exports: [TypeOrmModule],
 })

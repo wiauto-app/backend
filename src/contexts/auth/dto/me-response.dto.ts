@@ -1,8 +1,8 @@
 import { Roles } from "../../roles/entities/roles.entity";
 import { AuthProvider, User } from "../../users/entities/user.entity";
-import { VehicleListEntity } from "@/src/contexts/vehicles/infrastructure/persistence/vehicle-list.entity";
-import { PublisherType } from "../../vehicles/domain/entities/vehicle";
-import { DealershipMembershipDetail } from "@/src/contexts/dealership/domain/read-models/dealership-membership-detail";
+import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
+import { PublisherType } from "../../vehicles/types/vehicle";
+import { DealershipMembershipDetail } from "@/src/contexts/dealership/types/dealership-membership-detail";
 
 export class MeDealershipMembershipDto {
   dealership_id: string;

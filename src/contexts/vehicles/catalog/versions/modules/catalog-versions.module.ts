@@ -1,22 +1,15 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { VersionEntity } from "../infrastructure/persistence/version.entity";
-import { TypeormCatalogVersionRepository } from "../infrastructure/repositories/typeorm.catalog-version-repository";
-import { CatalogVersionsRepository } from "../domain/repositories/catalog-versions.repository";
-import { CatalogVersionsController } from "../infrastructure/http-api/catalog-versions-v1/catalog-versions.controller";
-import { CatalogVersionsUseCase } from "../application/catalog-versions-use-cases/catalog-versions.use-case";
+
+import { VersionEntity } from "../entities/version.entity";
+import { TypeormCatalogVersionRepository } from "../repositories/typeorm.catalog-version-repository";
+import { CatalogVersionsController } from "../api/catalog-versions-v1/catalog-versions.controller";
+import { CatalogVersionsService } from "../services/catalog-versions.service";
 
 @Module({
   controllers: [CatalogVersionsController],
   imports: [TypeOrmModule.forFeature([VersionEntity])],
-  providers: [
-    CatalogVersionsUseCase,
-    TypeormCatalogVersionRepository,
-    {
-      provide: CatalogVersionsRepository,
-      useExisting: TypeormCatalogVersionRepository,
-    },
-  ],
-  exports: [CatalogVersionsRepository],
+  providers: [CatalogVersionsService, TypeormCatalogVersionRepository],
+  exports: [CatalogVersionsService],
 })
 export class CatalogVersionsModule {}

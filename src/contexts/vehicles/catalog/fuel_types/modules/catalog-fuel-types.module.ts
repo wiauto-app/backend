@@ -1,23 +1,16 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { CatalogFuelTypeEntity } from "../infrastructure/persistence/catalog-fuel-type.entity";
-import { TypeormCatalogFuelTypeRepository } from "../infrastructure/repositories/typeorm.catalog-fuel-type-repository";
-import { CatalogFuelTypesRepository } from "../domain/repositories/catalog-fuel-types.repository";
-import { CatalogFuelTypesController } from "../infrastructure/http-api/catalog-fuel-types-v1/catalog-fuel-types.controller";
-import { CatalogFuelTypesUseCase } from "../application/catalog-fuel-types-use-cases/catalog-fuel-types.use-case";
-import { VersionEntity } from "../../versions/infrastructure/persistence/version.entity";
+
+import { VersionEntity } from "../../versions/entities/version.entity";
+import { CatalogFuelTypeEntity } from "../entities/catalog-fuel-type.entity";
+import { TypeormCatalogFuelTypeRepository } from "../repositories/typeorm.catalog-fuel-type-repository";
+import { CatalogFuelTypesController } from "../api/catalog-fuel-types-v1/catalog-fuel-types.controller";
+import { CatalogFuelTypesService } from "../services/catalog-fuel-types.service";
 
 @Module({
   controllers: [CatalogFuelTypesController],
   imports: [TypeOrmModule.forFeature([CatalogFuelTypeEntity, VersionEntity])],
-  providers: [
-    CatalogFuelTypesUseCase,
-    TypeormCatalogFuelTypeRepository,
-    {
-      provide: CatalogFuelTypesRepository,
-      useExisting: TypeormCatalogFuelTypeRepository,
-    },
-  ],
-  exports: [CatalogFuelTypesRepository, CatalogFuelTypesUseCase],
+  providers: [CatalogFuelTypesService, TypeormCatalogFuelTypeRepository],
+  exports: [CatalogFuelTypesService],
 })
 export class CatalogFuelTypesModule {}

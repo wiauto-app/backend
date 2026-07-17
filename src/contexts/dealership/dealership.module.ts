@@ -3,33 +3,21 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 
-import { SyncDealershipMembersUseCase } from "./application/dealership-members/sync-dealership-members-use-case/sync-dealership-members.use-case";
-import { FindDealershipTeamUseCase } from "./application/dealership-members/find-dealership-team-use-case/find-dealership-team.use-case";
-import { LeaveDealershipTeamUseCase } from "./application/dealership-members/leave-dealership-team-use-case/leave-dealership-team.use-case";
-import { RemoveDealershipMemberUseCase } from "./application/dealership-members/remove-dealership-member-use-case/remove-dealership-member.use-case";
-import { UpdateDealershipMemberRoleUseCase } from "./application/dealership-members/update-dealership-member-role-use-case/update-dealership-member-role.use-case";
-import { CreateDealershipUseCase } from "./application/dealership/create-dealership-use-case/create-dealership.use-case";
-import { CreateMyDealershipUseCase } from "./application/dealership/create-my-dealership-use-case/create-my-dealership.use-case";
-import { FindAllDealershipUseCase } from "./application/dealership/find-all-dealership-use-case/find-all-dealership.use-case";
-import { FindOneDealershipUseCase } from "./application/dealership/find-one-dealership-use-case/find-one-dealership.use-case";
-import { FindOneDealershipBySlugUseCase } from "./application/dealership/find-one-dealership-by-slug-use-case/find-one-dealership-by-slug.use-case";
-import { RecalculateDealershipRatingService } from "./application/dealership/recalculate-dealership-rating/recalculate-dealership-rating.service";
-import { RemoveDealershipUseCase } from "./application/dealership/remove-dealership-use-case/remove-dealership.use-case";
-import { UpdateDealershipUseCase } from "./application/dealership/update-dealership-use-case/update-dealership.use-case";
-import { DealershipRepository } from "./domain/repositories/dealership.repository";
-import { DealershipTeamController } from "./infrastructure/http-api/v1/dealership-team/dealership-team.controller";
-import { CreateDealershipController } from "./infrastructure/http-api/v1/create-dealership/create-dealership.controller";
-import { CreateMyDealershipController } from "./infrastructure/http-api/v1/create-my-dealership/create-my-dealership.controller";
-import { FindAllDealershipsController } from "./infrastructure/http-api/v1/find-all-dealerships/find-all-dealerships.controller";
-import { FindDealershipController } from "./infrastructure/http-api/v1/find-one-dealership/find-one-dealership.controller";
-import { FindDealershipBySlugController } from "./infrastructure/http-api/v1/find-one-dealership-by-slug/find-one-dealership-by-slug.controller";
-import { RemoveDealershipController } from "./infrastructure/http-api/v1/remove-dealership/remove-dealership.controller";
-import { UpdateDealershipController } from "./infrastructure/http-api/v1/update-dealership/update-dealership.controller";
-import { DealershipEntity } from "./infrastructure/persistence/dealership.entity";
-import { TypeOrmDealershipRepository } from "./infrastructure/repositories/typeorm.dealership-repository";
+import { DealershipService } from "./services/dealership.service";
+import { RecalculateDealershipRatingService } from "./services/recalculate-dealership-rating.service";
+import { TypeOrmDealershipRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-repository";
+import { DealershipTeamController } from "./api/v1/dealership-team/dealership-team.controller";
+import { CreateDealershipController } from "./api/v1/create-dealership/create-dealership.controller";
+import { CreateMyDealershipController } from "./api/v1/create-my-dealership/create-my-dealership.controller";
+import { FindAllDealershipsController } from "./api/v1/find-all-dealerships/find-all-dealerships.controller";
+import { FindDealershipController } from "./api/v1/find-one-dealership/find-one-dealership.controller";
+import { FindDealershipBySlugController } from "./api/v1/find-one-dealership-by-slug/find-one-dealership-by-slug.controller";
+import { RemoveDealershipController } from "./api/v1/remove-dealership/remove-dealership.controller";
+import { UpdateDealershipController } from "./api/v1/update-dealership/update-dealership.controller";
+import { DealershipEntity } from "./entities/dealership.entity";
 import { DealershipInvitationModule } from "./modules/dealership-invitation.module";
 import { DealershipReviewsModule } from "./modules/dealership-reviews.module";
-import { RemoveFilesUseCase } from "../shared/file/application/images-use-cases/remove-files-use-case/remove-files.use-case";
+import { RemoveFilesService } from "../shared/file/services/remove-files.service";
 import { MinioService } from "../shared/minio-provider/minio.service";
 
 @Module({
@@ -37,8 +25,7 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     TypeOrmModule.forFeature([DealershipEntity]),
     DealershipInvitationModule,
     forwardRef(() => ProfileModule),
-    forwardRef(() => DealershipReviewsModule),
-  ],
+    forwardRef(() => DealershipReviewsModule)],
   controllers: [
     CreateDealershipController,
     CreateMyDealershipController,
@@ -47,30 +34,18 @@ import { MinioService } from "../shared/minio-provider/minio.service";
     FindDealershipController,
     DealershipTeamController,
     UpdateDealershipController,
-    RemoveDealershipController,
-  ],
+    RemoveDealershipController],
   providers: [
-    SyncDealershipMembersUseCase,
-    FindDealershipTeamUseCase,
-    UpdateDealershipMemberRoleUseCase,
-    RemoveDealershipMemberUseCase,
-    LeaveDealershipTeamUseCase,
-    CreateDealershipUseCase,
-    CreateMyDealershipUseCase,
-    FindAllDealershipUseCase,
-    FindOneDealershipBySlugUseCase,
-    FindOneDealershipUseCase,
-    UpdateDealershipUseCase,
-    RemoveDealershipUseCase,
-    RemoveFilesUseCase,
+    DealershipService,
+    RemoveFilesService,
     MinioService,
     RecalculateDealershipRatingService,
-    TypeOrmDealershipRepository,
-    {
-      provide: DealershipRepository,
-      useExisting: TypeOrmDealershipRepository,
-    },
+    TypeOrmDealershipRepository
   ],
-  exports: [DealershipRepository, RecalculateDealershipRatingService, DealershipInvitationModule],
+  exports: [
+    DealershipService,
+    TypeOrmDealershipRepository,
+    RecalculateDealershipRatingService,
+    DealershipInvitationModule],
 })
 export class DealershipModule {}

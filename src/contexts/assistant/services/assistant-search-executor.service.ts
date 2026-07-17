@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { STATUS_VEHICLE } from "@/src/contexts/vehicles/domain/entities/vehicle";
-import { FindAllVehiclesUseCase } from "@/src/contexts/vehicles/application/vehicle/find-all-vehicles-use-case/find-all-vehicles.use-case";
-import { FindAllVehiclesUseCaseDto } from "@/src/contexts/vehicles/application/vehicle/find-all-vehicles-use-case/find-all-vehicles.dto";
+import { STATUS_VEHICLE } from "@/src/contexts/vehicles/types/vehicle";
+import { FindAllVehiclesUseCaseDto } from "@/src/contexts/vehicles/dto/find-all-vehicles.dto";
+import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import {
   SearchVehiclesInput,
 } from "../schemas/search-vehicles.schema";
@@ -142,7 +142,7 @@ export const validateSearchVehiclesFilters = (
 @Injectable()
 export class AssistantSearchExecutorService {
   constructor(
-    private readonly findAllVehiclesUseCase: FindAllVehiclesUseCase,
+    private readonly vehicle_service: VehicleService,
   ) {}
 
   async execute(
@@ -152,13 +152,14 @@ export class AssistantSearchExecutorService {
   ): Promise<SearchVehiclesResult> {
     validateSearchVehiclesFilters(filters, catalog, resolved);
 
-    const result = await this.findAllVehiclesUseCase.execute({
+    const result = await this.vehicle_service.findAll({
       ...filters,
       status: STATUS_VEHICLE.ACTIVE,
       page: 1,
       limit: SEARCH_RESULT_LIMIT,
       makes_slugs: filters.makes_slugs ?? [],
       models_slugs: filters.models_slugs ?? [],
+      categories_slugs: filters.categories_slugs ?? [],
       service_slugs: filters.service_slugs ?? [],
       provinces_slugs: filters.provinces_slugs ?? [],
       comunities_slugs: filters.comunities_slugs ?? [],

@@ -1,5 +1,0 @@
-export class UpdateCategoryDto {
-  id: string;
-  name?: string;
-  image_url?: string | null;
-}

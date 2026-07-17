@@ -1,5 +1,5 @@
 import { envs } from "@/src/common/envs";
-import { V1_DEALERSHIP_INVITATIONS } from "../../dealership/infrastructure/route.constants";
+import { V1_DEALERSHIP_INVITATIONS } from "../../dealership/api/route.constants";
 
 export const build_dealership_invitation_accept_link = (
   invitation_token: string,

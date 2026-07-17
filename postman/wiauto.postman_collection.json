@@ -2901,6 +2901,24 @@
                   }
                 },
                 {
+                  "name": "ai search filters",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"message\": \"Toyota barato hasta 20000\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/search/ai-filters",
+                    "description": "Público (sin JWT). Convierte lenguaje natural en filtros de búsqueda de vehículos. Throttle: ai-search-filters."
+                  }
+                },
+                {
                   "name": "reindex hero search (admin)",
                   "request": {
                     "method": "POST",
@@ -2957,6 +2975,85 @@
                 "description": "Público. Listado paginado de anuncios similares al vehículo indicado. Excluye el anuncio actual y solo devuelve status active. Meta: tier (1|2) y listing_href_slugs (make, model) para CTA del frontend."
               },
               "response": []
+            },
+            {
+              "name": "ai",
+              "item": [
+                {
+                  "name": "recomendar precio",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"version_id\": 1,\n  \"condition\": \"used\",\n  \"mileage\": 45000,\n  \"transmission_type\": \"manual\",\n  \"power\": 120,\n  \"displacement\": 1600,\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"vehicle_type_id\": \"{{vehicle_type_id}}\",\n  \"publisher_type\": \"particular\",\n  \"color_id\": \"{{color_id}}\",\n  \"category_id\": \"{{category_id}}\",\n  \"dgt_label_id\": \"{{dgt_label_id}}\",\n  \"traction_id\": \"{{traction_id}}\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/ai/recommend-price",
+                    "description": "JWT requerido. Rate limit `vehicle-ai` (5 req/min por defecto). Snapshot parcial del formulario quick-publish. Devuelve mediana de anuncios similares activos en WiAuto (España) + explicación IA. 409 si hay menos de 3 comparables."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "generar descripción",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"version_id\": 1,\n  \"condition\": \"used\",\n  \"mileage\": 45000,\n  \"transmission_type\": \"manual\",\n  \"power\": 120,\n  \"displacement\": 1600,\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"vehicle_type_id\": \"{{vehicle_type_id}}\",\n  \"publisher_type\": \"particular\",\n  \"color_id\": \"{{color_id}}\",\n  \"category_id\": \"{{category_id}}\",\n  \"dgt_label_id\": \"{{dgt_label_id}}\",\n  \"traction_id\": \"{{traction_id}}\",\n  \"autonomy\": 0,\n  \"battery_capacity\": 0,\n  \"time_to_charge\": 0\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/ai/generate-description",
+                    "description": "JWT requerido. Rate limit `vehicle-ai` (5 req/min por defecto). Campos mínimos: version_id, condition, mileage, transmission_type, power, traction_id. Genera descripción en español neutro para anuncio de ocasión en España."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "identification",
+              "item": [
+                {
+                  "name": "lookup por matrícula o VIN",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"plate\": \"5847GKZ\",\n  \"country\": \"ES\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/identification/lookup",
+                    "description": "JWT requerido. Rate limit `vehicle-identification`. Envía exactamente uno de `plate` o `vin`. Consulta ApiVehiculo y hace reverse match al catálogo WiAuto. 404 si no existe, 429 si se agota el cupo."
+                  },
+                  "response": []
+                }
+              ]
             },
             {
               "name": "actualizar vehículo",
@@ -5470,7 +5567,7 @@
                     "description": "PATCH parcial (PartialType del create).",
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"name\": \"Toyota actualizado\"\n}"
+                      "raw": "{\n  \"name\": \"Toyota actualizado\",\n  \"image_url\": \"files/makes/toyota-logo.png\"\n}"
                     }
                   },
                   "response": []

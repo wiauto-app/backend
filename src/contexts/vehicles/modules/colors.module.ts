@@ -1,22 +1,14 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ColorEntity } from "../infrastructure/persistence/color.entity";
-import { TypeormColorRepository } from "../infrastructure/repositories/typeorm.color-repository";
-import { ColorsRepository } from "../domain/repositories/colors.repository";
-import { ColorsController } from "../infrastructure/http-api/colors-v1/colors.controller";
-import { ColorsUseCase } from "../application/colors-use-cases/colors.use-case";
+
+import { ColorEntity } from "../entities/color.entity";
+import { ColorsController } from "../api/colors-v1/colors.controller";
+import { ColorsService } from "../services/colors.service";
 
 @Module({
   controllers: [ColorsController],
   imports: [TypeOrmModule.forFeature([ColorEntity])],
-  providers: [
-    ColorsUseCase,
-    TypeormColorRepository,
-    {
-      provide: ColorsRepository,
-      useExisting: TypeormColorRepository,
-    },
-  ],
-  exports: [ColorsRepository],
+  providers: [ColorsService],
+  exports: [ColorsService],
 })
 export class ColorsModule {}

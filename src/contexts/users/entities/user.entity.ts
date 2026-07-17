@@ -10,7 +10,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm";
-import { ProfileEntity } from "@/src/contexts/profiles/infrastructure/persistence/profile.entity";
+import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { SuspensionDurationType } from "./suspension_duration_type.entity";
 
 export type AuthProvider = "local" | "google" | "apple";
