@@ -9,6 +9,7 @@ import {
   V1_VEHICLES_AI_GENERATE_DESCRIPTION,
 } from "../../route.constants";
 import { VehicleAiContextHttpDto } from "./vehicle-ai-context.http-dto";
+import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
 
 @Controller(`${V1_VEHICLES}/${V1_VEHICLES_AI}`)
 @UseGuards(JwtGuard, ThrottlerGuard)
@@ -25,7 +26,7 @@ export class GenerateVehicleDescriptionController {
 
   @Post(V1_VEHICLES_AI_GENERATE_DESCRIPTION)
   @HttpCode(HttpStatus.OK)
-  run(@Body() body: VehicleAiContextHttpDto) {
-    return this.generate_vehicle_description_service.execute(body);
+  run(@Body() body: VehicleAiContextHttpDto,@GetUserId() userId: string) {
+    return this.generate_vehicle_description_service.execute(body, userId);
   }
 }

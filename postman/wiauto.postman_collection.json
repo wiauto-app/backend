@@ -1055,7 +1055,10 @@
                   "host": ["{{base_url}}"],
                   "path": ["auth", "email-verification", "confirm"],
                   "query": [
-                    { "key": "token", "value": "<token_del_link>" },
+                    {
+                      "key": "token",
+                      "value": "<token_del_link>"
+                    },
                     {
                       "key": "redirectUrl",
                       "value": "http://localhost:3000/api/auth/callback",
@@ -1844,7 +1847,7 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"dealership\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"name\": \"Concesionario ejemplo\",\n    \"slug\": \"concesionario-ejemplo\",\n    \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n    \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n    \"description\": \"Descripción del concesionario.\",\n    \"website_url\": \"https://ejemplo.com\",\n    \"email\": \"contacto@ejemplo.com\",\n    \"phone_code\": \"+34\",\n    \"phone\": \"912345678\",\n    \"address\": \"Calle Ejemplo 1\",\n    \"lat\": 40.4168,\n    \"lng\": -3.7038,\n    \"created_at\": \"2026-05-05T12:00:00.000Z\",\n    \"updated_at\": \"2026-05-05T12:00:00.000Z\"\n  }\n}"
+              "body": "{\n  \"dealership\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"name\": \"Concesionario ejemplo\",\n    \"slug\": \"concesionario-ejemplo\",\n    \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n    \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n    \"description\": \"Descripción del concesionario.\",\n    \"website_url\": \"https://ejemplo.com\",\n    \"email\": \"contacto@ejemplo.com\",\n    \"phone_code\": \"+34\",\n    \"phone\": \"912345678\",\n    \"address\": \"Calle Ejemplo 1\",\n    \"lat\": 40.4168,\n    \"lng\": -3.7038,\n    \"created_at\": \"2026-05-05T12:00:00.000Z\",\n    \"updated_at\": \"2026-05-05T12:00:00.000Z\",\n    \"schedules\": [\n      {\n        \"day\": 1,\n        \"open_times\": [\n          {\n            \"open_time\": \"09:00\",\n            \"close_time\": \"14:00\"\n          },\n          {\n            \"open_time\": \"16:00\",\n            \"close_time\": \"20:00\"\n          }\n        ]\n      },\n      {\n        \"day\": 7,\n        \"open_times\": []\n      }\n    ],\n    \"members\": []\n  }\n}"
             }
           ]
         },
@@ -1939,6 +1942,61 @@
                 }
               ],
               "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"name\": \"Nombre actualizado\",\n  \"slug\": \"concesionario-ejemplo\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"banner_url\": \"https://cdn.ejemplo/banner.png\",\n  \"description\": \"Nueva descripción.\",\n  \"website_url\": \"https://ejemplo.com\",\n  \"email\": \"contacto@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"912345678\",\n  \"address\": \"Calle Ejemplo 1, Madrid\",\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"created_at\": \"2026-05-05T12:00:00.000Z\",\n  \"updated_at\": \"2026-05-05T13:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "actualizar horarios de concesionario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schedules\": [\n    {\n      \"day\": 1,\n      \"open_times\": [\n        {\n          \"open_time\": \"09:00\",\n          \"close_time\": \"14:00\"\n        },\n        {\n          \"open_time\": \"16:00\",\n          \"close_time\": \"20:00\"\n        }\n      ]\n    },\n    {\n      \"day\": 2,\n      \"open_times\": [\n        {\n          \"open_time\": \"09:00\",\n          \"close_time\": \"18:00\"\n        }\n      ]\n    },\n    {\n      \"day\": 7,\n      \"open_times\": []\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/schedules",
+            "description": "JWT + DealershipTeamManagerGuard (owner/admin). Replace-all del horario semanal. `day` 1=Lunes…7=Domingo; `open_times: []` = cerrado. Embebido también en GET findOne/by-slug."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"schedules\": [\n    {\n      \"day\": 1,\n      \"open_times\": [\n        {\n          \"open_time\": \"09:00\",\n          \"close_time\": \"14:00\"\n        },\n        {\n          \"open_time\": \"16:00\",\n          \"close_time\": \"20:00\"\n        }\n      ]\n    },\n    {\n      \"day\": 7,\n      \"open_times\": []\n    }\n  ]\n}"
+                },
+                "url": "{{base_url}}/v1/dealerships/{{dealership_id}}/schedules"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[\n  {\n    \"day\": 1,\n    \"open_times\": [\n      {\n        \"open_time\": \"09:00\",\n        \"close_time\": \"14:00\"\n      },\n      {\n        \"open_time\": \"16:00\",\n        \"close_time\": \"20:00\"\n      }\n    ]\n  },\n  {\n    \"day\": 7,\n    \"open_times\": []\n  }\n]"
             }
           ]
         },
@@ -2882,8 +2940,14 @@
                     "url": {
                       "raw": "{{base_url}}/v1/search/hero-facets?facet=models&make_slugs=audi",
                       "query": [
-                        { "key": "facet", "value": "models" },
-                        { "key": "make_slugs", "value": "audi" }
+                        {
+                          "key": "facet",
+                          "value": "models"
+                        },
+                        {
+                          "key": "make_slugs",
+                          "value": "audi"
+                        }
                       ]
                     },
                     "description": "Requiere make_slugs. Cada item incluye make_id de la marca padre. Ejemplo: { id, slug, name, vehicle_count, make_id }."
@@ -2896,7 +2960,12 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/search/hero-facets?facet=price_ranges",
-                      "query": [{ "key": "facet", "value": "price_ranges" }]
+                      "query": [
+                        {
+                          "key": "facet",
+                          "value": "price_ranges"
+                        }
+                      ]
                     }
                   }
                 },
@@ -2968,8 +3037,14 @@
                   "host": ["{{base_url}}"],
                   "path": ["v1", "vehicles", "{{vehicle_id}}", "similar"],
                   "query": [
-                    { "key": "page", "value": "1" },
-                    { "key": "limit", "value": "4" }
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "4"
+                    }
                   ]
                 },
                 "description": "Público. Listado paginado de anuncios similares al vehículo indicado. Excluye el anuncio actual y solo devuelve status active. Meta: tier (1|2) y listing_href_slugs (make, model) para CTA del frontend."
@@ -3231,9 +3306,20 @@
                 "url": {
                   "raw": "{{base_url}}/v1/owner/dashboard?period=30d",
                   "query": [
-                    { "key": "period", "value": "30d" },
-                    { "key": "period", "value": "7d", "disabled": true },
-                    { "key": "period", "value": "90d", "disabled": true }
+                    {
+                      "key": "period",
+                      "value": "30d"
+                    },
+                    {
+                      "key": "period",
+                      "value": "7d",
+                      "disabled": true
+                    },
+                    {
+                      "key": "period",
+                      "value": "90d",
+                      "disabled": true
+                    }
                   ]
                 },
                 "description": "JWT (`JwtGuard`). Dashboard analítico del propietario: KPIs, serie de vistas, actividad semanal, oportunidades, inventario y datos de concesionario. Query `period`: `7d` | `30d` | `90d` (default `30d`)."
@@ -3253,9 +3339,19 @@
                 "url": {
                   "raw": "{{base_url}}/v1/vehicles/mine?page=1&limit=20",
                   "query": [
-                    { "key": "page", "value": "1" },
-                    { "key": "limit", "value": "20" },
-                    { "key": "status", "value": "active", "disabled": true }
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "status",
+                      "value": "active",
+                      "disabled": true
+                    }
                   ]
                 },
                 "description": "JWT (`JwtGuard`). Listado del propietario con stats (visitas, leads, favoritos, compartidos) y tendencias 30d vs 30d anteriores. Query opcional: `status`."
@@ -6258,9 +6354,18 @@
               "host": ["{{base_url}}"],
               "path": ["v1", "chats"],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "order_direction", "value": "ASC" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "order_direction",
+                  "value": "ASC"
+                }
               ]
             },
             "description": "Lista chats donde el usuario autenticado es participante (JWT)."
@@ -6312,9 +6417,18 @@
               "host": ["{{base_url}}"],
               "path": ["v1", "chats", "{{chat_id}}", "messages"],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "20" },
-                { "key": "order_direction", "value": "DESC" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "order_direction",
+                  "value": "DESC"
+                }
               ]
             },
             "description": "Lista mensajes de un chat (JWT). Solo participantes. Excluye mensajes borrados (soft delete)."
@@ -6890,8 +7004,14 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{auth_token}}" },
-                  { "key": "Content-Type", "value": "application/json" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -6907,7 +7027,10 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/plans?page=1&limit=10",
                 "description": "JWT + billing.manage."
@@ -6919,7 +7042,10 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/sync-stripe",
                 "description": "Crea/actualiza Product y Prices en Stripe."
@@ -6931,7 +7057,10 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/admin/plan-lead-requests?page=1&limit=10",
                 "description": "JWT + billing.manage. Listado paginado de solicitudes de planes."
@@ -6958,7 +7087,10 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -6974,7 +7106,10 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -6995,7 +7130,10 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/plans/catalog?audience=professional",
                 "description": "Planes activos + precios + features."
@@ -7007,7 +7145,10 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/me",
                 "description": "Suscripción activa, rol efectivo y cuota de anuncios."
@@ -7023,7 +7164,10 @@
                     "key": "Authorization",
                     "value": "Bearer {{access_token}}"
                   },
-                  { "key": "Content-Type", "value": "application/json" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -7043,7 +7187,10 @@
                     "key": "Authorization",
                     "value": "Bearer {{access_token}}"
                   },
-                  { "key": "Content-Type", "value": "application/json" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -7059,7 +7206,10 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/portal",
                 "description": "Devuelve portal_url del Customer Portal de Stripe."
@@ -7071,7 +7221,10 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
                 ],
                 "url": "{{base_url}}/v1/billing/invoices",
                 "description": "Historial de facturas del perfil autenticado."
@@ -7085,8 +7238,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "stripe-signature", "value": "whsec_test" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "stripe-signature",
+                "value": "whsec_test"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -7107,8 +7266,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -7124,7 +7289,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
             "url": "{{base_url}}/v1/assistant/conversations",
             "description": "Lista conversaciones del usuario autenticado."
@@ -7136,7 +7304,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
             "url": "{{base_url}}/v1/assistant/conversations",
             "description": "Crea una conversación vacía."
@@ -7148,7 +7319,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
             "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
             "description": "Obtiene mensajes de una conversación."
@@ -7160,12 +7334,96 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
             "url": "{{base_url}}/v1/assistant/conversations/{{assistant_conversation_id}}",
             "description": "Elimina una conversación del usuario."
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "financing",
+      "item": [
+        {
+          "name": "simulator config (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/v1/financing/simulator/config",
+            "description": "Público. Rangos, defaults y opciones de seguro del simulador de financiamiento."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/financing/simulator/config"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"currency\": \"USD\",\n    \"vehicle_price\": { \"min\": 5000, \"max\": 150000, \"step\": 100, \"default\": 18990 },\n    \"down_payment_percent\": { \"min\": 0, \"max\": 70, \"step\": 1, \"default\": 30 },\n    \"term_months\": { \"min\": 12, \"max\": 84, \"step\": 12, \"default\": 60 },\n    \"annual_interest_rate\": { \"min\": 0, \"max\": 25, \"step\": 0.5, \"default\": 9.5 },\n    \"insurance_options\": [\n      { \"id\": \"basic\", \"label\": \"Básico\", \"monthly_amount\": 35 },\n      { \"id\": \"standard\", \"label\": \"Estándar\", \"monthly_amount\": 55 },\n      { \"id\": \"premium\", \"label\": \"Premium\", \"monthly_amount\": 85 }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "simulator simulate (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle_price\": 18990,\n  \"down_payment_percent\": 30,\n  \"term_months\": 60,\n  \"annual_interest_rate\": 9.5,\n  \"insurance_option_id\": \"standard\"\n}"
+            },
+            "url": "{{base_url}}/v1/financing/simulator/simulate",
+            "description": "Público. Amortización francesa + schedule + breakdown + seguros. Body alineado con `SimulateFinancingHttpDto`."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vehicle_price\": 18990,\n  \"down_payment_percent\": 30,\n  \"term_months\": 60,\n  \"annual_interest_rate\": 9.5,\n  \"insurance_option_id\": \"standard\"\n}"
+                },
+                "url": "{{base_url}}/v1/financing/simulator/simulate"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"down_payment\": 5697,\n    \"financed_amount\": 13293,\n    \"monthly_payment\": 278.47,\n    \"monthly_insurance\": 55,\n    \"monthly_total\": 333.47,\n    \"total_interest\": 3415.2,\n    \"total_insurance\": 3300,\n    \"total_to_pay\": 25705.2,\n    \"credit_cost\": 6715.2,\n    \"effective_annual_rate\": 9.9163,\n    \"breakdown\": {\n      \"financed_percent\": 51.71,\n      \"interest_percent\": 13.29,\n      \"insurance_percent\": 12.84\n    },\n    \"schedule\": [\n      {\n        \"installment\": 1,\n        \"date\": \"2026-08-17\",\n        \"payment\": 278.47,\n        \"remaining_balance\": 13119.77\n      }\n    ]\n  }\n}"
+            }
+          ]
         }
       ]
     },

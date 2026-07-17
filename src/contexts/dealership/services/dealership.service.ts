@@ -21,6 +21,7 @@ import { FindOneDealershipDto } from "../dto/find-one-dealership.dto";
 import { RemoveDealershipDto } from "../dto/remove-dealership.dto";
 import { UpdateDealershipDto } from "../dto/update-dealership.dto";
 import { DealershipMembersService } from "./dealership-members.service";
+import { DealershipScheduleService } from "./dealership-schedule.service";
 
 @Injectable()
 export class DealershipService {
@@ -28,6 +29,7 @@ export class DealershipService {
     private readonly dealership_repository: TypeOrmDealershipRepository,
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly dealership_members_service: DealershipMembersService,
+    private readonly dealership_schedule_service: DealershipScheduleService,
     private readonly remove_image_service: RemoveFilesService,
   ) {}
 
@@ -84,10 +86,15 @@ export class DealershipService {
       await this.dealership_member_repository.findAllByDealershipId(
         find_one_dealership_dto.id,
       );
+    const schedules =
+      await this.dealership_schedule_service.findByDealershipId(
+        find_one_dealership_dto.id,
+      );
 
     return {
       ...dealership.toPrimitives(),
       members,
+      schedules,
     };
   }
 
@@ -108,6 +115,8 @@ export class DealershipService {
       await this.dealership_member_repository.findAllByDealershipId(
         primitives.id,
       );
+    const schedules =
+      await this.dealership_schedule_service.findByDealershipId(primitives.id);
 
     const should_hide_phone = primitives.show_phone === false;
 
@@ -116,6 +125,7 @@ export class DealershipService {
       phone: should_hide_phone ? "" : primitives.phone,
       phone_code: should_hide_phone ? "" : primitives.phone_code,
       members,
+      schedules,
     };
   }
 

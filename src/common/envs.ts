@@ -8,6 +8,7 @@ const envsSchema = z.object({
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
 
+  /** Alineado con cookie access (15 min) en authCookieConfig */
   ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   
   /** Callback Next (ej. http://localhost:3000/api/auth/callback) — OAuth y verificación de email */

@@ -1,8 +1,8 @@
-import { CanActivate, ExecutionContext } from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Request } from "express";
 import { RefreshTokenService } from "../services/refresh-token.service";
 
-
+@Injectable()
 export class RefreshTokenGuard implements CanActivate {
   constructor(
     private readonly refreshTokenService: RefreshTokenService,

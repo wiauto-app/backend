@@ -1,4 +1,5 @@
 import { PrimitiveDealership } from "./dealership";
+import { DealershipScheduleDayDto } from "./dealership-schedule";
 
 export interface DealershipMemberProfileSummary {
   id: string;
@@ -20,4 +21,5 @@ export interface DealershipMemberDetail {
 
 export interface DealershipDetail extends PrimitiveDealership {
   members: DealershipMemberDetail[];
+  schedules: DealershipScheduleDayDto[];
 }

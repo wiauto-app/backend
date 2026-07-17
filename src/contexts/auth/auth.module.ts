@@ -38,6 +38,7 @@ import { SessionService } from "./services/session.service";
 import { AdminLoginService } from "./services/admin-login.service";
 import { TwoFactorLoginService } from "./services/two-factor-login.service";
 import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scope.guard";
+import { RefreshTokenGuard } from "./guards/refresh-token.guard";
 import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
@@ -65,6 +66,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     OptionalJwtGuard,
     GoogleAuthGuard,
     AppleAuthGuard,
+    RefreshTokenGuard,
 
     MeService,
     AccountSettingsService,

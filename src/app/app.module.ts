@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-
+import { CacheModule } from '@nestjs/cache-manager';
+import KeyvRedis from '@keyv/redis';
 import { HealthModule } from "@/app/health/health.module";
 import { UserModule } from "@/contexts/users/user.module";
 import { LoggerModule } from "@/shared/logger/logger.module";
@@ -35,6 +36,7 @@ import { AlertsModule } from "../contexts/alerts/alerts.module";
 import { LocationsModule } from "../contexts/locations/locations.module";
 import { BillingModule } from "../contexts/billing/billing.module";
 import { AssistantModule } from "../contexts/assistant/assistant.module";
+import { FinancingModule } from "../contexts/financing/financing.module";
 
 @Module({
   imports: [
@@ -68,6 +70,7 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
     LocationsModule,
     BillingModule,
     AssistantModule,
+    FinancingModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -86,6 +89,16 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
           limit: envs.VEHICLE_IDENTIFICATION_THROTTLE_LIMIT,
         },
       ],
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: () => {
+        return {
+          stores: [
+            new KeyvRedis(envs.REDIS_URL),
+          ],
+        };
+      },
     }),
     BullModule.forRoot({
       connection: {

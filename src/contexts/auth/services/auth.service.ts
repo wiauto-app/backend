@@ -136,8 +136,7 @@ export class AuthService {
     const token_hash = hashToken(raw_token);
     const revoked = await this.refreshTokenService.findRevokedByTokenHash(token_hash);
     if (revoked) {
-      await this.sessionService.delete(revoked.session_id);
-      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
+      return this.resolveRevokedRefreshReuse(revoked);
     }
 
     const refresh_token = await this.refreshTokenService.findByRawToken(raw_token);
@@ -175,6 +174,12 @@ export class AuthService {
       },
     );
 
+    this.refreshTokenService.rememberRotationForGrace(
+      refresh_token.id,
+      new_raw_token,
+      refresh_token_hash,
+    );
+
     const scope = user.two_factor_enabled ? "2fa_challenge" : "session";
     const token = this.createToken({
       user,
@@ -187,5 +192,43 @@ export class AuthService {
       token,
       refresh_token: new_raw_token,
     };
+  }
+
+  /**
+   * Reuso concurrente del padre ya rotado: si hay hijo reciente y sesión activa,
+   * devolver los tokens del hijo. Si no hay hijo válido, invalidar la sesión.
+   */
+  private async resolveRevokedRefreshReuse(
+    revoked: RefreshTokenEntity,
+  ): Promise<SignInResult> {
+    const child =
+      await this.refreshTokenService.findRecentActiveChildByParentId(revoked.id);
+    const session = revoked.session;
+    const session_active =
+      Boolean(session) && session.expires_at.getTime() > Date.now();
+
+    if (child && session_active) {
+      const cached = this.refreshTokenService.getGraceRotation(revoked.id);
+      if (cached && cached.token_hash === child.token_hash) {
+        const user = await this.userService.findOne(revoked.user_id);
+        const scope = user.two_factor_enabled ? "2fa_challenge" : "session";
+        const token = this.createToken({
+          user,
+          session_id: revoked.session_id,
+          refresh_token_hash: child.token_hash,
+          scope,
+        });
+        return {
+          type: scope,
+          token,
+          refresh_token: cached.raw_token,
+        };
+      }
+      // Hijo válido pero sin raw en cache: no borrar sesión (otra instancia pudo rotar).
+      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
+    }
+
+    await this.sessionService.delete(revoked.session_id);
+    throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
   }
 }

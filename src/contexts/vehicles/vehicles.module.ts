@@ -160,6 +160,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     },
   ],
   imports: [
+    
     TypeOrmModule.forFeature([
       VehicleEntity,
       FeaturesEntity,

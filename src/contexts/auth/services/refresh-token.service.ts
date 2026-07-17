@@ -14,10 +14,25 @@ import { authResponseConfig } from "../response.config";
 export interface CreateRefreshTokenResult {
   entity: RefreshTokenEntity;
   raw_token: string;
-};
+}
+
+/** Ventana para reutilizar el refresh hijo tras una rotación concurrente. */
+export const REFRESH_ROTATION_GRACE_MS = 30_000;
+
+export interface GraceRotationTokens {
+  raw_token: string;
+  token_hash: string;
+  cached_at: number;
+}
 
 @Injectable()
 export class RefreshTokenService {
+  /** Raw del hijo recién emitido (no se persiste en DB); solo para grace same-process. */
+  private readonly recent_rotations_by_parent_id = new Map<
+    string,
+    GraceRotationTokens
+  >();
+
   constructor(
     @InjectRepository(RefreshTokenEntity)
     private readonly refresh_token_repository: Repository<RefreshTokenEntity>,
@@ -67,6 +82,55 @@ export class RefreshTokenService {
       where: { token_hash, revoked: true },
       relations: ["session"],
     });
+  }
+
+  /**
+   * Hijo activo creado dentro de la ventana de grace (rotación reciente).
+   */
+  async findRecentActiveChildByParentId(
+    parent_id: string,
+    max_age_ms: number = REFRESH_ROTATION_GRACE_MS,
+  ): Promise<RefreshTokenEntity | null> {
+    const child = await this.refresh_token_repository.findOne({
+      where: {
+        parent_id,
+        revoked: false,
+        expires_at: MoreThan(new Date()),
+      },
+      relations: ["session"],
+    });
+    if (!child) {
+      return null;
+    }
+    const age_ms = Date.now() - child.created_at.getTime();
+    if (age_ms > max_age_ms) {
+      return null;
+    }
+    return child;
+  }
+
+  rememberRotationForGrace(
+    parent_id: string,
+    raw_token: string,
+    token_hash: string,
+  ): void {
+    this.recent_rotations_by_parent_id.set(parent_id, {
+      raw_token,
+      token_hash,
+      cached_at: Date.now(),
+    });
+  }
+
+  getGraceRotation(parent_id: string): GraceRotationTokens | null {
+    const entry = this.recent_rotations_by_parent_id.get(parent_id);
+    if (!entry) {
+      return null;
+    }
+    if (Date.now() - entry.cached_at > REFRESH_ROTATION_GRACE_MS) {
+      this.recent_rotations_by_parent_id.delete(parent_id);
+      return null;
+    }
+    return entry;
   }
 
   async findBySessionId(session_id: string): Promise<RefreshTokenEntity> {
