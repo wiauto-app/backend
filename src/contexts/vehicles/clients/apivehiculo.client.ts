@@ -98,17 +98,72 @@ interface ApiVehiculoLookupResponse {
   data?: ApiVehicleData;
 }
 
-
+export interface ApiVehiculoSubscriptionMe {
+  _id: string;
+  userId: string;
+  planId: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  requestsUsed: number;
+  additionalRequests: number;
+  planMonthlyRequests: number;
+  totalRequests: number;
+  remainingRequests: number;
+  stripeSubscriptionId: string | null;
+  pendingPlanId: string | null;
+  cancelledAt: string | null;
+}
 
 @Injectable()
 export class ApiVehiculoClient {
   private readonly logger = new Logger(ApiVehiculoClient.name);
 
-  async lookup(query: VehicleExternalLookupQuery): Promise<ApiVehicleData> {
+  private resolveApiKey(): string {
     const api_key = envs.APIVEHICULO_API_KEY.trim();
     if (!api_key) {
       throw new VehicleExternalLookupConfigException();
     }
+    return api_key;
+  }
+
+  private buildUrl(path: string): string {
+    const base = envs.APIVEHICULO_BASE_URL.replace(/\/$/, "");
+    const normalized_path = path.replace(/^\//, "");
+    return `${base}/${normalized_path}`;
+  }
+
+  async getSubscriptionMe(): Promise<ApiVehiculoSubscriptionMe> {
+    const api_key = this.resolveApiKey();
+    const url = this.buildUrl("subscriptions/me");
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      this.logger.error(
+        `ApiVehiculo subscription auth error status=${response.status}`,
+      );
+      throw new VehicleExternalLookupConfigException();
+    }
+    if (!response.ok) {
+      this.logger.error(
+        `ApiVehiculo subscription unexpected status=${response.status}`,
+      );
+      throw new VehicleExternalLookupConfigException();
+    }
+
+    return (await response.json()) as ApiVehiculoSubscriptionMe;
+  }
+
+  async lookup(query: VehicleExternalLookupQuery): Promise<ApiVehicleData> {
+    const api_key = this.resolveApiKey();
 
     const has_plate =
       typeof query.plate === "string" && query.plate.trim().length > 0;

@@ -3106,6 +3106,21 @@
               "name": "identification",
               "item": [
                 {
+                  "name": "disponibilidad de identificación",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/vehicles/identification/availability",
+                    "description": "JWT requerido. Consulta ApiVehiculo `GET /subscriptions/me`. Devuelve `available: false` si `remaining_requests` es 0."
+                  },
+                  "response": []
+                },
+                {
                   "name": "lookup por matrícula o VIN",
                   "request": {
                     "method": "POST",

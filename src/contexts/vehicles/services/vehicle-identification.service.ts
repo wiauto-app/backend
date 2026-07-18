@@ -3,11 +3,12 @@ import { BadRequestException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { TransmissionType } from "@/src/contexts/vehicles/types/vehicle";
 
-import { ApiVehicleData, ApiVehicleResponse } from "../clients/apivehiculo.client";
 import {
-  CatalogReverseMatchService,
-
-} from "./catalog-reverse-match.service";
+  ApiVehiculoClient,
+  ApiVehicleData,
+  ApiVehicleResponse,
+} from "../clients/apivehiculo.client";
+import { CatalogReverseMatchService } from "./catalog-reverse-match.service";
 
 export interface LookupVehicleIdentificationDto {
   plate?: string;
@@ -56,11 +57,30 @@ export interface LookupVehicleIdentificationResult {
   match: VehicleIdentificationMatch;
 }
 
+export interface VehicleIdentificationAvailabilityResult {
+  available: boolean;
+  remaining_requests: number;
+  total_requests: number;
+}
+
 @Injectable()
 export class VehicleIdentificationService {
   constructor(
     private readonly catalog_reverse_match: CatalogReverseMatchService,
-  ) { }
+    private readonly api_vehiculo_client: ApiVehiculoClient,
+  ) {}
+
+  async getAvailability(): Promise<VehicleIdentificationAvailabilityResult> {
+    const subscription = await this.api_vehiculo_client.getSubscriptionMe();
+    const remaining_requests = Number(subscription?.remainingRequests) || 0;
+    const total_requests = Number(subscription?.totalRequests) || 0;
+
+    return {
+      available: remaining_requests > 0,
+      remaining_requests,
+      total_requests,
+    };
+  }
 
   async lookup(
     dto: LookupVehicleIdentificationDto,

@@ -10,6 +10,7 @@ export const V1_VEHICLES_AI_RECOMMEND_PRICE = "recommend-price";
 export const V1_VEHICLES_AI_GENERATE_DESCRIPTION = "generate-description";
 export const V1_VEHICLES_IDENTIFICATION = "identification";
 export const V1_VEHICLES_IDENTIFICATION_LOOKUP = "lookup";
+export const V1_VEHICLES_IDENTIFICATION_AVAILABILITY = "availability";
 export const V1_FEATURES = "v1/features";
 export const V1_CATEGORIES = "v1/categories";
 export const V1_VEHICLE_TYPES = "v1/vehicle-types";
