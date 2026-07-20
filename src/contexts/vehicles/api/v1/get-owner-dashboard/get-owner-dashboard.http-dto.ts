@@ -1,13 +1,17 @@
-import { IsIn, IsOptional } from "class-validator";
-
-import {
-  DEFAULT_OWNER_DASHBOARD_PERIOD,
-  OWNER_DASHBOARD_PERIOD_CODES,
-} from "@/src/contexts/vehicles/utils/owner-dashboard-rules";
-import type { OwnerDashboardPeriodCode } from "@/src/contexts/vehicles/types/owner-dashboard";
+import { IsDateString, IsOptional, Matches } from "class-validator";
 
 export class GetOwnerDashboardHttpDto {
   @IsOptional()
-  @IsIn(OWNER_DASHBOARD_PERIOD_CODES)
-  period?: OwnerDashboardPeriodCode = DEFAULT_OWNER_DASHBOARD_PERIOD;
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "start_date debe tener formato YYYY-MM-DD",
+  })
+  start_date?: string;
+
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "end_date debe tener formato YYYY-MM-DD",
+  })
+  end_date?: string;
 }

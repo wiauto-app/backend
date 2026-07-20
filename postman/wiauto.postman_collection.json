@@ -3319,25 +3319,21 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/v1/owner/dashboard?period=30d",
+                  "raw": "{{base_url}}/v1/owner/dashboard?start_date=2026-06-21&end_date=2026-07-20",
                   "query": [
                     {
-                      "key": "period",
-                      "value": "30d"
+                      "key": "start_date",
+                      "value": "2026-06-21",
+                      "description": "YYYY-MM-DD (inclusive). Default: hoy - 6 días si no se envía."
                     },
                     {
-                      "key": "period",
-                      "value": "7d",
-                      "disabled": true
-                    },
-                    {
-                      "key": "period",
-                      "value": "90d",
-                      "disabled": true
+                      "key": "end_date",
+                      "value": "2026-07-20",
+                      "description": "YYYY-MM-DD (inclusive). Default: hoy si no se envía."
                     }
                   ]
                 },
-                "description": "JWT (`JwtGuard`). Dashboard analítico del propietario: KPIs, serie de vistas, actividad semanal, oportunidades, inventario y datos de concesionario. Query `period`: `7d` | `30d` | `90d` (default `30d`)."
+                "description": "JWT (`JwtGuard`). Dashboard analítico del propietario: KPIs, serie de vistas, actividad semanal, oportunidades, inventario y datos de concesionario. Query `start_date` y `end_date` (YYYY-MM-DD); ambos opcionales con default últimos 7 días. Respuesta incluye `period.granularity`: `day` (≤15 días), `week` (16-31), `month` (>31)."
               },
               "response": []
             },

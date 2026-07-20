@@ -1,11 +1,12 @@
 import type { OwnerVehicleStatTrend } from "./owner-vehicle-list-item";
 
-export type OwnerDashboardPeriodCode = "7d" | "30d" | "90d";
+export type OwnerDashboardGranularity = "day" | "week" | "month";
 
 export interface OwnerDashboardPeriod {
   days: number;
   start: string;
   end: string;
+  granularity: OwnerDashboardGranularity;
 }
 
 export interface OwnerDashboardSummary {

@@ -1,3 +1,4 @@
+import { BadRequestException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { envs } from "@/src/common/envs";
 import { ChatService } from "@/src/contexts/chat/services/chat.service";
@@ -16,7 +17,8 @@ import {
   buildQualityDistribution,
   buildStockAgeBuckets,
   calculateListingQualityScore,
-  resolveOwnerDashboardPeriodBounds,
+  OwnerDashboardDateRangeError,
+  resolveOwnerDashboardDateRangeBounds,
   WEEKLY_ACTIVITY_DAYS,
 } from "../utils/owner-dashboard-rules";
 import { GetOwnerDashboardDto } from "../dto/get-owner-dashboard.dto";
@@ -35,7 +37,22 @@ export class OwnerDashboardService {
 
   async getDashboard(dto: GetOwnerDashboardDto): Promise<OwnerDashboard> {
     const now = new Date();
-    const bounds = resolveOwnerDashboardPeriodBounds(dto.period, now);
+    let bounds;
+
+    try {
+      bounds = resolveOwnerDashboardDateRangeBounds({
+        start_date: dto.start_date,
+        end_date: dto.end_date,
+        now,
+      });
+    } catch (error) {
+      if (error instanceof OwnerDashboardDateRangeError) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
+    }
+
     const week_start = new Date(now.getTime() - WEEKLY_ACTIVITY_DAYS * DAY_MS);
 
     const [
@@ -51,12 +68,13 @@ export class OwnerDashboardService {
         profile_id: dto.profile_id,
         current_start: bounds.current_start,
         previous_start: bounds.previous_start,
-        period_end: bounds.end,
+        period_end: bounds.period_end,
       }),
       this.owner_dashboard_repository.getViewsTimeSeries({
         profile_id: dto.profile_id,
-        period_start: bounds.start,
-        period_end: bounds.end,
+        period_start: bounds.current_start,
+        period_end: bounds.period_end,
+        granularity: bounds.granularity,
       }),
       this.owner_dashboard_repository.countWeeklyVisits({
         profile_id: dto.profile_id,
@@ -90,6 +108,7 @@ export class OwnerDashboardService {
         days: bounds.days,
         start: bounds.start.toISOString(),
         end: bounds.end.toISOString(),
+        granularity: bounds.granularity,
       },
       summary: buildOwnerDashboardSummary(summary_raw),
       views_time_series,

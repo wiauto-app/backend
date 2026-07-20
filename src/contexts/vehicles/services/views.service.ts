@@ -24,6 +24,7 @@ export class ViewsService {
   async record(
     input: RecordVehicleViewInput,
   ): Promise<{ view: PrimitiveView }> {
+    console.log("record", input);
     const vehicle = await this.vehicle_repository.findOne(input.vehicle_id);
     if (!vehicle) {
       throw new VehicleNotFoundException(input.vehicle_id);

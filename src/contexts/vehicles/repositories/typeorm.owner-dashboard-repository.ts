@@ -10,6 +10,7 @@ import {
   OwnerDashboardSummaryRaw,
   OwnerDashboardViewsBucket,
 } from "../types/owner-dashboard";
+import type { OwnerDashboardGranularity } from "../types/owner-dashboard";
 type SummaryRow = {
   active_stock_current: string;
   active_stock_previous: string;
@@ -49,6 +50,22 @@ type PriceDeviationRow = {
   price: string;
   benchmark_price: string;
   deviation_percent: string;
+};
+
+const resolveDateTruncUnit = (
+  granularity: OwnerDashboardGranularity,
+): "day" | "week" | "month" => {
+  switch (granularity) {
+    case "day": {
+      return "day";
+    }
+    case "week": {
+      return "week";
+    }
+    case "month": {
+      return "month";
+    }
+  }
 };
 
 const map_summary_row = (row: SummaryRow): OwnerDashboardSummaryRaw => ({
@@ -181,11 +198,13 @@ export class TypeOrmOwnerDashboardRepository {
     profile_id: string;
     period_start: Date;
     period_end: Date;
+    granularity: OwnerDashboardGranularity;
   }): Promise<OwnerDashboardViewsBucket[]> {
+    const date_trunc_unit = resolveDateTruncUnit(params.granularity);
     const rows = await this.data_source.query<ViewsBucketRow[]>(
       `
         SELECT
-          date_trunc('week', vv.created_at) AS bucket_start,
+          date_trunc('${date_trunc_unit}', vv.created_at) AS bucket_start,
           COUNT(*)::int AS count
         FROM vehicle_views vv
         INNER JOIN vehicles v ON v.id = vv.vehicle_id

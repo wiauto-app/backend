@@ -1,6 +1,5 @@
-import type { OwnerDashboardPeriodCode } from "../types/owner-dashboard";
-
 export interface GetOwnerDashboardDto {
   profile_id: string;
-  period: OwnerDashboardPeriodCode;
+  start_date?: string;
+  end_date?: string;
 }
