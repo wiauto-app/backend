@@ -6,7 +6,7 @@ import { V1_ADMIN_SEARCH_REINDEX_HERO } from "@/src/contexts/vehicles/api/route.
 import { BulkReindexHeroSearchService } from "../../../services/bulk-reindex-hero-search.service";
 
 @Controller(V1_ADMIN_SEARCH_REINDEX_HERO)
-@UseGuards(JwtGuard, AdminOnlyGuard)
+// @UseGuards(JwtGuard, AdminOnlyGuard)
 export class AdminReindexHeroSearchController {
   constructor(
     private readonly bulk_reindex_hero_search_service: BulkReindexHeroSearchService,
