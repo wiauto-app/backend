@@ -14,11 +14,12 @@ export class MeService {
   ) {}
 
   async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {
-    const membership_detail = user.profile?.id
-      ? await this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
-      : null;
-    const identity = await this.user_auth_provider_service.getAuthIdentitySummary(user.id);
-
+    const [membership_detail, identity] = await Promise.all([
+      user.profile.id
+        ? this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
+        : Promise.resolve(null),
+      this.user_auth_provider_service.getAuthIdentitySummary(user.id),
+    ]);
     return MeResponseDto.fromUser(user, {
       providers: identity.providers,
       has_password: identity.has_password,
