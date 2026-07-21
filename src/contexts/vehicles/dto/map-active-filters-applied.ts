@@ -72,6 +72,9 @@ export const mapActiveFiltersApplied = (
   if (dto.time_to_charge != null) {
     applied.time_to_charge = dto.time_to_charge;
   }
+  if (dto.condition != null) {
+    applied.condition = dto.condition;
+  }
 
   return applied;
 };

@@ -1,5 +1,7 @@
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import {
+  CONDITION_VEHICLE,
+  ConditionVehicle,
   PublisherType,
   PUBLISHER_TYPE,
   TransmissionType,
@@ -143,4 +145,8 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
 
   @OptionalQueryStringArray()
   dealership_ids: string[] = [];
+
+  @IsOptional()
+  @IsIn(Object.values(CONDITION_VEHICLE))
+  condition: ConditionVehicle;
 }

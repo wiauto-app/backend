@@ -1,4 +1,5 @@
 import {
+  ConditionVehicle,
   PublisherType,
   TransmissionType,
 } from "./vehicle";
@@ -26,6 +27,7 @@ export interface ActiveFiltersApplied {
   battery_capacity_since?: number;
   battery_capacity_until?: number;
   time_to_charge?: number;
+  condition?: ConditionVehicle;
 }
 
 export interface ActiveFiltersResolved {

@@ -2,6 +2,8 @@ import { ActiveFilterItem } from "../types/active-filter-item";
 import { ActiveFiltersResolved } from "../types/active-filters-response";
 import { FindActiveFiltersDto } from "../dto/find-active-filters.dto";
 import {
+  CONDITION_VEHICLE,
+  ConditionVehicle,
   PUBLISHER_TYPE,
   TRANSMISSION_TYPE,
   PublisherType,
@@ -16,6 +18,11 @@ const PUBLISHER_TYPE_MAP: Record<PublisherType, string> = {
 const TRANSMISSION_TYPE_MAP: Record<TransmissionType, string> = {
   [TRANSMISSION_TYPE.MANUAL]: "manual",
   [TRANSMISSION_TYPE.AUTOMATIC]: "automático",
+};
+
+const CONDITION_MAP: Record<ConditionVehicle, string> = {
+  [CONDITION_VEHICLE.NEW]: "nuevo",
+  [CONDITION_VEHICLE.USED]: "usado",
 };
 
 interface PushRangeOptions {
@@ -122,7 +129,11 @@ export const buildActiveFiltersTitle = (
   pushRange(parts, dto.since_mileage, dto.until_mileage, { unit: "km" });
   pushRange(parts, dto.since_price, dto.until_price, { unit: "€" });
 
-  parts.push("de segunda mano");
+  if (dto.condition != null && CONDITION_MAP[dto.condition]) {
+    parts.push(CONDITION_MAP[dto.condition]);
+  } else {
+    parts.push("de segunda mano");
+  }
 
   const locationNames = [
     ...resolved.municipalities,

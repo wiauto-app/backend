@@ -1,5 +1,9 @@
 import { PaginationDto } from "@/src/contexts/shared/dto/pagination.dto";
-import { PublisherType, TransmissionType } from "../types/vehicle";
+import {
+  ConditionVehicle,
+  PublisherType,
+  TransmissionType,
+} from "../types/vehicle";
 import { PickType } from "@nestjs/mapped-types";
 
 
@@ -91,6 +95,8 @@ export class FindAllVehiclesDto extends PickType(PaginationDto, [
   exclude_vehicle_ids: string[];
 
   dealership_ids: string[];
+
+  condition?: ConditionVehicle;
 
 }
 
