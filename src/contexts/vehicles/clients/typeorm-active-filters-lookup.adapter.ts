@@ -67,7 +67,7 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
   async resolveResolved(
     find_active_filters_dto: FindActiveFiltersDto,
   ): Promise<ActiveFiltersResolved> {
-    const type_slug = find_active_filters_dto.type_slug?.trim();
+    const type_slug = find_active_filters_dto.type_slug
     const makes_slugs = has_non_empty_slug_array(find_active_filters_dto.makes_slugs)
       ? trim_slug_array(find_active_filters_dto.makes_slugs)
       : [];

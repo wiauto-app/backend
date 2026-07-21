@@ -13,6 +13,7 @@ import { ServicesService } from "./services.service";
 import { TractionsService } from "./tractions.service";
 import { VehicleTypesService } from "./vehicle-types.service";
 import { WarrantyTypesService } from "./warranty-types.service";
+import { buildActiveFiltersTitle } from "../utils/build-active-filters-title";
 
 @Injectable()
 export class VehicleFiltersService {
@@ -27,7 +28,7 @@ export class VehicleFiltersService {
     private readonly features_service: FeaturesService,
     private readonly fuel_types_service: CatalogFuelTypesService,
     private readonly active_filters_lookup_port: ActiveFiltersLookupPort,
-  ) {}
+  ) { }
 
   async findFilters() {
     const [
@@ -128,6 +129,7 @@ export class VehicleFiltersService {
     return {
       resolved,
       applied: mapActiveFiltersApplied(find_active_filters_dto),
+      title: buildActiveFiltersTitle(resolved, find_active_filters_dto),
     };
   }
 }

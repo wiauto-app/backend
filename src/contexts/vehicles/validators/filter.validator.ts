@@ -34,6 +34,11 @@ export function normalize_query_string_array(value: unknown): string[] | undefin
     const expanded = split_query_string_array_item(value);
     return expanded.length > 0 ? expanded : undefined;
   }
+  // qs / express: publisher_types[0]=x → { "0": "x" }
+  if (typeof value === "object") {
+    const values = Object.values(value as Record<string, unknown>);
+    return normalize_query_string_array(values);
+  }
   return undefined;
 }
 

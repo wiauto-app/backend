@@ -10,7 +10,6 @@ import {
   OptionalQueryStringArray,
 } from "@/src/contexts/vehicles/validators/filter.validator";
 import {
-  IsArray,
   IsBoolean,
   IsIn,
   IsNumber,
@@ -70,8 +69,7 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   @OptionalPositiveInt()
   radius: number;
 
-  @IsOptional()
-  @IsArray()
+  @OptionalQueryStringArray()
   @IsIn(Object.values(PUBLISHER_TYPE), { each: true })
   publisher_types: PublisherType[] = [];
 
@@ -94,8 +92,7 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   @OptionalPositiveInt()
   until_mileage: number;
 
-  @IsOptional()
-  @IsArray()
+  @OptionalQueryStringArray()
   @IsIn(Object.values(TRANSMISSION_TYPE), { each: true })
   transmission_types: TransmissionType[] = [];
 
@@ -147,4 +144,3 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   @OptionalQueryStringArray()
   dealership_ids: string[] = [];
 }
-
