@@ -1,9 +1,21 @@
-import { UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 
 import { envs } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
 
 const normalizeUrl = (url: string): string => url.trim().replace(/\/$/, "");
+
+const isUrlAllowedByBases = (url: string, bases: string[]): boolean => {
+  const normalized = normalizeUrl(url);
+  const allowed = bases
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map(normalizeUrl);
+
+  return allowed.some(
+    (entry) => normalized === entry || normalized.startsWith(`${entry}/`),
+  );
+};
 
 export const resolveEmailVerificationRedirectUrl = (
   redirectUrl?: string,
@@ -21,20 +33,25 @@ export const resolveEmailVerificationRedirectUrl = (
   return candidate;
 };
 
-const isAllowedRedirectUrl = (url: string): boolean => {
-  const normalized = normalizeUrl(url);
-  const allowed = [
-    envs.FRONTEND_REDIRECT_URL,
-    envs.FRONTEND_URL,
-  ]
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .map(normalizeUrl);
+export const resolvePasswordRecoveryRedirectUrl = (redirectUrl: string): string => {
+  const candidate = redirectUrl.trim();
 
-  return allowed.some(
-    (entry) => normalized === entry || normalized.startsWith(`${entry}/`),
-  );
+  if (!candidate) {
+    throw new BadRequestException("redirect_url es obligatorio");
+  }
+
+  if (!isAllowedPasswordRecoveryRedirectUrl(candidate)) {
+    throw new BadRequestException("La URL de redirección no está permitida");
+  }
+
+  return normalizeUrl(candidate);
 };
+
+const isAllowedRedirectUrl = (url: string): boolean =>
+  isUrlAllowedByBases(url, [envs.FRONTEND_REDIRECT_URL, envs.FRONTEND_URL]);
+
+const isAllowedPasswordRecoveryRedirectUrl = (url: string): boolean =>
+  isUrlAllowedByBases(url, [envs.FRONTEND_URL, envs.DASHBOARD_URL]);
 
 export type OAuthFrontendRedirectOptions = {
   popup?: boolean;

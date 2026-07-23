@@ -214,9 +214,7 @@ export class DealershipMembersService {
   ): Promise<void> {
     const profile_ids = members.map((member) => member.profile_id);
     const profiles = await this.profile_repository.findByIds(profile_ids);
-    const found_profile_ids = new Set(
-      profiles.map((profile) => profile.toPrimitives().id),
-    );
+    const found_profile_ids = new Set(profiles.map((profile) => profile.id));
 
     for (const member of members) {
       if (!found_profile_ids.has(member.profile_id)) {

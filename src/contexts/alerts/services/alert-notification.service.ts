@@ -20,7 +20,7 @@ import { ALERT_EVENT_TYPE } from "../types/alert-event-type.enum";
 import { ALERT_NOTIFICATION_EVENT_STATUS } from "../types/alert-notification-event-status.enum";
 import { TypeOrmAlertNotificationEventRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-notification-event.repository";
 import { TypeOrmAlertNotificationPreferencesRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-notification-preferences.repository";
-import { AlertNotificationDispatcher, AlertPushNotificationPort, AlertSmsNotificationPort } from "../ports/alert-notification.port";
+import { AlertNotificationDispatcher } from "../ports/alert-notification.port";
 import { GetAlertNotificationPreferencesDto } from "../dto/get-alert-notification-preferences.dto";
 import { MatchVehicleAlertsDto } from "../dto/match-vehicle-alerts.dto";
 import { ProcessAlertEventDto } from "../dto/process-alert-event.dto";
@@ -28,11 +28,12 @@ import { SendAlertDigestDto } from "../dto/send-alert-digest.dto";
 import { UpdateAlertNotificationPreferencesDto } from "../dto/update-alert-notification-preferences.dto";
 import { vehicle_matches_alert_filters } from "./alert-vehicle-matcher";
 import {
-  get_enabled_channels,
   is_alert_toggle_enabled,
   is_global_toggle_enabled,
+  get_enabled_channels,
 } from "./alert-notification-rules";
 import { compute_digest_scheduled_for } from "./compute-digest-scheduled-for";
+import { NotificationChannelDispatcher } from "./notification-channel-dispatcher.service";
 
 interface Recipient {
   profile_id: string;
@@ -50,8 +51,7 @@ export class AlertNotificationService {
     private readonly vehicle_list_item_repository: TypeOrmVehicleListItemRepository,
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly alert_notification_dispatcher: AlertNotificationDispatcher,
-    private readonly alert_push_port: AlertPushNotificationPort,
-    private readonly alert_sms_port: AlertSmsNotificationPort,
+    private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
   ) {}
 
   async processEvent(dto: ProcessAlertEventDto): Promise<void> {
@@ -215,6 +215,10 @@ export class AlertNotificationService {
       recipient,
       snapshot,
     );
+    const { title, body } = this.build_title_and_body(
+      dto.event_type,
+      notification_payload,
+    );
 
     const event = AlertNotificationEvent.create({
       profile_id: recipient.profile_id,
@@ -233,22 +237,14 @@ export class AlertNotificationService {
       return;
     }
 
-    for (const channel of channels) {
-      const event_notification = {
-        to: recipient.email,
-        event_type: dto.event_type,
-        channel,
-        payload: notification_payload,
-      };
-
-      if (channel === "email") {
-        await this.alert_notification_dispatcher.notifyEvent(event_notification);
-      } else if (channel === "push") {
-        await this.alert_push_port.notify(event_notification);
-      } else {
-        await this.alert_sms_port.notify(event_notification);
-      }
-    }
+    await this.notification_channel_dispatcher.notify({
+      profile_id: recipient.profile_id,
+      category: dto.event_type,
+      title,
+      body,
+      data: notification_payload,
+      email_override: recipient.email,
+    });
 
     await this.event_repository.update(event.markSent());
 
@@ -261,6 +257,70 @@ export class AlertNotificationService {
         recipient.alert.update({ last_sent_at: new Date() }),
       );
     }
+  }
+
+  private build_title_and_body(
+    event_type: ProcessAlertEventDto["event_type"],
+    payload: Record<string, unknown>,
+  ): { title: string; body: string } {
+    const vehicle_title =
+      typeof payload.vehicle_title === "string"
+        ? payload.vehicle_title
+        : "WiAuto";
+
+    const previous_price = payload.previous_price;
+    const new_price = payload.vehicle_price;
+
+    if (
+      event_type === ALERT_EVENT_TYPE.PRICE_DROP &&
+      typeof previous_price === "number" &&
+      typeof new_price === "number"
+    ) {
+      return {
+        title: `Bajada de precio: ${vehicle_title}`,
+        body: `El precio bajó de ${previous_price} € a ${new_price} €`,
+      };
+    }
+
+    if (event_type === ALERT_EVENT_TYPE.SOLD_REMOVED) {
+      return {
+        title: `Anuncio no disponible: ${vehicle_title}`,
+        body: "El anuncio ya no está disponible",
+      };
+    }
+
+    if (event_type === ALERT_EVENT_TYPE.NEW_MESSAGE) {
+      return {
+        title: "Nuevo mensaje",
+        body: "Tienes un nuevo mensaje",
+      };
+    }
+
+    if (event_type === ALERT_EVENT_TYPE.SELLER_REPLY) {
+      return {
+        title: "Respuesta del vendedor",
+        body: "El vendedor respondió a tu mensaje",
+      };
+    }
+
+    if (event_type === ALERT_EVENT_TYPE.SAVED_VEHICLE_REMINDER) {
+      return {
+        title: "Recordatorio de vehículo guardado",
+        body: "Tienes un vehículo guardado sin revisar",
+      };
+    }
+
+    if (event_type === ALERT_EVENT_TYPE.FEATURED) {
+      return {
+        title: `Destacado: ${vehicle_title}`,
+        body: `Novedad sobre ${vehicle_title}`,
+      };
+    }
+
+    return {
+      title: vehicle_title,
+      body: `Novedad sobre ${vehicle_title}`,
+    };
   }
 
   private async load_preferences(

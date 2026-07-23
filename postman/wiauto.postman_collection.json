@@ -186,6 +186,10 @@
       "key": "report_category_id",
       "value": "",
       "description": "UUID de categoría de denuncia (`v1/report-categories`, `v1/admin/report-categories`)."
+    },
+    {
+      "key": "notification_id",
+      "value": ""
     }
   ],
   "item": [
@@ -1130,7 +1134,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
+                  "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"redirect_url\": \"http://localhost:5173/auth/reset-password\"\n}"
                 },
                 "url": "{{base_url}}/auth/admin/password-recovery/request"
               },
@@ -1148,7 +1152,7 @@
                     "url": "{{base_url}}/auth/admin/password-recovery/request",
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"email\": \"usuario@ejemplo.com\"\n}"
+                      "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"redirect_url\": \"http://localhost:5173/auth/reset-password\"\n}"
                     }
                   },
                   "status": "OK",
@@ -4400,6 +4404,21 @@
           "name": "leads",
           "item": [
             {
+              "name": "listar leads (vendedor/equipo)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/leads?from=2026-01-01&to=2026-12-31&sort=desc&page=1&limit=20",
+                "description": "JWT (`JwtGuard`). Leads de vehículos propios o del mismo dealership (dealership_members). Query: `from`, `to`, `sort` (asc|desc), `page`, `limit`. Respuesta paginada con resumen de vehículo y `buyer_profile_id`."
+              },
+              "response": []
+            },
+            {
               "name": "crear lead (guest)",
               "request": {
                 "method": "POST",
@@ -6519,6 +6538,94 @@
             ],
             "url": "{{base_url}}/v1/chat-messages/{{chat_message_id}}",
             "description": "Soft delete de un mensaje (JWT). Solo el `sender_id`. Emite `message_deleted`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "alerts",
+      "item": [
+        {
+          "name": "obtener preferencias de notificación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/alerts/notification-preferences",
+            "description": "JWT. Preferencias globales de canales y categorías (incluye `notify_new_leads`, `channel_in_app`, `channel_whatsapp`)."
+          },
+          "response": []
+        },
+        {
+          "name": "actualizar preferencias de notificación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notify_new_leads\": true,\n  \"channel_email\": true,\n  \"channel_in_app\": true,\n  \"channel_push\": true,\n  \"channel_whatsapp\": false\n}"
+            },
+            "url": "{{base_url}}/v1/alerts/notification-preferences",
+            "description": "JWT. Actualiza uno o más campos de preferencias."
+          },
+          "response": []
+        },
+        {
+          "name": "listar inbox in-app",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/alerts/notifications?page=1&limit=20",
+            "description": "JWT. Inbox in-app paginado (no leídas primero)."
+          },
+          "response": []
+        },
+        {
+          "name": "marcar notificación como leída",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/alerts/notifications/{{notification_id}}/read",
+            "description": "JWT. Marca una notificación del perfil autenticado como leída."
+          },
+          "response": []
+        },
+        {
+          "name": "marcar todas como leídas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/alerts/notifications/read-all",
+            "description": "JWT. Marca todas las notificaciones del perfil como leídas. Respuesta: `{ updated }`."
           },
           "response": []
         }

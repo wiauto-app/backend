@@ -3,71 +3,32 @@ import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { Profile, PrimitiveProfile, PrimitiveProfileRole, PrimitiveUser } from "../types/profile";
 import { ProfileEntity } from "../entities/profile.entity";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { ProfileFilter } from "../types/profile.filter";
-import { AuthProvider, User } from "@/src/contexts/users/entities/user.entity";
 
-function role_to_primitives(role: ProfileEntity["role"]): PrimitiveProfileRole | null {
-  if (!role) {
-    return null;
-  }
-
-  return {
-    id: role.id,
-    name: role.name,
-    is_admin: role.is_admin,
-    is_developer: role.is_developer,
-    is_default: role.is_default,
-  };
+export interface SaveProfileInput {
+  id: string;
+  name: string;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  image_url?: string | null;
+  role_id?: string | null;
+  phone_code?: string | null;
+  phone?: string | null;
+  dni?: string | null;
 }
 
-function resolve_user_providers(user: User): Pick<PrimitiveUser, "providers" | "has_password"> {
-  const has_password = Boolean(user.password);
-  const providers: AuthProvider[] = [];
-
-  if (has_password) {
-    providers.push("local");
-  }
-
-  for (const identity of user.auth_providers ?? []) {
-    providers.push(identity.provider);
-  }
-
-  return { providers, has_password };
-}
-
-function user_to_primitives(user: User): PrimitiveUser {
-  const identity = resolve_user_providers(user);
-
-  return {
-    id: user.id,
-    email: user.email,
-    providers: identity.providers,
-    has_password: identity.has_password,
-    last_sign_in: user.last_sign_in,
-    is_email_verified: user.is_email_verified,
-    two_factor_enabled: user.two_factor_enabled,
-    is_suspended: user.is_suspended,
-    suspension_reason: user.suspension_reason,
-    suspension_end_time: user.suspension_end_time,
-    suspended_at: user.suspended_at,
-    created_at: user.created_at,
-  };
-}
-function entity_to_primitives(entity: ProfileEntity): PrimitiveProfile {
-  return {
-    id: entity.id,
-    name: entity.name,
-    last_name: entity.last_name,
-    avatar_url: entity.avatar_url,
-    image_url: entity.image_url,
-    role_id: entity.role?.id ?? "",
-    role: role_to_primitives(entity.role),
-    user: user_to_primitives(entity.user),
-  };
+export interface UpdateProfileInput {
+  name?: string;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  image_url?: string | null;
+  role_id?: string | null;
+  phone_code?: string | null;
+  phone?: string | null;
+  dni?: string | null;
 }
 
 @Injectable()
@@ -75,29 +36,35 @@ export class TypeOrmProfileRepository {
   constructor(
     @InjectRepository(ProfileEntity)
     private readonly profileRepository: Repository<ProfileEntity>,
-  ) { }
+  ) {}
 
-  async save(profile: Profile): Promise<void> {
-    const p = profile.toPrimitives();
-    const entity = new ProfileEntity();
-    entity.id = p.id;
-    entity.name = p.name;
-    entity.last_name = p.last_name ?? undefined;
-    entity.avatar_url = p.avatar_url ?? "";
-    entity.image_url = p.image_url ?? "";
-    entity.role = p.role_id ? ({ id: p.role_id } as Roles) : null;
+  async save(input: SaveProfileInput): Promise<ProfileEntity> {
+    const entity = this.profileRepository.create({
+      id: input.id,
+      name: input.name,
+      last_name: input.last_name ?? undefined,
+      avatar_url: input.avatar_url ?? "",
+      image_url: input.image_url ?? "",
+      role: input.role_id ? ({ id: input.role_id } as Roles) : null,
+      role_id: input.role_id ?? undefined,
+      phone_code: input.phone_code ?? null,
+      phone: input.phone ?? null,
+      dni: input.dni ?? null,
+    });
 
-    await this.profileRepository.save(entity);
+    return this.profileRepository.save(entity);
   }
 
   async exists(id: string): Promise<boolean> {
     return this.profileRepository.exists({ where: { id } });
   }
 
-
-  async findAll(filter: ProfileFilter): Promise<PaginatedResult<Profile>> {
+  async findAll(
+    filter: ProfileFilter,
+  ): Promise<PaginatedResult<ProfileEntity>> {
     const skip = getSkip(filter.page, filter.limit);
-    const qb = this.profileRepository.createQueryBuilder("p")
+    const qb = this.profileRepository
+      .createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
@@ -106,7 +73,9 @@ export class TypeOrmProfileRepository {
       .take(filter.limit);
 
     if (filter.query) {
-      qb.andWhere("p.name ILIKE :query OR p.last_name ILIKE :query", { query: `%${filter.query}%` });
+      qb.andWhere("p.name ILIKE :query OR p.last_name ILIKE :query", {
+        query: `%${filter.query}%`,
+      });
     }
     if (filter.order_by) {
       qb.orderBy(`p.${filter.order_by}`, filter.order_direction);
@@ -125,11 +94,11 @@ export class TypeOrmProfileRepository {
     }
 
     const [rows, total] = await qb.getManyAndCount();
-    return new PaginatedResult(rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row))), total, filter.page, filter.limit);
+    return new PaginatedResult(rows, total, filter.page, filter.limit);
   }
 
-  async findOne(id: string): Promise<Profile | null> {
-    const entity = await this.profileRepository
+  async findOne(id: string): Promise<ProfileEntity | null> {
+    return this.profileRepository
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
@@ -137,16 +106,10 @@ export class TypeOrmProfileRepository {
       .addSelect("user.password")
       .where("p.id = :id", { id })
       .getOne();
-
-    if (!entity) {
-      return null;
-    }
-
-    return Profile.fromPrimitives(entity_to_primitives(entity));
   }
 
-  async findByEmail(email: string): Promise<Profile | null> {
-    const entity = await this.profileRepository
+  async findByEmail(email: string): Promise<ProfileEntity | null> {
+    return this.profileRepository
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
@@ -154,19 +117,14 @@ export class TypeOrmProfileRepository {
       .addSelect("user.password")
       .where("user.email = :email", { email })
       .getOne();
-
-    if (!entity) {
-      return null;
-    }
-    return Profile.fromPrimitives(entity_to_primitives(entity));
   }
 
-  async findByIds(ids: string[]): Promise<Profile[]> {
+  async findByIds(ids: string[]): Promise<ProfileEntity[]> {
     if (ids.length === 0) {
       return [];
     }
 
-    const rows = await this.profileRepository
+    return this.profileRepository
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
@@ -174,29 +132,34 @@ export class TypeOrmProfileRepository {
       .addSelect("user.password")
       .where("p.id IN (:...ids)", { ids })
       .getMany();
-
-    return rows.map((row) => Profile.fromPrimitives(entity_to_primitives(row)));
   }
 
-  async update(id: string, profile: Profile): Promise<void> {
-    const p = profile.toPrimitives();
+  async update(id: string, input: UpdateProfileInput): Promise<ProfileEntity | null> {
     const preloaded = await this.profileRepository.preload({
-      id: id,
-      name: p.name,
-      last_name: p.last_name ?? undefined,
-      avatar_url: p.avatar_url ?? "",
-      image_url: p.image_url ?? "",
-      role_id: p.role_id,
-      phone_code: p.phone_code ?? undefined,
-      phone: p.phone ?? undefined,
-      dni: p.dni ?? undefined,
+      id,
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.last_name !== undefined
+        ? { last_name: input.last_name ?? undefined }
+        : {}),
+      ...(input.avatar_url !== undefined
+        ? { avatar_url: input.avatar_url ?? "" }
+        : {}),
+      ...(input.image_url !== undefined
+        ? { image_url: input.image_url ?? "" }
+        : {}),
+      ...(input.role_id !== undefined ? { role_id: input.role_id ?? undefined } : {}),
+      ...(input.phone_code !== undefined
+        ? { phone_code: input.phone_code }
+        : {}),
+      ...(input.phone !== undefined ? { phone: input.phone } : {}),
+      ...(input.dni !== undefined ? { dni: input.dni } : {}),
     });
 
     if (!preloaded) {
-      return;
+      return null;
     }
 
-    await this.profileRepository.save(preloaded);
+    return this.profileRepository.save(preloaded);
   }
 
   async delete(id: string): Promise<void> {

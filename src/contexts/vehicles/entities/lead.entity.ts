@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,11 +10,14 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
+import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { LEAD_TYPE, LeadType, PrimitiveLead } from "../types/lead";
 import { VehicleEntity } from "./vehicle.entity";
 
 @Entity({ name: "leads" })
+@Index("IDX_leads_seller_profile_id", ["seller_profile_id"])
+@Index("IDX_leads_dealership_id", ["dealership_id"])
 export class LeadEntity implements PrimitiveLead {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -35,7 +39,6 @@ export class LeadEntity implements PrimitiveLead {
   @Column({ type: "varchar", nullable: true })
   email: string | null;
 
-  
   @Column({ type: "varchar", nullable: true })
   phone: string | null;
 
@@ -51,6 +54,12 @@ export class LeadEntity implements PrimitiveLead {
   @Column({ type: "uuid", nullable: true })
   profile_id: string | null;
 
+  @Column()
+  seller_profile_id: string;
+
+  @Column({ type: "uuid", nullable: true })
+  dealership_id: string | null;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -60,6 +69,14 @@ export class LeadEntity implements PrimitiveLead {
   @ManyToOne(() => ProfileEntity, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({ name: "profile_id" })
   profile: Relation<ProfileEntity>;
+
+  @ManyToOne(() => ProfileEntity, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "seller_profile_id" })
+  seller_profile: Relation<ProfileEntity>;
+
+  @ManyToOne(() => DealershipEntity, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn({ name: "dealership_id" })
+  dealership: Relation<DealershipEntity> | null;
 
   @ManyToOne(() => VehicleEntity, { onDelete: "CASCADE" })
   @JoinColumn({ name: "vehicle_id" })

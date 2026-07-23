@@ -1,46 +1,8 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { AuthProvider, User } from "@/src/contexts/users/entities/user.entity";
-
 import { ProfileEntity } from "../entities/profile.entity";
-import { Profile, PrimitiveUser } from "../types/profile";
-
-const resolve_user_providers = (
-  user: User,
-): Pick<PrimitiveUser, "providers" | "has_password"> => {
-  const has_password = Boolean(user.password);
-  const providers: AuthProvider[] = [];
-
-  if (has_password) {
-    providers.push("local");
-  }
-
-  for (const identity of user.auth_providers ?? []) {
-    providers.push(identity.provider);
-  }
-
-  return { providers, has_password };
-};
-
-const user_to_primitives = (user: User): PrimitiveUser => {
-  const identity = resolve_user_providers(user);
-
-  return {
-    id: user.id,
-    email: user.email,
-    providers: identity.providers,
-    has_password: identity.has_password,
-    last_sign_in: user.last_sign_in,
-    is_email_verified: user.is_email_verified,
-    two_factor_enabled: user.two_factor_enabled,
-    is_suspended: user.is_suspended,
-    suspension_reason: user.suspension_reason,
-    suspension_end_time: user.suspension_end_time,
-    suspended_at: user.suspended_at,
-    created_at: user.created_at,
-  };
-};
+import type { SaveProfileInput, UpdateProfileInput } from "./typeorm.profile-repository";
 
 export class TypeOrmAdminProfileRepository {
   constructor(
@@ -48,51 +10,47 @@ export class TypeOrmAdminProfileRepository {
     private readonly profileRepository: Repository<ProfileEntity>,
   ) {}
 
-  async create(profile: Profile): Promise<void> {
-    const p = profile.toPrimitives();
-    await this.profileRepository.save({
-      id: p.id,
-      name: p.name,
-      last_name: p.last_name,
+  async create(input: SaveProfileInput): Promise<ProfileEntity> {
+    return this.profileRepository.save({
+      id: input.id,
+      name: input.name,
+      last_name: input.last_name ?? undefined,
+      avatar_url: input.avatar_url ?? undefined,
+      image_url: input.image_url ?? undefined,
+      role_id: input.role_id ?? undefined,
     });
   }
 
-  async findOne(id: string): Promise<Profile | null> {
-    const profile = await this.profileRepository
+  async findOne(id: string): Promise<ProfileEntity | null> {
+    return this.profileRepository
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
       .addSelect("user.password")
       .where("p.id = :id", { id })
       .getOne();
+  }
 
-    if (!profile) {
+  async update(id: string, input: UpdateProfileInput): Promise<ProfileEntity | null> {
+    const preloaded = await this.profileRepository.preload({
+      id,
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.last_name !== undefined
+        ? { last_name: input.last_name ?? undefined }
+        : {}),
+      ...(input.avatar_url !== undefined
+        ? { avatar_url: input.avatar_url ?? undefined }
+        : {}),
+      ...(input.image_url !== undefined
+        ? { image_url: input.image_url ?? undefined }
+        : {}),
+      ...(input.role_id !== undefined ? { role_id: input.role_id ?? undefined } : {}),
+    });
+
+    if (!preloaded) {
       return null;
     }
 
-    return Profile.fromPrimitives({
-      id: profile.id,
-      name: profile.name,
-      last_name: profile.last_name ?? undefined,
-      dni: profile.dni ?? undefined,
-      phone: profile.phone ?? undefined,
-      phone_code: profile.phone_code ?? undefined,
-      avatar_url: profile.avatar_url ?? undefined,
-      image_url: profile.image_url ?? undefined,
-      role_id: profile.role_id,
-      user: profile.user ? user_to_primitives(profile.user) : undefined,
-    });
-  }
-
-  async update(profile: Profile): Promise<void> {
-    const p = profile.toPrimitives();
-    await this.profileRepository.save({
-      id: p.id,
-      name: p.name,
-      last_name: p.last_name,
-      avatar_url: p.avatar_url,
-      image_url: p.image_url,
-      role_id: p.role_id,
-    });
+    return this.profileRepository.save(preloaded);
   }
 }

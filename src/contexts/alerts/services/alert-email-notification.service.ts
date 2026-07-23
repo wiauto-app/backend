@@ -124,25 +124,3 @@ export class AlertEmailNotificationService extends AlertNotificationDispatcher {
     return "Tienes una nueva notificación";
   }
 }
-
-@Injectable()
-export class AlertPushNotificationStubService {
-  private readonly logger = new Logger(AlertPushNotificationStubService.name);
-
-  async notify(payload: AlertEventNotificationPayload): Promise<void> {
-    this.logger.log(
-      `Push stub: ${payload.event_type} para ${payload.to} (sin envío real)`,
-    );
-  }
-}
-
-@Injectable()
-export class AlertSmsNotificationStubService {
-  private readonly logger = new Logger(AlertSmsNotificationStubService.name);
-
-  async notify(payload: AlertEventNotificationPayload): Promise<void> {
-    this.logger.log(
-      `SMS stub: ${payload.event_type} para ${payload.to} (sin envío real)`,
-    );
-  }
-}

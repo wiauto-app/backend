@@ -13,16 +13,13 @@ export class TypeOrmChatParticipantLookupAdapter  {
     }
 
     const profiles = await this.profile_repository.findByIds(ids);
-    return profiles.map((profile) => {
-      const primitive = profile.toPrimitives();
-      return {
-        id: primitive.id,
-        name: primitive.name,
-        last_name: primitive.last_name,
-        avatar_url: primitive.avatar_url,
-        email: primitive.user?.email,
-      };
-    });
+    return profiles.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      last_name: profile.last_name,
+      avatar_url: profile.avatar_url,
+      email: profile.user?.email,
+    }));
   }
 }
 

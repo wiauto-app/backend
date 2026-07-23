@@ -20,6 +20,8 @@ export interface PrimitiveLead {
   created_at: Date;
   updated_at: Date;
   profile_id: string | null;
+  seller_profile_id: string;
+  dealership_id: string | null;
 }
 
 export class Lead {
@@ -35,6 +37,8 @@ export class Lead {
     message: string | null;
     callback_scheduled_at?: Date | null;
     profile_id: string | null;
+    seller_profile_id: string;
+    dealership_id: string | null;
   }): Lead {
     return new Lead({
       id: uuidv4(),
@@ -47,6 +51,8 @@ export class Lead {
       message: payload.message,
       callback_scheduled_at: payload.callback_scheduled_at ?? null,
       profile_id: payload.profile_id,
+      seller_profile_id: payload.seller_profile_id,
+      dealership_id: payload.dealership_id,
       created_at: new Date(),
       updated_at: new Date(),
     });

@@ -46,6 +46,9 @@ export class AlertNotificationPreferencesEntity
   @Column({ default: true })
   notify_saved_vehicle_reminders: boolean;
 
+  @Column({ default: true })
+  notify_new_leads: boolean;
+
   @Column({ default: 7 })
   saved_vehicle_reminder_days: number;
 
@@ -65,6 +68,12 @@ export class AlertNotificationPreferencesEntity
 
   @Column({ default: false })
   channel_sms: boolean;
+
+  @Column({ default: true })
+  channel_in_app: boolean;
+
+  @Column({ default: false })
+  channel_whatsapp: boolean;
 
   @CreateDateColumn()
   created_at: Date;

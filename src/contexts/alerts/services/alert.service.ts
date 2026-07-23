@@ -37,8 +37,7 @@ export class AlertService {
       throw new ValidationException("Perfil de usuario no encontrado");
     }
 
-    const profile_primitive = profile.toPrimitives();
-    const profile_email = profile_primitive.user?.email?.trim();
+    const profile_email = profile.user?.email?.trim();
     const email = dto.email?.trim() || profile_email;
 
     if (!email) {

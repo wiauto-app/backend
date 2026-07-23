@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import {
   DealershipMember,
@@ -7,11 +11,12 @@ import {
 import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-invitation-repository";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 
-import { PrimitiveProfile, Profile } from "../types/profile";
+import {
+  mapProfileToResponse,
+  type ProfileResponse,
+} from "../types/profile";
 import { ProfileNotFoundException } from "../exceptions/profile-not-found.exception";
 import { ProfileFilter } from "../types/profile.filter";
-import { CreateProfilePayload } from "../types/create-profile.payload";
-import { UpdateProfilePayload } from "../types/update-profile.payload";
 import { TypeOrmAdminProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.admin-profile-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
@@ -21,7 +26,8 @@ import { UpdateProfileDto } from "../dto/update-profile.dto";
 const dealership_member_roles = new Set<PrimitiveDealershipMember["role"]>([
   "owner",
   "admin",
-  "member"]);
+  "member",
+]);
 
 export interface AdminCreateProfileInput {
   id: string;
@@ -56,6 +62,9 @@ export interface UpdateMyProfileInput {
   user_id: string;
   name?: string;
   last_name?: string;
+  phone_code?: string;
+  phone?: string;
+  dni?: string;
   avatar_url?: string;
   image_url?: string;
 }
@@ -70,9 +79,8 @@ export class ProfileService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
   ) {}
 
-  async createProfile(createProfileDto: CreateProfileDto): Promise<Profile> {
-    const primitives = await this.create(createProfileDto);
-    return new Profile(primitives);
+  async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
+    return this.create(createProfileDto);
   }
 
   async create(input: {
@@ -82,7 +90,7 @@ export class ProfileService {
     avatar_url?: string;
     image_url?: string;
     role_id: string;
-  }): Promise<PrimitiveProfile> {
+  }): Promise<ProfileResponse> {
     const email = await this.profile_user_repository.findEmailById(input.id);
     const accepted_invitation = email
       ? await this.dealership_invitation_repository.findAcceptedByEmail(email)
@@ -91,9 +99,14 @@ export class ProfileService {
       ? this.toDealershipMemberRole(accepted_invitation.role)
       : null;
 
-    const payload = this.toCreatePayload(input);
-    const profile = Profile.create(payload);
-    await this.profile_repository.save(profile);
+    await this.profile_repository.save({
+      id: input.id,
+      name: input.name,
+      last_name: input.last_name,
+      avatar_url: input.avatar_url,
+      image_url: input.image_url,
+      role_id: input.role_id,
+    });
 
     if (accepted_invitation && dealership_member_role) {
       const member_exists =
@@ -112,25 +125,40 @@ export class ProfileService {
       }
     }
 
-    return profile.toPrimitives();
+    const saved = await this.profile_repository.findOne(input.id);
+    if (!saved) {
+      throw new ProfileNotFoundException(input.id);
+    }
+    return mapProfileToResponse(saved);
   }
 
   async adminCreate(
     input: AdminCreateProfileInput,
-  ): Promise<PrimitiveProfile> {
+  ): Promise<ProfileResponse> {
     const user_exists = await this.profile_user_repository.exists(input.id);
     if (!user_exists) {
       throw new NotFoundException("No se encontró el usuario");
     }
 
-    const profile = Profile.create(input);
-    await this.admin_profile_repository.create(profile);
-    return profile.toPrimitives();
+    await this.admin_profile_repository.create({
+      id: input.id,
+      name: input.name,
+      last_name: input.last_name,
+      role_id: input.role_id,
+      avatar_url: input.avatar_url,
+      image_url: input.image_url,
+    });
+
+    const saved = await this.admin_profile_repository.findOne(input.id);
+    if (!saved) {
+      throw new ProfileNotFoundException(input.id);
+    }
+    return mapProfileToResponse(saved);
   }
 
   async adminUpdate(
     input: AdminUpdateProfileInput,
-  ): Promise<PrimitiveProfile> {
+  ): Promise<ProfileResponse> {
     const currentProfile = await this.admin_profile_repository.findOne(
       input.id,
     );
@@ -138,14 +166,17 @@ export class ProfileService {
       throw new ProfileNotFoundException(input.id);
     }
 
-    const updatedProfile = currentProfile.update(input);
-    await this.admin_profile_repository.update(updatedProfile);
-    return updatedProfile.toPrimitives();
+    const { id, ...patch } = input;
+    const updated = await this.admin_profile_repository.update(id, patch);
+    if (!updated) {
+      throw new ProfileNotFoundException(id);
+    }
+    return mapProfileToResponse(updated);
   }
 
   async findAll(
     input: FindAllProfilesInput,
-  ): Promise<PaginatedResult<PrimitiveProfile>> {
+  ): Promise<PaginatedResult<ProfileResponse>> {
     const filter = new ProfileFilter({
       page: input.page ?? 1,
       limit: input.limit ?? 10,
@@ -157,33 +188,34 @@ export class ProfileService {
       email: input.email,
     });
     const profiles = await this.profile_repository.findAll(filter);
-    return profiles.map((profile) => profile.toPrimitives());
+    return profiles.map((profile) => mapProfileToResponse(profile));
   }
 
-  async findOne(id: string): Promise<Profile> {
-    const primitives = await this.findOnePrimitives(id);
-    return new Profile(primitives);
+  async findOne(id: string): Promise<ProfileResponse> {
+    return this.findOnePrimitives(id);
   }
 
-  async findOnePrimitives(id: string): Promise<PrimitiveProfile> {
+  async findOnePrimitives(id: string): Promise<ProfileResponse> {
     const profile = await this.profile_repository.findOne(id);
     if (!profile) {
       throw new ProfileNotFoundException(id);
     }
-    return profile.toPrimitives();
+    return mapProfileToResponse(profile);
   }
 
-  async findByEmail(email: string): Promise<PrimitiveProfile> {
+  async findByEmail(email: string): Promise<ProfileResponse> {
     const profile = await this.profile_repository.findByEmail(email);
     if (!profile) {
       throw new ProfileNotFoundException(email);
     }
-    return profile.toPrimitives();
+    return mapProfileToResponse(profile);
   }
 
-  async updateProfile(user_id: string, dto: UpdateProfileDto): Promise<Profile> {
-    const primitives = await this.update({ id: user_id, ...dto });
-    return new Profile(primitives);
+  async updateProfile(
+    user_id: string,
+    dto: UpdateProfileDto,
+  ): Promise<ProfileResponse> {
+    return this.update({ id: user_id, ...dto });
   }
 
   async update(input: {
@@ -193,32 +225,33 @@ export class ProfileService {
     avatar_url?: string;
     image_url?: string;
     role_id?: string;
-  }): Promise<PrimitiveProfile> {
+    phone_code?: string;
+    phone?: string;
+    dni?: string;
+  }): Promise<ProfileResponse> {
     const { id, ...patch_fields } = input;
     const profile = await this.profile_repository.findOne(id);
     if (!profile) {
       throw new ProfileNotFoundException(id);
     }
 
-    const payload: UpdateProfilePayload = { id, ...patch_fields };
-    const updated = profile.update(payload);
-    await this.profile_repository.update(id, updated);
-    return updated.toPrimitives();
+    const updated = await this.profile_repository.update(id, patch_fields);
+    if (!updated) {
+      throw new ProfileNotFoundException(id);
+    }
+
+    const reloaded = await this.profile_repository.findOne(id);
+    if (!reloaded) {
+      throw new ProfileNotFoundException(id);
+    }
+    return mapProfileToResponse(reloaded);
   }
 
   async updateMyProfile(
     input: UpdateMyProfileInput,
-  ): Promise<PrimitiveProfile> {
+  ): Promise<ProfileResponse> {
     const { user_id, ...patch_fields } = input;
-    const profile = await this.profile_repository.findOne(user_id);
-    if (!profile) {
-      throw new ProfileNotFoundException(user_id);
-    }
-
-    const payload: UpdateProfilePayload = { id: user_id, ...patch_fields };
-    const updated = profile.update(payload);
-    await this.profile_repository.update(user_id, updated);
-    return updated.toPrimitives();
+    return this.update({ id: user_id, ...patch_fields });
   }
 
   async removeProfile(id: string): Promise<void> {
@@ -229,31 +262,17 @@ export class ProfileService {
     await this.profile_repository.delete(id);
   }
 
-  private toCreatePayload(dto: {
-    id: string;
-    name: string;
-    last_name?: string;
-    avatar_url?: string;
-    image_url?: string;
-    role_id: string;
-  }): CreateProfilePayload {
-    const payload = new CreateProfilePayload();
-    payload.name = dto.name;
-    payload.last_name = dto.last_name;
-    payload.avatar_url = dto.avatar_url;
-    payload.image_url = dto.image_url;
-    payload.role_id = dto.role_id;
-    payload.id = dto.id;
-    return payload;
-  }
-
   private toDealershipMemberRole(
     role: string,
   ): PrimitiveDealershipMember["role"] {
-    if (dealership_member_roles.has(role as PrimitiveDealershipMember["role"])) {
+    if (
+      dealership_member_roles.has(role as PrimitiveDealershipMember["role"])
+    ) {
       return role as PrimitiveDealershipMember["role"];
     }
 
-    throw new BadRequestException(`La invitación tiene un rol inválido: ${role}`);
+    throw new BadRequestException(
+      `La invitación tiene un rol inválido: ${role}`,
+    );
   }
 }

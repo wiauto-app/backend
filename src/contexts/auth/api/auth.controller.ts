@@ -262,7 +262,7 @@ export class AuthController {
 
   @Post("admin/password-recovery/request")
   async adminPasswordRecoveryRequest(@Body() dto: PasswordRecoveryRequestDto) {
-    await this.password_recovery_service.requestAdminRecovery(dto.email);
+    await this.password_recovery_service.requestAdminRecovery(dto.email, dto.redirect_url);
     return {
       message: "Si el email está registrado, vas a recibir un correo con instrucciones.",
     };

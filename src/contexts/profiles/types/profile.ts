@@ -1,9 +1,9 @@
 import type { AuthProvider } from "@/src/contexts/users/entities/user.entity";
+import type { User } from "@/src/contexts/users/entities/user.entity";
 
-import { CreateProfilePayload } from "../types/create-profile.payload";
-import { UpdateProfilePayload } from "../types/update-profile.payload";
+import type { ProfileEntity } from "../entities/profile.entity";
 
-export interface PrimitiveProfileRole {
+export interface ProfileRoleResponse {
   id: string;
   name: string;
   is_admin: boolean;
@@ -11,7 +11,7 @@ export interface PrimitiveProfileRole {
   is_default: boolean;
 }
 
-export interface PrimitiveUser {
+export interface ProfileUserResponse {
   id: string;
   email: string;
   providers: AuthProvider[];
@@ -23,72 +23,80 @@ export interface PrimitiveUser {
   suspension_reason: string | null;
   suspension_end_time: Date | null;
   suspended_at: Date | null;
-  created_at: string;
+  created_at: Date | string;
 }
-export interface PrimitiveProfile {
+
+/** Forma de respuesta HTTP / API (sin clase de dominio). */
+export interface ProfileResponse {
   id: string;
-  name: string ;
-  last_name?: string ;
-  avatar_url?: string ;
-  image_url?: string ;
-  role_id: string ;
-  role?: PrimitiveProfileRole | null;
-  user?: PrimitiveUser | null;
-  phone_code?: string;
-  phone?: string;
-  dni?: string;
+  name: string;
+  last_name?: string;
+  avatar_url?: string;
+  image_url?: string;
+  role_id: string;
+  role?: ProfileRoleResponse | null;
+  user?: ProfileUserResponse | null;
+  phone_code?: string | null;
+  phone?: string | null;
+  dni?: string | null;
 }
 
-export class Profile {
-  constructor(private readonly primitive_profile: PrimitiveProfile) { }
+const resolveUserProviders = (
+  user: User,
+): Pick<ProfileUserResponse, "providers" | "has_password"> => {
+  const has_password = Boolean(user.password);
+  const providers: AuthProvider[] = [];
 
-  static create(payload: CreateProfilePayload): Profile {
-    return new Profile({
-      id: payload.id,
-      name: payload.name,
-      last_name: payload.last_name,
-      avatar_url: payload.avatar_url ,
-      image_url: payload.image_url ,
-      role_id: payload.role_id,
-      role: null,
-    });
+  if (has_password) {
+    providers.push("local");
   }
 
-  update(payload: UpdateProfilePayload): Profile {
-    return new Profile({
-      ...this.primitive_profile,
-      ...payload,
-    });
+  for (const identity of user.auth_providers ?? []) {
+    providers.push(identity.provider);
   }
 
-  fill_missing_names(payload: Pick<UpdateProfilePayload, "name" | "last_name">): Profile {
-    const current_name = this.primitive_profile.name;
-    const current_last_name = this.primitive_profile.last_name;
-    const should_fill_name =
-      current_name === "";
-    const should_fill_last_name =
-      current_last_name === "";
+  return { providers, has_password };
+};
 
-    return new Profile({
-      ...this.primitive_profile,
-      name: should_fill_name ? (payload.name ?? current_name) : current_name,
-      last_name: should_fill_last_name
-        ? (payload.last_name ?? current_last_name)
-        : current_last_name,
-    });
-  }
+export const mapUserToResponse = (user: User): ProfileUserResponse => {
+  const identity = resolveUserProviders(user);
 
-  has_same_names(profile: Profile): boolean {
-    const current = this.toPrimitives();
-    const next = profile.toPrimitives();
-    return current.name === next.name && current.last_name === next.last_name;
-  }
+  return {
+    id: user.id,
+    email: user.email,
+    providers: identity.providers,
+    has_password: identity.has_password,
+    last_sign_in: user.last_sign_in,
+    is_email_verified: user.is_email_verified,
+    two_factor_enabled: user.two_factor_enabled,
+    is_suspended: user.is_suspended,
+    suspension_reason: user.suspension_reason,
+    suspension_end_time: user.suspension_end_time,
+    suspended_at: user.suspended_at,
+    created_at: user.created_at,
+  };
+};
 
-  static fromPrimitives(primitive: PrimitiveProfile): Profile {
-    return new Profile(primitive);
-  }
-
-  toPrimitives(): PrimitiveProfile {
-    return { ...this.primitive_profile };
-  }
-}
+export const mapProfileToResponse = (
+  entity: ProfileEntity,
+): ProfileResponse => ({
+  id: entity.id,
+  name: entity.name,
+  last_name: entity.last_name,
+  avatar_url: entity.avatar_url,
+  image_url: entity.image_url,
+  role_id: entity.role_id ?? entity.role?.id ?? "",
+  phone_code: entity.phone_code,
+  phone: entity.phone,
+  dni: entity.dni,
+  role: entity.role
+    ? {
+        id: entity.role.id,
+        name: entity.role.name,
+        is_admin: entity.role.is_admin,
+        is_developer: entity.role.is_developer,
+        is_default: entity.role.is_default,
+      }
+    : null,
+  user: entity.user ? mapUserToResponse(entity.user) : null,
+});

@@ -35,6 +35,10 @@ export class UpdateAlertNotificationPreferencesHttpDto {
   notify_saved_vehicle_reminders?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  notify_new_leads?: boolean;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(365)
@@ -55,4 +59,12 @@ export class UpdateAlertNotificationPreferencesHttpDto {
   @IsOptional()
   @IsBoolean()
   channel_sms?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  channel_in_app?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  channel_whatsapp?: boolean;
 }

@@ -1,5 +1,6 @@
 import type { AlertEventType } from "../types/alert-event-type.enum";
 import type { Alert } from "../types/alert";
+import type { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
 import type { PrimitiveAlertNotificationPreferences } from "../types/alert-notification-preferences";
 
 export const is_alert_toggle_enabled = (
@@ -50,10 +51,37 @@ export const is_global_toggle_enabled = (
   }
 };
 
+export const is_category_toggle_enabled = (
+  category: string,
+  preferences: PrimitiveAlertNotificationPreferences,
+): boolean => {
+  switch (category) {
+    case "lead":
+      return preferences.notify_new_leads;
+    case "new_listing":
+    case "featured":
+    case "recently_updated":
+    case "sold_removed":
+      return preferences.notify_new_matches;
+    case "price_drop":
+      return preferences.notify_price_drops;
+    case "favorite_change":
+      return preferences.notify_favorite_changes;
+    case "new_message":
+      return preferences.notify_new_messages;
+    case "seller_reply":
+      return preferences.notify_seller_replies;
+    case "saved_vehicle_reminder":
+      return preferences.notify_saved_vehicle_reminders;
+    default:
+      return true;
+  }
+};
+
 export const get_enabled_channels = (
   preferences: PrimitiveAlertNotificationPreferences,
-): Array<"email" | "push" | "sms"> => {
-  const channels: Array<"email" | "push" | "sms"> = [];
+): AlertNotificationChannel[] => {
+  const channels: AlertNotificationChannel[] = [];
   if (preferences.channel_email) {
     channels.push("email");
   }
@@ -62,6 +90,12 @@ export const get_enabled_channels = (
   }
   if (preferences.channel_sms) {
     channels.push("sms");
+  }
+  if (preferences.channel_in_app) {
+    channels.push("in_app");
+  }
+  if (preferences.channel_whatsapp) {
+    channels.push("whatsapp");
   }
   return channels;
 };

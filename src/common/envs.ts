@@ -35,12 +35,15 @@ const envsSchema = z.object({
   MAIL_PASSWORD: z.string(),
   MAIL_FROM: z.string().default('"No Reply" <noreply@example.com>'),
 
+  /** Legado: ya no arma el link del mail; el cliente envía redirect_url */
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),
   PASSWORD_RESET_TOKEN_EXPIRES_IN: z.string().default("15m"),
 
   /** Override opcional del endpoint GET confirm; por defecto BACKEND_URL/auth/email-verification/confirm */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string().default(""),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
+  /** Origen del dashboard admin (allowlist de redirect_url en password recovery) */
+  DASHBOARD_URL: z.string().default("http://localhost:5173"),
 
   BACKEND_URL: z.string().default("http://localhost:4000"),
   /** Segundos hasta expirar el enlace de verificación (por defecto 48 h) */
@@ -89,6 +92,14 @@ const envsSchema = z.object({
     .string(),
   VEHICLE_IDENTIFICATION_THROTTLE_LIMIT: z.coerce.number().default(10),
   VEHICLE_IDENTIFICATION_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
+
+  WHATSAPP_ACCESS_TOKEN: z.string(),
+  PHONE_NUMBER_ID: z.string(),
+  WHATSAPP_API_VERSION: z.string().default("v25.0"),
+  WHATSAPP_TEMPLATE_NAME: z
+    .string()
+    .default("jaspers_market_order_confirmation_v1"),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().default("en_US"),
 });
 
 const parsed_envs = envsSchema.parse(process.env);

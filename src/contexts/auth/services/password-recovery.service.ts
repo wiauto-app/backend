@@ -11,6 +11,7 @@ import { envs } from "@/src/common/envs";
 import { OutboundMailEnqueueService } from "../../shared/mail/outbound-mail-enqueue.service";
 import { UserService } from "../../users/services/user.service";
 import { authResponseConfig } from "../response.config";
+import { resolvePasswordRecoveryRedirectUrl } from "../utils/validate-redirect-url";
 
 interface PasswordResetTokenPayload {
   sub: string;
@@ -27,7 +28,9 @@ export class PasswordRecoveryService {
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
-  async requestRecovery(email: string): Promise<void> {
+  async requestRecovery(email: string, redirect_url: string): Promise<void> {
+    const safe_redirect_url = resolvePasswordRecoveryRedirectUrl(redirect_url);
+
     let user;
     try {
       user = await this.userService.getUserByEmail({
@@ -52,7 +55,7 @@ export class PasswordRecoveryService {
       scope: "password_reset",
     });
 
-    const link = this.buildRecoveryLink(token);
+    const link = this.buildRecoveryLink(token, safe_redirect_url);
     await this.outbound_mail_enqueue_service.enqueue_password_recovery({
       to: user.email,
       recovery_link: link,
@@ -67,7 +70,9 @@ export class PasswordRecoveryService {
     await this.userService.resetPassword(payload.sub, newPassword);
   }
 
-  async requestAdminRecovery(email: string): Promise<void> {
+  async requestAdminRecovery(email: string, redirect_url: string): Promise<void> {
+    const safe_redirect_url = resolvePasswordRecoveryRedirectUrl(redirect_url);
+
     let user;
     try {
       user = await this.userService.findOneByEmailWithPassword(email);
@@ -94,7 +99,7 @@ export class PasswordRecoveryService {
       scope: "password_reset_admin",
     });
 
-    const link = this.buildRecoveryLink(token);
+    const link = this.buildRecoveryLink(token, safe_redirect_url);
     await this.outbound_mail_enqueue_service.enqueue_password_recovery({
       to: user.email,
       recovery_link: link,
@@ -138,9 +143,8 @@ export class PasswordRecoveryService {
     });
   }
 
-  private buildRecoveryLink(token: string): string {
-    const base = envs.FRONTEND_PASSWORD_RESET_URL;
-    const separator = base.includes("?") ? "&" : "?";
-    return `${base}${separator}token=${encodeURIComponent(token)}`;
+  private buildRecoveryLink(token: string, redirect_url: string): string {
+    const separator = redirect_url.includes("?") ? "&" : "?";
+    return `${redirect_url}${separator}token=${encodeURIComponent(token)}`;
   }
 }

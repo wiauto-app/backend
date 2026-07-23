@@ -11,7 +11,7 @@ export class PasswordRecoveryController {
   @Post("request")
   @HttpCode(HttpStatus.OK)
   async request(@Body() dto: PasswordRecoveryRequestDto) {
-    await this.passwordRecoveryService.requestRecovery(dto.email);
+    await this.passwordRecoveryService.requestRecovery(dto.email, dto.redirect_url);
     return {
       message: "Si el email está registrado, vas a recibir un correo con instrucciones.",
     };
