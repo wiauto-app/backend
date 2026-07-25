@@ -28,12 +28,12 @@ export class AlertEntity implements PrimitiveAlert {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: "uuid" })
-  profile_id: string;
+  @Column({ type: "uuid", nullable: true })
+  profile_id: string | null;
 
-  @ManyToOne(() => ProfileEntity, { onDelete: "CASCADE" })
+  @ManyToOne(() => ProfileEntity, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({ name: "profile_id" })
-  profile: Relation<ProfileEntity>;
+  profile: Relation<ProfileEntity> | null;
 
   @Column()
   email: string;

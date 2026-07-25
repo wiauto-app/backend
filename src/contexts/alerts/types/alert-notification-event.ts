@@ -6,7 +6,7 @@ import type { AlertNotificationEventStatus } from "./alert-notification-event-st
 
 export interface PrimitiveAlertNotificationEvent {
   id: string;
-  profile_id: string;
+  profile_id: string | null;
   alert_id: string | null;
   vehicle_id: string | null;
   event_type: AlertEventType;
@@ -22,7 +22,7 @@ export class AlertNotificationEvent {
   constructor(private readonly primitive_event: PrimitiveAlertNotificationEvent) {}
 
   static create(payload: {
-    profile_id: string;
+    profile_id: string | null;
     alert_id?: string | null;
     vehicle_id?: string | null;
     event_type: AlertEventType;

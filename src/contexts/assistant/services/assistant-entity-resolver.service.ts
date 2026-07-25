@@ -7,7 +7,7 @@ import { AssistantResolvedEntities } from "../types/assistant-resolved-entities"
 
 const SEARCH_LIMIT = 15;
 
-type SlugNameCandidate = {
+interface SlugNameCandidate  {
   id?: number;
   slug: string;
   name: string;

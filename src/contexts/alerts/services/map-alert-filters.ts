@@ -14,7 +14,9 @@ const has_value = (value: unknown): boolean => {
   return true;
 };
 
-export const mapToAlertFilters = (source: AlertFiltersDto): AlertFilters => {
+export const mapToAlertFilters = (
+  source: Partial<AlertFiltersDto>,
+): AlertFilters => {
   const filters: AlertFilters = {};
 
   for (const [key, value] of Object.entries(source)) {

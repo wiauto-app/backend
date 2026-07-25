@@ -8,7 +8,7 @@ import { Repository } from "typeorm";
 import { AssistantConversationEntity } from "../entities/assistant-conversation.entity";
 import { buildConversationTitle } from "../helpers/build-conversation-title";
 
-export type AssistantConversationListItem = {
+export interface AssistantConversationListItem  {
   id: string;
   title: string;
   updated_at: Date;

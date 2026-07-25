@@ -27,6 +27,23 @@ export class NotificationChannelDispatcher {
   ) {}
 
   async notify(input: NotifyInput): Promise<void> {
+    if (!input.profile_id) {
+      const email = input.email_override?.trim();
+      if (!email) {
+        return;
+      }
+
+      await this.email_channel.send({
+        to: email,
+        profile_id: null,
+        category: input.category,
+        title: input.title,
+        body: input.body,
+        data: input.data,
+      });
+      return;
+    }
+
     const preferences = await this.load_preferences(input.profile_id);
     const preferences_primitive = preferences.toPrimitives();
 

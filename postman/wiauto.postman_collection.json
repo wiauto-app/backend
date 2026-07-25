@@ -5575,6 +5575,29 @@
                   "response": []
                 },
                 {
+                  "name": "sincronizar logos makes",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/catalog/makes/sync-logos",
+                    "description": "POST sincroniza logos SVG desde Wikimedia → WebP 256 en MinIO (`files/makes/{slug}.webp`) y actualiza `image_url`. Requiere JwtGuard. Por defecto salta marcas con `image_url`; `force: true` sobrescribe. Opcional `make_id` para una sola marca. Puede tardar varios minutos: subir timeout en Postman.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"make_id\": {{catalog_make_id}},\n  \"force\": false\n}"
+                    }
+                  },
+                  "response": []
+                },
+                {
                   "name": "listar makes",
                   "request": {
                     "method": "GET",
@@ -6547,6 +6570,30 @@
       "name": "alerts",
       "item": [
         {
+          "name": "crear alerta (guest o auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SUV híbridos Madrid\",\n  \"email\": \"guest@example.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"600000000\",\n  \"makes_slugs\": [\"toyota\"],\n  \"models_slugs\": [\"rav4\"],\n  \"provinces_slugs\": [\"madrid\"]\n}"
+            },
+            "url": "{{base_url}}/v1/alerts",
+            "description": "OptionalJwt. Body: email, phone, phone_code obligatorios; name opcional; + filtros. Con JWT asigna profile_id; sin JWT queda null (guest). 201 + PrimitiveAlert."
+          },
+          "response": []
+        },
+        {
           "name": "obtener preferencias de notificación",
           "request": {
             "method": "GET",
@@ -6649,10 +6696,10 @@
               }
             ],
             "url": "{{base_url}}/v1/assistant/chat",
-            "description": "Stream SSE del asistente (JWT). `conversation_id` opcional para persistir historial.",
+            "description": "Stream SSE del asistente (JWT). `conversation_id` opcional. `mode`: search (default, busca antes) | buy_assistant (agente multi-tool). `initial_filters` opcional en bootstrap de compra.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"conversation_id\": \"{{assistant_conversation_id}}\",\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Busco un SUV híbrido en Madrid\"\n        }\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"conversation_id\": \"{{assistant_conversation_id}}\",\n  \"mode\": \"buy_assistant\",\n  \"initial_filters\": {\n    \"makes_slugs\": [\"toyota\"],\n    \"until_price\": 25000,\n    \"fuel_type_slugs\": [\"hibrido\"]\n  },\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Quiero ayuda para comprar con estos filtros de búsqueda.\"\n        }\n      ]\n    }\n  ]\n}"
             }
           },
           "response": []
@@ -7395,10 +7442,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Busco un SUV híbrido en Madrid\"\n        }\n      ]\n    }\n  ],\n  \"conversation_id\": \"{{assistant_conversation_id}}\"\n}"
+              "raw": "{\n  \"messages\": [\n    {\n      \"id\": \"msg-1\",\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Quiero ayuda para comprar con estos filtros de búsqueda.\"\n        }\n      ]\n    }\n  ],\n  \"conversation_id\": \"{{assistant_conversation_id}}\",\n  \"mode\": \"buy_assistant\",\n  \"initial_filters\": {\n    \"makes_slugs\": [\"toyota\"],\n    \"until_price\": 25000,\n    \"fuel_type_slugs\": [\"hibrido\"]\n  }\n}"
             },
             "url": "{{base_url}}/v1/assistant/chat",
-            "description": "Stream de chat del asistente. JWT opcional; con token persiste historial si se envía conversation_id."
+            "description": "Stream de chat del asistente (JWT). mode=search|buy_assistant; initial_filters opcional para bootstrap de compra."
           },
           "response": []
         },

@@ -1,5 +1,5 @@
 export interface NotifyInput {
-  profile_id: string;
+  profile_id: string | null;
   category: string;
   title: string;
   body: string;
@@ -9,7 +9,7 @@ export interface NotifyInput {
 
 export interface NotificationEmailChannelInput {
   to: string;
-  profile_id: string;
+  profile_id: string | null;
   category: string;
   title: string;
   body: string;

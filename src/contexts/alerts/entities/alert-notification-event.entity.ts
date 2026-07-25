@@ -28,15 +28,15 @@ export class AlertNotificationEventEntity implements PrimitiveAlertNotificationE
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: "uuid" })
-  profile_id: string;
+  @Column({ type: "uuid", nullable: true })
+  profile_id: string | null;
 
-  @ManyToOne(() => ProfileEntity, { onDelete: "CASCADE" })
+  @ManyToOne(() => ProfileEntity, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({
     name: "profile_id",
     foreignKeyConstraintName: "FK_alert_notification_events_profile_id",
   })
-  profile: Relation<ProfileEntity>;
+  profile: Relation<ProfileEntity> | null;
 
   @Column({ type: "uuid", nullable: true })
   alert_id: string | null;

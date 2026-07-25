@@ -1,6 +1,8 @@
 import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { AlertEntity } from "@/src/contexts/alerts/entities/alert.entity";
+import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 import { User } from "../users/entities/user.entity";
 import { TypeOrmAdminProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.admin-profile-repository";
@@ -26,21 +28,24 @@ import { ProfileService } from "./services/profile.service";
     RemoveProfileController,
     AdminCreateProfileController,
     AdminUpdateProfileController,
-    UpdateMyProfileController],
+    UpdateMyProfileController,
+  ],
   providers: [
     ProfileService,
     TypeOrmProfileRepository,
     TypeOrmProfileUserRepository,
-    TypeOrmAdminProfileRepository
+    TypeOrmAdminProfileRepository,
+    TypeOrmAlertRepository,
   ],
   exports: [
     ProfileService,
     TypeOrmProfileRepository,
     TypeOrmProfileUserRepository,
-    TypeOrmAdminProfileRepository],
+    TypeOrmAdminProfileRepository,
+  ],
   imports: [
-    TypeOrmModule.forFeature([ProfileEntity, User]),
-    forwardRef(() => DealershipInvitationModule)],
+    TypeOrmModule.forFeature([ProfileEntity, User, AlertEntity]),
+    forwardRef(() => DealershipInvitationModule),
+  ],
 })
 export class ProfileModule {}
-

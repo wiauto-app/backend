@@ -36,7 +36,7 @@ import { compute_digest_scheduled_for } from "./compute-digest-scheduled-for";
 import { NotificationChannelDispatcher } from "./notification-channel-dispatcher.service";
 
 interface Recipient {
-  profile_id: string;
+  profile_id: string | null;
   email: string;
   alert: Alert | null;
 }
@@ -124,7 +124,10 @@ export class AlertNotificationService {
 
       const recipients_map = new Map<string, Recipient>();
       for (const recipient of alert_recipients) {
-        recipients_map.set(recipient.profile_id, recipient);
+        const key =
+          recipient.profile_id ??
+          `guest:${recipient.email.toLowerCase()}:${recipient.alert?.toPrimitives().id ?? "none"}`;
+        recipients_map.set(key, recipient);
       }
 
       for (const profile_id of favorite_profile_ids) {
@@ -180,34 +183,8 @@ export class AlertNotificationService {
       ReturnType<PublishedVehicleSnapshotPort["buildForVehicleId"]>
     >,
   ): Promise<void> {
-    const preferences = await this.load_preferences(recipient.profile_id);
-    const preferences_primitive = preferences.toPrimitives();
-
-    if (!is_global_toggle_enabled(dto.event_type, preferences_primitive)) {
-      return;
-    }
-
     if (recipient.alert && !recipient.alert.toPrimitives().is_active) {
       return;
-    }
-
-    const channels = get_enabled_channels(preferences_primitive);
-    if (channels.length === 0) {
-      return;
-    }
-
-    const alert_id = recipient.alert?.toPrimitives().id ?? null;
-    const vehicle_id = dto.vehicle_id ?? null;
-
-    if (alert_id && vehicle_id) {
-      const duplicate = await this.event_repository.findDuplicate({
-        alert_id,
-        vehicle_id,
-        event_type: dto.event_type,
-      });
-      if (duplicate) {
-        return;
-      }
     }
 
     const notification_payload = this.build_notification_payload(
@@ -219,6 +196,85 @@ export class AlertNotificationService {
       dto.event_type,
       notification_payload,
     );
+
+    const alert_id = recipient.alert?.toPrimitives().id ?? null;
+    const vehicle_id = dto.vehicle_id ?? null;
+
+    if (!recipient.profile_id) {
+      if (!recipient.email) {
+        return;
+      }
+
+      if (alert_id && vehicle_id) {
+        const duplicate = await this.event_repository.findDuplicate({
+          alert_id,
+          vehicle_id,
+          event_type: dto.event_type,
+        });
+        if (duplicate) {
+          return;
+        }
+      }
+
+      const guest_event = AlertNotificationEvent.create({
+        profile_id: null,
+        alert_id,
+        vehicle_id,
+        event_type: dto.event_type,
+        channel: "email",
+        status: ALERT_NOTIFICATION_EVENT_STATUS.PENDING,
+        scheduled_for: null,
+        payload: notification_payload,
+      });
+
+      await this.event_repository.save(guest_event);
+
+      await this.notification_channel_dispatcher.notify({
+        profile_id: null,
+        category: dto.event_type,
+        title,
+        body,
+        data: notification_payload,
+        email_override: recipient.email,
+      });
+
+      await this.event_repository.update(guest_event.markSent());
+
+      if (
+        recipient.alert &&
+        (dto.event_type === ALERT_EVENT_TYPE.NEW_LISTING ||
+          dto.event_type === ALERT_EVENT_TYPE.FEATURED)
+      ) {
+        await this.alert_repository.update(
+          recipient.alert.update({ last_sent_at: new Date() }),
+        );
+      }
+
+      return;
+    }
+
+    const preferences = await this.load_preferences(recipient.profile_id);
+    const preferences_primitive = preferences.toPrimitives();
+
+    if (!is_global_toggle_enabled(dto.event_type, preferences_primitive)) {
+      return;
+    }
+
+    const channels = get_enabled_channels(preferences_primitive);
+    if (channels.length === 0) {
+      return;
+    }
+
+    if (alert_id && vehicle_id) {
+      const duplicate = await this.event_repository.findDuplicate({
+        alert_id,
+        vehicle_id,
+        event_type: dto.event_type,
+      });
+      if (duplicate) {
+        return;
+      }
+    }
 
     const event = AlertNotificationEvent.create({
       profile_id: recipient.profile_id,
@@ -435,6 +491,9 @@ export class AlertNotificationService {
     const grouped = new Map<string, typeof pending_events>();
     for (const event of pending_events) {
       const profile_id = event.toPrimitives().profile_id;
+      if (!profile_id) {
+        continue;
+      }
       const current = grouped.get(profile_id) ?? [];
       current.push(event);
       grouped.set(profile_id, current);

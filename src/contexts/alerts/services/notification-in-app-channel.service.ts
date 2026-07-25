@@ -12,6 +12,10 @@ export class NotificationInAppChannelService {
   ) {}
 
   async send(input: NotifyInput): Promise<void> {
+    if (!input.profile_id) {
+      return;
+    }
+
     const notification =
       await this.notification_repository.createFromNotifyInput(input);
     this.notification_gateway.emitNew(notification);

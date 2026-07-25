@@ -7,7 +7,7 @@ export interface PrimitiveAlert {
   name: string;
   created_at: Date;
   updated_at: Date;
-  profile_id: string;
+  profile_id: string | null;
   email: string;
   phone: string;
   phone_code: string;
@@ -27,7 +27,7 @@ export class Alert {
 
   static create(payload: {
     name: string;
-    profile_id: string;
+    profile_id: string | null;
     email: string;
     phone: string;
     phone_code: string;

@@ -89,7 +89,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
       },
     }),
     forwardRef(() => UserModule),
-    ProfileModule,
+    forwardRef(() => ProfileModule),
     RolesModule,
     forwardRef(() => TwoFactorAuthModule),
     DealershipInvitationModule,

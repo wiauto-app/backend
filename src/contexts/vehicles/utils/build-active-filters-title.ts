@@ -91,9 +91,15 @@ export const buildActiveFiltersTitle = (
 ): string => {
   const parts: string[] = [];
 
-  pushIfPresent(parts, joinNames(resolved.makes));
-  pushIfPresent(parts, joinNames(resolved.models));
+  const makes = joinNames(resolved.makes);
+  const models = joinNames(resolved.models);
+  pushIfPresent(parts, makes);
+  pushIfPresent(parts, models);
   pushIfPresent(parts, joinNames(resolved.categories));
+
+  if (!makes && !models) {
+    parts.push("Vehículos");
+  }
 
   if (resolved.vehicle_type?.name) {
     parts.push(`de tipo ${capitalize(resolved.vehicle_type.name.trim())}`);

@@ -1,0 +1,72 @@
+import { z } from "zod";
+import { tool, generateText, Output } from "ai";
+import { createDeepSeek } from "@ai-sdk/deepseek";
+import { envs } from "@/src/common/envs";
+import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
+import { buildAssistantVehicleSummary } from "../helpers/build-assistant-vehicle-summary";
+import type { PrepareNegotiationResult } from "../types/prepare-negotiation";
+
+const prepareNegotiationInputSchema = z.object({
+  vehicle_id: z.string().uuid(),
+  user_budget: z.number().positive().optional(),
+});
+
+const prepareNegotiationOutputSchema = z.object({
+  talking_points: z.array(z.string()).min(2).max(8),
+  offer_range: z
+    .object({
+      min: z.number(),
+      max: z.number(),
+      currency: z.literal("EUR"),
+    })
+    .optional(),
+  caveats: z.array(z.string()).max(6),
+});
+
+interface CreatePrepareNegotiationToolOptions {
+  vehicleService: VehicleService;
+}
+
+export const createPrepareNegotiationTool = ({
+  vehicleService,
+}: CreatePrepareNegotiationToolOptions) =>
+  tool({
+    description:
+      "OBLIGATORIA cuando el usuario pide negociar / preparar oferta / argumentos de precio sobre un anuncio concreto. Prepara talking points, rango de oferta orientativo y advertencias. Requiere vehicle_id (UUID; usa el del anuncio en contexto si no lo repite). NUNCA uses searchVehicles ni inventes otros nombres de tool.",
+    inputSchema: prepareNegotiationInputSchema,
+    execute: async ({
+      vehicle_id,
+      user_budget,
+    }): Promise<PrepareNegotiationResult> => {
+      const detail = await vehicleService.findOne({ id: vehicle_id });
+      const summary = buildAssistantVehicleSummary(detail);
+
+      const deepseek = createDeepSeek({
+        apiKey: envs.DEEPSEEK_API_KEY,
+      });
+
+      const { output } = await generateText({
+        model: deepseek(envs.DEEPSEEK_MODEL),
+        output: Output.object({
+          schema: prepareNegotiationOutputSchema,
+        }),
+        prompt: `Eres coach de negociación de coches usados en España (WiAuto).
+Sé realista: no prometas descuentos imposibles. Habla en español neutro.
+
+Anuncio (JSON):
+${JSON.stringify(summary, null, 2)}
+
+Presupuesto del usuario (opcional): ${user_budget ?? "no indicado"}
+
+Devuelve:
+- talking_points: argumentos concretos (km, año, estado, mercado aparente, urgencia del vendedor si se deduce)
+- offer_range: rango orientativo en EUR si tiene sentido (min/max <= precio anunciado)
+- caveats: advertencias (inspección, historial, no firmar sin revisión, etc.)`,
+      });
+
+      return {
+        vehicle_id,
+        ...output,
+      };
+    },
+  });

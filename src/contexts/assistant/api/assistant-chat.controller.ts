@@ -6,6 +6,7 @@ import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 import { V1_ASSISTANT } from "../route.constants";
 import { AssistantChatService } from "../services/assistant-chat.service";
 import { AssistantChatDto } from "../dto/assistant-chat.dto";
+import type { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
 
 @Controller(V1_ASSISTANT)
 @UseGuards(JwtGuard)
@@ -24,6 +25,8 @@ export class AssistantChatController {
       conversationId: body.conversation_id,
       userId,
       response,
+      mode: body.mode ?? "search",
+      initialFilters: body.initial_filters as SearchVehiclesInput | undefined,
     });
   }
 }

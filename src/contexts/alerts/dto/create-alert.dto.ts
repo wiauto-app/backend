@@ -1,10 +1,10 @@
 import type { AlertFilters } from "../types/alert-filters";
-import { AlertFiltersDto } from "./alert-filters.dto";
+import type { AlertFiltersDto } from "./alert-filters.dto";
 
-export class CreateAlertDto extends AlertFiltersDto {
-  profile_id: string;
-  name: string;
-  email?: string;
+export interface CreateAlertDto extends Partial<AlertFiltersDto> {
+  profile_id: string | null;
+  name?: string;
+  email: string;
   phone: string;
   phone_code: string;
   filters?: AlertFilters;

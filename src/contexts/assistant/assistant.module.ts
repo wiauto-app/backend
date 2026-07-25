@@ -21,6 +21,8 @@ import { AssistantSearchFiltersBuilderService } from "./services/assistant-searc
 import { AssistantSearchFiltersPromptService } from "./services/assistant-search-filters-prompt.service";
 import { AssistantSearchFromMessageService } from "./services/assistant-search-from-message.service";
 import { AssistantSystemPromptService } from "./services/assistant-system-prompt.service";
+import { AssistantBuySystemPromptService } from "./services/assistant-buy-system-prompt.service";
+import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { AssistantSystemPromptService } from "./services/assistant-system-prompt
     AssistantConversationService,
     AssistantFilterCatalogService,
     AssistantSystemPromptService,
+    AssistantBuySystemPromptService,
+    AssistantBuyToolsService,
     AssistantIntentPromptService,
     AssistantIntentExtractorService,
     AssistantEntityResolverService,

@@ -32,16 +32,26 @@ export class AlertService {
   ) {}
 
   async create(dto: CreateAlertDto): Promise<PrimitiveAlert> {
-    const profile = await this.profile_repository.findOne(dto.profile_id);
-    if (!profile) {
-      throw new ValidationException("Perfil de usuario no encontrado");
+    const profile_id = dto.profile_id ?? null;
+
+    if (profile_id) {
+      const profile = await this.profile_repository.findOne(profile_id);
+      if (!profile) {
+        throw new ValidationException("Perfil de usuario no encontrado");
+      }
     }
 
-    const profile_email = profile.user?.email?.trim();
-    const email = dto.email?.trim() || profile_email;
-
+    const email = dto.email?.trim();
     if (!email) {
       throw new ValidationException("El correo es obligatorio para crear una alerta");
+    }
+
+    const phone = dto.phone?.trim();
+    const phone_code = dto.phone_code?.trim();
+    if (!phone || !phone_code) {
+      throw new ValidationException(
+        "El teléfono y el código de país son obligatorios para crear una alerta",
+      );
     }
 
     const filters = dto.filters ?? mapToAlertFilters(dto);
@@ -49,12 +59,22 @@ export class AlertService {
       throw new ValidationException("Debes definir al menos un filtro para la alerta");
     }
 
+    const existing = profile_id
+      ? await this.alert_repository.filtersMatch(profile_id, filters)
+      : await this.alert_repository.filtersMatchByEmail(email, filters);
+
+    if (existing) {
+      throw new ValidationException(
+        "Ya tienes una alerta guardada con estos filtros",
+      );
+    }
+
     const alert = Alert.create({
-      name: dto.name.trim(),
-      profile_id: dto.profile_id,
+      name: dto.name?.trim() || "Búsqueda guardada",
+      profile_id,
       email,
-      phone: dto.phone.trim(),
-      phone_code: dto.phone_code.trim(),
+      phone,
+      phone_code,
       filters,
     });
 
@@ -96,6 +116,11 @@ export class AlertService {
       );
     }
 
+    const profile = await this.profile_repository.findOne(dto.profile_id);
+    if (!profile) {
+      throw new ValidationException("Perfil de usuario no encontrado");
+    }
+
     const name =
       dto.name?.trim() ||
       buildDefaultAlertNameFromVehicleSnapshot(snapshot);
@@ -103,11 +128,11 @@ export class AlertService {
     return this.create({
       profile_id: dto.profile_id,
       name,
-      email: dto.email,
-      phone: dto.phone?.trim() ?? "",
-      phone_code: dto.phone_code?.trim() ?? "",
+      email: dto.email?.trim() || profile.user?.email?.trim() || "",
+      phone: dto.phone?.trim() || profile.phone?.trim() || "",
+      phone_code: dto.phone_code?.trim() || profile.phone_code?.trim() || "",
       filters,
-    } as CreateAlertDto);
+    });
   }
 
   async findAll(dto: FindAllAlertsDto): Promise<AlertWithNewMatchesCount[]> {

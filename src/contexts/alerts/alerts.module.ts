@@ -63,11 +63,12 @@ import { AlertEmailNotificationService } from "./services/alert-email-notificati
     ]),
     AlertProcessingEnqueueModule,
     BullModule.registerQueue({ name: ALERT_DIGEST_QUEUE }),
-    AuthModule,
-    ProfileModule,
+    forwardRef(() => AuthModule),
+    forwardRef(() => ProfileModule),
     MailModule,
     forwardRef(() => VehiclesModule),
   ],
+
   controllers: [
     AlertNotificationPreferencesController,
     NotificationInboxController,

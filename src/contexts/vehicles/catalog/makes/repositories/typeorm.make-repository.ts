@@ -140,6 +140,29 @@ export class TypeormMakeRepository {
     });
   }
 
+  async findAllForLogoSync(options?: {
+    make_id?: number;
+  }): Promise<Make[]> {
+    if (options?.make_id != null) {
+      const make = await this.findOne(options.make_id);
+      return make ? [make] : [];
+    }
+
+    const rows = await this.make_repository.find({
+      order: { name: "ASC" },
+    });
+
+    return rows.map((row) =>
+      Make.fromPrimitives({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        image_url: row.image_url ?? null,
+        created_at: row.created_at,
+      }),
+    );
+  }
+
   async save(make: Make): Promise<Make> {
     const p = make.toPrimitives();
     if (p.id === undefined) {

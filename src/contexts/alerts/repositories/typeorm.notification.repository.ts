@@ -38,6 +38,10 @@ export class TypeOrmNotificationRepository {
   async createFromNotifyInput(
     input: NotifyInput,
   ): Promise<PrimitiveNotification> {
+    if (!input.profile_id) {
+      throw new Error("profile_id es obligatorio para notificaciones in-app");
+    }
+
     const entity = this.notification_repository.create({
       profile_id: input.profile_id,
       category: input.category,

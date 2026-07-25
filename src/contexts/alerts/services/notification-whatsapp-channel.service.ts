@@ -30,6 +30,10 @@ export class NotificationWhatsappChannelService {
   ) {}
 
   async send(input: NotifyInput): Promise<void> {
+    if (!input.profile_id) {
+      return;
+    }
+
     try {
       const profile = await this.profile_repository.findOne(input.profile_id);
       if (!profile) {

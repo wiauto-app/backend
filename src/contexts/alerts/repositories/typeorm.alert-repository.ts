@@ -112,6 +112,38 @@ export class TypeOrmAlertRepository {
     return null;
   }
 
+  async filtersMatchByEmail(
+    email: string,
+    filters: AlertFilters,
+  ): Promise<Alert | null> {
+    const rows = await this.alert_repository
+      .createQueryBuilder("alert")
+      .where("alert.profile_id IS NULL")
+      .andWhere("LOWER(alert.email) = LOWER(:email)", { email: email.trim() })
+      .getMany();
+
+    for (const row of rows) {
+      const alert = entity_to_alert(row);
+      if (alertFiltersAreEqual(alert.toPrimitives().filters, filters)) {
+        return alert;
+      }
+    }
+
+    return null;
+  }
+
+  async claimByEmail(email: string, profile_id: string): Promise<number> {
+    const result = await this.alert_repository
+      .createQueryBuilder()
+      .update(AlertEntity)
+      .set({ profile_id })
+      .where("profile_id IS NULL")
+      .andWhere("LOWER(email) = LOWER(:email)", { email: email.trim() })
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
   async findAll(): Promise<Alert[]> {
     const rows = await this.alert_repository.find({
       order: { created_at: "DESC" },
@@ -126,9 +158,12 @@ export class TypeOrmAlertRepository {
   }): Promise<Alert[]> {
     const rows = await this.alert_repository
       .createQueryBuilder("alert")
-      .where("alert.profile_id != :exclude_profile_id", {
-        exclude_profile_id: params.exclude_profile_id,
-      })
+      .where(
+        "(alert.profile_id IS NULL OR alert.profile_id != :exclude_profile_id)",
+        {
+          exclude_profile_id: params.exclude_profile_id,
+        },
+      )
       .andWhere("alert.is_active = true")
       .andWhere(
         `(
