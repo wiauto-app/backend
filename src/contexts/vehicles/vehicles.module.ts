@@ -20,6 +20,7 @@ import { CategoryEntity } from "./entities/category.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeOrmVehicleRepository } from "./repositories/typeorm.vehicle-repository";
 import { FindVehicleController } from "./api/v1/find-vehicle/find-vehicle.controller";
+import { FindVehicleByRefController } from "./api/v1/find-vehicle-by-ref/find-vehicle-by-ref.controller";
 import { UpdateVehicleController } from "./api/v1/update-vehicle/update-vehicle.controller";
 
 import { FileModule } from "../shared/file/file.module";
@@ -107,6 +108,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     GetVehicleReportController,
     GetOwnerDashboardController,
     GetOwnerStatisticsController,
+    FindVehicleByRefController,
     FindVehicleController,
     FindSimilarVehiclesController,
     UpdateVehicleController,

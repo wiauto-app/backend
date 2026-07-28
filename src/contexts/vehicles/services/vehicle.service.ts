@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { is_temp_storage_path } from "@/src/contexts/shared/file/types/temp-storage-path";
@@ -227,6 +227,16 @@ export class VehicleService {
       throw new VehicleNotFoundException(get_vehicle_dto.id);
     }
     return vehicle;
+  }
+
+  async findActiveIdByRef(ref: number): Promise<{ id: string }> {
+    const id = await this.vehicle_repository.findActiveIdByRef(ref);
+    if (!id) {
+      throw new NotFoundException(
+        `No se encontró un vehículo activo con referencia ${ref}`,
+      );
+    }
+    return { id };
   }
 
   async findAll(

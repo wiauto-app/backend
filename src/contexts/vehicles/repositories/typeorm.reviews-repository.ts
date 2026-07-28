@@ -95,4 +95,18 @@ export class TypeormReviewsRepository {
     const row = await this.review_repository.findOne({ where: { id } });
     return row ? Review.fromPrimitives(row) : null;
   }
+
+  async getAverageRating(vehicle_id: string): Promise<number | null> {
+    const result = await this.review_repository
+      .createQueryBuilder("r")
+      .select("ROUND(AVG(r.rating)::numeric, 1)", "avg")
+      .where("r.vehicle_id = :vehicle_id", { vehicle_id })
+      .getRawOne<{ avg: string | null }>();
+
+    if (result?.avg === null || result?.avg === undefined) {
+      return null;
+    }
+
+    return Number(result.avg);
+  }
 }

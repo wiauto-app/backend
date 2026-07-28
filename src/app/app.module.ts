@@ -39,6 +39,7 @@ import { BillingModule } from "../contexts/billing/billing.module";
 import { AssistantModule } from "../contexts/assistant/assistant.module";
 import { FinancingModule } from "../contexts/financing/financing.module";
 import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests/appraisal-requests.module";
+import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboard.module";
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests
     AssistantModule,
     FinancingModule,
     AppraisalRequestsModule,
+    AdminDashboardModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

@@ -3,7 +3,10 @@ import { ReviewsService } from "@/src/contexts/vehicles/services/reviews.service
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -52,5 +55,18 @@ export class ReviewsController {
       order_by: query.order_by,
       order_direction: query.order_direction,
     });
+  }
+
+  @Delete(":id")
+  @UseGuards(JwtGuard)
+  remove(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ): Promise<void> {
+    const user = req.user;
+    if (!user) {
+      throw new UnauthorizedException("Usuario no autenticado");
+    }
+    return this.reviews_service.remove(id, user.id);
   }
 }

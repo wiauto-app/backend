@@ -3,7 +3,10 @@ import { Inject } from "@nestjs/common";
 import type { Client } from "@opensearch-project/opensearch";
 
 import type { VehicleHeroSearchDocument } from "../../types/vehicle-hero-search-document";
-import type { HeroSearchFacetFilter } from "../../types/hero-search-facet.filter";
+import type {
+  HeroSearchBaseFilter,
+  HeroSearchFacetFilter,
+} from "../../types/hero-search-facet.filter";
 import type {
   HeroCatalogFacetItem,
   HeroFacetsResult,
@@ -131,7 +134,7 @@ export class OpenSearchHeroSearchRepository {
       `${meta_prefix}_name`];
 
     if (filter.facet === "models") {
-      source_includes.push("make_id");
+      source_includes.push("make_id", "make_slug", "make_name");
     }
 
     const terms_agg = {
@@ -200,8 +203,33 @@ export class OpenSearchHeroSearchRepository {
     return { facet: filter.facet, items };
   }
 
+  async countDocuments(filter: HeroSearchBaseFilter): Promise<{ count: number }> {
+    await this.ensureIndex();
+
+    const base_filter = this.buildBaseFilters(filter);
+
+    const response = await this.client.search({
+      index: VEHICLE_HERO_INDEX_NAME,
+      body: {
+        size: 0,
+        track_total_hits: true,
+        query: {
+          bool: {
+            filter: base_filter as Record<string, unknown>[],
+          },
+        },
+      } as Record<string, unknown>,
+    });
+
+    const total = response.body.hits?.total;
+    const count =
+      typeof total === "number" ? total : (total?.value ?? 0);
+
+    return { count };
+  }
+
   private buildBaseFilters(
-    filter: HeroSearchFacetFilter,
+    filter: HeroSearchBaseFilter,
     exclude_until_price = false,
   ): unknown[] {
     const clauses: unknown[] = [

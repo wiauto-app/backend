@@ -39,6 +39,9 @@ export class VehicleEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+  @Column({ type: "int", unique: true, generated: "increment" })
+  ref: number;
+
   // --- Anuncio ---
   @Column({ type: "varchar", nullable: true })
   description?: string | null;
@@ -76,6 +79,9 @@ export class VehicleEntity {
 
   @Column({ default: 0 })
   shares: number;
+
+  @Column({ type: "numeric", precision: 2, scale: 1, nullable: true })
+  rating: number | null;
 
   @Column({ type: "enum", enum: PUBLISHER_TYPE, default: PUBLISHER_TYPE.PROFESSIONAL })
   publisher_type: PublisherType;

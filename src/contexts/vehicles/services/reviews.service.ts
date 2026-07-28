@@ -1,5 +1,6 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 
 import { PrimitiveReview, Review } from "../types/reviews";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
@@ -43,6 +44,7 @@ export class ReviewsService {
     }
     const review = Review.create(input);
     await this.reviews_repository.save(review);
+    await this.recalculateVehicleRating(input.vehicle_id);
     return { review: review.toPrimitives() };
   }
 
@@ -60,5 +62,25 @@ export class ReviewsService {
       order_direction: input.order_direction,
     });
     return this.reviews_repository.find_all(filter);
+  }
+
+  async remove(id: string, profile_id: string): Promise<void> {
+    const review = await this.reviews_repository.find_one(id);
+    if (!review) {
+      throw new NotFoundException("Reseña no encontrada");
+    }
+
+    const primitives = review.toPrimitives();
+    if (primitives.profile_id !== profile_id) {
+      throw new ForbiddenException("No puedes eliminar esta reseña");
+    }
+
+    await this.reviews_repository.remove(id);
+    await this.recalculateVehicleRating(primitives.vehicle_id);
+  }
+
+  async recalculateVehicleRating(vehicle_id: string): Promise<void> {
+    const average = await this.reviews_repository.getAverageRating(vehicle_id);
+    await this.vehicle_repository.updateRating(vehicle_id, average);
   }
 }

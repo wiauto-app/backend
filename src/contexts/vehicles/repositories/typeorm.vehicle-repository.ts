@@ -39,7 +39,7 @@ import { CategoryEntity } from "../entities/category.entity";
 import { VehiclePriceEntity } from "../vehicle-prices/entities/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../vehicle-prices/types/vehicle-price";
 import { applyAdminFilters, applyFilters } from "../validators/filters.applier";
-import { apply_vehicle_created_at_listing_order } from "../validators/vehicle-listing-order.utils";
+import { apply_public_listing_order } from "../validators/vehicle-listing-order.utils";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../types/admin-vehicle.filter";
 import { MakeEntity } from "../catalog/makes/entities/make.entity";
@@ -392,6 +392,7 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
 function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
   return {
     id: entity.id,
+    ref: entity.ref,
     mileage: entity.mileage,
     lat: Number(entity.lat),
     lng: Number(entity.lng),
@@ -818,11 +819,7 @@ export class TypeOrmVehicleRepository {
     const order_field = order_by ?? "created_at";
     const direction = order_direction ?? "DESC";
 
-    if (order_field === "created_at") {
-      apply_vehicle_created_at_listing_order(qb, direction, new Date());
-    } else {
-      qb.orderBy(`vehicle.${order_field}`, direction);
-    }
+    apply_public_listing_order(qb, order_field, direction);
 
     qb.skip(skip).take(limit);
     const rows = await qb.getMany();
@@ -837,6 +834,17 @@ export class TypeOrmVehicleRepository {
     const preloaded = await this.vehicle_repository.preload(payload);
     if (!preloaded) {
       throw new VehicleNotFoundException(p.id);
+    }
+    await this.vehicle_repository.save(preloaded);
+  }
+
+  async updateRating(vehicle_id: string, rating: number | null): Promise<void> {
+    const preloaded = await this.vehicle_repository.preload({
+      id: vehicle_id,
+      rating,
+    });
+    if (!preloaded) {
+      throw new VehicleNotFoundException(vehicle_id);
     }
     await this.vehicle_repository.save(preloaded);
   }
@@ -920,6 +928,14 @@ export class TypeOrmVehicleRepository {
       return null;
     }
     return Vehicle.fromPrimitives(entity_to_primitives(row));
+  }
+
+  async findActiveIdByRef(ref: number): Promise<string | null> {
+    const row = await this.vehicle_repository.findOne({
+      where: { ref, status: STATUS_VEHICLE.ACTIVE },
+      select: { id: true },
+    });
+    return row?.id ?? null;
   }
 
   private build_owner_stats_map(

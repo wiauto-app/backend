@@ -24,6 +24,11 @@
       "value": ""
     },
     {
+      "key": "vehicle_ref",
+      "value": "1",
+      "description": "Referencia pública numérica del vehículo (GET /v1/vehicles/by-ref/:ref)."
+    },
+    {
       "key": "vehicle_price_id",
       "value": ""
     },
@@ -2946,7 +2951,7 @@
                     "method": "GET",
                     "header": [],
                     "url": {
-                      "raw": "{{base_url}}/v1/search/hero-facets?facet=models&make_slugs=audi",
+                      "raw": "{{base_url}}/v1/search/hero-facets?facet=models",
                       "query": [
                         {
                           "key": "facet",
@@ -2954,11 +2959,51 @@
                         },
                         {
                           "key": "make_slugs",
-                          "value": "audi"
+                          "value": "audi",
+                          "disabled": true,
+                          "description": "Opcional. Sin make_slugs = todos los modelos."
                         }
                       ]
                     },
-                    "description": "Requiere make_slugs. Cada item incluye make_id de la marca padre. Ejemplo: { id, slug, name, vehicle_count, make_id }."
+                    "description": "make_slugs opcional (vacío = todos los modelos). Cada item incluye make_id, make_slug y make_name de la marca padre."
+                  }
+                },
+                {
+                  "name": "hero count",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/search/hero-count",
+                      "query": [
+                        {
+                          "key": "make_slugs",
+                          "value": "audi",
+                          "disabled": true
+                        },
+                        {
+                          "key": "model_slugs",
+                          "value": "a3",
+                          "disabled": true
+                        },
+                        {
+                          "key": "province_slug",
+                          "value": "madrid",
+                          "disabled": true
+                        },
+                        {
+                          "key": "municipality_slug",
+                          "value": "madrid",
+                          "disabled": true
+                        },
+                        {
+                          "key": "until_price",
+                          "value": "20000",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Público. Cuenta vehículos activos en OpenSearch con los mismos filtros en cascada que hero-facets. Respuesta: `{ count: number }`."
                   }
                 },
                 {
@@ -3003,6 +3048,35 @@
                     "url": "{{base_url}}/v1/admin/search/reindex-hero",
                     "description": "Bulk reindex de vehículos active no borrados en OpenSearch (índice vehicles_hero_v1)."
                   }
+                }
+              ]
+            },
+            {
+              "name": "obtener vehículo por ref",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/vehicles/by-ref/{{vehicle_ref}}",
+                "description": "Público. Solo vehículos active. Respuesta: `{ id: string }` o 404 si no existe."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/v1/vehicles/by-ref/{{vehicle_ref}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n}"
                 }
               ]
             },
@@ -4616,7 +4690,7 @@
                   "raw": "{\n  \"vehicle_id\": \"{{vehicle_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Trato excelente y vehículo como en el anuncio.\"\n}"
                 },
                 "url": "{{base_url}}/v1/reviews",
-                "description": "JWT (`JwtGuard`). El autor es el usuario autenticado (`profile_id` implícito). Comprueba que el `vehicle_id` exista."
+                "description": "JWT (`JwtGuard`). El autor es el usuario autenticado (`profile_id` implícito). Comprueba que el `vehicle_id` exista. Tras crear se recalcula `vehicles.rating` (AVG 1 decimal)."
               },
               "response": []
             },
@@ -4627,6 +4701,21 @@
                 "header": [],
                 "url": "{{base_url}}/v1/reviews?vehicle_id={{vehicle_id}}&page=1&limit=10",
                 "description": "Público. Query obligatorio: `vehicle_id`. Opcional: `profile_id`, `created_since`, `created_until`, `page`, `limit`, `query`, `order_by`, `order_direction`."
+              },
+              "response": []
+            },
+            {
+              "name": "eliminar reseña",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/reviews/{{review_id}}",
+                "description": "JWT (`JwtGuard`). Solo el autor puede eliminar. Tras borrar se recalcula `vehicles.rating` (AVG 1 decimal o null)."
               },
               "response": []
             }
@@ -5674,6 +5763,42 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "admin-dashboard",
+      "item": [
+        {
+          "name": "overview plataforma (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/admin/dashboard?startDate=2026-06-29&endDate=2026-07-28",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "admin", "dashboard"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-06-29",
+                  "description": "Inicio del rango (YYYY-MM-DD). Debe enviarse junto con endDate. Si ambos faltan: últimos 30 días."
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-07-28",
+                  "description": "Fin del rango (YYYY-MM-DD). startDate ≤ endDate; máximo 365 días. Granularidad: day (≤45) o week (>45)."
+                }
+              ]
+            },
+            "description": "JWT (`JwtGuard`) + `AdminOnlyGuard`. Overview agregado de plataforma: kpis (current/previous del periodo anterior de igual longitud), queues operativas, inventoryByStatus, timeSeries y commercial en una sola respuesta. Sin scope por profile_id."
+          },
+          "response": []
         }
       ]
     },

@@ -11,12 +11,6 @@ export class GetHeroFacetsService {
   constructor(private readonly hero_search_repository: OpenSearchHeroSearchRepository) {}
 
   async execute(dto: GetHeroFacetsDto): Promise<HeroFacetsResult> {
-    if (dto.facet === "models" && !dto.make_slugs?.length) {
-      throw new BadRequestException(
-        "make_slug es obligatorio cuando facet=models",
-      );
-    }
-
     if (dto.facet === "municipalities" && !dto.province_slug?.trim()) {
       throw new BadRequestException(
         "province_slug es obligatorio cuando facet=municipalities",

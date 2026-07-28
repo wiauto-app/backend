@@ -32,6 +32,8 @@ export type TransmissionType =
 
 export interface PrimitiveVehicle {
   id: string;
+  /** Referencia pública autoincremental (generada por BD). */
+  ref?: number;
   mileage: number;
   lat: number;
   lng: number;
@@ -49,6 +51,7 @@ export interface PrimitiveVehicle {
   views?: number;
   favorites?: number;
   shares?: number;
+  rating?: number | null;
   address?: string | null;
   address_details?: VehicleAddressDetails | null;
   transmission_type: TransmissionType;
@@ -195,6 +198,7 @@ export class Vehicle {
       views: this.primitiveVehicle.views,
       favorites: this.primitiveVehicle.favorites,
       shares: this.primitiveVehicle.shares,
+      rating: this.primitiveVehicle.rating ?? null,
       scheduled_publish_at: this.primitiveVehicle.scheduled_publish_at ?? null,
       renewed_at: this.primitiveVehicle.renewed_at ?? null,
       address: this.primitiveVehicle.address ?? null,
