@@ -145,3 +145,32 @@ export interface OutboundMailAlertDigestNotificationJobData {
     summary: string;
   }>;
 }
+
+export const OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_NOTIFICATION =
+  "appraisal_request_notification";
+
+export interface OutboundMailAppraisalRequestNotificationJobData {
+  to: string;
+  appraisal: {
+    vehicle_label: string;
+    mileage: number;
+    name: string;
+    email: string;
+    phone_code: string;
+    phone: string;
+    address: string | null;
+  };
+  created_at: string;
+}
+
+export const OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_ANSWERED =
+  "appraisal_request_answered";
+
+export interface OutboundMailAppraisalRequestAnsweredJobData {
+  to: string;
+  name: string;
+  vehicle_label: string;
+  estimated_price_min: number;
+  estimated_price_max: number;
+  admin_note: string | null;
+}

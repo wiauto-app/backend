@@ -6,6 +6,8 @@ import {
   OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_ANSWERED,
+  OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
@@ -21,6 +23,8 @@ import {
   OutboundMailAlertDigestNotificationJobData,
   OutboundMailAlertEventNotificationJobData,
   OutboundMailAlertMatchNotificationJobData,
+  OutboundMailAppraisalRequestAnsweredJobData,
+  OutboundMailAppraisalRequestNotificationJobData,
   OutboundMailCheckoutAbandonedJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
@@ -145,6 +149,24 @@ export class OutboundMailEnqueueService {
   ): Promise<void> {
     await this.outbound_mail_queue.add(
       OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
+      data,
+    );
+  }
+
+  async enqueue_appraisal_request_notification(
+    data: OutboundMailAppraisalRequestNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_NOTIFICATION,
+      data,
+    );
+  }
+
+  async enqueue_appraisal_request_answered(
+    data: OutboundMailAppraisalRequestAnsweredJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_ANSWERED,
       data,
     );
   }

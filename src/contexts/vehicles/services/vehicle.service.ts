@@ -58,6 +58,8 @@ import { FindAllVehiclesUseCaseDto } from "../dto/find-all-vehicles.dto";
 import { FindOwnerVehiclesDto } from "../dto/find-owner-vehicles.dto";
 import { FindSimilarVehiclesDto } from "../dto/find-similar-vehicles.dto";
 import { GetVehicleDto } from "../dto/get-vehicle.dto";
+import { GetVehicleReportDto } from "../dto/get-vehicle-report.dto";
+import { VehicleReport } from "../types/vehicle-report";
 import { RemoveVehicleDto } from "../dto/remove-vehicle.dto";
 import { RenewVehicleDto } from "../dto/renew-vehicle.dto";
 import { ScheduleVehicleDto } from "../dto/schedule-vehicle.dto";
@@ -348,6 +350,10 @@ export class VehicleService {
     const filter = new OwnerVehicleFilter({
       profile_id: dto.profile_id,
       status: dto.status,
+      make_id: dto.make_id,
+      model_id: dto.model_id,
+      since_created_at: dto.since_created_at,
+      until_created_at: dto.until_created_at,
       page: dto.page ?? 1,
       limit: dto.limit ?? 10,
       order_by: dto.order_by,
@@ -355,6 +361,17 @@ export class VehicleService {
     });
 
     return this.vehicle_repository.findAllByProfileId(filter);
+  }
+
+  async getVehicleReport(dto: GetVehicleReportDto): Promise<VehicleReport> {
+    const report = await this.vehicle_repository.findReportByIdAndProfileId(
+      dto.vehicle_id,
+      dto.profile_id,
+    );
+    if (!report) {
+      throw new VehicleNotFoundException(dto.vehicle_id);
+    }
+    return report;
   }
 
   async duplicate(dto: DuplicateVehicleDto): Promise<{ vehicle_id: string }> {

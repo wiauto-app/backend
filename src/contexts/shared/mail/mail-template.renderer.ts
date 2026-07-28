@@ -591,6 +591,124 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderAppraisalRequestNotification(payload: {
+    appraisal: {
+      vehicle_label: string;
+      mileage: number;
+      name: string;
+      email: string;
+      phone_code: string;
+      phone: string;
+      address: string | null;
+    };
+    created_at: string;
+  }): string {
+    const escaped_vehicle_label = this.escapeHtml(payload.appraisal.vehicle_label);
+    const escaped_name = this.escapeHtml(payload.appraisal.name);
+    const escaped_email = this.escapeHtml(payload.appraisal.email);
+    const escaped_phone = this.escapeHtml(
+      `${payload.appraisal.phone_code} ${payload.appraisal.phone}`,
+    );
+    const escaped_created_at = this.escapeHtml(
+      new Date(payload.created_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const address_row = payload.appraisal.address
+      ? `<tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Ubicación</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;white-space:pre-line;">${this.escapeHtml(payload.appraisal.address)}</p>
+          </td>
+        </tr>`
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Recibiste una nueva solicitud de tasación para un <strong style="color:#111827;">${escaped_vehicle_label}</strong>.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Kilometraje</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${formatMileage(payload.appraisal.mileage)}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Nombre</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_name}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Correo</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_email}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Teléfono</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_phone}</p>
+          </td>
+        </tr>
+        ${address_row}
+        <tr>
+          <td style="padding:16px 20px;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Fecha</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_created_at}</p>
+          </td>
+        </tr>
+      </table>`;
+
+    return this.renderBase({
+      preheader: `Nueva solicitud de tasación de ${payload.appraisal.vehicle_label}.`,
+      title: "Nueva solicitud de tasación",
+      body,
+      footer_note: "Revisa la solicitud en el panel de administración y responde con un rango estimado.",
+    });
+  }
+
+  renderAppraisalRequestAnswered(payload: {
+    name: string;
+    vehicle_label: string;
+    estimated_price_min: number;
+    estimated_price_max: number;
+    admin_note: string | null;
+  }): string {
+    const escaped_name = this.escapeHtml(payload.name);
+    const escaped_vehicle_label = this.escapeHtml(payload.vehicle_label);
+    const note_block = payload.admin_note
+      ? `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+            <strong style="color:#111827;">Nota del equipo:</strong><br />${this.escapeHtml(payload.admin_note)}
+          </p>`
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Hola ${escaped_name}, ya revisamos los datos de tu <strong style="color:#111827;">${escaped_vehicle_label}</strong>.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 24px;">
+        <tr>
+          <td style="padding:16px 20px;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Rango estimado</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:18px;font-weight:600;color:#111827;">${formatCurrencyEur(payload.estimated_price_min)} – ${formatCurrencyEur(payload.estimated_price_max)}</p>
+          </td>
+        </tr>
+      </table>
+      ${note_block}
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.6;color:#6b7280;">
+        Este rango es orientativo y no constituye un compromiso de compra. Si quieres avanzar, contáctanos para coordinar los siguientes pasos.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Tenemos una estimación para tu ${payload.vehicle_label}.`,
+      title: "Estimación de tu tasación",
+      body,
+      footer_note: "Gracias por confiar en WiAuto para tasar tu vehículo.",
+    });
+  }
+
   buildLocationLabelFromSlugs(
     municipalities_slugs: string[],
     province_slugs: string[],

@@ -52,6 +52,8 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import { OwnerVehicleFilter } from "../types/owner-vehicle.filter";
 import { OwnerVehicleListItem } from "../types/owner-vehicle-list-item";
+import { LeadEntity } from "../entities/lead.entity";
+import { VehicleReport } from "../types/vehicle-report";
 import { CONTACT_CLICK_TYPE } from "../types/contact-click";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import {
@@ -727,6 +729,49 @@ export class TypeOrmVehicleRepository {
     return entity_to_vehicle_detail(vehicle, dealership_members);
   }
 
+  async findReportByIdAndProfileId(
+    id: string,
+    profile_id: string,
+  ): Promise<VehicleReport | null> {
+    const vehicle = await this.vehicle_repository.findOne({
+      where: { id, profile: { id: profile_id } },
+      relations: {
+        images: true,
+        vehicle_prices: true,
+        version: {
+          make: true,
+          model: true,
+        },
+      },
+    });
+    if (!vehicle) {
+      return null;
+    }
+
+    const stats = await this.vehicle_analytics_repository.countTotalsByVehicleId(id);
+    const display_name = formatVehicleDisplayName({
+      make_name: vehicle.version.make.name,
+      model_name: vehicle.version.model.name,
+      version_name: vehicle.version.name,
+    });
+
+    return {
+      id: vehicle.id,
+      display_name,
+      status: vehicle.status,
+      condition: vehicle.condition,
+      price: get_active_price(vehicle),
+      mileage: vehicle.mileage,
+      created_at: vehicle.created_at,
+      renewed_at: vehicle.renewed_at ?? null,
+      expires_at: vehicle.expires_at,
+      images: map_vehicle_list_images(vehicle.images),
+      version_summary: map_version_summary(vehicle),
+      price_history: map_vehicle_prices_history(vehicle.vehicle_prices),
+      stats,
+    };
+  }
+
   async findAll(
     filter: VehicleFilter,
   ): Promise<PaginatedResult<VehicleListItem>> {
@@ -924,6 +969,26 @@ export class TypeOrmVehicleRepository {
       qb.andWhere("vehicle.status = :status", { status: filter.status });
     }
 
+    if (filter.make_id) {
+      qb.andWhere("version.make_id = :make_id", { make_id: filter.make_id });
+    }
+
+    if (filter.model_id) {
+      qb.andWhere("version.model_id = :model_id", { model_id: filter.model_id });
+    }
+
+    if (filter.since_created_at) {
+      qb.andWhere("vehicle.created_at >= :since_created_at", {
+        since_created_at: filter.since_created_at,
+      });
+    }
+
+    if (filter.until_created_at) {
+      qb.andWhere("vehicle.created_at <= :until_created_at", {
+        until_created_at: filter.until_created_at,
+      });
+    }
+
     const count_qb = qb.clone();
     (
       count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
@@ -932,8 +997,33 @@ export class TypeOrmVehicleRepository {
     const count_row = await count_qb.getRawOne<{ cnt: string }>();
     const total_count = Number(count_row?.cnt ?? 0);
 
-    const order_field = order_by ?? "created_at";
-    qb.orderBy(`vehicle.${order_field}`, order_direction ?? "DESC");
+    switch (order_by) {
+      case "price": {
+        qb.orderBy("vehicle_prices.price", order_direction);
+        break;
+      }
+      case "views": {
+        qb.orderBy("vehicle.views", order_direction);
+        break;
+      }
+      case "leads": {
+        qb.leftJoin(
+          (sub) =>
+            sub
+              .select("lead.vehicle_id", "vehicle_id")
+              .addSelect("COUNT(*)", "leads_count")
+              .from(LeadEntity, "lead")
+              .groupBy("lead.vehicle_id"),
+          "owner_leads_count",
+          "owner_leads_count.vehicle_id = vehicle.id",
+        );
+        qb.orderBy("COALESCE(owner_leads_count.leads_count, 0)", order_direction);
+        break;
+      }
+      default: {
+        qb.orderBy("vehicle.created_at", order_direction);
+      }
+    }
     qb.skip(skip).take(limit);
 
     const rows = await qb.getMany();

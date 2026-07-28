@@ -41,6 +41,7 @@ import { CatalogModule } from "./catalog/catalog.module";
 import { FindSimilarVehiclesController } from "./api/v1/find-similar-vehicles/find-similar-vehicles.controller";
 import { RemoveVehicleController } from "./api/v1/remove-vehicle/remove-vehicle.controller";
 import { FindOwnerVehiclesController } from "./api/v1/find-owner-vehicles/find-owner-vehicles.controller";
+import { GetVehicleReportController } from "./api/v1/get-vehicle-report/get-vehicle-report.controller";
 import { DuplicateVehicleController } from "./api/v1/duplicate-vehicle/duplicate-vehicle.controller";
 import { RenewVehicleController } from "./api/v1/renew-vehicle/renew-vehicle.controller";
 import { ScheduleVehicleController } from "./api/v1/schedule-vehicle/schedule-vehicle.controller";
@@ -80,6 +81,9 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
 import { ChatModule } from "../chat/modules/chat.module";
 import { GetOwnerDashboardController } from "./api/v1/get-owner-dashboard/get-owner-dashboard.controller";
 import { TypeOrmOwnerDashboardRepository } from "./repositories/typeorm.owner-dashboard-repository";
+import { GetOwnerStatisticsController } from "./api/v1/get-owner-statistics/get-owner-statistics.controller";
+import { TypeOrmOwnerStatisticsRepository } from "./repositories/typeorm.owner-statistics-repository";
+import { OwnerStatisticsService } from "./services/owner-statistics.service";
 import { RecommendVehiclePriceController } from "./api/v1/vehicle-ai/recommend-vehicle-price.controller";
 import { GenerateVehicleDescriptionController } from "./api/v1/vehicle-ai/generate-vehicle-description.controller";
 import { RecommendVehiclePriceService } from "./services/recommend-vehicle-price.service";
@@ -100,7 +104,9 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
   controllers: [
     CreateVehicleController,
     FindOwnerVehiclesController,
+    GetVehicleReportController,
     GetOwnerDashboardController,
+    GetOwnerStatisticsController,
     FindVehicleController,
     FindSimilarVehiclesController,
     UpdateVehicleController,
@@ -125,6 +131,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     VehicleService,
     VehicleFiltersService,
     OwnerDashboardService,
+    OwnerStatisticsService,
     ScheduledVehiclePublishProcessor,
     ScheduledVehiclePublishBootstrapService,
     FeaturedVehicleExpiryProcessor,
@@ -146,6 +153,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     TypeOrmVehicleRepository,
     TypeOrmVehicleAnalyticsRepository,
     TypeOrmOwnerDashboardRepository,
+    TypeOrmOwnerStatisticsRepository,
     {
       provide: ActiveFiltersLookupPort,
       useExisting: TypeOrmActiveFiltersLookupAdapter,

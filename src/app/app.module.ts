@@ -16,6 +16,7 @@ import { LeadsModule } from "../contexts/vehicles/modules/leads.module";
 import { SharesModule } from "../contexts/vehicles/modules/shares.module";
 import { ContactClicksModule } from "../contexts/vehicles/modules/contact-clicks.module";
 import { ViewsModule } from "../contexts/vehicles/modules/views.module";
+import { ImpressionsModule } from "../contexts/vehicles/modules/impressions.module";
 import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
@@ -37,6 +38,7 @@ import { LocationsModule } from "../contexts/locations/locations.module";
 import { BillingModule } from "../contexts/billing/billing.module";
 import { AssistantModule } from "../contexts/assistant/assistant.module";
 import { FinancingModule } from "../contexts/financing/financing.module";
+import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests/appraisal-requests.module";
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { FinancingModule } from "../contexts/financing/financing.module";
     SharesModule,
     ContactClicksModule,
     ViewsModule,
+    ImpressionsModule,
     VehicleListsModule,
     MailModule,
     TwoFactorAuthModule,
@@ -71,6 +74,7 @@ import { FinancingModule } from "../contexts/financing/financing.module";
     BillingModule,
     AssistantModule,
     FinancingModule,
+    AppraisalRequestsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

@@ -3,7 +3,7 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 
-import type { ContactClickType } from "../types/contact-click";
+import { CONTACT_CLICK_TYPE, type ContactClickType } from "../types/contact-click";
 type PeriodCountRow = {
   vehicle_id: string;
   current: string;
@@ -129,6 +129,58 @@ export class TypeOrmVehicleAnalyticsRepository {
     );
 
     return map_period_rows(rows);
+  }
+
+  async countTotalsByVehicleId(vehicle_id: string): Promise<{
+    views: number;
+    favorites: number;
+    shares: number;
+    leads: number;
+    phone_clicks: number;
+    whatsapp_clicks: number;
+  }> {
+    const [
+      [views],
+      [favorites],
+      [shares],
+      [leads],
+      [phone_clicks],
+      [whatsapp_clicks],
+    ] = await Promise.all([
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM vehicle_views WHERE vehicle_id = $1",
+        [vehicle_id],
+      ),
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM vehicle_list_items WHERE vehicle_id = $1",
+        [vehicle_id],
+      ),
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM vehicle_shares WHERE vehicle_id = $1",
+        [vehicle_id],
+      ),
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM leads WHERE vehicle_id = $1",
+        [vehicle_id],
+      ),
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM vehicle_contact_clicks WHERE vehicle_id = $1 AND type = $2",
+        [vehicle_id, CONTACT_CLICK_TYPE.PHONE],
+      ),
+      this.data_source.query<{ cnt: string }[]>(
+        "SELECT COUNT(*)::int AS cnt FROM vehicle_contact_clicks WHERE vehicle_id = $1 AND type = $2",
+        [vehicle_id, CONTACT_CLICK_TYPE.WHATSAPP],
+      ),
+    ]);
+
+    return {
+      views: Number(views.cnt),
+      favorites: Number(favorites.cnt),
+      shares: Number(shares.cnt),
+      leads: Number(leads.cnt),
+      phone_clicks: Number(phone_clicks.cnt),
+      whatsapp_clicks: Number(whatsapp_clicks.cnt),
+    };
   }
 
   async countContactClicksByVehicleIdsInPeriods(

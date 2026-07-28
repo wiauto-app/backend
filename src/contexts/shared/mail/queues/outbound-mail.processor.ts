@@ -8,6 +8,8 @@ import {
   OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_EVENT_NOTIFICATION,
   OUTBOUND_MAIL_JOB_ALERT_MATCH_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_ANSWERED,
+  OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
@@ -23,6 +25,8 @@ import {
   OutboundMailAlertDigestNotificationJobData,
   OutboundMailAlertEventNotificationJobData,
   OutboundMailAlertMatchNotificationJobData,
+  OutboundMailAppraisalRequestAnsweredJobData,
+  OutboundMailAppraisalRequestNotificationJobData,
   OutboundMailCheckoutAbandonedJobData,
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
@@ -59,8 +63,8 @@ export class OutboundMailProcessor extends WorkerHost {
       | OutboundMailAlertMatchNotificationJobData
       | OutboundMailAlertEventNotificationJobData
       | OutboundMailAlertDigestNotificationJobData
-      | OutboundMailAlertEventNotificationJobData
-      | OutboundMailAlertDigestNotificationJobData
+      | OutboundMailAppraisalRequestNotificationJobData
+      | OutboundMailAppraisalRequestAnsweredJobData
     >,
   ): Promise<void> {
     if (job.name === OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION) {
@@ -168,6 +172,29 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_ALERT_DIGEST_NOTIFICATION) {
       const data = job.data as OutboundMailAlertDigestNotificationJobData;
       await this.mail_service.sendAlertDigestNotificationEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_NOTIFICATION) {
+      const data = job.data as OutboundMailAppraisalRequestNotificationJobData;
+      await this.mail_service.sendAppraisalRequestNotificationEmail({
+        to: data.to,
+        appraisal: data.appraisal,
+        created_at: data.created_at,
+      });
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_APPRAISAL_REQUEST_ANSWERED) {
+      const data = job.data as OutboundMailAppraisalRequestAnsweredJobData;
+      await this.mail_service.sendAppraisalRequestAnsweredEmail({
+        to: data.to,
+        name: data.name,
+        vehicle_label: data.vehicle_label,
+        estimated_price_min: data.estimated_price_min,
+        estimated_price_max: data.estimated_price_max,
+        admin_note: data.admin_note,
+      });
       return;
     }
 

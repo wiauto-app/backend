@@ -370,6 +370,61 @@ export class MailService {
     }
   }
 
+  async sendAppraisalRequestNotificationEmail(payload: {
+    to: string;
+    appraisal: {
+      vehicle_label: string;
+      mileage: number;
+      name: string;
+      email: string;
+      phone_code: string;
+      phone: string;
+      address: string | null;
+    };
+    created_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderAppraisalRequestNotification(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nueva solicitud de tasación: ${payload.appraisal.vehicle_label}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de solicitud de tasación a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendAppraisalRequestAnsweredEmail(payload: {
+    to: string;
+    name: string;
+    vehicle_label: string;
+    estimated_price_min: number;
+    estimated_price_max: number;
+    admin_note: string | null;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderAppraisalRequestAnswered(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Ya tenemos una estimación para tu ${payload.vehicle_label}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la respuesta de tasación a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendDealershipInvitationEmail(payload: {
     to: string;
     invitation_link: string;

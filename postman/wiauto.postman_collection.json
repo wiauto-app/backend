@@ -190,6 +190,10 @@
     {
       "key": "notification_id",
       "value": ""
+    },
+    {
+      "key": "appraisal_request_id",
+      "value": ""
     }
   ],
   "item": [
@@ -3313,6 +3317,54 @@
               ]
             },
             {
+              "name": "registrar impresiones vehículos (batch)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vehicle_ids\": [\"{{vehicle_id}}\"],\n  \"profile_id\": \"{{profile_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/impressions",
+                "description": "Público (sin JWT). Registra impresiones en lote de anuncios vistos en el listado público. Body: `vehicle_ids` (array de UUID, máx. 50) obligatorio; `profile_id` (UUID de perfil/usuario) opcional."
+              },
+              "response": [
+                {
+                  "name": "201 Created — impresiones registradas (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"vehicle_ids\": [\"{{vehicle_id}}\"],\n  \"profile_id\": \"{{profile_id}}\"\n}"
+                    },
+                    "url": "{{base_url}}/v1/vehicles/impressions",
+                    "description": "Público (sin JWT). Registra impresiones en lote de anuncios vistos en el listado público. Body: `vehicle_ids` (array de UUID, máx. 50) obligatorio; `profile_id` (UUID de perfil/usuario) opcional."
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"recorded\": 1\n}"
+                }
+              ]
+            },
+            {
               "name": "dashboard propietario",
               "request": {
                 "method": "GET",
@@ -3342,6 +3394,40 @@
               "response": []
             },
             {
+              "name": "estadísticas propietario",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v1/owner/statistics?since=2026-06-21&until=2026-07-20&granularity=day",
+                  "query": [
+                    {
+                      "key": "since",
+                      "value": "2026-06-21",
+                      "description": "YYYY-MM-DD (inclusive). Obligatorio."
+                    },
+                    {
+                      "key": "until",
+                      "value": "2026-07-20",
+                      "description": "YYYY-MM-DD (inclusive). Default: hoy si no se envía."
+                    },
+                    {
+                      "key": "granularity",
+                      "value": "day",
+                      "description": "day | week | month. Default: day."
+                    }
+                  ]
+                },
+                "description": "JWT (`JwtGuard`). Estadísticas del propietario para la página `/estadisticas`: alcance (publicaciones, impresiones, visitas, contactos), acciones (favoritos, compartidos, % de respuesta y tiempo mediano) y serie temporal de 4 métricas (`impressions`, `visits`, `messages`, `listings_published`)."
+              },
+              "response": []
+            },
+            {
               "name": "mis anuncios — listar",
               "request": {
                 "method": "GET",
@@ -3366,10 +3452,56 @@
                       "key": "status",
                       "value": "active",
                       "disabled": true
+                    },
+                    {
+                      "key": "make_id",
+                      "value": "1",
+                      "disabled": true
+                    },
+                    {
+                      "key": "model_id",
+                      "value": "1",
+                      "disabled": true
+                    },
+                    {
+                      "key": "since_created_at",
+                      "value": "2026-01-01",
+                      "disabled": true
+                    },
+                    {
+                      "key": "until_created_at",
+                      "value": "2026-12-31",
+                      "disabled": true
+                    },
+                    {
+                      "key": "order_by",
+                      "value": "created_at",
+                      "disabled": true,
+                      "description": "created_at | price | views | leads"
+                    },
+                    {
+                      "key": "order_direction",
+                      "value": "DESC",
+                      "disabled": true
                     }
                   ]
                 },
-                "description": "JWT (`JwtGuard`). Listado del propietario con stats (visitas, leads, favoritos, compartidos) y tendencias 30d vs 30d anteriores. Query opcional: `status`."
+                "description": "JWT (`JwtGuard`). Listado del propietario con stats (visitas, leads, favoritos, compartidos) y tendencias 30d vs 30d anteriores. Query opcional: `status`, `make_id`, `model_id`, `since_created_at`/`until_created_at` (rango sobre `created_at`), `order_by` (`created_at` | `price` | `views` | `leads`) y `order_direction`."
+              },
+              "response": []
+            },
+            {
+              "name": "mis anuncios — informe de anuncio",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/report",
+                "description": "JWT + `VehicleOwnerGuard`. Informe exportable de un anuncio propio: datos del vehículo, histórico de precios (`vehicle_prices`) y estadísticas totales (vistas, favoritos, compartidos, leads, clics de contacto)."
               },
               "response": []
             },
@@ -5540,6 +5672,135 @@
                   "body": ""
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "appraisal-requests",
+      "item": [
+        {
+          "name": "crear solicitud de tasación (público)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make_id\": 1,\n  \"model_id\": 1,\n  \"year_id\": 1,\n  \"version_id\": 1,\n  \"fuel_type_id\": 1,\n  \"body_type_id\": 1,\n  \"transmission_type\": \"manual\",\n  \"mileage\": 85000,\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"612345678\"\n}"
+            },
+            "url": "{{base_url}}/v1/appraisal-requests",
+            "description": "Público (sin JWT). Fuerza `priority=low` y `profile_id=null` en servidor. No confiar en prioridad enviada por el cliente."
+          },
+          "response": []
+        },
+        {
+          "name": "crear solicitud de tasación (autenticado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make_id\": 1,\n  \"model_id\": 1,\n  \"year_id\": 1,\n  \"version_id\": 1,\n  \"fuel_type_id\": 1,\n  \"body_type_id\": 1,\n  \"transmission_type\": \"manual\",\n  \"mileage\": 85000,\n  \"lat\": 40.4168,\n  \"lng\": -3.7038,\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"612345678\"\n}"
+            },
+            "url": "{{base_url}}/v1/appraisal-requests/authenticated",
+            "description": "JWT (`JwtGuard`). Fuerza `priority=high` y `profile_id` del JWT. Usado por `/mi-tasador`."
+          },
+          "response": []
+        },
+        {
+          "name": "admin",
+          "item": [
+            {
+              "name": "listar solicitudes de tasación",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v1/admin/appraisal-requests?page=1&limit=10",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true,
+                      "description": "pending | answered | closed"
+                    },
+                    {
+                      "key": "priority",
+                      "value": "high",
+                      "disabled": true,
+                      "description": "low | high"
+                    }
+                  ]
+                },
+                "description": "JWT + AdminOnly. Orden por defecto: `priority DESC` (high primero), luego `created_at DESC`. Filtros opcionales `status` y `priority`."
+              },
+              "response": []
+            },
+            {
+              "name": "responder solicitud de tasación",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estimated_price_min\": 12000,\n  \"estimated_price_max\": 14500,\n  \"admin_note\": \"Estimación orientativa según mercado.\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/appraisal-requests/{{appraisal_request_id}}/respond",
+                "description": "JWT + AdminOnly. Marca como answered y notifica al cliente."
+              },
+              "response": []
+            },
+            {
+              "name": "cerrar solicitud de tasación",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/appraisal-requests/{{appraisal_request_id}}/close",
+                "description": "JWT + AdminOnly. Marca la solicitud como closed."
+              },
+              "response": []
             }
           ]
         }
