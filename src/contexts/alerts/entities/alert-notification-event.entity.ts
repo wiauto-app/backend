@@ -62,7 +62,6 @@ export class AlertNotificationEventEntity implements PrimitiveAlertNotificationE
       "favorite_change",
       "new_message",
       "seller_reply",
-      "saved_vehicle_reminder",
     ],
     enumName: "alert_notification_event_type_enum",
   })

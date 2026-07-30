@@ -113,10 +113,6 @@ export class AlertEmailNotificationService extends AlertNotificationDispatcher {
       return "El vendedor respondió a tu mensaje";
     }
 
-    if (payload.event_type === "saved_vehicle_reminder") {
-      return "Tienes un vehículo guardado sin revisar";
-    }
-
     if (typeof payload.payload.vehicle_title === "string") {
       return `Novedad sobre ${payload.payload.vehicle_title}`;
     }

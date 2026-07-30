@@ -5,7 +5,6 @@ import { Queue } from "bullmq";
 import type { AlertEventType } from "../types/alert-event-type.enum";
 import {
   ALERT_DIGEST_JOB_DAILY,
-  ALERT_DIGEST_JOB_REMINDERS,
   ALERT_DIGEST_JOB_WEEKLY,
   ALERT_DIGEST_QUEUE,
   ALERT_PROCESSING_JOB_VEHICLE_EVENT,
@@ -76,17 +75,6 @@ export class AlertDigestEnqueueService {
       {
         repeat: { pattern: "0 8 * * 1" },
         jobId: ALERT_DIGEST_JOB_WEEKLY,
-        removeOnComplete: true,
-        removeOnFail: 100,
-      },
-    );
-
-    await this.alert_digest_queue.add(
-      ALERT_DIGEST_JOB_REMINDERS,
-      {},
-      {
-        repeat: { pattern: "0 9 * * *" },
-        jobId: ALERT_DIGEST_JOB_REMINDERS,
         removeOnComplete: true,
         removeOnFail: 100,
       },

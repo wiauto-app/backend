@@ -192,22 +192,4 @@ export class TypeOrmVehicleListItemRepository {
 
     return [...new Set(rows.map((row) => row.profile_id))];
   }
-
-  async findStaleFavoriteReminders(params: {
-    older_than_days: number;
-  }): Promise<Array<{ profile_id: string; vehicle_id: string; added_at: Date }>> {
-    const threshold = new Date();
-    threshold.setDate(threshold.getDate() - params.older_than_days);
-
-    const rows = await this.vehicle_list_item_repository
-      .createQueryBuilder("item")
-      .innerJoin("item.vehicle_list", "vehicle_list")
-      .select("vehicle_list.profile_id", "profile_id")
-      .addSelect("item.vehicle_id", "vehicle_id")
-      .addSelect("item.created_at", "added_at")
-      .where("item.created_at <= :threshold", { threshold })
-      .getRawMany<{ profile_id: string; vehicle_id: string; added_at: Date }>();
-
-    return rows;
-  }
 }

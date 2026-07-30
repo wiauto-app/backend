@@ -44,13 +44,7 @@ export class AlertNotificationPreferencesEntity
   notify_seller_replies: boolean;
 
   @Column({ default: true })
-  notify_saved_vehicle_reminders: boolean;
-
-  @Column({ default: true })
   notify_new_leads: boolean;
-
-  @Column({ default: 7 })
-  saved_vehicle_reminder_days: number;
 
   @Column({
     type: "enum",

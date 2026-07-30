@@ -49,6 +49,8 @@ import {
   resolveMakeModelFilterMode,
 } from "../validators/make-model-filter-mode.utils";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
+import type { DealershipSchedule } from "@/src/contexts/dealership/entities/dealership-schedule.entity";
+import type { DealershipScheduleDayDto } from "@/src/contexts/dealership/types/dealership-schedule";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import { OwnerVehicleFilter } from "../types/owner-vehicle.filter";
 import { OwnerVehicleListItem } from "../types/owner-vehicle-list-item";
@@ -111,14 +113,15 @@ const map_vehicle_list_images = (
     .map((image) => ({ id: image.id, url: image.url }));
 
 const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
-  make_name: entity.version?.make?.name ?? "",
-  model_name: entity.version?.model?.name ?? "",
-  version_name: entity.version?.name ?? "",
+  make_name: entity.version.make.name,
+  model_name: entity.version.model.name,
+  version_name: entity.version.name,
 });
 
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
+    ref:entity.ref,
     price: get_active_price(entity),
     mileage: entity.mileage,
     lat: Number(entity.lat),
@@ -294,6 +297,40 @@ function entity_to_vehicle_detail_version(entity: VersionEntity): Version {
   };
 }
 
+function format_schedule_time(value: string): string {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return value;
+  }
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
+}
+
+function map_dealership_schedules(
+  schedules: DealershipSchedule[] | undefined,
+): DealershipScheduleDayDto[] {
+  if (!schedules?.length) {
+    return [];
+  }
+
+  return [...schedules]
+    .sort((a, b) => Number(a.day) - Number(b.day))
+    .map((schedule) => {
+      const open_times = [...schedule.open_times].sort((a, b) =>
+        format_schedule_time(a.open_time).localeCompare(
+          format_schedule_time(b.open_time),
+        ),
+      );
+
+      return {
+        day: Number(schedule.day),
+        open_times: open_times.map((slot) => ({
+          open_time: format_schedule_time(slot.open_time),
+          close_time: format_schedule_time(slot.close_time),
+        })),
+      };
+    });
+}
+
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find((member) => member.profile_id === entity.profile.id)?.dealership;
@@ -325,13 +362,11 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     vin_code: entity.vin_code,
     version_id: entity.version_id,
     version: entity_to_vehicle_detail_version(entity.version),
-    traction: entity.traction
-      ? {
-          id: entity.traction.id,
-          name: entity.traction.name,
-          slug: entity.traction.slug,
-        }
-      : null,
+    traction: {
+      id: entity.traction.id,
+      name: entity.traction.name,
+      slug: entity.traction.slug,
+    },
     phone_code: public_contact.phone_code,
     phone: public_contact.phone,
     has_whatsapp: public_contact.has_whatsapp,
@@ -352,6 +387,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
       website_url: dealership?.website_url ?? "",
       email: dealership?.email ?? "",
       phone_code: dealership?.phone_code ?? "",
+      schedules: map_dealership_schedules(dealership?.schedules),
     },
   };
 }
@@ -379,13 +415,11 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     phone: entity.phone,
     email: entity.email,
     version_id: entity.version_id,
-    traction: entity.traction
-      ? {
-          id: entity.traction.id,
-          name: entity.traction.name,
-          slug: entity.traction.slug,
-        }
-      : null,
+    traction: {
+      id: entity.traction.id,
+      name: entity.traction.name,
+      slug: entity.traction.slug,
+    },
   };
 }
 
@@ -418,7 +452,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
     email: entity.email,
-    traction_id: entity.traction?.id ?? null,
+    traction_id: entity.traction.id,
     power: entity.power,
     displacement: entity.displacement,
     autonomy: entity.autonomy,
@@ -724,7 +758,11 @@ export class TypeOrmVehicleRepository {
     const dealership_members = await this.dealership_members_repository.find({
       where: { profile_id: vehicle.profile.id },
       relations: {
-        dealership: true,
+        dealership: {
+          schedules: {
+            open_times: true,
+          },
+        },
       },
     });
     return entity_to_vehicle_detail(vehicle, dealership_members);
@@ -817,9 +855,8 @@ export class TypeOrmVehicleRepository {
     const total_count = Number(count_row?.cnt ?? 0);
 
     const order_field = order_by ?? "created_at";
-    const direction = order_direction ?? "DESC";
 
-    apply_public_listing_order(qb, order_field, direction);
+    apply_public_listing_order(qb, order_field, order_direction);
 
     qb.skip(skip).take(limit);
     const rows = await qb.getMany();
@@ -1096,9 +1133,9 @@ export class TypeOrmVehicleRepository {
     const items: OwnerVehicleListItem[] = rows.map((entity) => {
       const images = map_vehicle_list_images(entity.images);
       const display_name = formatVehicleDisplayName({
-        make_name: entity.version?.make?.name,
-        model_name: entity.version?.model?.name,
-        version_name: entity.version?.name,
+        make_name: entity.version.make.name,
+        model_name: entity.version.model.name,
+        version_name: entity.version.name,
       });
       const is_featured_active = isFeaturedActive({
         is_featured: entity.is_featured,
@@ -1131,7 +1168,7 @@ export class TypeOrmVehicleRepository {
           is_featured_active,
         }),
         transmission_type: entity.transmission_type,
-        fuel_type: entity.version?.fuel_type?.slug ?? null,
+        fuel_type: entity.version.fuel_type.slug,
         image: images[0] ?? null,
         stats: {
           views: this.get_trend_from_map(views_map, entity.id),
@@ -1276,7 +1313,7 @@ export class TypeOrmVehicleRepository {
       warranty_type: source.warranty_type,
       features: source.features ?? [],
       services: source.services ?? [],
-      cuotas: source.cuotas ?? [],
+      cuotas: source.cuotas,
       suggestions: source.suggestions,
       profile: source.profile,
     });

@@ -7,7 +7,6 @@ export const ALERT_EVENT_TYPE = {
   FAVORITE_CHANGE: "favorite_change",
   NEW_MESSAGE: "new_message",
   SELLER_REPLY: "seller_reply",
-  SAVED_VEHICLE_REMINDER: "saved_vehicle_reminder",
 } as const;
 
 export type AlertEventType =

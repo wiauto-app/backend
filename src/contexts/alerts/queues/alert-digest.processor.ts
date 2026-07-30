@@ -5,7 +5,6 @@ import { Job } from "bullmq";
 import { AlertNotificationService } from "../services/alert-notification.service";
 import {
   ALERT_DIGEST_JOB_DAILY,
-  ALERT_DIGEST_JOB_REMINDERS,
   ALERT_DIGEST_JOB_WEEKLY,
   ALERT_DIGEST_QUEUE,
 } from "./alert-processing.queue.constants";
@@ -39,11 +38,6 @@ export class AlertDigestProcessor extends WorkerHost {
 
     if (job.name === ALERT_DIGEST_JOB_WEEKLY) {
       await this.alert_notification_service.sendDigest({ frequency: "weekly" });
-      return;
-    }
-
-    if (job.name === ALERT_DIGEST_JOB_REMINDERS) {
-      await this.alert_notification_service.processSavedVehicleReminders();
       return;
     }
 

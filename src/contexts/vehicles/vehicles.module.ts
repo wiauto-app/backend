@@ -100,6 +100,7 @@ import { ApiVehiculoClient } from "./clients/apivehiculo.client";
 import { VehicleService } from "./services/vehicle.service";
 import { VehicleFiltersService } from "./services/vehicle-filters.service";
 import { OwnerDashboardService } from "./services/owner-dashboard.service";
+import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
 
 @Module({
   controllers: [
@@ -170,7 +171,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     },
   ],
   imports: [
-    
+
     TypeOrmModule.forFeature([
       VehicleEntity,
       FeaturesEntity,
@@ -211,6 +212,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     PermissionModule,
     ProfileModule,
     DealershipModule,
+    VehicleCreatorModule,
     DealershipInvitationModule,
     forwardRef(() => ChatModule),
     forwardRef(() => AlertsModule),
@@ -229,6 +231,7 @@ import { OwnerDashboardService } from "./services/owner-dashboard.service";
     DgtLabelsModule,
     FeaturesModule,
     CategoriesModule,
-    CatalogModule],
+    CatalogModule
+  ],
 })
-export class VehiclesModule {}
+export class VehiclesModule { }

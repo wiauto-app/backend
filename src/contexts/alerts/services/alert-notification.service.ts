@@ -83,8 +83,7 @@ export class AlertNotificationService {
 
     if (
       event_type === ALERT_EVENT_TYPE.NEW_MESSAGE ||
-      event_type === ALERT_EVENT_TYPE.SELLER_REPLY ||
-      event_type === ALERT_EVENT_TYPE.SAVED_VEHICLE_REMINDER
+      event_type === ALERT_EVENT_TYPE.SELLER_REPLY
     ) {
       if (!dto.profile_id) {
         return [];
@@ -359,13 +358,6 @@ export class AlertNotificationService {
       };
     }
 
-    if (event_type === ALERT_EVENT_TYPE.SAVED_VEHICLE_REMINDER) {
-      return {
-        title: "Recordatorio de vehículo guardado",
-        body: "Tienes un vehículo guardado sin revisar",
-      };
-    }
-
     if (event_type === ALERT_EVENT_TYPE.FEATURED) {
       return {
         title: `Destacado: ${vehicle_title}`,
@@ -520,40 +512,6 @@ export class AlertNotificationService {
       for (const event of events) {
         await this.event_repository.update(event.markSent());
       }
-    }
-  }
-
-  async processSavedVehicleReminders(): Promise<void> {
-    const stale_items =
-      await this.vehicle_list_item_repository.findStaleFavoriteReminders({
-        older_than_days: 7,
-      });
-
-    for (const item of stale_items) {
-      const prefs = await this.preferences_repository.findByProfileId(
-        item.profile_id,
-      );
-      const reminder_days = prefs?.toPrimitives().saved_vehicle_reminder_days ?? 7;
-
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - reminder_days);
-      if (item.added_at > cutoff) {
-        continue;
-      }
-
-      const email = await this.profile_user_repository.findEmailById(item.profile_id);
-      if (!email) {
-        continue;
-      }
-
-      await this.processEvent({
-        event_type: ALERT_EVENT_TYPE.SAVED_VEHICLE_REMINDER,
-        profile_id: item.profile_id,
-        vehicle_id: item.vehicle_id,
-        metadata: {
-          added_at: item.added_at.toISOString(),
-        },
-      });
     }
   }
 }

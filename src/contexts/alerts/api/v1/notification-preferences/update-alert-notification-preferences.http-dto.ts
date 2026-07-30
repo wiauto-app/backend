@@ -1,11 +1,4 @@
-import {
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from "class-validator";
+import { IsBoolean, IsIn, IsOptional } from "class-validator";
 
 import type { AlertNotificationFrequency } from "../../../types/alert-notification-frequency.enum";
 
@@ -32,17 +25,7 @@ export class UpdateAlertNotificationPreferencesHttpDto {
 
   @IsOptional()
   @IsBoolean()
-  notify_saved_vehicle_reminders?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
   notify_new_leads?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(365)
-  saved_vehicle_reminder_days?: number;
 
   @IsOptional()
   @IsIn(["instant", "daily", "weekly"])

@@ -4,7 +4,6 @@ import { Queue } from "bullmq";
 
 import {
   ALERT_DIGEST_JOB_DAILY,
-  ALERT_DIGEST_JOB_REMINDERS,
   ALERT_DIGEST_JOB_WEEKLY,
   ALERT_DIGEST_QUEUE,
 } from "./alert-processing.queue.constants";
@@ -34,17 +33,6 @@ export class AlertDigestBootstrapService implements OnModuleInit {
       {
         repeat: { pattern: "0 8 * * 1" },
         jobId: ALERT_DIGEST_JOB_WEEKLY,
-        removeOnComplete: true,
-        removeOnFail: 100,
-      },
-    );
-
-    await this.queue.add(
-      ALERT_DIGEST_JOB_REMINDERS,
-      {},
-      {
-        repeat: { pattern: "0 9 * * *" },
-        jobId: ALERT_DIGEST_JOB_REMINDERS,
         removeOnComplete: true,
         removeOnFail: 100,
       },

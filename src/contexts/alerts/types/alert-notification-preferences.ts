@@ -7,9 +7,7 @@ export interface PrimitiveAlertNotificationPreferences {
   notify_favorite_changes: boolean;
   notify_new_messages: boolean;
   notify_seller_replies: boolean;
-  notify_saved_vehicle_reminders: boolean;
   notify_new_leads: boolean;
-  saved_vehicle_reminder_days: number;
   frequency: AlertNotificationFrequency;
   channel_email: boolean;
   channel_push: boolean;
@@ -33,9 +31,7 @@ export class AlertNotificationPreferences {
       notify_favorite_changes: true,
       notify_new_messages: true,
       notify_seller_replies: true,
-      notify_saved_vehicle_reminders: true,
       notify_new_leads: true,
-      saved_vehicle_reminder_days: 7,
       frequency: "instant",
       channel_email: true,
       channel_push: true,

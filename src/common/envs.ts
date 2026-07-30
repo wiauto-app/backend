@@ -76,6 +76,8 @@ const envsSchema = z.object({
   DEEPSEEK_API_KEY: z.string(),
   DEEPSEEK_MODEL: z.string().default("deepseek-v4-flash"),
 
+  OPENAI_API_KEY: z.string(),
+
   WIAUTO_SUPPORT_PHONE: z.string().default("+34 900 000 000"),
   WIAUTO_FAQ_URL: z.string().default(""),
 

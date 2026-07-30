@@ -7,9 +7,7 @@ export interface UpdateAlertNotificationPreferencesDto {
   notify_favorite_changes?: boolean;
   notify_new_messages?: boolean;
   notify_seller_replies?: boolean;
-  notify_saved_vehicle_reminders?: boolean;
   notify_new_leads?: boolean;
-  saved_vehicle_reminder_days?: number;
   frequency?: AlertNotificationFrequency;
   channel_email?: boolean;
   channel_push?: boolean;

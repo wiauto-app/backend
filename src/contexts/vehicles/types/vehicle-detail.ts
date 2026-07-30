@@ -11,6 +11,7 @@ import {
   VehicleListItem,
   VehicleListItemCatalogRef,
 } from "./vehicle-list-item";
+import { DealershipScheduleDayDto } from "../../dealership/types/dealership-schedule";
 
 export interface VehicleDetailPrice {
   id: string;
@@ -120,6 +121,7 @@ export interface VehicleDetailDealership {
   website_url?: string;
   email: string;
   phone_code: string;
+  schedules: DealershipScheduleDayDto[];
 }
 
 export const vehicleDetailToPrimitives = (

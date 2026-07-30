@@ -42,8 +42,6 @@ export const is_global_toggle_enabled = (
       return preferences.notify_new_messages;
     case "seller_reply":
       return preferences.notify_seller_replies;
-    case "saved_vehicle_reminder":
-      return preferences.notify_saved_vehicle_reminders;
     case "sold_removed":
       return preferences.notify_new_matches;
     default:
@@ -71,8 +69,6 @@ export const is_category_toggle_enabled = (
       return preferences.notify_new_messages;
     case "seller_reply":
       return preferences.notify_seller_replies;
-    case "saved_vehicle_reminder":
-      return preferences.notify_saved_vehicle_reminders;
     default:
       return true;
   }

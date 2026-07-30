@@ -18,4 +18,3 @@ export const ALERT_DIGEST_QUEUE = "alert-digest";
 
 export const ALERT_DIGEST_JOB_DAILY = "daily_digest";
 export const ALERT_DIGEST_JOB_WEEKLY = "weekly_digest";
-export const ALERT_DIGEST_JOB_REMINDERS = "saved_vehicle_reminders";

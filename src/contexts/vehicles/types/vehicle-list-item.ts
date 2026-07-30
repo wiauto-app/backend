@@ -32,6 +32,7 @@ export interface VehicleListItemPublisher {
  */
 export interface VehicleListItem {
   id: string;
+  ref: number;
   price: number;
   mileage: number;
   lat: number;
