@@ -1,20 +1,12 @@
-import { BadRequestException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { User } from "@/src/contexts/users/entities/user.entity";
 
-import { PlanLeadRequest } from "../types/plan-lead-request";
 import { TypeOrmPlanLeadRequestRepository } from "@/src/contexts/billing/repositories/typeorm.plan-lead-request-repository";
 import { PlanLeadRequestNotificationMailService } from "../services/plan-lead-request-notification-mail.service";
-
-export type CreatePlanLeadRequestPayload = {
-  name: string;
-  email: string;
-  phone: string;
-  message?: string | null;
-};
+import { CreatePlanLeadRequestHttpDto } from "../api/public/create-plan-lead-request/create-plan-lead-request.http-dto";
 
 @Injectable()
 export class PlanLeadRequestsService {
@@ -25,31 +17,15 @@ export class PlanLeadRequestsService {
     private readonly user_repository: Repository<User>,
   ) {}
 
-  async create(payload: CreatePlanLeadRequestPayload) {
-    const name = payload.name?.trim();
-    const email = payload.email?.trim();
-    const phone = payload.phone?.trim();
-
-    if (!name) {
-      throw new BadRequestException("El nombre es obligatorio");
-    }
-
-    if (!email) {
-      throw new BadRequestException("El correo es obligatorio");
-    }
-
-    if (!phone) {
-      throw new BadRequestException("El teléfono es obligatorio");
-    }
-
-    const request = PlanLeadRequest.create({
-      name,
-      email,
-      phone,
-      message: payload.message,
+  async create(dto: CreatePlanLeadRequestHttpDto) {
+    const saved = await this.plan_lead_request_repository.save({
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone,
+      cars_quantity: dto.cars_quantity,
+      message: dto.message ?? null,
     });
 
-    const saved = await this.plan_lead_request_repository.save(request);
     const staff_emails = await this.findStaffEmails();
 
     if (staff_emails.length > 0) {
@@ -59,6 +35,7 @@ export class PlanLeadRequestsService {
           name: saved.name,
           email: saved.email,
           phone: saved.phone,
+          cars_quantity: saved.cars_quantity,
           message: saved.message,
         },
         created_at: saved.created_at.toISOString(),
@@ -89,6 +66,7 @@ export class PlanLeadRequestsService {
         users
           .map((user) => user.email.trim())
           .filter((email) => email.length > 0),
-      )];
+      ),
+    ];
   }
 }

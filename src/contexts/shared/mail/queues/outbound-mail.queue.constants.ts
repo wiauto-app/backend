@@ -49,6 +49,7 @@ export interface OutboundMailPlanLeadRequestNotificationJobData {
     name: string;
     email: string;
     phone: string;
+    cars_quantity: string;
     message: string | null;
   };
   created_at: string;

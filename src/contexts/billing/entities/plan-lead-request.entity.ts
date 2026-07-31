@@ -20,6 +20,9 @@ export class PlanLeadRequestEntity {
   @Column()
   phone!: string;
 
+  @Column()
+  cars_quantity!: string;
+
   @Column({ type: "text", nullable: true })
   message!: string | null;
 

@@ -194,6 +194,7 @@ export class MailTemplateRenderer {
       name: string;
       email: string;
       phone: string;
+      cars_quantity: string;
       message: string | null;
     };
     created_at: string;
@@ -201,6 +202,7 @@ export class MailTemplateRenderer {
     const escaped_name = this.escapeHtml(payload.lead.name);
     const escaped_email = this.escapeHtml(payload.lead.email);
     const escaped_phone = this.escapeHtml(payload.lead.phone);
+    const escaped_cars_quantity = this.escapeHtml(payload.lead.cars_quantity);
     const escaped_message = payload.lead.message
       ? this.escapeHtml(payload.lead.message)
       : "Sin mensaje";
@@ -231,6 +233,12 @@ export class MailTemplateRenderer {
           <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
             <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Teléfono</p>
             <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_phone}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Cantidad de vehículos</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_cars_quantity}</p>
           </td>
         </tr>
         <tr>

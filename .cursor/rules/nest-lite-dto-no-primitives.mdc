@@ -1,0 +1,46 @@
+---
+description: Nest lite — DTOs en servicios, sin primitivos duplicados, sin trims redundantes
+alwaysApply: true
+---
+
+# Nest lite: DTOs, entity y validación
+
+Complementa `prefer-interfaces.mdc`. Aplica a features Nest lite (`api/` + `services/` + `entities/`).
+
+## Servicios tipan con el DTO de API
+
+Entradas de servicio = **HttpDto / Dto** de la capa `api/`. No crear `CreateXPayload` paralelo al DTO.
+
+```typescript
+// ❌ EVITAR
+async create(payload: CreatePlanLeadRequestPayload) { ... }
+
+// ✅ BIEN
+async create(dto: CreatePlanLeadRequestHttpDto) { ... }
+```
+
+## Sin trims redundantes
+
+Si `ValidationPipe` + decoradores (`@IsString`, `@MinLength`, `@IsEmail`) ya validan el body, **no** volver a `trim()` en el servicio.
+
+Trim solo en el borde de validación (DTO/transform) o cuando el dato llega sin pipe.
+
+## Preferir `interface` sobre `type` para objetos
+
+Ver `prefer-interfaces.mdc`. Uniones/literales → `type`.
+
+## Evitar `Primitive*` y wrappers de dominio innecesarios
+
+En Nest lite, persistir y devolver la **entity TypeORM** directamente.
+
+```typescript
+// ❌ EVITAR
+type PrimitivePlanLeadRequest = { id: string; name: string; ... };
+class PlanLeadRequest { toPrimitives() { ... } }
+
+// ✅ BIEN
+@Entity({ name: "plan_lead_requests" })
+export class PlanLeadRequestEntity { ... }
+```
+
+Si en una tarea aparece un `PrimitiveX` o una clase dominio solo-wrapper alrededor de la entity, **eliminarlo** y dejar la entity (salvo contexts aún hexagonales documentados en `docs/architecture-nest-lite.md`).

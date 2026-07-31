@@ -7645,7 +7645,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Ana García\",\n  \"email\": \"ana@ejemplo.com\",\n  \"phone\": \"+34 612345678\",\n  \"message\": \"Quiero información sobre planes profesionales\"\n}"
+                  "raw": "{\n  \"name\": \"Ana García\",\n  \"email\": \"ana@ejemplo.com\",\n  \"phone\": \"+34 612345678\",\n  \"cars_quantity\": \"1-10\",\n  \"message\": \"Quiero información sobre planes profesionales\"\n}"
                 },
                 "url": "{{base_url}}/v1/public/billing/plan-lead-requests",
                 "description": "Formulario público de solicitud de información sobre planes (sin JWT)."

@@ -1,16 +1,17 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
 
-export type PlanLeadRequestNotificationPayload = {
+export interface PlanLeadRequestNotificationPayload {
   recipients: string[];
   lead: {
     name: string;
     email: string;
     phone: string;
+    cars_quantity: string;
     message: string | null;
   };
   created_at: string;
-};
+}
 
 @Injectable()
 export class PlanLeadRequestNotificationMailService {
