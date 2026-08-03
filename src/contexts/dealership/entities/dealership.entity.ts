@@ -1,9 +1,16 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Relation,
+  UpdateDateColumn,
+} from "typeorm";
 import { DealershipMembersEntity } from "./dealership-members.entity";
 import { DealershipInvitationsEntity } from "./dealership-invitations.entity";
 import { DealershipReviewEntity } from "./dealership-review.entity";
 import { DealershipSchedule } from "./dealership-schedule.entity";
-
 
 @Entity({ name: "dealerships" })
 export class DealershipEntity {
@@ -54,6 +61,10 @@ export class DealershipEntity {
 
   @Column({ name: "rating", type: "decimal", precision: 3, scale: 2, nullable: true })
   rating?: number | null;
+
+  /** Plan PRO activo del concesionario (compartido por todos los miembros). */
+  @Column({ name: "billing_plan_id", type: "uuid", nullable: true })
+  billing_plan_id?: string | null;
 
   @CreateDateColumn()
   created_at: Date;

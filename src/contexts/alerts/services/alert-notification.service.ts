@@ -345,9 +345,18 @@ export class AlertNotificationService {
     }
 
     if (event_type === ALERT_EVENT_TYPE.NEW_MESSAGE) {
+      const sender_name =
+        typeof payload.sender_name === "string" && payload.sender_name.trim()
+          ? payload.sender_name
+          : "Alguien";
+      const excerpt =
+        typeof payload.message_excerpt === "string" &&
+        payload.message_excerpt.trim()
+          ? payload.message_excerpt
+          : "Tienes un nuevo mensaje";
       return {
-        title: "Nuevo mensaje",
-        body: "Tienes un nuevo mensaje",
+        title: `Nuevo mensaje de ${sender_name}`,
+        body: excerpt,
       };
     }
 

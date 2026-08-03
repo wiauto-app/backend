@@ -1,4 +1,8 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+
+import { BillingModule } from "@/src/contexts/billing/billing.module";
+import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 
 import { AttachVehicleImagesFromTempService } from "./services/attach-vehicle-images-from-temp.service";
 import { BulkVehicleImagesService } from "./services/bulk-vehicle-images.service";
@@ -23,6 +27,11 @@ import { VehicleImagesPersistenceModule } from "./vehicle-images-persistence.mod
     BulkVehicleImagesService,
     AttachVehicleImagesFromTempService,
   ],
-  imports: [VehicleImagesPersistenceModule, FileModule],
+  imports: [
+    VehicleImagesPersistenceModule,
+    FileModule,
+    TypeOrmModule.forFeature([VehicleEntity]),
+    forwardRef(() => BillingModule),
+  ],
 })
 export class VehicleImagesModule {}

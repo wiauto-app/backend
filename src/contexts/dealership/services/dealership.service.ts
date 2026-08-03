@@ -3,6 +3,7 @@ import { ConflictException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { RemoveFilesService } from "@/src/contexts/shared/file/services/remove-files.service";
+import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
 
 import { Dealership, PrimitiveDealership } from "../types/dealership";
 import { DealershipNotFoundException } from "../exceptions/dealership-not-found.exception";
@@ -36,7 +37,7 @@ export class DealershipService {
   async create(
     create_dealership_dto: CreateDealershipDto,
   ): Promise<PrimitiveDealership> {
-    const payload = this.toCreatePayload(create_dealership_dto);
+    const payload = await this.toCreatePayload(create_dealership_dto);
     const dealership = Dealership.create(payload);
     await this.dealership_repository.save(dealership);
 
@@ -137,7 +138,13 @@ export class DealershipService {
     if (!dealership) {
       throw new DealershipNotFoundException(id);
     }
+
     const payload: UpdateDealershipPayload = { ...patch_fields };
+
+    if (patch_fields.name !== undefined) {
+      payload.slug = await this.buildUniqueSlug(patch_fields.name, id);
+    }
+
     const updated = dealership.update(payload);
     await this.dealership_repository.update(updated);
 
@@ -178,12 +185,36 @@ export class DealershipService {
     await this.dealership_repository.delete(remove_dealership_dto.id);
   }
 
-  private toCreatePayload(
+  private async buildUniqueSlug(
+    name: string,
+    exclude_id?: string,
+  ): Promise<string> {
+    const base = slugify(name) || "concesionaria";
+    let candidate = base;
+    let suffix = 2;
+
+    while (true) {
+      const existing =
+        await this.dealership_repository.findOneBySlug(candidate);
+      if (!existing) {
+        return candidate;
+      }
+
+      if (exclude_id && existing.toPrimitives().id === exclude_id) {
+        return candidate;
+      }
+
+      candidate = `${base}-${suffix}`;
+      suffix += 1;
+    }
+  }
+
+  private async toCreatePayload(
     dto: CreateDealershipDto,
-  ): CreateDealershipPayload {
+  ): Promise<CreateDealershipPayload> {
     const payload = new CreateDealershipPayload();
     payload.name = dto.name;
-    payload.slug = dto.slug;
+    payload.slug = await this.buildUniqueSlug(dto.name);
     payload.avatar_url = dto.avatar_url;
     payload.banner_url = dto.banner_url;
     payload.description = dto.description;

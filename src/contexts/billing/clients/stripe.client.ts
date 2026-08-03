@@ -35,7 +35,6 @@ export class StripeClient {
         active: p.is_active,
         metadata: {
           plan_id: p.id ?? "",
-          slug: p.slug,
           audience: p.audience,
           billing_type: p.billing_type,
         },
@@ -49,7 +48,6 @@ export class StripeClient {
       active: p.is_active,
       metadata: {
         plan_id: p.id ?? "",
-        slug: p.slug,
         audience: p.audience,
         billing_type: p.billing_type,
       },
@@ -111,22 +109,31 @@ export class StripeClient {
     profile_id: string;
     plan_id: string;
     plan_price_id: string;
+    dealership_id?: string;
   }): Promise<string> {
+    const shared_metadata: Record<string, string> = {
+      profile_id: params.profile_id,
+      plan_id: params.plan_id,
+      plan_price_id: params.plan_price_id,
+    };
+    if (params.dealership_id) {
+      shared_metadata.dealership_id = params.dealership_id;
+    }
+
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
       customer: params.customer_id,
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
       success_url: envs.STRIPE_SUCCESS_URL,
       cancel_url: envs.STRIPE_CANCEL_URL,
-      metadata: {
-        profile_id: params.profile_id,
-        plan_id: params.plan_id,
-        plan_price_id: params.plan_price_id,
-      },
+      metadata: shared_metadata,
       subscription_data: {
         metadata: {
           profile_id: params.profile_id,
           plan_id: params.plan_id,
+          ...(params.dealership_id
+            ? { dealership_id: params.dealership_id }
+            : {}),
         },
       },
     });

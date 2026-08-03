@@ -1614,7 +1614,37 @@
           "name": "v1",
           "item": [
             {
-              "name": "crear permiso",
+              "name": "catálogo hardcodeado de permisos",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions/catalog",
+                "description": "JWT + permissions.manage. Devuelve el catálogo fijo en código (capacidades; sin cuotas numéricas)."
+              },
+              "response": []
+            },
+            {
+              "name": "sincronizar catálogo a BD",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/permissions/sync-catalog",
+                "description": "JWT + permissions.manage. Upsert de filas `permissions` desde el catálogo hardcodeado. No elimina huérfanas."
+              },
+              "response": []
+            },
+            {
+              "name": "crear permiso (deshabilitado)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1629,10 +1659,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  // Estructura de `key`: {nombre_recurso}.{accion}\n  // Acciones habituales (CRUD): create, update, list, delete; además manage; pueden sumarse más con el tiempo.\n  // `value`: entero positivo opcional (columna nullable; p. ej. bitmask, peso u orden).\n  \"name\": \"Listar vehículos\",\n  \"key\": \"vehicles.list\",\n  \"value\": 1\n}"
+                  "raw": "{}"
                 },
                 "url": "{{base_url}}/v1/permissions",
-                "description": "POST. `key` único. `name` obligatorio. `value` opcional (int > 0). Guarda el `id` en `permission_id`."
+                "description": "Deshabilitado: responde 400. Usar sync-catalog."
               },
               "response": []
             },
@@ -1647,7 +1677,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/permissions",
-                "description": "Lista permisos activos (sin soft-deleted)."
+                "description": "Lista permisos activos en BD (filas sincronizadas desde el catálogo)."
               },
               "response": []
             },
@@ -1662,12 +1692,12 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/permissions/{{permission_id}}",
-                "description": "Incluye relación `roles` asociados."
+                "description": "Incluye relación `roles_permissions` asociados."
               },
               "response": []
             },
             {
-              "name": "actualizar permiso",
+              "name": "actualizar permiso (deshabilitado)",
               "request": {
                 "method": "PATCH",
                 "header": [
@@ -1682,15 +1712,15 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  // Misma convención que al crear: `key` = {nombre_recurso}.{accion}\n  // Acciones habituales: create, update, list, delete (CRUD), manage; pueden ampliarse.\n  // `value`: entero positivo opcional (misma semántica que al crear).\n  \"name\": \"Listar vehículos (editado)\",\n  \"key\": \"vehicles.list\",\n  \"value\": 2\n}"
+                  "raw": "{}"
                 },
                 "url": "{{base_url}}/v1/permissions/{{permission_id}}",
-                "description": "Body parcial: `name`, `key`, `value` (cualquiera opcional; int > 0 para `value`)."
+                "description": "Deshabilitado: responde 400. El catálogo en código es la fuente de verdad."
               },
               "response": []
             },
             {
-              "name": "eliminar permiso (soft delete)",
+              "name": "eliminar permiso (deshabilitado)",
               "request": {
                 "method": "DELETE",
                 "header": [
@@ -1700,7 +1730,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/permissions/{{permission_id}}",
-                "description": "204. Soft delete (`deleted_at`)."
+                "description": "Deshabilitado: no se pueden borrar permisos del catálogo."
               },
               "response": []
             },
@@ -7566,10 +7596,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"slug\": \"pro-mensual\",\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"15 anuncios activos\", \"included\": true}]\n}"
+                  "raw": "{\n  \"slug\": \"pro-mensual\",\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"is_custom\": false,\n  \"quotas\": {\n    \"max_listings\": 50,\n    \"max_photos\": 30,\n    \"allow_videos\": true,\n    \"featured_monthly\": 5\n  },\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"50 anuncios activos\", \"included\": true}]\n}"
                 },
                 "url": "{{base_url}}/v1/billing/plans",
-                "description": "JWT + permiso billing.manage. CRUD admin de planes."
+                "description": "JWT + billing.manage. Incluye `quotas`, `is_custom` y opcional `target_dealership_id` (obligatorio si is_custom)."
               },
               "response": []
             },
@@ -7584,7 +7614,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/billing/plans?page=1&limit=10",
-                "description": "JWT + billing.manage."
+                "description": "JWT + billing.manage. Incluye planes públicos y personalizados."
               },
               "response": []
             },
@@ -7600,6 +7630,21 @@
                 ],
                 "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/sync-stripe",
                 "description": "Crea/actualiza Product y Prices en Stripe."
+              },
+              "response": []
+            },
+            {
+              "name": "generar enlace checkout custom",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/checkout-link",
+                "description": "JWT + billing.manage. Solo planes `is_custom` con `target_dealership_id`. Devuelve Checkout Session para el owner del concesionario."
               },
               "response": []
             },
@@ -7629,7 +7674,7 @@
                 "method": "GET",
                 "header": [],
                 "url": "{{base_url}}/v1/public/billing/plans/catalog?audience=professional",
-                "description": "Catálogo público de suscripciones activas (sin JWT). Solo planes recurring."
+                "description": "Catálogo público de suscripciones activas (sin JWT). Solo planes recurring y `is_custom=false`."
               },
               "response": []
             },
@@ -7702,7 +7747,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/billing/me",
-                "description": "Suscripción activa, rol efectivo y cuota de anuncios."
+                "description": "Suscripción activa, rol efectivo, quotas/usage (dealership o perfil) y source."
               },
               "response": []
             },

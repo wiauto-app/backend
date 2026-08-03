@@ -34,6 +34,8 @@ const envsSchema = z.object({
   MAIL_USER: z.string(),
   MAIL_PASSWORD: z.string(),
   MAIL_FROM: z.string().default('"No Reply" <noreply@example.com>'),
+  /** URL absoluta del logo en correos; por defecto FRONTEND_URL/branding/icon-logo.png */
+  MAIL_BRAND_LOGO_URL: z.string().default(""),
 
   /** Legado: ya no arma el link del mail; el cliente envía redirect_url */
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),

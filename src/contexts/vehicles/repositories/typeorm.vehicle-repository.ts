@@ -730,6 +730,19 @@ export class TypeOrmVehicleRepository {
     });
   }
 
+  async count_active_by_profile_ids(profile_ids: string[]): Promise<number> {
+    if (profile_ids.length === 0) {
+      return 0;
+    }
+
+    return this.vehicle_repository.count({
+      where: {
+        profile: { id: In(profile_ids) },
+        status: STATUS_VEHICLE.ACTIVE,
+      },
+    });
+  }
+
   async save(vehicle: Vehicle): Promise<void> {
     const p = vehicle.toPrimitives();
     await this.assert_vehicle_catalog_refs(p);

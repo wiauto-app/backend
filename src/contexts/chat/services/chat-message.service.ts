@@ -5,6 +5,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/alert-processing-enqueue.service";
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
+import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 
 import { ChatNotFoundException } from "../exceptions/chat-not-found.exception";
 import { ChatMessageNotFoundException } from "../exceptions/chat-message-not-found.exception";
@@ -29,6 +30,7 @@ export class ChatMessageService {
     private readonly chat_repository: TypeOrmChatRepository,
     private readonly chat_participant_state_repository: TypeOrmChatParticipantStateRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
+    private readonly profile_repository: TypeOrmProfileRepository,
     private readonly alert_processing_enqueue_service: AlertProcessingEnqueueService,
   ) {}
 
@@ -56,7 +58,11 @@ export class ChatMessageService {
       create_chat_message_dto.sender_id,
     );
 
-    await this.enqueueMessageAlerts(chat, create_chat_message_dto.sender_id);
+    await this.enqueueMessageAlerts(
+      chat,
+      create_chat_message_dto.sender_id,
+      create_chat_message_dto.content,
+    );
 
     return chat_message;
   }
@@ -160,6 +166,7 @@ export class ChatMessageService {
   private async enqueueMessageAlerts(
     chat: { id: string; participants: string[]; vehicle_id: string | null },
     sender_id: string,
+    content: string,
   ): Promise<void> {
     if (!chat.vehicle_id) {
       return;
@@ -172,6 +179,17 @@ export class ChatMessageService {
 
     const owner_profile_id = vehicle.profile_id;
     const sender_is_owner = sender_id === owner_profile_id;
+    const sender_profile = await this.profile_repository.findOne(sender_id);
+    const sender_name = sender_profile
+      ? [sender_profile.name, sender_profile.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || "Alguien"
+      : "Alguien";
+    const message_excerpt =
+      content.trim().length > 160
+        ? `${content.trim().slice(0, 157)}...`
+        : content.trim();
 
     for (const participant_id of chat.participants) {
       if (participant_id === sender_id) {
@@ -194,6 +212,9 @@ export class ChatMessageService {
         profile_id: participant_id,
         metadata: {
           chat_id: chat.id,
+          sender_name,
+          message_excerpt,
+          publisher_type: vehicle.publisher_type,
         },
       });
     }

@@ -20,10 +20,6 @@ export class CreateDealershipHttpDto {
 
   @IsString()
   @IsNotEmpty()
-  slug: string;
-
-  @IsString()
-  @IsNotEmpty()
   avatar_url: string;
 
   @IsString()

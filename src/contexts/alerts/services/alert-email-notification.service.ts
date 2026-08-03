@@ -106,6 +106,17 @@ export class AlertEmailNotificationService extends AlertNotificationDispatcher {
     }
 
     if (payload.event_type === "new_message") {
+      const sender =
+        typeof payload.payload.sender_name === "string"
+          ? payload.payload.sender_name
+          : null;
+      const excerpt =
+        typeof payload.payload.message_excerpt === "string"
+          ? payload.payload.message_excerpt
+          : null;
+      if (sender && excerpt) {
+        return `${sender}: ${excerpt}`;
+      }
       return "Tienes un nuevo mensaje";
     }
 

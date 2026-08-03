@@ -3,7 +3,6 @@ import { DealershipMemberInputDto } from "./dealership-member-input.dto";
 export class UpdateDealershipDto {
   id: string;
   name?: string;
-  slug?: string;
   avatar_url?: string;
   banner_url?: string;
   description?: string;

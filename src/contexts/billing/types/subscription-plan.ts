@@ -1,3 +1,5 @@
+import { PlanQuotas } from "./plan-quotas";
+
 export type PlanEffectConfigType = "assistant_credits" | "feature_vehicle";
 
 export interface AssistantCreditsEffectConfig {
@@ -14,16 +16,16 @@ export type PlanEffectConfig =
   | FeatureVehicleEffectConfig
   | Record<string, never>;
 
-export type PrimitivePlanFeature = {
+export interface PrimitivePlanFeature {
   id?: string;
   plan_id?: string;
   label: string;
   description?: string | null;
   included: boolean;
   sort_order: number;
-};
+}
 
-export type PrimitivePlanPrice = {
+export interface PrimitivePlanPrice {
   id?: string;
   plan_id?: string;
   interval: string;
@@ -31,11 +33,10 @@ export type PrimitivePlanPrice = {
   currency: string;
   stripe_price_id?: string | null;
   is_active: boolean;
-};
+}
 
-export type PrimitiveSubscriptionPlan = {
+export interface PrimitiveSubscriptionPlan {
   id?: string;
-  slug: string;
   name: string;
   description?: string | null;
   audience: string;
@@ -44,13 +45,16 @@ export type PrimitiveSubscriptionPlan = {
   stripe_product_id?: string | null;
   is_active: boolean;
   is_featured: boolean;
+  is_custom: boolean;
+  target_dealership_id?: string | null;
+  quotas: PlanQuotas;
   sort_order: number;
   effect_config?: PlanEffectConfig;
   prices?: PrimitivePlanPrice[];
   features?: PrimitivePlanFeature[];
   created_at?: Date;
   updated_at?: Date;
-};
+}
 
 export class SubscriptionPlan {
   constructor(private readonly props: PrimitiveSubscriptionPlan) {}

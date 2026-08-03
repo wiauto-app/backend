@@ -3,6 +3,7 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { PermissionModule } from "@/src/contexts/users/permissions/permission.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
+import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { VehicleCreationGuard } from "./guards/vehicleCreation.guard";
 import { VehicleOwnerGuard } from "./guards/vehicle-owner.guard";
 import { Module, forwardRef } from "@nestjs/common";
@@ -54,6 +55,9 @@ import { ScheduledVehiclePublishBootstrapService } from "./queues/scheduled-vehi
 import { FEATURED_VEHICLE_EXPIRY_QUEUE } from "./queues/featured-vehicle-expiry.queue.constants";
 import { FeaturedVehicleExpiryProcessor } from "./queues/featured-vehicle-expiry.processor";
 import { FeaturedVehicleExpiryBootstrapService } from "./queues/featured-vehicle-expiry-bootstrap.service";
+import { VEHICLE_LISTING_EXPIRY_QUEUE } from "./queues/vehicle-listing-expiry.queue.constants";
+import { VehicleListingExpiryProcessor } from "./queues/vehicle-listing-expiry.processor";
+import { VehicleListingExpiryScheduler } from "./queues/vehicle-listing-expiry.scheduler";
 import { VehiclePriceEntity } from "./vehicle-prices/entities/vehicle-price.entity";
 import { get_vehicle_images_entity } from "./entities/vehicle-images-entity.relation-type";
 import { AdminFindAllVehiclesController } from "./api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
@@ -139,6 +143,8 @@ import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
     ScheduledVehiclePublishBootstrapService,
     FeaturedVehicleExpiryProcessor,
     FeaturedVehicleExpiryBootstrapService,
+    VehicleListingExpiryProcessor,
+    VehicleListingExpiryScheduler,
     PublishedVehicleSnapshotService,
     GoogleReverseGeocodingService,
     PostgisLocationResolver,
@@ -194,6 +200,7 @@ import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
       get_vehicle_images_entity()]),
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
+    BullModule.registerQueue({ name: VEHICLE_LISTING_EXPIRY_QUEUE }),
     LocationsModule,
     VehicleImagesModule,
     VehiclePricesModule,
@@ -211,6 +218,7 @@ import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
     AuthModule,
     PermissionModule,
     ProfileModule,
+    forwardRef(() => BillingModule),
     DealershipModule,
     VehicleCreatorModule,
     DealershipInvitationModule,

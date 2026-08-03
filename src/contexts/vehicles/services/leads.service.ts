@@ -17,9 +17,14 @@ import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.except
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import {
+  formatTransmissionLabel,
+  humanizeSlug,
+} from "@/src/contexts/shared/mail/mail-template.format";
+import {
   SellerLeadListItem,
   TypeOrmLeadRepository,
 } from "../repositories/typeorm.lead-repository";
+import type { VehicleDetail } from "../types/vehicle-detail";
 
 export interface CreateLeadInput {
   vehicle_id: string;
@@ -139,6 +144,7 @@ export class LeadsService {
       email_override: vehicle.email,
       lead: lead_primitive,
       vehicle_title,
+      vehicle,
     });
 
     let chat_id: string | null = null;
@@ -227,6 +233,7 @@ export class LeadsService {
       email_override: vehicle.email,
       lead: lead_primitive,
       vehicle_title,
+      vehicle,
     });
 
     return { lead: lead_primitive, chat_id: null };
@@ -248,6 +255,7 @@ export class LeadsService {
     email_override: string;
     lead: PrimitiveLead;
     vehicle_title: string;
+    vehicle: VehicleDetail;
   }): Promise<void> {
     const is_call_me = payload.lead.type === LEAD_TYPE.CALL_ME;
     const title = is_call_me
@@ -256,6 +264,8 @@ export class LeadsService {
     const body = is_call_me
       ? `${payload.lead.name} solicitó que lo llamen sobre ${payload.vehicle_title}`
       : `${payload.lead.name} envió una consulta sobre ${payload.vehicle_title}`;
+
+    const vehicle = payload.vehicle;
 
     await this.notification_channel_dispatcher.notify({
       profile_id: payload.publisher_profile_id,
@@ -279,6 +289,18 @@ export class LeadsService {
           : null,
         vehicle_title: payload.vehicle_title,
         buyer_profile_id: payload.lead.profile_id,
+        vehicle_price: vehicle.price ?? null,
+        vehicle_image_url: vehicle.images[0]?.url ?? null,
+        vehicle_year: vehicle.version.year?.year ?? null,
+        vehicle_mileage: vehicle.mileage ?? null,
+        vehicle_fuel_label: vehicle.version.fuel_type?.slug
+          ? humanizeSlug(vehicle.version.fuel_type.slug)
+          : null,
+        vehicle_transmission_label: formatTransmissionLabel(
+          vehicle.transmission_type,
+        ),
+        vehicle_location_label: vehicle.address ?? null,
+        publisher_type: vehicle.publisher_type,
       },
     });
   }

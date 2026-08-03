@@ -186,6 +186,28 @@ export class StripeWebhookService {
 
     if (this.provisioning_service.isActiveSubscriptionStatus(subscription.status)) {
       await this.provisioning_service.applyPlanEntitlements(profile_id, plan_id);
+      await this.provisioning_service.linkDealershipPlan(
+        profile_id,
+        plan_id,
+        subscription.metadata.dealership_id,
+      );
+    }
+
+    if (previous?.plan_id && previous.plan_id !== plan_id) {
+      const profile = await this.billing_profile_repository.findById(profile_id);
+      const previous_plan = await this.plan_repository.findOne(previous.plan_id);
+      const new_plan = await this.plan_repository.findOne(plan_id);
+
+      if (profile && previous_plan && new_plan) {
+        await this.billing_notification_mail_service.enqueueSubscriptionPlanChanged({
+          to: profile.email,
+          previous_plan_name: previous_plan.toPrimitives().name,
+          new_plan_name: new_plan.toPrimitives().name,
+          stripe_customer_id: customer_id,
+          stripe_subscription_id: subscription.id,
+          new_plan_id: plan_id,
+        });
+      }
     }
 
     const cancel_scheduled_now =
@@ -250,6 +272,40 @@ export class StripeWebhookService {
       paid_at: invoice.status_transitions.paid_at
         ? new Date(invoice.status_transitions.paid_at * 1000)
         : new Date(),
+    });
+
+    const billing_reason = invoice.billing_reason;
+    const is_subscription_invoice =
+      billing_reason === "subscription_create" ||
+      billing_reason === "subscription_cycle" ||
+      billing_reason === "subscription_update";
+
+    if (!is_subscription_invoice || invoice.amount_paid <= 0) {
+      return;
+    }
+
+    const profile_full = await this.billing_profile_repository.findById(profile.id);
+    if (!profile_full?.email) {
+      return;
+    }
+
+    const active_sub =
+      await this.subscription_repository.findActiveByProfileId(profile.id);
+    let plan_name = "tu plan";
+    if (active_sub?.plan_id) {
+      const plan = await this.plan_repository.findOne(active_sub.plan_id);
+      plan_name = plan?.toPrimitives().name ?? plan_name;
+    }
+
+    await this.billing_notification_mail_service.enqueueSubscriptionPaymentReceived({
+      to: profile_full.email,
+      plan_name,
+      amount_paid_cents: invoice.amount_paid,
+      currency: invoice.currency,
+      is_renewal: billing_reason === "subscription_cycle",
+      invoice_url: invoice.hosted_invoice_url ?? invoice.invoice_pdf ?? null,
+      stripe_customer_id: customer_id,
+      stripe_invoice_id: invoice.id,
     });
   }
 
@@ -431,8 +487,7 @@ export class StripeWebhookService {
       return;
     }
 
-    const is_feature_vehicle =
-      effect_type === "feature_vehicle" || primitives.slug === "destacar-vehiculo";
+    const is_feature_vehicle = effect_type === "feature_vehicle";
 
     if (!is_feature_vehicle) {
       return;
@@ -467,6 +522,19 @@ export class StripeWebhookService {
 
     await this.vehicle_repository.save(preloaded);
     await this.vehicle_search_indexer.syncVehicle(vehicle_id, preloaded.status);
+
+    const profile = await this.billing_profile_repository.findById(profile_id);
+    if (profile?.email) {
+      await this.billing_notification_mail_service.enqueueFeaturedPurchased({
+        to: profile.email,
+        vehicle_title: existing.license_plate
+          ? `Anuncio ${existing.license_plate}`
+          : "tu anuncio",
+        featured_expires_at,
+        vehicle_id,
+        publisher_type: existing.publisher_type,
+      });
+    }
   }
 
   private async findProfileByStripeCustomerId(customer_id: string) {

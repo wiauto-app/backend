@@ -6,6 +6,8 @@ export const RENEW_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 export const FEATURED_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 export const SCHEDULE_MAX_FUTURE_MS = 90 * 24 * 60 * 60 * 1000;
 export const TREND_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+/** Aviso de caducidad del listing: 3 días antes de expires_at */
+export const EXPIRY_WARNING_MS = 3 * 24 * 60 * 60 * 1000;
 
 export const calculateChangePercent = (
   current: number,

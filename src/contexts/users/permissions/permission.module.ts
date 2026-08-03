@@ -6,6 +6,7 @@ import { PermissionsController } from "./api/v1/permissions.controller";
 import { Permissions } from "./entities/permissions.entity";
 import { PermissionGuard } from "./guards/permission.guard";
 import { PermissionService } from "./services/permission.service";
+import { PermissionsCatalogSyncService } from "./services/permissions-catalog-sync.service";
 
 @Global()
 @Module({
@@ -14,7 +15,11 @@ import { PermissionService } from "./services/permission.service";
     forwardRef(() => AuthModule),
   ],
   controllers: [PermissionsController],
-  providers: [PermissionService, PermissionGuard],
-  exports: [PermissionService, PermissionGuard],
+  providers: [
+    PermissionService,
+    PermissionGuard,
+    PermissionsCatalogSyncService,
+  ],
+  exports: [PermissionService, PermissionGuard, PermissionsCatalogSyncService],
 })
 export class PermissionModule {}

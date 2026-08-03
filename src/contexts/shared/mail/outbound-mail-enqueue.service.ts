@@ -11,6 +11,7 @@ import {
   OUTBOUND_MAIL_JOB_DEALERSHIP_INVITATION,
   OUTBOUND_MAIL_JOB_DEALERSHIP_TEAM_JOINED,
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_NEW_MESSAGE_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME,
@@ -18,6 +19,19 @@ import {
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_ENDED,
   OUTBOUND_MAIL_JOB_CHECKOUT_ABANDONED,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_FAILED,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_RECEIVED,
+  OUTBOUND_MAIL_JOB_SUBSCRIPTION_PLAN_CHANGED,
+  OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
+  OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
+  OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
+  OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED,
+  OUTBOUND_MAIL_JOB_VEHICLE_APPROVED,
+  OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED,
+  OUTBOUND_MAIL_JOB_VEHICLE_EXPIRED,
+  OUTBOUND_MAIL_JOB_VEHICLE_EXPIRY_WARNING,
+  OUTBOUND_MAIL_JOB_VEHICLE_PUBLISHED,
+  OUTBOUND_MAIL_JOB_VEHICLE_REJECTED,
+  OUTBOUND_MAIL_JOB_VEHICLE_SOLD,
   OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
   OUTBOUND_MAIL_QUEUE,
   OutboundMailAlertDigestNotificationJobData,
@@ -29,11 +43,18 @@ import {
   OutboundMailDealershipInvitationJobData,
   OutboundMailDealershipTeamJoinedJobData,
   OutboundMailLeadNotificationJobData,
+  OutboundMailNewMessageNotificationJobData,
   OutboundMailPlanLeadRequestNotificationJobData,
   OutboundMailPasswordRecoveryJobData,
+  OutboundMailSellerVehicleJobData,
   OutboundMailSubscriptionCancelScheduledJobData,
   OutboundMailSubscriptionEndedJobData,
   OutboundMailSubscriptionPaymentFailedJobData,
+  OutboundMailSubscriptionPaymentReceivedJobData,
+  OutboundMailSubscriptionPlanChangedJobData,
+  OutboundMailListingLimitReachedJobData,
+  OutboundMailFeaturedPurchasedJobData,
+  OutboundMailFeaturedExpiredJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./queues/outbound-mail.queue.constants";
@@ -117,11 +138,120 @@ export class OutboundMailEnqueueService {
     );
   }
 
+  async enqueue_subscription_payment_received(
+    data: OutboundMailSubscriptionPaymentReceivedJobData,
+    job_id?: string,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_SUBSCRIPTION_PAYMENT_RECEIVED,
+      data,
+      job_id ? { jobId: job_id } : undefined,
+    );
+  }
+
+  async enqueue_subscription_plan_changed(
+    data: OutboundMailSubscriptionPlanChangedJobData,
+    job_id?: string,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_SUBSCRIPTION_PLAN_CHANGED,
+      data,
+      job_id ? { jobId: job_id } : undefined,
+    );
+  }
+
+  async enqueue_listing_limit_reached(
+    data: OutboundMailListingLimitReachedJobData,
+    job_id?: string,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
+      data,
+      job_id ? { jobId: job_id } : undefined,
+    );
+  }
+
+  async enqueue_featured_purchased(
+    data: OutboundMailFeaturedPurchasedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
+      data,
+    );
+  }
+
+  async enqueue_featured_expired(
+    data: OutboundMailFeaturedExpiredJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_FEATURED_EXPIRED, data);
+  }
+
+  /** @deprecated Preferir enqueue_vehicle_* temáticos. */
   async enqueue_vehicle_status_changed(
     data: OutboundMailVehicleStatusChangedJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(
       OUTBOUND_MAIL_JOB_VEHICLE_STATUS_CHANGED,
+      data,
+    );
+  }
+
+  async enqueue_vehicle_published(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_PUBLISHED, data);
+  }
+
+  async enqueue_vehicle_approved(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_APPROVED, data);
+  }
+
+  async enqueue_vehicle_rejected(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_REJECTED, data);
+  }
+
+  async enqueue_vehicle_deactivated(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED, data);
+  }
+
+  async enqueue_vehicle_sold(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_SOLD, data);
+  }
+
+  async enqueue_vehicle_archived(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED, data);
+  }
+
+  async enqueue_vehicle_expiry_warning(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_VEHICLE_EXPIRY_WARNING,
+      data,
+    );
+  }
+
+  async enqueue_vehicle_expired(
+    data: OutboundMailSellerVehicleJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_VEHICLE_EXPIRED, data);
+  }
+
+  async enqueue_new_message_notification(
+    data: OutboundMailNewMessageNotificationJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_NEW_MESSAGE_NOTIFICATION,
       data,
     );
   }

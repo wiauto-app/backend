@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthModule } from "@/src/contexts/auth/auth.module";
@@ -9,6 +9,8 @@ import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
+import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
+import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { VehicleSearchModule } from "@/src/contexts/vehicles/search/vehicle-search.module";
 
@@ -57,7 +59,7 @@ import { StripeClient } from "./clients/stripe.client";
 @Module({
   imports: [
     AuthModule,
-    AssistantModule,
+    forwardRef(() => AssistantModule),
     ProfileModule,
     TypeOrmModule.forFeature([
       SubscriptionPlanEntity,
@@ -71,9 +73,13 @@ import { StripeClient } from "./clients/stripe.client";
       Roles,
       User,
       VehicleEntity,
-      PlanLeadRequestEntity]),
-    VehiclesModule,
-    VehicleSearchModule],
+      DealershipEntity,
+      DealershipMembersEntity,
+      PlanLeadRequestEntity,
+    ]),
+    forwardRef(() => VehiclesModule),
+    VehicleSearchModule,
+  ],
   controllers: [
     FindPublicPlansCatalogController,
     CreatePlanLeadRequestController,
@@ -89,7 +95,8 @@ import { StripeClient } from "./clients/stripe.client";
     CreateOneTimeCheckoutController,
     CreateBillingPortalController,
     FindBillingInvoicesController,
-    StripeWebhookController],
+    StripeWebhookController,
+  ],
   providers: [
     BillingPlansService,
     BillingCheckoutService,
@@ -107,8 +114,12 @@ import { StripeClient } from "./clients/stripe.client";
     TypeOrmOneTimePurchaseRepository,
     TypeOrmStripeWebhookEventRepository,
     TypeOrmBillingProfileRepository,
-    TypeOrmPlanLeadRequestRepository
+    TypeOrmPlanLeadRequestRepository,
   ],
-  exports: [EntitlementsService, TypeOrmSubscriptionPlanRepository],
+  exports: [
+    EntitlementsService,
+    TypeOrmSubscriptionPlanRepository,
+    BillingNotificationMailService,
+  ],
 })
 export class BillingModule {}

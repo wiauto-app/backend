@@ -47,8 +47,12 @@ import {
   canOwnerReactivate,
   canRenewVehicle,
   canScheduleVehicle,
+  computeRenewedExpiresAt,
   SCHEDULE_MAX_FUTURE_MS,
 } from "../utils/owner-vehicle-rules";
+import { buildMailVehicleCard } from "@/src/contexts/shared/mail/mail-vehicle-card";
+import type { MailVehicleCardPayload } from "@/src/contexts/shared/mail/mail-vehicle-card";
+import { VehicleListingExpiryScheduler } from "../queues/vehicle-listing-expiry.scheduler";
 import { AdminFindAllVehiclesDto } from "../dto/admin-find-all-vehicles.dto";
 import { AdminGetVehicleDto } from "../dto/admin-get-vehicle.dto";
 import { AdminUpdateVehicleStatusDto } from "../dto/admin-update-vehicle-status.dto";
@@ -74,6 +78,8 @@ import { AttachVehicleImagesFromTempService } from "../vehicle-images/services/a
 import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-images/repositories/typeorm.vehicle-images.repository";
 import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-price.service";
 import { TypeOrmVehiclePriceRepository } from "@/src/contexts/vehicles/vehicle-prices/repositories/typeorm.vehicle-price.repository";
+import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
+import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
 
 export interface ValidateVehicleInput {
   battery_capacity: number;
@@ -113,14 +119,6 @@ interface ResolvedVehicleCatalog {
   fuel_type_slug: string;
 }
 
-const STATUS_LABELS: Record<StatusVehicle, string> = {
-  active: "Activo",
-  pending: "Pendiente",
-  inactive: "Inactivo",
-  sold: "Vendido",
-  archived: "Archivado",
-};
-
 @Injectable()
 export class VehicleService {
   private readonly MAX_MILEAGE_FOR_NEW_VEHICLE = 1000;
@@ -141,6 +139,9 @@ export class VehicleService {
     private readonly catalog_years_service: CatalogYearsService,
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
+    private readonly vehicle_listing_expiry_scheduler: VehicleListingExpiryScheduler,
+    private readonly entitlements_service: EntitlementsService,
+    private readonly billing_notification_mail_service: BillingNotificationMailService,
   ) {}
 
   async create(
@@ -207,6 +208,11 @@ export class VehicleService {
     });
 
     if (create_vehicle_dto.images && create_vehicle_dto.images.length > 0) {
+      await this.entitlements_service.assertCanAddPhotos(
+        publisher_profile_id,
+        0,
+        create_vehicle_dto.images.length,
+      );
       await this.attach_vehicle_images_from_temp_service.execute({
         vehicle_id: vehicle.toPrimitives().id,
         images: create_vehicle_dto.images,
@@ -218,7 +224,19 @@ export class VehicleService {
       STATUS_VEHICLE.PENDING,
     );
 
-    return { vehicle: vehicle.toPrimitives() };
+    const created_id = vehicle.toPrimitives().id;
+    const created_primitives = vehicle.toPrimitives();
+
+    if (created_primitives.expires_at) {
+      await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
+        created_id,
+        created_primitives.expires_at,
+      );
+    }
+
+    await this.enqueuePublishedMail(created_id, publisher_profile_id);
+
+    return { vehicle: created_primitives };
   }
 
   async findOne(get_vehicle_dto: GetVehicleDto): Promise<VehicleDetail> {
@@ -313,6 +331,13 @@ export class VehicleService {
         is_temp_storage_path(image.path),
       );
       if (temp_images.length > 0) {
+        const current_photo_count =
+          await this.vehicle_image_repository.countByVehicleId(id);
+        await this.entitlements_service.assertCanAddPhotos(
+          existing.profile_id,
+          current_photo_count,
+          temp_images.length,
+        );
         await this.attach_vehicle_images_from_temp_service.execute({
           vehicle_id: id,
           images: temp_images,
@@ -416,9 +441,20 @@ export class VehicleService {
 
     const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
       renewed_at: now,
+      expires_at: computeRenewedExpiresAt(primitive.expires_at ?? now, now),
     });
 
     await this.vehicle_repository.update(updated);
+
+    const renewed = updated.toPrimitives();
+    if (renewed.expires_at) {
+      await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
+        dto.vehicle_id,
+        renewed.expires_at,
+        now,
+      );
+    }
+
     await this.vehicle_search_indexer.syncVehicle(
       dto.vehicle_id,
       primitive.status,
@@ -426,6 +462,7 @@ export class VehicleService {
 
     return {
       renewed_at: now,
+      expires_at: renewed.expires_at,
       can_renew: false,
     };
   }
@@ -603,6 +640,24 @@ export class VehicleService {
         primitive.id,
         primitive.status,
       );
+
+      const detail = await this.vehicle_repository.findOne(primitive.id);
+      const vehicle_title = detail
+        ? formatVehicleDisplayName({
+            make_name: detail.version.make.name,
+            model_name: detail.version.model.name,
+            version_name: detail.version.name,
+          })
+        : "tu anuncio";
+
+      if (primitive.profile_id) {
+        await this.billing_notification_mail_service.enqueueFeaturedExpired({
+          profile_id: primitive.profile_id,
+          vehicle_id: primitive.id,
+          vehicle_title,
+        });
+      }
+
       processed += 1;
     }
 
@@ -705,15 +760,10 @@ export class VehicleService {
       : null;
 
     if (publisher_email) {
-      await this.outbound_mail_enqueue_service.enqueue_vehicle_status_changed({
+      await this.enqueueThematicStatusMail({
         to: publisher_email,
-        vehicle_title: formatVehicleDisplayName({
-          make_name: existing.version.make.name,
-          model_name: existing.version.model.name,
-          version_name: existing.version.name,
-        }),
-        previous_status_label: STATUS_LABELS[previous_status],
-        new_status_label: STATUS_LABELS[new_status],
+        detail: existing,
+        new_status,
         status_change_message,
       });
     }
@@ -887,6 +937,96 @@ export class VehicleService {
       ...base,
       since_year: catalog.year - year_delta,
       until_year: catalog.year + year_delta,
+    });
+  }
+
+  private async enqueuePublishedMail(
+    vehicle_id: string,
+    publisher_profile_id: string,
+  ): Promise<void> {
+    const publisher_email =
+      await this.profile_user_repository.findEmailById(publisher_profile_id);
+    if (!publisher_email) {
+      return;
+    }
+
+    const detail = await this.vehicle_repository.findOne(vehicle_id);
+    if (!detail) {
+      return;
+    }
+
+    await this.outbound_mail_enqueue_service.enqueue_vehicle_published({
+      to: publisher_email,
+      vehicle: this.buildMailCardFromDetail(detail),
+    });
+  }
+
+  private async enqueueThematicStatusMail(params: {
+    to: string;
+    detail: VehicleDetail;
+    new_status: StatusVehicle;
+    status_change_message: string | null;
+  }): Promise<void> {
+    const vehicle = this.buildMailCardFromDetail(params.detail);
+    const payload = {
+      to: params.to,
+      vehicle,
+      status_change_message: params.status_change_message,
+    };
+
+    if (params.new_status === STATUS_VEHICLE.ACTIVE) {
+      await this.outbound_mail_enqueue_service.enqueue_vehicle_approved(payload);
+      return;
+    }
+
+    if (params.new_status === STATUS_VEHICLE.INACTIVE) {
+      if (params.status_change_message) {
+        await this.outbound_mail_enqueue_service.enqueue_vehicle_rejected(
+          payload,
+        );
+        return;
+      }
+      await this.outbound_mail_enqueue_service.enqueue_vehicle_deactivated(
+        payload,
+      );
+      return;
+    }
+
+    if (params.new_status === STATUS_VEHICLE.SOLD) {
+      await this.outbound_mail_enqueue_service.enqueue_vehicle_sold(payload);
+      return;
+    }
+
+    if (params.new_status === STATUS_VEHICLE.ARCHIVED) {
+      await this.outbound_mail_enqueue_service.enqueue_vehicle_archived(payload);
+      return;
+    }
+
+    if (params.new_status === STATUS_VEHICLE.PENDING) {
+      await this.outbound_mail_enqueue_service.enqueue_vehicle_published(
+        payload,
+      );
+    }
+  }
+
+  private buildMailCardFromDetail(detail: VehicleDetail): MailVehicleCardPayload {
+    const title = formatVehicleDisplayName({
+      make_name: detail.version.make.name,
+      model_name: detail.version.model.name,
+      version_name: detail.version.name,
+    });
+
+    return buildMailVehicleCard({
+      id: detail.id,
+      title,
+      price: detail.price ?? null,
+      image_url: detail.images[0]?.url ?? null,
+      year: detail.version.year?.year ?? null,
+      mileage: detail.mileage ?? null,
+      fuel_type_slug: detail.version.fuel_type?.slug,
+      transmission_type: detail.transmission_type,
+      location_label: detail.address ?? undefined,
+      publisher_type: detail.publisher_type,
     });
   }
 }

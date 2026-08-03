@@ -8,6 +8,8 @@ import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { ProfileService } from "@/src/contexts/profiles/services/profile.service";
 import { PUBLISHER_TYPE } from "@/src/contexts/vehicles/types/vehicle";
+import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
+import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -40,6 +42,10 @@ export class BillingSubscriptionProvisioningService {
     private readonly profile_service: ProfileService,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
+    @InjectRepository(DealershipEntity)
+    private readonly dealership_repository: Repository<DealershipEntity>,
+    @InjectRepository(DealershipMembersEntity)
+    private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
   ) {}
 
   async provisionFromCheckoutSession(
@@ -101,6 +107,12 @@ export class BillingSubscriptionProvisioningService {
     await this.syncSubscriptionRecord(profile_id, plan_id, customer_id, subscription);
     await this.applyPlanEntitlements(profile_id, plan_id);
 
+    const dealership_id =
+      full_session.metadata?.dealership_id ??
+      subscription.metadata?.dealership_id ??
+      undefined;
+    await this.linkDealershipPlan(profile_id, plan_id, dealership_id);
+
     const profile = await this.billing_profile_repository.findById(profile_id);
     const plan = await this.plan_repository.findOne(plan_id);
 
@@ -130,6 +142,73 @@ export class BillingSubscriptionProvisioningService {
     );
   }
 
+  async linkDealershipPlan(
+    profile_id: string,
+    plan_id: string,
+    dealership_id_from_metadata?: string,
+  ): Promise<void> {
+    const plan = await this.plan_repository.findOne(plan_id);
+    const primitives = plan?.toPrimitives();
+
+    let dealership_id =
+      dealership_id_from_metadata ?? primitives?.target_dealership_id ?? null;
+
+    if (!dealership_id) {
+      const membership = await this.dealership_members_repository.findOne({
+        where: { profile_id },
+      });
+      dealership_id = membership?.dealership_id ?? null;
+    }
+
+    if (!dealership_id) {
+      return;
+    }
+
+    if (
+      primitives?.is_custom &&
+      primitives.target_dealership_id &&
+      primitives.target_dealership_id !== dealership_id
+    ) {
+      this.logger.warn(
+        `Plan custom ${plan_id} no coincide con dealership ${dealership_id}`,
+      );
+      return;
+    }
+
+    const preloaded = await this.dealership_repository.preload({
+      id: dealership_id,
+      billing_plan_id: plan_id,
+    });
+
+    if (preloaded) {
+      await this.dealership_repository.save(preloaded);
+    }
+  }
+
+  async clearDealershipPlan(profile_id: string): Promise<void> {
+    const membership = await this.dealership_members_repository.findOne({
+      where: { profile_id, role: "owner" },
+    });
+    if (!membership) {
+      return;
+    }
+
+    const dealership = await this.dealership_repository.findOne({
+      where: { id: membership.dealership_id },
+    });
+    if (!dealership || dealership.billing_plan_id == null) {
+      return;
+    }
+
+    const preloaded = await this.dealership_repository.preload({
+      id: dealership.id,
+      billing_plan_id: null,
+    });
+    if (preloaded) {
+      await this.dealership_repository.save(preloaded);
+    }
+  }
+
   async revokePlanEntitlements(profile_id: string): Promise<void> {
     const default_role_id = await this.entitlements_service.getDefaultRoleId();
     await this.billing_profile_repository.updateRoleId(profile_id, default_role_id);
@@ -137,6 +216,7 @@ export class BillingSubscriptionProvisioningService {
       profile_id,
       PUBLISHER_TYPE.PARTICULAR,
     );
+    await this.clearDealershipPlan(profile_id);
   }
 
   async syncSubscriptionRecord(

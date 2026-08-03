@@ -75,6 +75,20 @@ export class MailService {
   async sendLeadNotificationEmail(payload: {
     to: string;
     vehicle_title: string;
+    contacts_url?: string;
+    vehicle?: {
+      id: string;
+      title: string;
+      price: number | null;
+      image_url: string | null;
+      year: number | null;
+      mileage: number | null;
+      fuel_label: string;
+      transmission_label: string;
+      location_label: string;
+      detail_url: string;
+      edit_url: string;
+    } | null;
     lead: {
       type: string;
       name: string;
@@ -87,6 +101,8 @@ export class MailService {
   }): Promise<void> {
     const html = this.mail_template_renderer.renderLeadNotification({
       vehicle_title: payload.vehicle_title,
+      contacts_url: payload.contacts_url,
+      vehicle: payload.vehicle ?? null,
       lead: {
         type: payload.lead.type,
         name: payload.lead.name,
@@ -113,6 +129,42 @@ export class MailService {
     } catch (error) {
       this.logger.error(
         `No se pudo enviar la notificación de lead a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendNewMessageNotificationEmail(payload: {
+    to: string;
+    sender_name: string;
+    message_excerpt: string;
+    messages_url: string;
+    vehicle: {
+      id: string;
+      title: string;
+      price: number | null;
+      image_url: string | null;
+      year: number | null;
+      mileage: number | null;
+      fuel_label: string;
+      transmission_label: string;
+      location_label: string;
+      detail_url: string;
+      edit_url: string;
+    } | null;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderNewMessageNotification(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nuevo mensaje de ${payload.sender_name}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de mensaje a ${payload.to}`,
         error as Error,
       );
       throw error;
@@ -263,6 +315,129 @@ export class MailService {
     }
   }
 
+  async sendSubscriptionPaymentReceivedEmail(payload: {
+    to: string;
+    plan_name: string;
+    amount_label: string;
+    currency: string;
+    is_renewal: boolean;
+    invoice_url: string | null;
+    portal_url: string | null;
+  }): Promise<void> {
+    const html =
+      this.mail_template_renderer.renderSubscriptionPaymentReceived(payload);
+    const subject = payload.is_renewal
+      ? `Renovación de ${payload.plan_name} confirmada`
+      : `Pago recibido — ${payload.plan_name}`;
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de pago/renovación a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionPlanChangedEmail(payload: {
+    to: string;
+    previous_plan_name: string;
+    new_plan_name: string;
+    portal_url: string | null;
+  }): Promise<void> {
+    const html =
+      this.mail_template_renderer.renderSubscriptionPlanChanged(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Cambio de plan a ${payload.new_plan_name}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de cambio de plan a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendListingLimitReachedEmail(payload: {
+    to: string;
+    max_listings: number;
+    listings_used: number;
+    plan_name: string | null;
+    plans_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderListingLimitReached(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Has alcanzado el límite de anuncios",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de límite de anuncios a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendFeaturedPurchasedEmail(payload: {
+    to: string;
+    vehicle_title: string;
+    featured_expires_at_label: string;
+    vehicle_edit_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderFeaturedPurchased(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Destacado activo: ${payload.vehicle_title}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de compra de destacado a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendFeaturedExpiredEmail(payload: {
+    to: string;
+    vehicle_title: string;
+    vehicle_edit_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderFeaturedExpired(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `El destacado de ${payload.vehicle_title} ha finalizado`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de vencimiento de destacado a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendVehicleStatusChangedEmail(payload: {
     to: string;
     vehicle_title: string;
@@ -285,6 +460,95 @@ export class MailService {
       );
       throw error;
     }
+  }
+
+  async sendSellerVehicleStatusEmail(
+    payload: {
+      to: string;
+      vehicle: {
+        id: string;
+        title: string;
+        price: number | null;
+        image_url: string | null;
+        year: number | null;
+        mileage: number | null;
+        fuel_label: string;
+        transmission_label: string;
+        location_label: string;
+        detail_url: string;
+        edit_url: string;
+      };
+      status_change_message?: string | null;
+      expires_at_label?: string | null;
+    },
+    theme:
+      | "published"
+      | "approved"
+      | "rejected"
+      | "deactivated"
+      | "sold"
+      | "archived"
+      | "expiry_soon"
+      | "expired",
+  ): Promise<void> {
+    const cta = this.resolveSellerStatusCta(theme, payload.vehicle);
+    const html = this.mail_template_renderer.renderSellerStatusMail({
+      theme,
+      vehicle: payload.vehicle,
+      status_change_message: payload.status_change_message ?? null,
+      expires_at_label: payload.expires_at_label ?? null,
+      cta_label: cta.label,
+      cta_href: cta.href,
+    });
+
+    const subject_map: Record<typeof theme, string> = {
+      published: `Anuncio publicado: ${payload.vehicle.title}`,
+      approved: `Anuncio aprobado: ${payload.vehicle.title}`,
+      rejected: `Anuncio rechazado: ${payload.vehicle.title}`,
+      deactivated: `Anuncio desactivado: ${payload.vehicle.title}`,
+      sold: `Anuncio marcado como vendido: ${payload.vehicle.title}`,
+      archived: `Anuncio archivado: ${payload.vehicle.title}`,
+      expiry_soon: `Tu anuncio caduca pronto: ${payload.vehicle.title}`,
+      expired: `Anuncio caducado: ${payload.vehicle.title}`,
+    };
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: subject_map[theme],
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de estado (${theme}) a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  private resolveSellerStatusCta(
+    theme:
+      | "published"
+      | "approved"
+      | "rejected"
+      | "deactivated"
+      | "sold"
+      | "archived"
+      | "expiry_soon"
+      | "expired",
+    vehicle: { detail_url: string; edit_url: string },
+  ): { label: string; href: string } {
+    if (theme === "published" || theme === "approved") {
+      return { label: "Ver mi anuncio", href: vehicle.detail_url };
+    }
+    if (theme === "rejected") {
+      return { label: "Editar y volver a publicar", href: vehicle.edit_url };
+    }
+    if (theme === "expiry_soon" || theme === "expired") {
+      return { label: "Renovar anuncio", href: getFrontendUrl("MY_LISTINGS") };
+    }
+    return { label: "Mis anuncios", href: getFrontendUrl("MY_LISTINGS") };
   }
 
   async sendAlertMatchNotificationEmail(payload: {

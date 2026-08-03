@@ -14,7 +14,10 @@ import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/aut
 import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
-import { BillingPlansService } from "../../../services/billing-plans.service";
+import {
+  BillingCheckoutService,
+  BillingPlansService,
+} from "../../../services/billing-plans.service";
 import { V1_BILLING_PLANS } from "../../route.constants";
 
 import { CreateSubscriptionPlanHttpDto } from "./create-subscription-plan.http-dto";
@@ -23,7 +26,10 @@ import { UpdateSubscriptionPlanHttpDto } from "./update-subscription-plan.http-d
 @AuthPermissions(PermissionKeys.BILLING_MANAGE)
 @Controller(V1_BILLING_PLANS)
 export class BillingPlansAdminController {
-  constructor(private readonly billing_plans_service: BillingPlansService) {}
+  constructor(
+    private readonly billing_plans_service: BillingPlansService,
+    private readonly billing_checkout_service: BillingCheckoutService,
+  ) {}
 
   @Post()
   create(@Body() body: CreateSubscriptionPlanHttpDto) {
@@ -41,7 +47,6 @@ export class BillingPlansAdminController {
 
   @Get(":id")
   findOne(@Param("id", ParseUUIDPipe) id: string) {
-    
     return this.billing_plans_service.findOne(id);
   }
 
@@ -61,5 +66,10 @@ export class BillingPlansAdminController {
   @Post(":id/sync-stripe")
   syncStripe(@Param("id", ParseUUIDPipe) id: string) {
     return this.billing_plans_service.syncStripe(id);
+  }
+
+  @Post(":id/checkout-link")
+  createCheckoutLink(@Param("id", ParseUUIDPipe) id: string) {
+    return this.billing_checkout_service.createAdminCustomCheckoutLink(id);
   }
 }

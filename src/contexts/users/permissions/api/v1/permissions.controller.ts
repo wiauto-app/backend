@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -11,27 +10,36 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { CreatePermissionDto } from "../../dto/create-permission.dto";
-import { DeletePermissionDto } from "../../dto/delete-permission.dto";
+
+import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
+
+import { FindAllPermissionsDto } from "../../dto/find-all-permissions.dto";
 import { FindOnePermissionDto } from "../../dto/find-one-permission.dto";
-import { UpdatePermissionDto } from "../../dto/update-permission.dto";
+import { DeletePermissionDto } from "../../dto/delete-permission.dto";
+import { PermissionKeys } from "../../lib/available-permission";
 import { V1_PERMISSIONS } from "../../route.constants";
 import { PermissionService } from "../../services/permission.service";
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "../../lib/available-permission";
-import { FindAllPermissionsDto } from "../../dto/find-all-permissions.dto";
-
 
 @Controller(V1_PERMISSIONS)
 @AuthPermissions(PermissionKeys.PERMISSIONS_MANAGE)
 export class PermissionsController {
   constructor(private readonly permission_service: PermissionService) {}
 
+  @Get("catalog")
+  listCatalog() {
+    return this.permission_service.listCatalog();
+  }
+
+  @Post("sync-catalog")
+  @HttpCode(HttpStatus.OK)
+  syncCatalog() {
+    return this.permission_service.syncCatalog();
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() create_permission_dto: CreatePermissionDto) {
-    console.log("create_permission_dto", create_permission_dto);
-    return this.permission_service.create(create_permission_dto);
+  create() {
+    return this.permission_service.create();
   }
 
   @Post("sync-available-keys-file")
@@ -51,16 +59,13 @@ export class PermissionsController {
   }
 
   @Patch(":id")
-  update(
-    @Param("id", ParseUUIDPipe) id: string,
-    @Body() update_permission_dto: UpdatePermissionDto,
-  ) {
-    return this.permission_service.update(id, update_permission_dto);
+  update(@Param("id", ParseUUIDPipe) _id: string) {
+    return this.permission_service.update();
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param() delete_permission_dto: DeletePermissionDto) {
-    await this.permission_service.remove(delete_permission_dto.id);
+  async remove(@Param() _delete_permission_dto: DeletePermissionDto) {
+    await this.permission_service.remove();
   }
 }

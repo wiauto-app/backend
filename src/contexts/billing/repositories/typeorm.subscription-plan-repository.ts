@@ -10,6 +10,7 @@ import {
   PrimitiveSubscriptionPlan,
   SubscriptionPlan,
 } from "../types/subscription-plan";
+import { FREE_PLAN_QUOTAS, normalizePlanQuotas } from "../types/plan-quotas";
 import { PlanFeatureEntity } from "../entities/plan-feature.entity";
 import { SubscriptionPlanPriceEntity } from "../entities/subscription-plan-price.entity";
 import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
@@ -17,7 +18,6 @@ import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 const entity_to_plan = (entity: SubscriptionPlanEntity): SubscriptionPlan =>
   SubscriptionPlan.fromPrimitives({
     id: entity.id,
-    slug: entity.slug,
     name: entity.name,
     description: entity.description,
     audience: entity.audience,
@@ -26,6 +26,9 @@ const entity_to_plan = (entity: SubscriptionPlanEntity): SubscriptionPlan =>
     stripe_product_id: entity.stripe_product_id,
     is_active: entity.is_active,
     is_featured: entity.is_featured,
+    is_custom: entity.is_custom ?? false,
+    target_dealership_id: entity.target_dealership_id ?? null,
+    quotas: normalizePlanQuotas(entity.quotas ?? FREE_PLAN_QUOTAS),
     sort_order: entity.sort_order,
     effect_config: (entity.effect_config ?? {}) as PrimitiveSubscriptionPlan["effect_config"],
     created_at: entity.created_at,
@@ -64,7 +67,6 @@ export class TypeOrmSubscriptionPlanRepository {
   async create(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
     const p = plan.toPrimitives();
     const saved = await this.plan_repository.save({
-      slug: p.slug,
       name: p.name,
       description: p.description ?? null,
       audience: p.audience as SubscriptionPlanEntity["audience"],
@@ -73,6 +75,9 @@ export class TypeOrmSubscriptionPlanRepository {
       stripe_product_id: p.stripe_product_id ?? null,
       is_active: p.is_active,
       is_featured: p.is_featured,
+      is_custom: p.is_custom ?? false,
+      target_dealership_id: p.target_dealership_id ?? null,
+      quotas: normalizePlanQuotas(p.quotas),
       sort_order: p.sort_order,
       effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
     });
@@ -91,7 +96,6 @@ export class TypeOrmSubscriptionPlanRepository {
     const p = plan.toPrimitives();
     const preloaded = await this.plan_repository.preload({
       id: p.id,
-      slug: p.slug,
       name: p.name,
       description: p.description ?? null,
       audience: p.audience as SubscriptionPlanEntity["audience"],
@@ -100,6 +104,9 @@ export class TypeOrmSubscriptionPlanRepository {
       stripe_product_id: p.stripe_product_id ?? null,
       is_active: p.is_active,
       is_featured: p.is_featured,
+      is_custom: p.is_custom ?? false,
+      target_dealership_id: p.target_dealership_id ?? null,
+      quotas: normalizePlanQuotas(p.quotas),
       sort_order: p.sort_order,
       effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
     });
@@ -133,15 +140,6 @@ export class TypeOrmSubscriptionPlanRepository {
     return entity ? entity_to_plan(entity) : null;
   }
 
-  async findBySlug(slug: string): Promise<SubscriptionPlan | null> {
-    const entity = await this.plan_repository.findOne({
-      where: { slug },
-      relations: { prices: true, features: true },
-    });
-
-    return entity ? entity_to_plan(entity) : null;
-  }
-
   async findAll(params: {
     page: number;
     limit: number;
@@ -149,7 +147,7 @@ export class TypeOrmSubscriptionPlanRepository {
   }): Promise<PaginatedResult<SubscriptionPlan>> {
     const skip = getSkip(params.page, params.limit);
     const where = params.search
-      ? [{ name: ILike(`%${params.search}%`) }, { slug: ILike(`%${params.search}%`) }]
+      ? { name: ILike(`%${params.search}%`) }
       : undefined;
 
     const [rows, total] = await this.plan_repository.findAndCount({
@@ -172,6 +170,7 @@ export class TypeOrmSubscriptionPlanRepository {
     const rows = await this.plan_repository.find({
       where: {
         is_active: true,
+        is_custom: false,
         ...(audience ? { audience: audience as SubscriptionPlanEntity["audience"] } : {}),
       },
       relations: { prices: true, features: true },

@@ -4,20 +4,37 @@ import path from "path";
 import { Injectable, Logger } from "@nestjs/common";
 
 import {
+  FRONTEND_ROUTES,
+  getFrontendPath,
+  getFrontendUrl,
+  getMailBrandLogoUrl,
+  getMyListingsUrl,
+} from "@/src/common/frontend-routes";
+
+import {
   formatCurrencyEur,
   formatLocationLabel,
   formatMileage,
   formatTransmissionLabel,
   humanizeSlug,
 } from "./mail-template.format";
+import {
+  MAIL_STATUS_THEMES,
+  type MailStatusThemeKey,
+  type MailVehicleCardPayload,
+} from "./mail-vehicle-card";
 
 export interface RenderBaseOptions {
   preheader: string;
   title: string;
+  /** Si se informa, se usa HTML ya escapado/seguro en lugar de `title` escapado. */
+  title_html?: string;
   body: string;
   cta_label?: string;
   cta_href?: string;
   footer_note?: string;
+  share_url?: string;
+  doc_title?: string;
 }
 
 export interface AlertMatchRenderPayload {
@@ -51,14 +68,39 @@ export class MailTemplateRenderer {
     const footer_note = options.footer_note
       ? `<p style="margin:24px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.55;color:#6b7280;">${options.footer_note}</p>`
       : "";
+    const share_url = options.share_url ?? getFrontendUrl("HOME");
+    const share_encoded = encodeURIComponent(share_url);
+    const title_html =
+      options.title_html ?? this.escapeHtml(options.title);
+    const doc_title = this.escapeHtml(options.doc_title ?? options.title);
 
     return this.render("base-email.html", {
       PREHEADER: this.escapeHtml(options.preheader),
-      TITLE: this.escapeHtml(options.title),
+      DOC_TITLE: doc_title,
+      TITLE: title_html,
       BODY: options.body,
       CTA_BLOCK: cta_block,
       FOOTER_NOTE: footer_note,
       YEAR: year,
+      HOME_URL: getFrontendUrl("HOME"),
+      LOGO_URL: getMailBrandLogoUrl(),
+      SHARE_URL: share_url,
+      SHARE_FACEBOOK_URL: `https://www.facebook.com/sharer/sharer.php?u=${share_encoded}`,
+      SHARE_WHATSAPP_URL: `https://wa.me/?text=${share_encoded}`,
+      FOOTER_VEHICLES_URL: getFrontendUrl("VEHICLES"),
+      FOOTER_FEATURED_URL: getFrontendPath(
+        `${FRONTEND_ROUTES.VEHICLES}?is_featured=true`,
+      ),
+      FOOTER_CATEGORIES_URL: getFrontendUrl("VEHICLES"),
+      FOOTER_CREATE_URL: getFrontendUrl("CREATE_VEHICLE"),
+      FOOTER_PLANS_URL: getFrontendUrl("PLANS"),
+      FOOTER_TIPS_URL: getFrontendUrl("SELL_VEHICLE"),
+      FOOTER_ABOUT_URL: getFrontendUrl("ABOUT"),
+      FOOTER_NEWS_URL: getFrontendUrl("NEWS"),
+      FOOTER_CONTACT_URL: getFrontendUrl("CONTACT"),
+      SOCIAL_FACEBOOK_URL: "https://www.facebook.com/",
+      SOCIAL_INSTAGRAM_URL: "https://www.instagram.com/",
+      SOCIAL_X_URL: "https://x.com/",
     });
   }
 
@@ -97,6 +139,8 @@ export class MailTemplateRenderer {
 
   renderLeadNotification(payload: {
     vehicle_title: string;
+    vehicle?: MailVehicleCardPayload | null;
+    contacts_url?: string;
     lead: {
       type: string;
       name: string;
@@ -119,63 +163,55 @@ export class MailTemplateRenderer {
         : "No indicado";
 
     const email_row = payload.lead.email
-      ? `<tr>
-          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
-            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Correo</p>
-            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${this.escapeHtml(payload.lead.email)}</p>
-          </td>
-        </tr>`
+      ? this.buildInfoRow("Correo", this.escapeHtml(payload.lead.email))
       : "";
 
     const callback_row =
       is_call_me && payload.lead.callback_scheduled_at
-        ? `<tr>
-            <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
-              <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Fecha preferida de llamada</p>
-              <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${this.escapeHtml(
-                new Date(`${payload.lead.callback_scheduled_at}T00:00:00`).toLocaleDateString(
-                  "es-ES",
-                  { dateStyle: "long" },
-                ),
-              )}</p>
-            </td>
-          </tr>`
+        ? this.buildInfoRow(
+            "Fecha preferida de llamada",
+            this.escapeHtml(
+              new Date(`${payload.lead.callback_scheduled_at}T00:00:00`).toLocaleDateString(
+                "es-ES",
+                { dateStyle: "long" },
+              ),
+            ),
+          )
         : "";
 
     const message_row =
       !is_call_me && escaped_message
-        ? `<tr>
-            <td style="padding:16px 20px;">
-              <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Mensaje</p>
-              <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${escaped_message}</p>
-            </td>
-          </tr>`
+        ? this.buildInfoRow("Mensaje", escaped_message, true)
         : "";
 
     const intro_text = is_call_me
       ? `Recibiste una solicitud de llamada sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`
       : `Recibiste una consulta sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`;
 
-    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
-        ${intro_text}
-      </p>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
+    const vehicle_card = payload.vehicle
+      ? this.buildVehicleCardHtml(payload.vehicle)
+      : "";
+
+    const lead_box = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
         <tr>
-          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
-            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Nombre</p>
-            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${escaped_name}</p>
+          <td style="background-color:#EFF6FF;padding:12px 16px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">
+              ${is_call_me ? "Solicitud de llamada" : "Datos del interesado"}
+            </p>
           </td>
         </tr>
+        ${this.buildInfoRow("Nombre", escaped_name)}
         ${email_row}
-        <tr>
-          <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
-            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">Teléfono</p>
-            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${phone_display}</p>
-          </td>
-        </tr>
+        ${this.buildInfoRow("Teléfono", phone_display)}
         ${callback_row}
         ${message_row}
       </table>`;
+
+    const body = `<p style="margin:0 0 20px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${intro_text}
+      </p>
+      ${vehicle_card}
+      ${lead_box}`;
 
     return this.renderBase({
       preheader: is_call_me
@@ -183,9 +219,141 @@ export class MailTemplateRenderer {
         : `Nueva consulta sobre ${payload.vehicle_title}.`,
       title: is_call_me ? "Nueva solicitud de llamada" : "Nueva consulta recibida",
       body,
+      ...(payload.contacts_url
+        ? { cta_label: "Responder", cta_href: payload.contacts_url }
+        : {}),
       footer_note: is_call_me
         ? "Contacta al interesado en la fecha indicada para no perder la oportunidad."
         : "Responde al interesado lo antes posible para no perder la oportunidad.",
+      share_url: payload.vehicle?.detail_url,
+    });
+  }
+
+  renderNewMessageNotification(payload: {
+    sender_name: string;
+    message_excerpt: string;
+    messages_url: string;
+    vehicle?: MailVehicleCardPayload | null;
+  }): string {
+    const escaped_sender = this.escapeHtml(payload.sender_name);
+    const escaped_excerpt = this.escapeHtml(payload.message_excerpt);
+    const vehicle_card = payload.vehicle
+      ? this.buildVehicleCardHtml(payload.vehicle)
+      : "";
+
+    const message_box = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+        <tr>
+          <td style="background-color:#F0FDF4;padding:12px 16px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#16A34A;">
+              Nuevo mensaje de ${escaped_sender}
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 20px;">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;">
+              ${escaped_excerpt}
+            </p>
+          </td>
+        </tr>
+      </table>`;
+
+    const body = `<p style="margin:0 0 20px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tienes un nuevo mensaje sobre tu anuncio.
+      </p>
+      ${vehicle_card}
+      ${message_box}`;
+
+    return this.renderBase({
+      preheader: `${payload.sender_name}: ${payload.message_excerpt}`.slice(0, 120),
+      title: "Nuevo mensaje",
+      body,
+      cta_label: "Ver mensaje",
+      cta_href: payload.messages_url,
+      footer_note: "Responde cuanto antes para no perder al interesado.",
+      share_url: payload.vehicle?.detail_url,
+    });
+  }
+
+  renderSellerStatusMail(payload: {
+    theme: MailStatusThemeKey;
+    vehicle: MailVehicleCardPayload;
+    status_change_message?: string | null;
+    expires_at_label?: string | null;
+    cta_label: string;
+    cta_href: string;
+  }): string {
+    const theme = MAIL_STATUS_THEMES[payload.theme];
+    const title_html = this.buildColoredStatusTitle(theme.label, theme.color);
+    const status_header = this.buildStatusIconHeader(theme);
+    const vehicle_card = this.buildVehicleCardHtml(payload.vehicle);
+
+    let extra_box = "";
+    if (payload.theme === "rejected" && payload.status_change_message) {
+      extra_box = this.buildRejectionBox(payload.status_change_message);
+    } else if (
+      (payload.theme === "expiry_soon" || payload.theme === "expired") &&
+      payload.expires_at_label
+    ) {
+      extra_box = this.buildExpiryAlertBar(
+        payload.theme,
+        payload.expires_at_label,
+      );
+    }
+
+    const intro = this.buildStatusIntro(payload.theme, payload.vehicle.title);
+
+    const body = `${status_header}
+      <p style="margin:0 0 20px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${intro}
+      </p>
+      ${extra_box}
+      ${vehicle_card}`;
+
+    return this.renderBase({
+      preheader: `${theme.label}: ${payload.vehicle.title}`,
+      title: theme.label,
+      title_html,
+      body,
+      cta_label: payload.cta_label,
+      cta_href: payload.cta_href,
+      footer_note:
+        "Si tienes dudas, responde a este correo o contacta al soporte de WiAuto.",
+      share_url: payload.vehicle.detail_url,
+      doc_title: `${theme.label} — ${payload.vehicle.title}`,
+    });
+  }
+
+  /**
+   * @deprecated Preferir renderSellerStatusMail por tema.
+   * Se mantiene por compatibilidad con jobs antiguos en cola.
+   */
+  renderVehicleStatusChanged(payload: {
+    vehicle_title: string;
+    previous_status_label: string;
+    new_status_label: string;
+    status_change_message: string | null;
+  }): string {
+    const escaped_title = this.escapeHtml(payload.vehicle_title);
+    const escaped_previous = this.escapeHtml(payload.previous_status_label);
+    const escaped_new = this.escapeHtml(payload.new_status_label);
+    const message_block = payload.status_change_message
+      ? this.buildRejectionBox(payload.status_change_message)
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        El anuncio <strong style="color:#111827;">${escaped_title}</strong> pasó de <strong style="color:#111827;">${escaped_previous}</strong> a <strong style="color:#111827;">${escaped_new}</strong>.
+      </p>
+      ${message_block}`;
+
+    return this.renderBase({
+      preheader: `Tu anuncio ${payload.vehicle_title} cambió de estado.`,
+      title: "Tu anuncio cambió de estado",
+      body,
+      cta_label: "Mis anuncios",
+      cta_href: getMyListingsUrl(),
+      footer_note:
+        "Si tienes dudas, responde a este correo o contacta al soporte de WiAuto.",
     });
   }
 
@@ -399,32 +567,153 @@ export class MailTemplateRenderer {
     });
   }
 
-  renderVehicleStatusChanged(payload: {
-    vehicle_title: string;
-    previous_status_label: string;
-    new_status_label: string;
-    status_change_message: string | null;
+  renderSubscriptionPaymentReceived(payload: {
+    plan_name: string;
+    amount_label: string;
+    is_renewal: boolean;
+    invoice_url: string | null;
+    portal_url: string | null;
   }): string {
-    const escaped_title = this.escapeHtml(payload.vehicle_title);
-    const escaped_previous = this.escapeHtml(payload.previous_status_label);
-    const escaped_new = this.escapeHtml(payload.new_status_label);
-    const message_block = payload.status_change_message
+    const escaped_plan = this.escapeHtml(payload.plan_name);
+    const escaped_amount = this.escapeHtml(payload.amount_label);
+    const title = payload.is_renewal
+      ? "Renovación confirmada"
+      : "Pago recibido";
+    const lead = payload.is_renewal
+      ? `Hemos renovado tu plan <strong style="color:#111827;">${escaped_plan}</strong>.`
+      : `Hemos recibido el pago de tu plan <strong style="color:#111827;">${escaped_plan}</strong>.`;
+
+    const invoice_block = payload.invoice_url
       ? `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
-            <strong style="color:#111827;">Mensaje del equipo:</strong><br />${this.escapeHtml(payload.status_change_message)}
-          </p>`
+          Puedes consultar o descargar tu factura desde el enlace del botón.
+        </p>`
       : "";
 
     const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
-        El anuncio <strong style="color:#111827;">${escaped_title}</strong> pasó de <strong style="color:#111827;">${escaped_previous}</strong> a <strong style="color:#111827;">${escaped_new}</strong>.
+        ${lead}
       </p>
-      ${message_block}`;
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Importe: <strong style="color:#111827;">${escaped_amount}</strong>
+      </p>
+      ${invoice_block}`;
+
+    const cta_href = payload.invoice_url ?? payload.portal_url;
+    const cta_label = payload.invoice_url
+      ? "Ver factura"
+      : "Gestionar suscripción";
 
     return this.renderBase({
-      preheader: `Tu anuncio ${payload.vehicle_title} cambió de estado.`,
-      title: "Tu anuncio cambió de estado",
+      preheader: payload.is_renewal
+        ? `Renovación de ${payload.plan_name} confirmada.`
+        : `Pago de ${payload.plan_name} recibido.`,
+      title,
       body,
-      footer_note:
-        "Si tienes dudas, responde a este correo o contacta al soporte de WiAuto.",
+      ...(cta_href ? { cta_label, cta_href } : {}),
+      footer_note: "Gracias por confiar en WiAuto PRO.",
+    });
+  }
+
+  renderSubscriptionPlanChanged(payload: {
+    previous_plan_name: string;
+    new_plan_name: string;
+    portal_url: string | null;
+  }): string {
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tu suscripción ha cambiado de
+        <strong style="color:#111827;">${this.escapeHtml(payload.previous_plan_name)}</strong>
+        a
+        <strong style="color:#111827;">${this.escapeHtml(payload.new_plan_name)}</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Los cupos y ventajas del nuevo plan ya están activos en tu cuenta.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Cambio a ${payload.new_plan_name}.`,
+      title: "Cambio de plan",
+      body,
+      ...(payload.portal_url
+        ? {
+            cta_label: "Gestionar suscripción",
+            cta_href: payload.portal_url,
+          }
+        : {}),
+      footer_note: "Si no reconoces este cambio, revisa tu portal de facturación.",
+    });
+  }
+
+  renderListingLimitReached(payload: {
+    max_listings: number;
+    listings_used: number;
+    plan_name: string | null;
+    plans_url: string;
+  }): string {
+    const plan_line = payload.plan_name
+      ? ` de tu plan <strong style="color:#111827;">${this.escapeHtml(payload.plan_name)}</strong>`
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Has alcanzado el límite de anuncios activos${plan_line}
+        (${payload.listings_used}/${payload.max_listings}).
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Archiva un anuncio o mejora tu plan para publicar más vehículos.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Has llegado al límite de anuncios activos.",
+      title: "Límite de anuncios",
+      body,
+      cta_label: "Ver planes",
+      cta_href: payload.plans_url,
+      footer_note: "El cupo se comparte entre todos los miembros del concesionario si aplica.",
+    });
+  }
+
+  renderFeaturedPurchased(payload: {
+    vehicle_title: string;
+    featured_expires_at_label: string;
+    vehicle_edit_url: string;
+  }): string {
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tu anuncio <strong style="color:#111827;">${this.escapeHtml(payload.vehicle_title)}</strong>
+        ya está destacado.
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        El destacado estará activo hasta el
+        <strong style="color:#111827;">${this.escapeHtml(payload.featured_expires_at_label)}</strong>.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Destacado activo: ${payload.vehicle_title}.`,
+      title: "Anuncio destacado",
+      body,
+      cta_label: "Ver anuncio",
+      cta_href: payload.vehicle_edit_url,
+      footer_note: "Puedes renovar el destacado cuando expire.",
+    });
+  }
+
+  renderFeaturedExpired(payload: {
+    vehicle_title: string;
+    vehicle_edit_url: string;
+  }): string {
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        El destacado de
+        <strong style="color:#111827;">${this.escapeHtml(payload.vehicle_title)}</strong>
+        ha finalizado.
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Destácalo de nuevo para seguir ganando visibilidad.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `El destacado de ${payload.vehicle_title} ha caducado.`,
+      title: "Destacado finalizado",
+      body,
+      cta_label: "Destacar de nuevo",
+      cta_href: payload.vehicle_edit_url,
+      footer_note: "Los anuncios sin destacado siguen publicados con normalidad.",
     });
   }
 
@@ -730,6 +1019,149 @@ export class MailTemplateRenderer {
 
   formatTransmissionType(transmission_type: string): string {
     return formatTransmissionLabel(transmission_type);
+  }
+
+  private buildColoredStatusTitle(label: string, color: string): string {
+    return `Tu anuncio: <span style="color:${color};">${this.escapeHtml(label)}</span>`;
+  }
+
+  private buildStatusIconHeader(theme: {
+    color: string;
+    label: string;
+    icon: string;
+  }): string {
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+      <tr>
+        <td style="width:40px;height:40px;border-radius:20px;background-color:${theme.color};text-align:center;vertical-align:middle;">
+          <span style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:18px;font-weight:700;color:#ffffff;line-height:40px;">${this.escapeHtml(theme.icon)}</span>
+        </td>
+        <td style="padding-left:12px;vertical-align:middle;">
+          <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:${theme.color};">
+            ${this.escapeHtml(theme.label)}
+          </p>
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  private buildStatusIntro(theme: MailStatusThemeKey, vehicle_title: string): string {
+    const title = `<strong style="color:#111827;">${this.escapeHtml(vehicle_title)}</strong>`;
+    switch (theme) {
+      case "published":
+        return `Tu anuncio ${title} se publicó correctamente y está pendiente de revisión.`;
+      case "approved":
+        return `¡Buenas noticias! Tu anuncio ${title} fue aprobado y ya es visible para compradores.`;
+      case "rejected":
+        return `Tu anuncio ${title} fue rechazado. Revisa el motivo y edítalo para volver a publicarlo.`;
+      case "deactivated":
+        return `Tu anuncio ${title} quedó desactivado y ya no es visible en el listado.`;
+      case "sold":
+        return `Marcado como vendido: ${title}. ¡Enhorabuena por la venta!`;
+      case "archived":
+        return `Tu anuncio ${title} fue archivado.`;
+      case "expiry_soon":
+        return `Tu anuncio ${title} caduca en breve. Renúevalo para seguir recibiendo contactos.`;
+      case "expired":
+        return `Tu anuncio ${title} ha caducado y dejó de estar activo.`;
+      default:
+        return `Actualización sobre tu anuncio ${title}.`;
+    }
+  }
+
+  private buildRejectionBox(message: string): string {
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid #FECACA;border-radius:8px;background-color:#FEF2F2;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 6px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;color:#DC2626;">
+            Motivo del rechazo
+          </p>
+          <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.55;color:#7F1D1D;">
+            ${this.escapeHtml(message)}
+          </p>
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  private buildExpiryAlertBar(
+    theme: "expiry_soon" | "expired",
+    expires_at_label: string,
+  ): string {
+    const is_soon = theme === "expiry_soon";
+    const bg = is_soon ? "#FFF7ED" : "#FEF2F2";
+    const border = is_soon ? "#FDBA74" : "#FECACA";
+    const color = is_soon ? "#EA580C" : "#DC2626";
+    const label = is_soon ? "Caduca el" : "Caducó el";
+
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid ${border};border-radius:8px;background-color:${bg};">
+      <tr>
+        <td style="padding:14px 18px;">
+          <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:${color};">
+            ${label} ${this.escapeHtml(expires_at_label)}
+          </p>
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  private buildVehicleCardHtml(vehicle: MailVehicleCardPayload): string {
+    const price_label =
+      vehicle.price !== null && vehicle.price !== undefined
+        ? formatCurrencyEur(vehicle.price)
+        : "Precio a consultar";
+    const year_label =
+      vehicle.year !== null && vehicle.year !== undefined
+        ? String(vehicle.year)
+        : "—";
+    const mileage_label =
+      vehicle.mileage !== null && vehicle.mileage !== undefined
+        ? formatMileage(vehicle.mileage)
+        : "—";
+
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+      <tr>
+        <td style="padding:0;vertical-align:top;" width="180">
+          ${this.buildVehicleImageBlock(vehicle.image_url)}
+        </td>
+        <td style="padding:16px 18px;vertical-align:top;">
+          <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.35;color:#111827;">
+            ${this.escapeHtml(vehicle.title)}
+          </p>
+          <p style="margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:18px;font-weight:700;line-height:1.3;color:#0153E8;">
+            ${price_label}
+          </p>
+          <p style="margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+            <strong style="color:#374151;">Año:</strong> ${year_label}
+          </p>
+          <p style="margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+            <strong style="color:#374151;">Kilometraje:</strong> ${mileage_label}
+          </p>
+          <p style="margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+            <strong style="color:#374151;">Combustible:</strong> ${this.escapeHtml(vehicle.fuel_label)}
+          </p>
+          <p style="margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+            <strong style="color:#374151;">Transmisión:</strong> ${this.escapeHtml(vehicle.transmission_label)}
+          </p>
+          <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+            <strong style="color:#374151;">Ubicación:</strong> ${this.escapeHtml(vehicle.location_label)}
+          </p>
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  private buildInfoRow(
+    label: string,
+    value_html: string,
+    last = false,
+  ): string {
+    const border = last ? "" : "border-bottom:1px solid #e5e7eb;";
+    return `<tr>
+      <td style="padding:16px 20px;${border}">
+        <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">${this.escapeHtml(label)}</p>
+        <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${value_html}</p>
+      </td>
+    </tr>`;
   }
 
   private buildCtaBlock(label?: string, href?: string): string {

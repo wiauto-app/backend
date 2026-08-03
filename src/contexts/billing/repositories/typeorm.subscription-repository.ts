@@ -80,7 +80,6 @@ export class TypeOrmSubscriptionRepository {
       current_period_end: row.current_period_end,
       cancel_at_period_end: row.cancel_at_period_end,
       plan_name: row.plan.name,
-      plan_slug: row.plan.slug,
     };
   }
 
@@ -94,6 +93,7 @@ export class TypeOrmSubscriptionRepository {
     }
 
     return {
+      plan_id: row.plan_id,
       cancel_at_period_end: row.cancel_at_period_end,
     };
   }

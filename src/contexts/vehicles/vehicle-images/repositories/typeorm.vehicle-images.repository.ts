@@ -42,6 +42,12 @@ export class TypeOrmVehicleImagesRepository {
     );
   }
 
+  async countByVehicleId(vehicle_id: string): Promise<number> {
+    return this.vehicleImagesRepository.count({
+      where: { vehicle_id },
+    });
+  }
+
   async delete(vehicleImage: VehicleImage): Promise<void> {
     const p = vehicleImage.toPrimitives();
     await lastValueFrom(this.minioService.deleteFileByUrl(p.url));
