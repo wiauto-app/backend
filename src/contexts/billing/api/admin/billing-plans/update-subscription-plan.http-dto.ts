@@ -24,7 +24,6 @@ import {
   normalizePlanEffectConfig,
   PlanEffectConfigHttpDto,
 } from "./plan-effect-config.http-dto";
-import { PlanQuotasHttpDto } from "./plan-quotas.http-dto";
 
 export { normalizePlanEffectConfig };
 
@@ -56,19 +55,6 @@ export class UpdateSubscriptionPlanHttpDto {
   @IsOptional()
   @IsBoolean()
   is_featured?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  is_custom?: boolean;
-
-  @IsOptional()
-  @IsUUID()
-  target_dealership_id?: string | null;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => PlanQuotasHttpDto)
-  quotas?: PlanQuotasHttpDto;
 
   @IsOptional()
   @IsInt()

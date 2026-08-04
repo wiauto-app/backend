@@ -126,6 +126,7 @@ export class StripeClient {
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
       success_url: envs.STRIPE_SUCCESS_URL,
       cancel_url: envs.STRIPE_CANCEL_URL,
+      allow_promotion_codes: true,
       metadata: shared_metadata,
       subscription_data: {
         metadata: {
@@ -155,6 +156,7 @@ export class StripeClient {
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
       success_url: envs.STRIPE_SUCCESS_URL,
       cancel_url: envs.STRIPE_CANCEL_URL,
+      allow_promotion_codes: true,
       metadata: {
         plan_id: params.plan_id,
         plan_price_id: params.plan_price_id,
@@ -222,6 +224,7 @@ export class StripeClient {
         params.cancel_url,
         envs.STRIPE_CANCEL_URL,
       ),
+      allow_promotion_codes: true,
       metadata: {
         profile_id: params.profile_id,
         plan_id: params.plan_id,
@@ -263,5 +266,99 @@ export class StripeClient {
     }
 
     return session.url;
+  }
+
+  async createCoupon(params: {
+    name: string;
+    percent_off?: number | null;
+    amount_off_cents?: number | null;
+    currency?: string | null;
+    duration?: "once" | "repeating" | "forever";
+    duration_in_months?: number | null;
+  }): Promise<string> {
+    const coupon = await this.stripe.coupons.create({
+      name: params.name,
+      duration: params.duration ?? "once",
+      ...(params.duration === "repeating" && params.duration_in_months
+        ? { duration_in_months: params.duration_in_months }
+        : {}),
+      ...(typeof params.percent_off === "number"
+        ? { percent_off: params.percent_off }
+        : {}),
+      ...(typeof params.amount_off_cents === "number"
+        ? {
+            amount_off: params.amount_off_cents,
+            currency: (params.currency ?? "eur").toLowerCase(),
+          }
+        : {}),
+    });
+
+    return coupon.id;
+  }
+
+  async createPromotionCode(params: {
+    coupon_id: string;
+    code: string;
+    max_redemptions?: number;
+    expires_at?: Date | null;
+    active?: boolean;
+  }): Promise<{ id: string; code: string; times_redeemed: number }> {
+    const promotion_code = await this.stripe.promotionCodes.create({
+      promotion: {
+        type: "coupon",
+        coupon: params.coupon_id,
+      },
+      code: params.code,
+      max_redemptions: params.max_redemptions ?? 1,
+      expires_at: params.expires_at
+        ? Math.floor(params.expires_at.getTime() / 1000)
+        : undefined,
+      active: params.active ?? true,
+    });
+
+    return {
+      id: promotion_code.id,
+      code: promotion_code.code,
+      times_redeemed: promotion_code.times_redeemed,
+    };
+  }
+
+  async updatePromotionCode(
+    promotion_code_id: string,
+    params: { active?: boolean },
+  ): Promise<{ id: string; active: boolean; times_redeemed: number }> {
+    const promotion_code = await this.stripe.promotionCodes.update(
+      promotion_code_id,
+      {
+        ...(params.active !== undefined ? { active: params.active } : {}),
+      },
+    );
+
+    return {
+      id: promotion_code.id,
+      active: promotion_code.active,
+      times_redeemed: promotion_code.times_redeemed,
+    };
+  }
+
+  async retrievePromotionCode(promotion_code_id: string): Promise<{
+    id: string;
+    code: string;
+    active: boolean;
+    times_redeemed: number;
+  }> {
+    const promotion_code =
+      await this.stripe.promotionCodes.retrieve(promotion_code_id);
+
+    return {
+      id: promotion_code.id,
+      code: promotion_code.code,
+      active: promotion_code.active,
+      times_redeemed: promotion_code.times_redeemed,
+    };
+  }
+
+  async deleteCoupon(coupon_id: string): Promise<void> {
+    await this.stripe.coupons.del(coupon_id);
   }
 }

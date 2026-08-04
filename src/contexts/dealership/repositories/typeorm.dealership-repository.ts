@@ -46,6 +46,9 @@ function entity_to_primitives(entity: DealershipEntity): PrimitiveDealership {
     is_featured: entity.is_featured,
     show_phone: entity.show_phone,
     rating: entity.rating != null ? Number(entity.rating) : null,
+    max_listings: entity.max_listings ?? 3,
+    max_photos: entity.max_photos ?? 6,
+    allow_videos: entity.allow_videos ?? false,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
   };
@@ -68,6 +71,9 @@ function raw_row_to_admin_list(row: Record<string, unknown>): DealershipAdminLis
     lng: row.d_lng != null ? Number(row.d_lng) : undefined,
     is_featured: Boolean(row.d_is_featured),
     rating: row.d_rating != null ? Number(row.d_rating) : null,
+    max_listings: Number(row.d_max_listings ?? 3),
+    max_photos: Number(row.d_max_photos ?? 6),
+    allow_videos: Boolean(row.d_allow_videos),
     created_at: row.d_created_at as Date,
     updated_at: row.d_updated_at as Date,
     members_count: Number(row.members_count ?? 0),
@@ -102,6 +108,9 @@ export class TypeOrmDealershipRepository {
       is_featured: p.is_featured,
       show_phone: p.show_phone,
       rating: p.rating,
+      max_listings: p.max_listings,
+      max_photos: p.max_photos,
+      allow_videos: p.allow_videos,
       created_at: p.created_at,
       updated_at: p.updated_at,
     });
@@ -193,6 +202,9 @@ export class TypeOrmDealershipRepository {
       .addSelect("d.lng", "d_lng")
       .addSelect("d.is_featured", "d_is_featured")
       .addSelect("d.rating", "d_rating")
+      .addSelect("d.max_listings", "d_max_listings")
+      .addSelect("d.max_photos", "d_max_photos")
+      .addSelect("d.allow_videos", "d_allow_videos")
       .addSelect("d.created_at", "d_created_at")
       .addSelect("d.updated_at", "d_updated_at")
       .addSelect(`(${members_subquery})`, "members_count")
@@ -249,6 +261,9 @@ export class TypeOrmDealershipRepository {
       lng: p.lng,
       is_featured: p.is_featured,
       show_phone: p.show_phone,
+      max_listings: p.max_listings,
+      max_photos: p.max_photos,
+      allow_videos: p.allow_videos,
       created_at: p.created_at,
       updated_at: p.updated_at,
     });

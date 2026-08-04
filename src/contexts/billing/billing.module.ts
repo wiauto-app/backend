@@ -33,6 +33,7 @@ import { TypeOrmSubscriptionRepository } from "./repositories/typeorm.subscripti
 import { TypeOrmPlanLeadRequestRepository } from "./repositories/typeorm.plan-lead-request-repository";
 import { BillingPlansAdminController } from "./api/admin/billing-plans/billing-plans-admin.controller";
 import { BillingSubscriptionsAdminController } from "./api/admin/billing-subscriptions/billing-subscriptions-admin.controller";
+import { DiscountCouponsAdminController } from "./api/admin/discount-coupons/discount-coupons-admin.controller";
 import { PlanLeadRequestsAdminController } from "./api/admin/plan-lead-requests/plan-lead-requests-admin.controller";
 import { CreatePlanLeadRequestController } from "./api/public/create-plan-lead-request/create-plan-lead-request.controller";
 import { CreatePublicSubscriptionCheckoutController } from "./api/public/create-subscription-checkout/create-public-subscription-checkout.controller";
@@ -45,6 +46,7 @@ import { FindBillingInvoicesController } from "./api/user/find-billing-invoices/
 import { GetBillingMeController } from "./api/user/get-billing-me/get-billing-me.controller";
 import { StripeWebhookController } from "./api/user/stripe-webhook/stripe-webhook.controller";
 import { BillingInvoiceEntity } from "./entities/billing-invoice.entity";
+import { DiscountCouponEntity } from "./entities/discount-coupon.entity";
 import { OneTimePurchaseEntity } from "./entities/one-time-purchase.entity";
 import { PlanFeatureEntity } from "./entities/plan-feature.entity";
 import { StripeWebhookEventEntity } from "./entities/stripe-webhook-event.entity";
@@ -54,6 +56,7 @@ import { SubscriptionPlanEntity } from "./entities/subscription-plan.entity";
 import { PlanLeadRequestEntity } from "./entities/plan-lead-request.entity";
 import { PlanLeadRequestNotificationMailService } from "./services/plan-lead-request-notification-mail.service";
 import { BillingNotificationMailService } from "./services/billing-notification-mail.service";
+import { DiscountCouponsService } from "./services/discount-coupons.service";
 import { StripeClient } from "./clients/stripe.client";
 
 @Module({
@@ -69,6 +72,7 @@ import { StripeClient } from "./clients/stripe.client";
       OneTimePurchaseEntity,
       BillingInvoiceEntity,
       StripeWebhookEventEntity,
+      DiscountCouponEntity,
       ProfileEntity,
       Roles,
       User,
@@ -88,6 +92,7 @@ import { StripeClient } from "./clients/stripe.client";
     // is not captured by GET /plans/:id (ParseUUIDPipe rejects "catalog").
     FindBillingCatalogController,
     BillingPlansAdminController,
+    DiscountCouponsAdminController,
     BillingSubscriptionsAdminController,
     PlanLeadRequestsAdminController,
     GetBillingMeController,
@@ -102,6 +107,7 @@ import { StripeClient } from "./clients/stripe.client";
     BillingCheckoutService,
     BillingSubscriptionProvisioningService,
     EntitlementsService,
+    DiscountCouponsService,
     PlanLeadRequestsService,
     PlanLeadRequestNotificationMailService,
     BillingNotificationMailService,

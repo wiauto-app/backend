@@ -7596,10 +7596,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"slug\": \"pro-mensual\",\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"is_custom\": false,\n  \"quotas\": {\n    \"max_listings\": 50,\n    \"max_photos\": 30,\n    \"allow_videos\": true,\n    \"featured_monthly\": 5\n  },\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"50 anuncios activos\", \"included\": true}]\n}"
+                  "raw": "{\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"Anuncios y soporte PRO\", \"included\": true}]\n}"
                 },
                 "url": "{{base_url}}/v1/billing/plans",
-                "description": "JWT + billing.manage. Incluye `quotas`, `is_custom` y opcional `target_dealership_id` (obligatorio si is_custom)."
+                "description": "JWT + billing.manage. Planes sin quotas/is_custom (límites viven en dealership)."
               },
               "response": []
             },
@@ -7614,7 +7614,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/billing/plans?page=1&limit=10",
-                "description": "JWT + billing.manage. Incluye planes públicos y personalizados."
+                "description": "JWT + billing.manage. Listado paginado de planes."
               },
               "response": []
             },
@@ -7634,17 +7634,40 @@
               "response": []
             },
             {
-              "name": "generar enlace checkout custom",
+              "name": "crear cupon",
               "request": {
                 "method": "POST",
                 "header": [
                   {
                     "key": "Authorization",
                     "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
                   }
                 ],
-                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/checkout-link",
-                "description": "JWT + billing.manage. Solo planes `is_custom` con `target_dealership_id`. Devuelve Checkout Session para el owner del concesionario."
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Promo lanzamiento\",\n  \"code\": \"WA-PROMO10\",\n  \"percent_off\": 10,\n  \"max_redemptions\": 1,\n  \"active\": true\n}"
+                },
+                "url": "{{base_url}}/v1/billing/coupons",
+                "description": "JWT + billing.manage. Crea Coupon + Promotion Code en Stripe (max_redemptions=1 por defecto)."
+              },
+              "response": []
+            },
+            {
+              "name": "listar cupones",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/coupons?page=1&limit=10",
+                "description": "JWT + billing.manage. Lista cupones y sincroniza times_redeemed desde Stripe."
               },
               "response": []
             },
@@ -7674,7 +7697,7 @@
                 "method": "GET",
                 "header": [],
                 "url": "{{base_url}}/v1/public/billing/plans/catalog?audience=professional",
-                "description": "Catálogo público de suscripciones activas (sin JWT). Solo planes recurring y `is_custom=false`."
+                "description": "Catálogo público de suscripciones activas (sin JWT)."
               },
               "response": []
             },

@@ -10,7 +10,6 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
-import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import {
   BILLING_TYPE,
@@ -18,7 +17,6 @@ import {
   PLAN_AUDIENCE,
   PlanAudience,
 } from "../types/billing.enums";
-import { FREE_PLAN_QUOTAS, PlanQuotas } from "../types/plan-quotas";
 import { SubscriptionPlanPriceEntity } from "./subscription-plan-price.entity";
 import { PlanFeatureEntity } from "./plan-feature.entity";
 
@@ -60,19 +58,6 @@ export class SubscriptionPlanEntity {
   @Column({ name: "is_featured", default: false })
   is_featured!: boolean;
 
-  @Column({ name: "is_custom", default: false })
-  is_custom!: boolean;
-
-  @Column({ name: "target_dealership_id", type: "uuid", nullable: true })
-  target_dealership_id!: string | null;
-
-  @Column({
-    name: "quotas",
-    type: "jsonb",
-    default: () => `'${JSON.stringify(FREE_PLAN_QUOTAS)}'`,
-  })
-  quotas!: PlanQuotas;
-
   @Column({ name: "sort_order", default: 0 })
   sort_order!: number;
 
@@ -91,13 +76,6 @@ export class SubscriptionPlanEntity {
     foreignKeyConstraintName: "FK_subscription_plans_role",
   })
   role!: Relation<Roles | null>;
-
-  @ManyToOne(() => DealershipEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({
-    name: "target_dealership_id",
-    foreignKeyConstraintName: "FK_subscription_plans_target_dealership",
-  })
-  target_dealership!: Relation<DealershipEntity | null>;
 
   @OneToMany(() => SubscriptionPlanPriceEntity, (price) => price.plan)
   prices!: Relation<SubscriptionPlanPriceEntity[]>;

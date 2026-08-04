@@ -11,13 +11,6 @@ export const FREE_PLAN_QUOTAS: PlanQuotas = {
   allow_videos: false,
 };
 
-export const DEFAULT_PRO_PLAN_QUOTAS: PlanQuotas = {
-  max_listings: 50,
-  max_photos: 30,
-  allow_videos: true,
-  featured_monthly: 5,
-};
-
 export const normalizePlanQuotas = (
   input?: Partial<PlanQuotas> | null,
 ): PlanQuotas => {

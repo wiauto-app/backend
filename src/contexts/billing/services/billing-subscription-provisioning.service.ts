@@ -147,11 +147,7 @@ export class BillingSubscriptionProvisioningService {
     plan_id: string,
     dealership_id_from_metadata?: string,
   ): Promise<void> {
-    const plan = await this.plan_repository.findOne(plan_id);
-    const primitives = plan?.toPrimitives();
-
-    let dealership_id =
-      dealership_id_from_metadata ?? primitives?.target_dealership_id ?? null;
+    let dealership_id = dealership_id_from_metadata ?? null;
 
     if (!dealership_id) {
       const membership = await this.dealership_members_repository.findOne({
@@ -161,17 +157,6 @@ export class BillingSubscriptionProvisioningService {
     }
 
     if (!dealership_id) {
-      return;
-    }
-
-    if (
-      primitives?.is_custom &&
-      primitives.target_dealership_id &&
-      primitives.target_dealership_id !== dealership_id
-    ) {
-      this.logger.warn(
-        `Plan custom ${plan_id} no coincide con dealership ${dealership_id}`,
-      );
       return;
     }
 

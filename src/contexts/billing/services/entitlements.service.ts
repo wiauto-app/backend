@@ -9,7 +9,6 @@ import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
-import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
 import { BillingMeSummary, ResolvedEntitlements } from "../types/billing.types";
 import { FREE_PLAN_QUOTAS, normalizePlanQuotas } from "../types/plan-quotas";
 
@@ -18,7 +17,6 @@ export class EntitlementsService {
   constructor(
     private readonly billing_profile_repository: TypeOrmBillingProfileRepository,
     private readonly subscription_repository: TypeOrmSubscriptionRepository,
-    private readonly plan_repository: TypeOrmSubscriptionPlanRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     @InjectRepository(Roles)
     private readonly roles_repository: Repository<Roles>,
@@ -38,52 +36,27 @@ export class EntitlementsService {
         where: { id: membership.dealership_id },
       });
 
-      if (dealership?.billing_plan_id) {
-        const plan = await this.plan_repository.findOne(
-          dealership.billing_plan_id,
+      if (dealership) {
+        const member_profile_ids = await this.getDealershipMemberProfileIds(
+          membership.dealership_id,
         );
-        if (plan) {
-          const primitives = plan.toPrimitives();
-          const member_profile_ids = await this.getDealershipMemberProfileIds(
-            membership.dealership_id,
-          );
-          const listings_used =
-            await this.vehicle_repository.count_active_by_profile_ids(
-              member_profile_ids,
-            );
-
-          return {
-            quotas: normalizePlanQuotas(primitives.quotas),
-            source: "dealership_plan",
-            plan_id: primitives.id ?? dealership.billing_plan_id,
-            plan_name: primitives.name,
-            dealership_id: membership.dealership_id,
-            listings_used,
-            listings_scope: "dealership",
-            is_unlimited: false,
-          };
-        }
-      }
-    }
-
-    const subscription =
-      await this.subscription_repository.findActiveByProfileId(profile_id);
-
-    if (subscription?.plan_id) {
-      const plan = await this.plan_repository.findOne(subscription.plan_id);
-      if (plan) {
-        const primitives = plan.toPrimitives();
         const listings_used =
-          await this.vehicle_repository.count_active_by_profile_id(profile_id);
+          await this.vehicle_repository.count_active_by_profile_ids(
+            member_profile_ids,
+          );
 
         return {
-          quotas: normalizePlanQuotas(primitives.quotas),
-          source: "own_subscription",
-          plan_id: primitives.id ?? subscription.plan_id,
-          plan_name: primitives.name,
-          dealership_id: membership?.dealership_id ?? null,
+          quotas: normalizePlanQuotas({
+            max_listings: dealership.max_listings,
+            max_photos: dealership.max_photos,
+            allow_videos: dealership.allow_videos,
+          }),
+          source: "dealership",
+          plan_id: dealership.billing_plan_id ?? null,
+          plan_name: null,
+          dealership_id: membership.dealership_id,
           listings_used,
-          listings_scope: "profile",
+          listings_scope: "dealership",
           is_unlimited: false,
         };
       }
@@ -106,7 +79,7 @@ export class EntitlementsService {
           source: "free",
           plan_id: null,
           plan_name: null,
-          dealership_id: membership?.dealership_id ?? null,
+          dealership_id: null,
           listings_used,
           listings_scope: "profile",
           is_unlimited: true,
@@ -122,7 +95,7 @@ export class EntitlementsService {
       source: "free",
       plan_id: null,
       plan_name: null,
-      dealership_id: membership?.dealership_id ?? null,
+      dealership_id: null,
       listings_used,
       listings_scope: "profile",
       is_unlimited: false,
@@ -181,7 +154,7 @@ export class EntitlementsService {
 
     if (entitlements.listings_used >= entitlements.quotas.max_listings) {
       throw new ForbiddenException(
-        `Has alcanzado el límite de anuncios activos de tu plan (${entitlements.quotas.max_listings}).`,
+        `Has alcanzado el límite de anuncios activos (${entitlements.quotas.max_listings}).`,
       );
     }
 
@@ -200,7 +173,7 @@ export class EntitlementsService {
 
     if (current_photo_count + adding_count > entitlements.quotas.max_photos) {
       throw new ForbiddenException(
-        `Tu plan permite un máximo de ${entitlements.quotas.max_photos} fotos por anuncio.`,
+        `Puedes añadir un máximo de ${entitlements.quotas.max_photos} fotos por anuncio.`,
       );
     }
   }
@@ -213,7 +186,7 @@ export class EntitlementsService {
 
     if (!entitlements.quotas.allow_videos) {
       throw new ForbiddenException(
-        "Tu plan no incluye vídeos en los anuncios.",
+        "Tu cuenta no incluye vídeos en los anuncios.",
       );
     }
   }

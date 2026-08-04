@@ -1,11 +1,9 @@
-import { Type } from "class-transformer";
-import { IsBoolean, IsInt, IsOptional, IsPositive } from "class-validator";
+
+import { IsBoolean, IsNumber, IsOptional } from "class-validator";
 
 export class SyncMakeLogosHttpDto {
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
+  @IsNumber()
   make_id?: number;
 
   @IsOptional()

@@ -226,6 +226,9 @@ export class DealershipService {
     payload.lat = dto.lat;
     payload.lng = dto.lng;
     payload.show_phone = dto.show_phone;
+    payload.max_listings = dto.max_listings;
+    payload.max_photos = dto.max_photos;
+    payload.allow_videos = dto.allow_videos;
     return payload;
   }
 }

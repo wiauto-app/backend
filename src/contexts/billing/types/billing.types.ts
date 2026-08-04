@@ -21,8 +21,6 @@ export interface PlanCatalogItem {
   audience: string;
   billing_type: string;
   is_featured: boolean;
-  is_custom?: boolean;
-  quotas?: PlanQuotas;
   sort_order: number;
   effect_config?: Record<string, unknown>;
   prices: PlanCatalogPrice[];
@@ -56,7 +54,7 @@ export interface BillingMeSummary {
   vehicle_listings_max: number | null;
   quotas: BillingMeQuotas;
   usage: BillingMeUsage;
-  source: "dealership_plan" | "own_subscription" | "free";
+  source: "dealership" | "free";
   plan_id: string | null;
   stripe_customer_id: string | null;
 }

@@ -1,5 +1,6 @@
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
+import { FREE_PLAN_QUOTAS } from "@/src/contexts/billing/types/plan-quotas";
 import { CreateDealershipPayload } from "../types/create-dealership.payload";
 import { UpdateDealershipPayload } from "../types/update-dealership.payload";
 
@@ -20,6 +21,9 @@ export interface PrimitiveDealership {
   is_featured: boolean;
   show_phone: boolean;
   rating: number | null;
+  max_listings: number;
+  max_photos: number;
+  allow_videos: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -46,6 +50,9 @@ export class Dealership {
       is_featured: false,
       show_phone: payload.show_phone ?? true,
       rating: null,
+      max_listings: payload.max_listings ?? FREE_PLAN_QUOTAS.max_listings,
+      max_photos: payload.max_photos ?? FREE_PLAN_QUOTAS.max_photos,
+      allow_videos: payload.allow_videos ?? FREE_PLAN_QUOTAS.allow_videos,
       created_at: today,
       updated_at: today,
     });

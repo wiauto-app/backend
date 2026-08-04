@@ -14,5 +14,8 @@ export class CreateDealershipDto {
   lat?: number;
   lng?: number;
   show_phone?: boolean;
+  max_listings?: number;
+  max_photos?: number;
+  allow_videos?: boolean;
   members: DealershipMemberInputDto[];
 }

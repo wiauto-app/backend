@@ -14,4 +14,9 @@ export class UpdateDealershipHttpDto extends PartialType(CreateDealershipHttpDto
   @Transform(({ value }) => value === "true" || value === true)
   @IsBoolean()
   show_phone?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  allow_videos?: boolean;
 }

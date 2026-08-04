@@ -1,5 +1,8 @@
 import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import type { Client } from "@opensearch-project/opensearch";
+
+import { MakeEntity } from "@/src/contexts/vehicles/catalog/makes/entities/make.entity";
 
 import { BulkReindexHeroSearchService } from "./services/bulk-reindex-hero-search.service";
 import { GetHeroCountService } from "./services/get-hero-count.service";
@@ -23,6 +26,7 @@ import { OpenSearchHeroSearchRepository } from "./clients/opensearch/opensearch-
     HeroCountController,
     AdminReindexHeroSearchController,
   ],
+  imports: [TypeOrmModule.forFeature([MakeEntity])],
   providers: [
     {
       provide: OPENSEARCH_CLIENT,

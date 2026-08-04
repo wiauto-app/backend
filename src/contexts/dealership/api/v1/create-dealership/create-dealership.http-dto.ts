@@ -60,6 +60,18 @@ export class CreateDealershipHttpDto {
   @IsBoolean()
   show_phone?: boolean;
 
+  @IsOptional()
+  @IsNumber()
+  max_listings?: number;
+
+  @IsOptional()
+  @IsNumber()
+  max_photos?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  allow_videos?: boolean;
+
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

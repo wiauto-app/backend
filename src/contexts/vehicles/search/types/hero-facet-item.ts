@@ -10,6 +10,8 @@ export interface HeroCatalogFacetItem {
   slug: string;
   name: string;
   vehicle_count: number;
+  /** Presente solo cuando facet=makes (desde entidad Make) */
+  image_url?: string | null;
   /** Presente solo cuando facet=models */
   make_id?: number;
   /** Presente solo cuando facet=models */

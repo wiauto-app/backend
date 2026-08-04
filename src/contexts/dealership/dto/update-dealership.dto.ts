@@ -16,4 +16,7 @@ export class UpdateDealershipDto {
   members?: DealershipMemberInputDto[];
   is_featured?: boolean;
   show_phone?: boolean;
+  max_listings?: number;
+  max_photos?: number;
+  allow_videos?: boolean;
 }

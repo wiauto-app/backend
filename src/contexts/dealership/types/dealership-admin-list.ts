@@ -1,5 +1,4 @@
 
-
 export interface DealershipAdminList {
   id: string;
   name: string;
@@ -16,6 +15,9 @@ export interface DealershipAdminList {
   lng?: number;
   is_featured: boolean;
   rating: number | null;
+  max_listings: number;
+  max_photos: number;
+  allow_videos: boolean;
   created_at: Date;
   updated_at: Date;
   members_count: number;

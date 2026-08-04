@@ -33,7 +33,7 @@ export class MakesController {
   }
 
   @Post("sync-logos")
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   syncLogos(@Body() dto: SyncMakeLogosHttpDto) {
     return this.sync_make_logos_service.execute({
       make_id: dto.make_id,

@@ -66,6 +66,15 @@ export class DealershipEntity {
   @Column({ name: "billing_plan_id", type: "uuid", nullable: true })
   billing_plan_id?: string | null;
 
+  @Column({ name: "max_listings", type: "int", default: 3 })
+  max_listings: number;
+
+  @Column({ name: "max_photos", type: "int", default: 6 })
+  max_photos: number;
+
+  @Column({ name: "allow_videos", type: "boolean", default: false })
+  allow_videos: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 

@@ -1,5 +1,3 @@
-import { PlanQuotas } from "./plan-quotas";
-
 export type PlanEffectConfigType = "assistant_credits" | "feature_vehicle";
 
 export interface AssistantCreditsEffectConfig {
@@ -45,9 +43,6 @@ export interface PrimitiveSubscriptionPlan {
   stripe_product_id?: string | null;
   is_active: boolean;
   is_featured: boolean;
-  is_custom: boolean;
-  target_dealership_id?: string | null;
-  quotas: PlanQuotas;
   sort_order: number;
   effect_config?: PlanEffectConfig;
   prices?: PrimitivePlanPrice[];
