@@ -4,10 +4,12 @@ import { Request } from "express";
 import { UserService } from "../../users/services/user.service";
 import { LoginDto } from "../dto/login.dto";
 import { SignInResult } from "../types/auth.types";
+import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthService } from "./auth.service";
 import { PasswordService } from "./password.service";
 import { SuspensionService } from "../../users/services/suspension.service";
 import { authResponseConfig } from "../response.config";
+import { normalizeUserAgent } from "../utils/normalize-user-agent";
 
 @Injectable()
 export class AdminLoginService {
@@ -16,6 +18,7 @@ export class AdminLoginService {
     private readonly passwordService: PasswordService,
     private readonly suspensionService: SuspensionService,
     private readonly authService: AuthService,
+    private readonly authSecurityMailService: AuthSecurityMailService,
   ) { }
 
   async signIn({
@@ -57,6 +60,9 @@ export class AdminLoginService {
 
     await this.suspensionService.assert_session_allowed_by_id(user.id);
 
+    const previous_last_sign_in = user.last_sign_in;
+    const notify_new_login = previous_last_sign_in != null;
+
     const { session_id, refresh_token, refresh_token_hash } = await this.authService.createSession(
       user,
       request,
@@ -67,7 +73,23 @@ export class AdminLoginService {
     });
 
     const type = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.authService.createToken({ user, session_id, refresh_token_hash });
+    const token = this.authService.createToken({
+      user,
+      session_id,
+      refresh_token_hash,
+      notify_new_login: type === "2fa_challenge" ? notify_new_login : undefined,
+    });
+
+    if (type === "session" && notify_new_login) {
+      this.authSecurityMailService.enqueueNewLogin({
+        to: user.email,
+        ip_address: request.ip ?? null,
+        user_agent: normalizeUserAgent(
+          request.headers["user-agent"] as string | undefined,
+        ),
+        audience: "admin",
+      });
+    }
 
     return { type, token, refresh_token };
   }

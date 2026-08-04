@@ -26,6 +26,10 @@ import {
   OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
+  OUTBOUND_MAIL_JOB_USER_WELCOME,
+  OUTBOUND_MAIL_JOB_NEW_LOGIN,
+  OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
+  OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
   OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED,
   OUTBOUND_MAIL_JOB_VEHICLE_APPROVED,
   OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED,
@@ -57,6 +61,10 @@ import {
   OutboundMailListingLimitReachedJobData,
   OutboundMailFeaturedPurchasedJobData,
   OutboundMailFeaturedExpiredJobData,
+  OutboundMailUserWelcomeJobData,
+  OutboundMailNewLoginJobData,
+  OutboundMailPasswordChangedJobData,
+  OutboundMailAccountDeletedJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./outbound-mail.queue.constants";
@@ -190,6 +198,30 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_FEATURED_EXPIRED) {
       const data = job.data as OutboundMailFeaturedExpiredJobData;
       await this.mail_service.sendFeaturedExpiredEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_USER_WELCOME) {
+      const data = job.data as OutboundMailUserWelcomeJobData;
+      await this.mail_service.sendUserWelcomeEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_NEW_LOGIN) {
+      const data = job.data as OutboundMailNewLoginJobData;
+      await this.mail_service.sendNewLoginEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_PASSWORD_CHANGED) {
+      const data = job.data as OutboundMailPasswordChangedJobData;
+      await this.mail_service.sendPasswordChangedEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_ACCOUNT_DELETED) {
+      const data = job.data as OutboundMailAccountDeletedJobData;
+      await this.mail_service.sendAccountDeletedEmail(data);
       return;
     }
 

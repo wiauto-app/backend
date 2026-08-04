@@ -8,6 +8,7 @@ import { PasswordService } from "@/contexts/auth/services/password.service";
 import { ProfileService } from "@/contexts/profiles/services/profile.service";
 import { TypeOrmProfileRepository } from "@/contexts/profiles/repositories/typeorm.profile-repository";
 import { EmailVerificationService } from "@/contexts/auth/services/email-verification.service";
+import { AuthSecurityMailService } from "@/contexts/auth/services/auth-security-mail.service";
 import { User } from "@/contexts/users/entities/user.entity";
 import { VehicleEntity } from "@/contexts/vehicles/entities/vehicle.entity";
 import { authResponseConfig } from "@/contexts/auth/response.config";
@@ -21,6 +22,7 @@ describe("UserService.findOrCreateOAuthUser (multiprovider)", () => {
   let profileRepository: Mock<TypeOrmProfileRepository>;
   let userAuthProviderService: Mock<UserAuthProviderService>;
   let emailVerificationService: Mock<EmailVerificationService>;
+  let authSecurityMailService: Mock<AuthSecurityMailService>;
 
   const localUser = {
     id: "user-1",
@@ -38,6 +40,7 @@ describe("UserService.findOrCreateOAuthUser (multiprovider)", () => {
     profileRepository = createMock<TypeOrmProfileRepository>();
     userAuthProviderService = createMock<UserAuthProviderService>();
     emailVerificationService = createMock<EmailVerificationService>();
+    authSecurityMailService = createMock<AuthSecurityMailService>();
 
     userService = new UserService(
       userRepository,
@@ -47,6 +50,7 @@ describe("UserService.findOrCreateOAuthUser (multiprovider)", () => {
       profileRepository,
       userAuthProviderService,
       emailVerificationService,
+      authSecurityMailService,
     );
   });
 
@@ -164,5 +168,50 @@ describe("UserService.findOrCreateOAuthUser (multiprovider)", () => {
         role_id: "role-1",
       }),
     ).rejects.toThrow(authResponseConfig.messages.OAUTH_EMAIL_REQUIRED);
+  });
+
+  it("enqueues welcome mail only when creating a new OAuth user", async () => {
+    const created = {
+      id: "user-new",
+      email: "nueva@example.com",
+      password: null,
+      is_email_verified: true,
+    } as User;
+
+    userAuthProviderService.findByProvider.mockResolvedValue(null);
+    userRepository.findOne.mockResolvedValue(null);
+    userRepository.create.mockReturnValue(created);
+    userRepository.save.mockResolvedValue(created);
+    profileService.createProfile.mockResolvedValue({} as any);
+    userAuthProviderService.linkProvider.mockResolvedValue({} as any);
+
+    await userService.findOrCreateOAuthUser({
+      provider: "google",
+      provider_id: "google-new",
+      email: created.email,
+      first_name: "Nueva",
+      role_id: "role-1",
+    });
+
+    expect(authSecurityMailService.enqueueUserWelcome).toHaveBeenCalledWith({
+      to: created.email,
+      name: "Nueva",
+    });
+  });
+
+  it("does not enqueue welcome when linking OAuth to an existing user", async () => {
+    userAuthProviderService.findByProvider.mockResolvedValue(null);
+    userRepository.findOne.mockResolvedValue(localUser);
+    userAuthProviderService.linkProvider.mockResolvedValue({} as any);
+
+    await userService.findOrCreateOAuthUser({
+      provider: "google",
+      provider_id: "google-123",
+      email: localUser.email,
+      first_name: "Ada",
+      role_id: "role-1",
+    });
+
+    expect(authSecurityMailService.enqueueUserWelcome).not.toHaveBeenCalled();
   });
 });

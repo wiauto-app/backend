@@ -7,6 +7,8 @@ export interface SessionPayload {
   session_id: string;
   refreshToken_hash: string;
   scope: "2fa_challenge" | "session";
+  /** Solo en reto 2FA: avisar de nuevo inicio tras verificar si hubo last_sign_in previo. */
+  notify_new_login?: boolean;
 }
 
 

@@ -24,6 +24,10 @@ import {
   OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
+  OUTBOUND_MAIL_JOB_USER_WELCOME,
+  OUTBOUND_MAIL_JOB_NEW_LOGIN,
+  OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
+  OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
   OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED,
   OUTBOUND_MAIL_JOB_VEHICLE_APPROVED,
   OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED,
@@ -55,6 +59,10 @@ import {
   OutboundMailListingLimitReachedJobData,
   OutboundMailFeaturedPurchasedJobData,
   OutboundMailFeaturedExpiredJobData,
+  OutboundMailUserWelcomeJobData,
+  OutboundMailNewLoginJobData,
+  OutboundMailPasswordChangedJobData,
+  OutboundMailAccountDeletedJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./queues/outbound-mail.queue.constants";
@@ -184,6 +192,28 @@ export class OutboundMailEnqueueService {
     data: OutboundMailFeaturedExpiredJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_FEATURED_EXPIRED, data);
+  }
+
+  async enqueue_user_welcome(
+    data: OutboundMailUserWelcomeJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_USER_WELCOME, data);
+  }
+
+  async enqueue_new_login(data: OutboundMailNewLoginJobData): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_NEW_LOGIN, data);
+  }
+
+  async enqueue_password_changed(
+    data: OutboundMailPasswordChangedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_PASSWORD_CHANGED, data);
+  }
+
+  async enqueue_account_deleted(
+    data: OutboundMailAccountDeletedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_ACCOUNT_DELETED, data);
   }
 
   /** @deprecated Preferir enqueue_vehicle_* temáticos. */

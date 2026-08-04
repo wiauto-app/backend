@@ -1,6 +1,6 @@
 # Inventario de correos WiAuto
 
-Estado al **2026-08-02**, según código en `wiauto-backend` (`mail-template.renderer`, cola `outbound-mail`, servicios que encolan). Actualizado tras PRO Premium (cuotas, planes custom y correos de billing).
+Estado al **2026-08-04**, según código en `wiauto-backend` (`mail-template.renderer`, cola `outbound-mail`, servicios que encolan). Actualizado tras correos de bienvenida y seguridad (auth).
 
 **Leyenda**
 
@@ -24,7 +24,7 @@ Estado al **2026-08-02**, según código en `wiauto-backend` (`mail-template.ren
 
 ## Particulares
 
-- [ ] Bienvenida (Automático)
+- [x] Bienvenida (Automático) — `user_welcome` (verificación email primera vez + OAuth nuevo)
 - [x] Verificación del correo (Automático) — `sendEmailVerification`
 - [x] Vehículo publicado (Automático) — al crear anuncio
 - [x] Vehículo aprobado (Automático) — status → `active`
@@ -66,10 +66,10 @@ Estado al **2026-08-02**, según código en `wiauto-backend` (`mail-template.ren
 
 - [x] Confirmación de registro (Automático) — mismo flujo que verificación de correo
 - [x] Recuperación de contraseña (Automático) — `password_recovery`
-- [ ] Cambio de contraseña (Automático)
+- [x] Cambio de contraseña (Automático) — `password_changed` (`updatePassword` / `resetPassword`)
 - [ ] Cambio de correo (Automático)
-- [ ] Nuevo inicio de sesión (Automático)
-- [ ] Eliminación de cuenta (Automático)
+- [x] Nuevo inicio de sesión (Automático) — `new_login` (plataforma, admin y tras 2FA)
+- [x] Eliminación de cuenta (Automático) — `account_deleted` (`UserService.remove` / `AdminUserService.delete`)
 
 ---
 
@@ -80,8 +80,8 @@ Estado al **2026-08-02**, según código en `wiauto-backend` (`mail-template.ren
 | Total de correos (catálogo) | 39       |
 | Automáticos (catálogo)      | 33       |
 | Manuales (catálogo)         | 6        |
-| **Listos (`[x]`)**          | **20**   |
-| **Pendientes (`[ ]`)**      | **19**   |
+| **Listos (`[x]`)**          | **24**   |
+| **Pendientes (`[ ]`)**      | **15**   |
 
 ### También cableados (fuera del catálogo / apoyo)
 

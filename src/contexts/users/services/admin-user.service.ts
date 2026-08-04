@@ -5,6 +5,7 @@ import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ConflictException, NotFoundException } from "@nestjs/common";
 import { PasswordService } from "../../auth/services/password.service";
+import { AuthSecurityMailService } from "../../auth/services/auth-security-mail.service";
 import { AdminUpdateUserDto } from "../dto/admin/update-user.dto";
 import { ProfileEntity } from "../../profiles/entities/profile.entity";
 
@@ -14,6 +15,7 @@ export class AdminUserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly passwordService: PasswordService,
+    private readonly authSecurityMailService: AuthSecurityMailService,
   ) { }
 
   async create(createUserDto: AdminCreateUserDto): Promise<User> {
@@ -145,6 +147,8 @@ export class AdminUserService {
     if (!user) {
       throw new NotFoundException("Usuario no encontrado")
     }
+    const email = user.email;
     await this.userRepository.delete(id)
+    this.authSecurityMailService.enqueueAccountDeleted({ to: email });
   }
 }

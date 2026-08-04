@@ -23,6 +23,7 @@ import { GetUserByEmailDto } from "../dto/get-user-by-email.dto";
 import { ProfileService } from "../../profiles/services/profile.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
 import { EmailVerificationService } from "../../auth/services/email-verification.service";
+import { AuthSecurityMailService } from "../../auth/services/auth-security-mail.service";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { UserAuthProviderService } from "./user-auth-provider.service";
 import { authResponseConfig } from "../../auth/response.config";
@@ -51,6 +52,7 @@ export class UserService {
     private readonly userAuthProviderService: UserAuthProviderService,
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
+    private readonly authSecurityMailService: AuthSecurityMailService,
   ) { }
 
   async create(registerUserDto: RegisterUserDto): Promise<ApiResponse<User>> {
@@ -145,6 +147,10 @@ export class UserService {
       profile.provider,
       profile.provider_id,
     );
+    this.authSecurityMailService.enqueueUserWelcome({
+      to: saved.email,
+      name: profile.first_name,
+    });
     saved.password = null;
     return saved;
   }
@@ -193,6 +199,11 @@ export class UserService {
   }
 
   async remove(id: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException("No se encontró el usuario");
+    }
+
     const vehicle_count = await this.vehicleRepository.count({
       where: { profile: { id } },
     });
@@ -201,10 +212,13 @@ export class UserService {
         "No se puede eliminar el usuario: tiene anuncios de vehículos asociados.",
       );
     }
+
     const result = await this.userRepository.delete(id);
     if (!result.affected) {
       throw new NotFoundException("No se encontró el usuario");
     }
+
+    this.authSecurityMailService.enqueueAccountDeleted({ to: user.email });
   }
 
   async findOne(id: string, selectPrivateFields = false): Promise<User> {
@@ -304,6 +318,7 @@ export class UserService {
       throw new NotFoundException("No se ha encontrado el usuario");
     }
     await this.userRepository.save(updated);
+    this.authSecurityMailService.enqueuePasswordChanged({ to: user.email });
   }
 
   async updatePassword(updatePasswordDto: UpdatePasswordDto, id: string): Promise<ApiResponse<null>> {
@@ -343,6 +358,7 @@ export class UserService {
       throw new NotFoundException("No se ha encontrado el usuario");
     }
     await this.userRepository.save(updated);
+    this.authSecurityMailService.enqueuePasswordChanged({ to: user.email });
 
     return {
       message: "Contraseña actualizada correctamente",

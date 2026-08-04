@@ -43,6 +43,7 @@ import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
 import { AuthSessionService } from "./services/auth-session.service";
+import { AuthSecurityMailService } from "./services/auth-security-mail.service";
 import { ProfileEntity } from "../profiles/entities/profile.entity";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 
@@ -56,6 +57,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
   providers: [
     AuthService,
     AuthSessionService,
+    AuthSecurityMailService,
     PasswordService,
     GoogleTokenService,
     AppleTokenService,
@@ -104,6 +106,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     OptionalJwtGuard,
     GoogleAuthGuard,
     AuthService,
+    AuthSecurityMailService,
     EmailVerificationService /*, AppleAuthGuard*/,
   ],
 })

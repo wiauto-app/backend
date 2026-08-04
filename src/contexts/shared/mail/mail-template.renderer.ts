@@ -137,6 +137,137 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderUserWelcome(payload: { name?: string; home_url: string }): string {
+    const greeting = payload.name
+      ? `Hola ${this.escapeHtml(payload.name)},`
+      : "Hola,";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${greeting}
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Tu cuenta en WiAuto ya está lista. Explora vehículos, publica anuncios y gestiona tu perfil cuando quieras.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Tu cuenta en WiAuto ya está activa.",
+      title: "Bienvenido a WiAuto",
+      body,
+      cta_label: "Ir a WiAuto",
+      cta_href: payload.home_url,
+      footer_note: "Gracias por unirte a WiAuto.",
+    });
+  }
+
+  renderNewLogin(payload: {
+    ip_address?: string | null;
+    user_agent?: string | null;
+    occurred_at: string;
+    audience: "platform" | "admin";
+    account_url: string;
+    recovery_url: string;
+  }): string {
+    const context_label =
+      payload.audience === "admin"
+        ? "el panel de administración de WiAuto"
+        : "tu cuenta de WiAuto";
+    const escaped_occurred_at = this.escapeHtml(
+      new Date(payload.occurred_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+    const ip_row = payload.ip_address
+      ? this.buildInfoRow("Dirección IP", this.escapeHtml(payload.ip_address))
+      : "";
+    const ua_row = payload.user_agent
+      ? this.buildInfoRow("Dispositivo / navegador", this.escapeHtml(payload.user_agent), true)
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Detectamos un nuevo inicio de sesión en ${context_label}.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 20px;">
+        ${this.buildInfoRow("Fecha y hora", escaped_occurred_at)}
+        ${ip_row}
+        ${ua_row || this.buildInfoRow("Dispositivo / navegador", "No disponible", true)}
+      </table>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Si no fuiste tú, cambia tu contraseña de inmediato.
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Nuevo inicio de sesión en ${context_label}.`,
+      title: "Nuevo inicio de sesión",
+      body,
+      cta_label: "Restablecer contraseña",
+      cta_href: payload.recovery_url,
+      footer_note: `Si reconoces esta actividad, no hace falta que hagas nada. También puedes iniciar sesión en <a href="${payload.account_url}" style="color:#2563eb;text-decoration:underline;">WiAuto</a>.`,
+    });
+  }
+
+  renderPasswordChanged(payload: {
+    occurred_at: string;
+    recovery_url: string;
+  }): string {
+    const escaped_occurred_at = this.escapeHtml(
+      new Date(payload.occurred_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        La contraseña de tu cuenta de WiAuto se actualizó correctamente.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 20px;">
+        ${this.buildInfoRow("Fecha y hora", escaped_occurred_at, true)}
+      </table>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Si no realizaste este cambio, restablece tu contraseña cuanto antes.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Tu contraseña de WiAuto se ha actualizado.",
+      title: "Contraseña actualizada",
+      body,
+      cta_label: "Restablecer contraseña",
+      cta_href: payload.recovery_url,
+      footer_note: "Si fuiste tú, puedes ignorar este mensaje.",
+    });
+  }
+
+  renderAccountDeleted(payload: {
+    occurred_at: string;
+    home_url: string;
+  }): string {
+    const escaped_occurred_at = this.escapeHtml(
+      new Date(payload.occurred_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Confirmamos que tu cuenta de WiAuto ha sido eliminada.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 20px;">
+        ${this.buildInfoRow("Fecha y hora", escaped_occurred_at, true)}
+      </table>
+      <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Ya no podrás iniciar sesión con este correo. Si crees que se trata de un error, contacta con soporte.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Tu cuenta de WiAuto ha sido eliminada.",
+      title: "Cuenta eliminada",
+      body,
+      cta_label: "Visitar WiAuto",
+      cta_href: payload.home_url,
+      footer_note: "Gracias por haber formado parte de WiAuto.",
+    });
+  }
+
   renderLeadNotification(payload: {
     vehicle_title: string;
     vehicle?: MailVehicleCardPayload | null;

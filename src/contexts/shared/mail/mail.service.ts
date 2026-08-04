@@ -50,6 +50,113 @@ export class MailService {
     }
   }
 
+  async sendUserWelcomeEmail(payload: {
+    to: string;
+    name?: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderUserWelcome({
+      name: payload.name,
+      home_url: getFrontendUrl("HOME"),
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Bienvenido a WiAuto",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de bienvenida a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendNewLoginEmail(payload: {
+    to: string;
+    ip_address?: string | null;
+    user_agent?: string | null;
+    occurred_at: string;
+    audience: "platform" | "admin";
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderNewLogin({
+      ip_address: payload.ip_address,
+      user_agent: payload.user_agent,
+      occurred_at: payload.occurred_at,
+      audience: payload.audience,
+      account_url: getFrontendUrl("SIGNIN"),
+      recovery_url: getFrontendUrl("RESET_PASSWORD"),
+    });
+    const subject =
+      payload.audience === "admin"
+        ? "Nuevo inicio de sesión en el panel de administración"
+        : "Nuevo inicio de sesión en tu cuenta";
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de nuevo inicio de sesión a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendPasswordChangedEmail(payload: {
+    to: string;
+    occurred_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderPasswordChanged({
+      occurred_at: payload.occurred_at,
+      recovery_url: getFrontendUrl("RESET_PASSWORD"),
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Tu contraseña se ha actualizado",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de cambio de contraseña a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
+  async sendAccountDeletedEmail(payload: {
+    to: string;
+    occurred_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderAccountDeleted({
+      occurred_at: payload.occurred_at,
+      home_url: getFrontendUrl("HOME"),
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Tu cuenta de WiAuto ha sido eliminada",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de eliminación de cuenta a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendDealershipTeamJoinedEmail(payload: {
     to: string;
     role: string;

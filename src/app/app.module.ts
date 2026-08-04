@@ -40,6 +40,7 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
 import { FinancingModule } from "../contexts/financing/financing.module";
 import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests/appraisal-requests.module";
 import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboard.module";
+import { WebhookModule } from "../contexts/strapi/webhook.module";
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboar
     FinancingModule,
     AppraisalRequestsModule,
     AdminDashboardModule,
+    WebhookModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

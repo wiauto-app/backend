@@ -282,3 +282,36 @@ export interface OutboundMailFeaturedExpiredJobData {
   vehicle_title: string;
   vehicle_edit_url: string;
 }
+
+export const OUTBOUND_MAIL_JOB_USER_WELCOME = "user_welcome";
+
+export interface OutboundMailUserWelcomeJobData {
+  to: string;
+  name?: string;
+}
+
+export type OutboundMailNewLoginAudience = "platform" | "admin";
+
+export const OUTBOUND_MAIL_JOB_NEW_LOGIN = "new_login";
+
+export interface OutboundMailNewLoginJobData {
+  to: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  occurred_at: string;
+  audience: OutboundMailNewLoginAudience;
+}
+
+export const OUTBOUND_MAIL_JOB_PASSWORD_CHANGED = "password_changed";
+
+export interface OutboundMailPasswordChangedJobData {
+  to: string;
+  occurred_at: string;
+}
+
+export const OUTBOUND_MAIL_JOB_ACCOUNT_DELETED = "account_deleted";
+
+export interface OutboundMailAccountDeletedJobData {
+  to: string;
+  occurred_at: string;
+}

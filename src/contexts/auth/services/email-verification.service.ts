@@ -17,6 +17,7 @@ import {
 } from "../queues/email-verification.queue.constants";
 import { authResponseConfig } from "../response.config";
 import { SignInResult } from "../types/auth.types";
+import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthSessionService } from "./auth-session.service";
 
 export interface EmailVerificationTokenPayload {
@@ -37,6 +38,7 @@ export class EmailVerificationService {
     private readonly userMailService: UserMailService,
     private readonly jwtService: JwtService,
     private readonly authSessionService: AuthSessionService,
+    private readonly authSecurityMailService: AuthSecurityMailService,
     @InjectQueue(EMAIL_VERIFICATION_QUEUE)
     private readonly emailVerificationQueue: Queue<EmailVerificationJobData>,
   ) { }
@@ -98,7 +100,10 @@ export class EmailVerificationService {
 
   async confirm(token: string, request: Request): Promise<EmailVerificationConfirmResult> {
     const payload = this.verifyToken(token);
-    const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      relations: ["profile"],
+    });
 
     if (!user || user.email !== payload.email) {
       throw new UnauthorizedException(
@@ -122,6 +127,10 @@ export class EmailVerificationService {
       await this.userRepository.save(updated);
       user.is_email_verified = true;
       message = authResponseConfig.messages.EMAIL_VERIFIED;
+      this.authSecurityMailService.enqueueUserWelcome({
+        to: user.email,
+        name: user.profile?.name,
+      });
     }
 
     const session: SignInResult = await this.authSessionService.establishSessionForUser(

@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Patch, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Req, UseGuards } from "@nestjs/common";
 import { Request } from "express";
 
+import { GetSessionId } from "../decorators/GetSessionId.decorator";
 import { GetUser } from "../decorators/GetUser.decorator";
 import { GetUserId } from "../decorators/GetUserId.decorator";
 import { MeUpdateEmailHttpDto } from "../dto/me-update-email.http-dto";
@@ -62,5 +63,14 @@ export class MeController {
       },
       user_id,
     );
+  }
+
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  deleteAccount(
+    @GetUserId() user_id: string,
+    @GetSessionId() session_id: string,
+  ) {
+    return this.me_service.deleteAccount(user_id, session_id);
   }
 }

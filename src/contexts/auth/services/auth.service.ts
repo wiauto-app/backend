@@ -89,11 +89,13 @@ export class AuthService {
     session_id,
     refresh_token_hash,
     scope,
+    notify_new_login,
   }: {
     user: User;
     session_id: string;
     refresh_token_hash: string;
     scope?: SessionPayload["scope"];
+    notify_new_login?: boolean;
   }) {
     const payload: SessionPayload = {
       id: user.id,
@@ -102,6 +104,7 @@ export class AuthService {
       refreshToken_hash: refresh_token_hash,
       scope:
         scope ?? (user.two_factor_enabled ? "2fa_challenge" : "session"),
+      ...(notify_new_login !== undefined ? { notify_new_login } : {}),
     };
     return this.jwtService.sign(payload, {
       expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any,

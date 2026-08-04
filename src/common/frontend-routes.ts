@@ -1,5 +1,12 @@
 import { envs } from "./envs";
 
+/**
+ * Logo de marca en todos los correos (header de `base-email.html` vía `LOGO_URL`).
+ * CDN público; no depende del FRONTEND_URL local.
+ */
+export const MAIL_BRAND_LOGO_URL =
+  "https://media.wiauto.es/wiauto-strapi/Group_1000002680_3c2f7d7cfb.avif";
+
 export const FRONTEND_ROUTES = {
   HOME: "/",
   TEAM: "/equipo",
@@ -71,7 +78,7 @@ export const getMailBrandLogoUrl = (): string => {
   if (override) {
     return override;
   }
-  return getFrontendPath("/branding/icon-logo.png");
+  return MAIL_BRAND_LOGO_URL;
 };
 
 export const getMailSocialIconUrl = (
