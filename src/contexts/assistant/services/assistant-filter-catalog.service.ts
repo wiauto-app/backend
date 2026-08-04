@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ONE_HOUR } from "@/src/common/envs";
 import { VehicleTypesService } from "@/src/contexts/vehicles/services/vehicle-types.service";
+import { CategoriesService } from "@/src/contexts/vehicles/services/categories.service";
 import { ServicesService } from "@/src/contexts/vehicles/services/services.service";
 import { CuotasService } from "@/src/contexts/vehicles/services/cuotas.service";
 import { TractionsService } from "@/src/contexts/vehicles/services/tractions.service";
@@ -29,6 +30,7 @@ export class AssistantFilterCatalogService {
 
   constructor(
     private readonly vehicleTypesService: VehicleTypesService,
+    private readonly categoriesService: CategoriesService,
     private readonly servicesService: ServicesService,
     private readonly cuotasService: CuotasService,
     private readonly tractionsService: TractionsService,
@@ -61,6 +63,7 @@ export class AssistantFilterCatalogService {
   async loadFullCatalog(): Promise<AssistantFilterCatalog> {
     const [
       vehicleTypes,
+      categories,
       colors,
       features,
       services,
@@ -71,6 +74,7 @@ export class AssistantFilterCatalogService {
       fuels,
     ] = await Promise.all([
       this.loadVehicleTypes(),
+      this.loadCategories(),
       this.loadColors(),
       this.loadFeatures(),
       this.loadServices(),
@@ -83,6 +87,7 @@ export class AssistantFilterCatalogService {
 
     return {
       vehicleTypes,
+      categories,
       colors,
       features,
       services,
@@ -98,6 +103,21 @@ export class AssistantFilterCatalogService {
     const rows = await fetchAllPages(
       (page, limit) =>
         this.vehicleTypesService.findAll(buildCatalogPageQuery(page, limit)),
+      CATALOG_PAGE_LIMIT,
+    );
+
+    return rows.map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      name: item.name,
+      image_url: item.image_url ?? null,
+    }));
+  }
+
+  private async loadCategories() {
+    const rows = await fetchAllPages(
+      (page, limit) =>
+        this.categoriesService.findAll(buildCatalogPageQuery(page, limit)),
       CATALOG_PAGE_LIMIT,
     );
 

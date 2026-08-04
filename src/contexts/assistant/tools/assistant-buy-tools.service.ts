@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import type { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
+import type { AssistantFilterCatalog } from "../types/assistant-filter-catalog";
 import { AssistantFilterCatalogService } from "../services/assistant-filter-catalog.service";
 import { AssistantSearchExecutorService } from "../services/assistant-search-executor.service";
 import { createAskClarifyingQuestionsTool } from "./ask-clarifying-questions.tool";
@@ -12,6 +13,7 @@ import { createPrepareNegotiationTool } from "./prepare-negotiation.tool";
 
 interface CreateBuyAssistantToolsOptions {
   initialFilters?: SearchVehiclesInput;
+  catalog: AssistantFilterCatalog;
 }
 
 @Injectable()
@@ -22,10 +24,14 @@ export class AssistantBuyToolsService {
     private readonly vehicleService: VehicleService,
   ) {}
 
-  createBuyAssistantTools({ initialFilters }: CreateBuyAssistantToolsOptions) {
+  createBuyAssistantTools({
+    initialFilters,
+    catalog,
+  }: CreateBuyAssistantToolsOptions) {
     return {
       askClarifyingQuestions: createAskClarifyingQuestionsTool({
         initialFilters,
+        catalog,
       }),
       searchVehicles: createSearchVehiclesTool({
         initialFilters,

@@ -5,6 +5,13 @@ export interface AssistantFilterCatalogVehicleType {
   image_url?: string | null;
 }
 
+export interface AssistantFilterCatalogCategory {
+  id: string;
+  slug: string;
+  name: string;
+  image_url?: string | null;
+}
+
 export interface AssistantFilterCatalogColor {
   id: string;
   slug: string;
@@ -62,6 +69,7 @@ export interface AssistantFilterCatalogFuel {
 
 export interface AssistantFilterCatalog {
   vehicleTypes: AssistantFilterCatalogVehicleType[];
+  categories: AssistantFilterCatalogCategory[];
   colors: AssistantFilterCatalogColor[];
   features: AssistantFilterCatalogFeature[];
   services: AssistantFilterCatalogService[];

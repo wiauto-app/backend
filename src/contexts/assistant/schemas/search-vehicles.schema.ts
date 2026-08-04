@@ -5,10 +5,20 @@ import {
 } from "@/src/contexts/vehicles/types/vehicle";
 
 export const searchVehiclesInputSchema = z.object({
-  type_slug: z.string().optional(),
+  type_slug: z
+    .string()
+    .optional()
+    .describe(
+      "Slug de TIPO de vehículo (carrocería/forma): p. ej. sedan, suv, familiar. NUNCA uses categorías aquí. Debe coincidir con vehicleTypes del catálogo.",
+    ),
   makes_slugs: z.array(z.string()).optional(),
   models_slugs: z.array(z.string()).optional(),
-  categories_slugs: z.array(z.string()).optional(),
+  categories_slugs: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Slugs de CATEGORÍA comercial del listing (p. ej. ofertas, km0). NO uses tipos de vehículo (sedan/suv) aquí. Debe coincidir con categories del catálogo.",
+    ),
   since_price: z.number().optional(),
   until_price: z.number().optional(),
   price_offer: z.boolean().optional(),

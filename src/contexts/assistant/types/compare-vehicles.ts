@@ -1,5 +1,6 @@
 export interface CompareVehicleSummary {
   id: string;
+  ref: number;
   title: string;
   price: number;
   mileage: number;

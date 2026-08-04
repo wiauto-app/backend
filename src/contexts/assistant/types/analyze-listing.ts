@@ -16,6 +16,7 @@ export interface AnalyzeListingRisk {
 
 export interface AnalyzeListingResult {
   vehicle_id: string;
+  ref: number;
   verdict: AnalyzeListingVerdict;
   checklist: AnalyzeListingChecklistItem[];
   risks: AnalyzeListingRisk[];

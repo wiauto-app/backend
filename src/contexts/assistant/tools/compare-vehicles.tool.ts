@@ -1,18 +1,17 @@
-import { z } from "zod";
 import { tool } from "ai";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import {
   buildAssistantVehicleSummary,
   type AssistantVehicleSummary,
 } from "../helpers/build-assistant-vehicle-summary";
+import {
+  assistantVehicleTargetsSchema,
+  resolveAssistantVehicleIds,
+} from "../helpers/resolve-assistant-vehicle-id";
 import type {
   CompareVehiclesCriterion,
   CompareVehiclesResult,
 } from "../types/compare-vehicles";
-
-const compareVehiclesInputSchema = z.object({
-  vehicle_ids: z.array(z.string().uuid()).min(2).max(4),
-});
 
 interface CreateCompareVehiclesToolOptions {
   vehicleService: VehicleService;
@@ -57,10 +56,12 @@ export const createCompareVehiclesTool = ({
 }: CreateCompareVehiclesToolOptions) =>
   tool({
     description:
-      "Compara de 2 a 4 vehículos concretos por sus UUIDs (precio, km, año, potencia, combustible, transmisión, garantía, DGT, ubicación, etc.). OBLIGATORIA cuando el usuario pide comparar y lista ids. NUNCA uses searchVehicles en su lugar.",
-    inputSchema: compareVehiclesInputSchema,
-    execute: async ({ vehicle_ids }): Promise<CompareVehiclesResult> => {
-      const uniqueIds = [...new Set(vehicle_ids)];
+      "Compara de 2 a 4 vehículos concretos por sus referencias numéricas (vehicle_refs preferido) o UUIDs internos (vehicle_ids legacy): precio, km, año, potencia, combustible, transmisión, garantía, DGT, ubicación, etc. OBLIGATORIA cuando el usuario pide comparar y lista Ref. N. NUNCA uses searchVehicles en su lugar.",
+    inputSchema: assistantVehicleTargetsSchema,
+    execute: async (input): Promise<CompareVehiclesResult> => {
+      const uniqueIds = await resolveAssistantVehicleIds(input, {
+        vehicleService,
+      });
       const vehicles = await Promise.all(
         uniqueIds.map(async (id) => {
           const detail = await vehicleService.findOne({ id });
@@ -73,7 +74,9 @@ export const createCompareVehiclesTool = ({
           if (!onlyIfPresent) {
             return true;
           }
-          return vehicles.some((vehicle) => hasCriterionValue(vehicle[key] as string | number | null));
+          return vehicles.some((vehicle) =>
+            hasCriterionValue(vehicle[key] as string | number | null),
+          );
         },
       ).map(({ key, label }) => ({
         key,
@@ -95,14 +98,15 @@ export const createCompareVehiclesTool = ({
       );
 
       const highlights = [
-        `Más económico: ${cheapest.title} (${cheapest.price} €)`,
-        `Menor kilometraje: ${lowestMileage.title} (${lowestMileage.mileage} km)`,
+        `Más económico: ${cheapest.title} (Ref. ${cheapest.ref}, ${cheapest.price} €)`,
+        `Menor kilometraje: ${lowestMileage.title} (Ref. ${lowestMileage.ref}, ${lowestMileage.mileage} km)`,
         `Rango de precios: ${Math.min(...prices)} – ${Math.max(...prices)} €`,
       ];
 
       return {
         vehicles: vehicles.map((vehicle) => ({
           id: vehicle.id,
+          ref: vehicle.ref,
           title: vehicle.title,
           price: vehicle.price,
           mileage: vehicle.mileage,

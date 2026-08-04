@@ -4,11 +4,11 @@ import { createDeepSeek } from "@ai-sdk/deepseek";
 import { envs } from "@/src/common/envs";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import { buildAssistantVehicleSummary } from "../helpers/build-assistant-vehicle-summary";
+import {
+  assistantVehicleTargetSchema,
+  resolveAssistantVehicleId,
+} from "../helpers/resolve-assistant-vehicle-id";
 import type { AnalyzeListingResult } from "../types/analyze-listing";
-
-const analyzeListingInputSchema = z.object({
-  vehicle_id: z.string().uuid(),
-});
 
 const analyzeListingOutputSchema = z.object({
   verdict: z.enum(["recomendable", "riesgosa"]),
@@ -18,7 +18,7 @@ const analyzeListingOutputSchema = z.object({
         id: z.string(),
         label: z.string(),
         status: z.enum(["ok", "warn", "missing"]),
-        detail: z.string().optional(),
+        detail: z.string().nullable().optional(),
       }),
     )
     .min(3)
@@ -29,7 +29,7 @@ const analyzeListingOutputSchema = z.object({
         id: z.string(),
         label: z.string(),
         severity: z.enum(["low", "medium", "high"]),
-        detail: z.string().optional(),
+        detail: z.string().nullable().optional(),
       }),
     )
     .max(8),
@@ -45,23 +45,30 @@ export const createAnalyzeListingTool = ({
 }: CreateAnalyzeListingToolOptions) =>
   tool({
     description:
-      "Analiza un anuncio concreto por UUID y devuelve veredicto (recomendable/riesgosa), checklist y riesgos. OBLIGATORIA cuando el usuario elige / le gusta un vehículo y pide explicar o analizar el anuncio. NUNCA uses searchVehicles en su lugar.",
-    inputSchema: analyzeListingInputSchema,
-    execute: async ({ vehicle_id }): Promise<AnalyzeListingResult> => {
-      const detail = await vehicleService.findOne({ id: vehicle_id });
-      const summary = buildAssistantVehicleSummary(detail);
+      "Analiza un anuncio concreto por referencia numérica (vehicle_ref preferido) o UUID interno (vehicle_id) y devuelve veredicto (recomendable/riesgosa), checklist y riesgos. OBLIGATORIA cuando el usuario elige / le gusta un vehículo y pide explicar o analizar el anuncio. Usa Ref. N del listado (vehicle_ref). NUNCA uses searchVehicles en su lugar.",
+    inputSchema: assistantVehicleTargetSchema,
+    execute: async (
+      input,
+    ): Promise<AnalyzeListingResult | { error: string }> => {
+      try {
+        const vehicle_id = await resolveAssistantVehicleId(input, {
+          vehicleService,
+        });
+        const detail = await vehicleService.findOne({ id: vehicle_id });
+        const summary = buildAssistantVehicleSummary(detail);
 
-      const deepseek = createDeepSeek({
-        apiKey: envs.DEEPSEEK_API_KEY,
-      });
+        const deepseek = createDeepSeek({
+          apiKey: envs.DEEPSEEK_API_KEY,
+        });
 
-      const { output } = await generateText({
-        model: deepseek(envs.DEEPSEEK_MODEL),
-        output: Output.object({
-          schema: analyzeListingOutputSchema,
-        }),
-        prompt: `Eres un analista de anuncios de coches usados en España para WiAuto.
+        const { output } = await generateText({
+          model: deepseek(envs.DEEPSEEK_MODEL),
+          output: Output.object({
+            schema: analyzeListingOutputSchema,
+          }),
+          prompt: `Eres un analista de anuncios de coches usados en España para WiAuto.
 Evalúa el anuncio con datos reales (no inventes campos ausentes). Sé prudente pero práctico.
+Devuelve SOLO un objeto JSON válido según el schema.
 
 Datos del anuncio (JSON):
 ${JSON.stringify(
@@ -80,13 +87,37 @@ ${JSON.stringify(
 Devuelve:
 - verdict: "recomendable" o "riesgosa"
 - checklist: puntos a revisar (fotos, precio vs mercado aparente, km/año, garantía, contacto, descripción)
-- risks: riesgos concretos si los hay
+- risks: riesgos concretos si los hay (puede ser array vacío)
 - summary: 2–3 frases en español neutro`,
-      });
+        });
 
-      return {
-        vehicle_id,
-        ...output,
-      };
+        if (!output) {
+          return {
+            error:
+              "No se pudo generar el análisis estructurado del anuncio. Inténtalo de nuevo.",
+          };
+        }
+
+        return {
+          vehicle_id,
+          ref: summary.ref,
+          verdict: output.verdict,
+          checklist: output.checklist.map((item) => ({
+            ...item,
+            detail: item.detail ?? undefined,
+          })),
+          risks: output.risks.map((item) => ({
+            ...item,
+            detail: item.detail ?? undefined,
+          })),
+          summary: output.summary,
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Error al analizar el anuncio";
+        return { error: message };
+      }
     },
   });

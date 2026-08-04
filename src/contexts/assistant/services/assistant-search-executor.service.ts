@@ -95,6 +95,12 @@ export const validateSearchVehiclesFilters = (
     }
   }
 
+  validateSlugArray(
+    filters.categories_slugs,
+    new Set(catalog.categories.map((item) => item.slug)),
+    "categoría",
+  );
+
   validateResolvedSlugs(filters.makes_slugs, resolved.make_slug, "marca");
   validateResolvedSlugs(filters.models_slugs, resolved.model_slug, "modelo");
   validateSlugArray(

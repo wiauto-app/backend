@@ -4,12 +4,19 @@ import { createDeepSeek } from "@ai-sdk/deepseek";
 import { envs } from "@/src/common/envs";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import { buildAssistantVehicleSummary } from "../helpers/build-assistant-vehicle-summary";
+import { resolveAssistantVehicleId } from "../helpers/resolve-assistant-vehicle-id";
 import type { PrepareNegotiationResult } from "../types/prepare-negotiation";
 
-const prepareNegotiationInputSchema = z.object({
-  vehicle_id: z.string().uuid(),
-  user_budget: z.number().positive().optional(),
-});
+const prepareNegotiationInputSchema = z
+  .object({
+    vehicle_ref: z.number().int().positive().optional(),
+    vehicle_id: z.string().uuid().optional(),
+    user_budget: z.number().positive().optional(),
+  })
+  .refine(
+    (data) => data.vehicle_ref != null || Boolean(data.vehicle_id),
+    { message: "Se requiere vehicle_ref o vehicle_id" },
+  );
 
 const prepareNegotiationOutputSchema = z.object({
   talking_points: z.array(z.string()).min(2).max(8),
@@ -32,12 +39,17 @@ export const createPrepareNegotiationTool = ({
 }: CreatePrepareNegotiationToolOptions) =>
   tool({
     description:
-      "OBLIGATORIA cuando el usuario pide negociar / preparar oferta / argumentos de precio sobre un anuncio concreto. Prepara talking points, rango de oferta orientativo y advertencias. Requiere vehicle_id (UUID; usa el del anuncio en contexto si no lo repite). NUNCA uses searchVehicles ni inventes otros nombres de tool.",
+      "OBLIGATORIA cuando el usuario pide negociar / preparar oferta / argumentos de precio sobre un anuncio concreto. Prepara talking points, rango de oferta orientativo y advertencias. Prefiere vehicle_ref (Ref. N); vehicle_id UUID solo como fallback. NUNCA uses searchVehicles ni inventes otros nombres de tool.",
     inputSchema: prepareNegotiationInputSchema,
     execute: async ({
-      vehicle_id,
+      vehicle_ref,
+      vehicle_id: inputVehicleId,
       user_budget,
     }): Promise<PrepareNegotiationResult> => {
+      const vehicle_id = await resolveAssistantVehicleId(
+        { vehicle_ref, vehicle_id: inputVehicleId },
+        { vehicleService },
+      );
       const detail = await vehicleService.findOne({ id: vehicle_id });
       const summary = buildAssistantVehicleSummary(detail);
 
@@ -66,6 +78,7 @@ Devuelve:
 
       return {
         vehicle_id,
+        ref: summary.ref,
         ...output,
       };
     },

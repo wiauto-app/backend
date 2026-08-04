@@ -22,7 +22,7 @@ export const createSearchVehiclesTool = ({
 }: CreateSearchVehiclesToolOptions) =>
   tool({
     description:
-      "Busca o refina vehículos activos en WiAuto con filtros estructurados. Combina los filtros iniciales del listing. Úsala SOLO para búsquedas nuevas, refinamientos, respuestas a clarificaciones o cuando el usuario pide otras opciones / ninguno le convence. NO la uses para comparar UUIDs concretos, analizar un anuncio ya elegido, contactar al vendedor (usa prepareSellerContact) ni negociar (usa prepareNegotiation).",
+      "Busca o refina vehículos activos en WiAuto con filtros estructurados. Combina los filtros iniciales del listing. Úsala SOLO para búsquedas nuevas, refinamientos, respuestas a clarificaciones o cuando el usuario pide otras opciones / ninguno le convence. NO la uses para comparar referencias (Ref. N) concretas, analizar un anuncio ya elegido, contactar al vendedor (usa prepareSellerContact) ni negociar (usa prepareNegotiation).",
     inputSchema: searchVehiclesInputSchema,
     execute: async (input): Promise<SearchVehiclesResult | { error: string }> => {
       const filters = mergeSearchVehiclesInput(initialFilters, input);

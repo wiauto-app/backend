@@ -2,6 +2,7 @@ import type { VehicleDetail } from "@/src/contexts/vehicles/types/vehicle-detail
 
 export interface AssistantVehicleSummary {
   id: string;
+  ref: number;
   title: string;
   price: number;
   mileage: number;
@@ -74,6 +75,7 @@ export const buildAssistantVehicleSummary = (
 
   return {
     id: vehicle.id,
+    ref: vehicle.ref,
     title,
     price: vehicle.price,
     mileage: vehicle.mileage,

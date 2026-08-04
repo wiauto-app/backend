@@ -172,7 +172,7 @@ export class VehicleEntity {
   // --- Catálogo: tracción y etiquetas ---
   @ManyToOne(() => TractionEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "traction_id" })
-  traction: Relation<TractionEntity>;
+  traction: Relation<TractionEntity | null>;
 
   @ManyToOne(() => VehicleTypeEntity, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "vehicle_type_id" })

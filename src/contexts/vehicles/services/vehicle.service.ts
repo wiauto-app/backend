@@ -37,6 +37,7 @@ import {
   vehicleDetailToPrimitives,
   VehicleDetail,
 } from "../types/vehicle-detail";
+import type { SellerContactFields } from "../types/seller-contact-fields";
 import { OwnerVehicleListItem } from "../types/owner-vehicle-list-item";
 import {
   AdminVehicleListItem,
@@ -257,6 +258,14 @@ export class VehicleService {
     return { id };
   }
 
+  async findSellerContactFields(id: string): Promise<SellerContactFields> {
+    const fields = await this.vehicle_repository.findSellerContactFields(id);
+    if (!fields) {
+      throw new VehicleNotFoundException(id);
+    }
+    return fields;
+  }
+
   async findAll(
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
   ): Promise<PaginatedResult<VehicleListItemDto>> {
@@ -274,9 +283,7 @@ export class VehicleService {
       update_vehicle_dto;
 
     const patch = Object.fromEntries(
-      Object.entries(dto_fields as Record<string, unknown>).filter(
-        ([ value]) => value !== undefined,
-      ),
+      Object.entries(dto_fields as Record<string, unknown>),
     ) as VehicleUpdateFields;
 
     const coordinates_changed =
@@ -1002,11 +1009,7 @@ export class VehicleService {
       return;
     }
 
-    if (params.new_status === STATUS_VEHICLE.PENDING) {
-      await this.outbound_mail_enqueue_service.enqueue_vehicle_published(
-        payload,
-      );
-    }
+    await this.outbound_mail_enqueue_service.enqueue_vehicle_published(payload);
   }
 
   private buildMailCardFromDetail(detail: VehicleDetail): MailVehicleCardPayload {
@@ -1019,11 +1022,11 @@ export class VehicleService {
     return buildMailVehicleCard({
       id: detail.id,
       title,
-      price: detail.price ?? null,
+      price: detail.price,
       image_url: detail.images[0]?.url ?? null,
-      year: detail.version.year?.year ?? null,
-      mileage: detail.mileage ?? null,
-      fuel_type_slug: detail.version.fuel_type?.slug,
+      year: detail.version.year.year,
+      mileage: detail.mileage,
+      fuel_type_slug: detail.version.fuel_type.slug,
       transmission_type: detail.transmission_type,
       location_label: detail.address ?? undefined,
       publisher_type: detail.publisher_type,

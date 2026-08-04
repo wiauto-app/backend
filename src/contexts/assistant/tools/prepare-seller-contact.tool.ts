@@ -1,16 +1,15 @@
-import { z } from "zod";
 import { tool } from "ai";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import { buildWhatsAppUrl } from "@/src/contexts/vehicles/helpers/build-whatsapp-url";
 import { buildAssistantVehicleSummary } from "../helpers/build-assistant-vehicle-summary";
+import {
+  assistantVehicleTargetSchema,
+  resolveAssistantVehicleId,
+} from "../helpers/resolve-assistant-vehicle-id";
 import type {
   PrepareSellerContactResult,
   SellerContactChannel,
 } from "../types/prepare-seller-contact";
-
-const prepareSellerContactInputSchema = z.object({
-  vehicle_id: z.string().uuid(),
-});
 
 /** Preguntas fijas recomendadas al contactar al vendedor (5–8). */
 export const RECOMMENDED_SELLER_QUESTIONS: string[] = [
@@ -33,12 +32,14 @@ export const createPrepareSellerContactTool = ({
 }: CreatePrepareSellerContactToolOptions) =>
   tool({
     description:
-      "OBLIGATORIA cuando el usuario quiere contactar / contactar al vendedor / hablar con el vendedor / pedir más información al vendedor / WhatsApp / teléfono / email de un anuncio concreto. Prepara canales reales (WhatsApp, teléfono, email), mensaje sugerido y preguntas recomendadas. Requiere vehicle_id (UUID del anuncio; usa el del último analyzeListing si no lo repite). NUNCA uses searchVehicles ni inventes tools como contactSeller: el nombre exacto es prepareSellerContact.",
-    inputSchema: prepareSellerContactInputSchema,
-    execute: async ({
-      vehicle_id,
-    }): Promise<PrepareSellerContactResult> => {
+      "OBLIGATORIA cuando el usuario quiere contactar / contactar al vendedor / hablar con el vendedor / pedir más información al vendedor / chat WiAuto / WhatsApp / teléfono / email de un anuncio concreto. Prepara canales reales (Chat WiAuto preferente, WhatsApp, teléfono, email), mensaje sugerido y preguntas recomendadas. Prefiere vehicle_ref (Ref. N del anuncio); vehicle_id UUID solo como fallback. NUNCA uses searchVehicles ni inventes tools como contactSeller: el nombre exacto es prepareSellerContact.",
+    inputSchema: assistantVehicleTargetSchema,
+    execute: async (input): Promise<PrepareSellerContactResult> => {
+      const vehicle_id = await resolveAssistantVehicleId(input, {
+        vehicleService,
+      });
       const detail = await vehicleService.findOne({ id: vehicle_id });
+      const contact = await vehicleService.findSellerContactFields(vehicle_id);
       const summary = buildAssistantVehicleSummary(detail);
 
       const suggested_message = [
@@ -50,21 +51,32 @@ export const createPrepareSellerContactTool = ({
 
       const channels: SellerContactChannel[] = [];
 
-      if (detail.has_whatsapp && detail.phone_code && detail.phone) {
+      if (contact.profile_id) {
+        channels.push({
+          type: "wiauto_chat",
+          label: "Chat WiAuto",
+          value: vehicle_id,
+          publisher_profile_id: contact.profile_id,
+          vehicle_id,
+          vehicle_ref: contact.ref,
+        });
+      }
+
+      if (contact.has_whatsapp && contact.phone_code && contact.phone) {
         channels.push({
           type: "whatsapp",
           label: "WhatsApp",
-          value: `${detail.phone_code}${detail.phone}`,
+          value: `${contact.phone_code}${contact.phone}`,
           href: buildWhatsAppUrl(
-            detail.phone_code,
-            detail.phone,
+            contact.phone_code,
+            contact.phone,
             suggested_message,
           ),
         });
       }
 
-      if (detail.show_phone && detail.phone_code && detail.phone) {
-        const phoneValue = `${detail.phone_code}${detail.phone}`;
+      if (contact.show_phone && contact.phone_code && contact.phone) {
+        const phoneValue = `${contact.phone_code}${contact.phone}`;
         channels.push({
           type: "phone",
           label: "Teléfono",
@@ -73,12 +85,12 @@ export const createPrepareSellerContactTool = ({
         });
       }
 
-      if (detail.email?.trim()) {
+      if (contact.email?.trim()) {
         channels.push({
           type: "email",
           label: "Email",
-          value: detail.email.trim(),
-          href: `mailto:${detail.email.trim()}?subject=${encodeURIComponent(
+          value: contact.email.trim(),
+          href: `mailto:${contact.email.trim()}?subject=${encodeURIComponent(
             `Interés en ${summary.title}`,
           )}&body=${encodeURIComponent(suggested_message)}`,
         });
@@ -90,6 +102,7 @@ export const createPrepareSellerContactTool = ({
         recommended_questions: [...RECOMMENDED_SELLER_QUESTIONS],
         vehicle_summary: {
           id: summary.id,
+          ref: summary.ref,
           title: summary.title,
           price: summary.price,
           mileage: summary.mileage,

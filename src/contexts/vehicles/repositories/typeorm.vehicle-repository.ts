@@ -24,6 +24,7 @@ import {
   VehicleDetail,
   Version,
 } from "../types/vehicle-detail";
+import type { SellerContactFields } from "../types/seller-contact-fields";
 import { VersionEntity } from "../catalog/versions/entities/version.entity";
 import { ColorEntity } from "../entities/color.entity";
 import { DgtLabelEntity } from "../entities/dgt-label.entity";
@@ -121,7 +122,7 @@ const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
-    ref:entity.ref,
+    ref: entity.ref,
     price: get_active_price(entity),
     mileage: entity.mileage,
     lat: Number(entity.lat),
@@ -333,7 +334,9 @@ function map_dealership_schedules(
 
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
   const base = entity_to_list_item(entity);
-  const dealership = dealership_members.find((member) => member.profile_id === entity.profile.id)?.dealership;
+  const dealership = dealership_members.find(
+    (member) => member.profile_id === entity.profile.id,
+  )?.dealership;
   const public_contact = toPublicVehicleContact({
     show_phone: entity.show_phone,
     has_whatsapp: entity.has_whatsapp,
@@ -362,11 +365,13 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     vin_code: entity.vin_code,
     version_id: entity.version_id,
     version: entity_to_vehicle_detail_version(entity.version),
-    traction: {
-      id: entity.traction.id,
-      name: entity.traction.name,
-      slug: entity.traction.slug,
-    },
+    traction: entity.traction
+      ? {
+          id: entity.traction.id,
+          name: entity.traction.name,
+          slug: entity.traction.slug,
+        }
+      : null,
     phone_code: public_contact.phone_code,
     phone: public_contact.phone,
     has_whatsapp: public_contact.has_whatsapp,
@@ -377,7 +382,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     prices: map_vehicle_prices_history(entity.vehicle_prices),
     address: entity.address ?? null,
     address_details: entity.address_details ?? null,
-    dealership:{
+    dealership: {
       id: dealership?.id ?? "",
       name: dealership?.name ?? "",
       slug: dealership?.slug ?? "",
@@ -415,11 +420,13 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     phone: entity.phone,
     email: entity.email,
     version_id: entity.version_id,
-    traction: {
-      id: entity.traction.id,
-      name: entity.traction.name,
-      slug: entity.traction.slug,
-    },
+    traction: entity.traction
+      ? {
+          id: entity.traction.id,
+          name: entity.traction.name,
+          slug: entity.traction.slug,
+        }
+      : null,
   };
 }
 
@@ -452,7 +459,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
     email: entity.email,
-    traction_id: entity.traction.id,
+    traction_id: entity.traction?.id ?? null,
     power: entity.power,
     displacement: entity.displacement,
     autonomy: entity.autonomy,
@@ -483,6 +490,8 @@ export class TypeOrmVehicleRepository {
   constructor(
     @InjectRepository(VehicleEntity)
     private readonly vehicle_repository: Repository<VehicleEntity>,
+    @InjectRepository(MakeEntity)
+    private readonly make_repository: Repository<MakeEntity>,
     @InjectRepository(FeaturesEntity)
     private readonly features_repository: Repository<FeaturesEntity>,
     @InjectRepository(ServiceEntity)
@@ -502,7 +511,7 @@ export class TypeOrmVehicleRepository {
     @InjectRepository(CategoryEntity)
     private readonly category_repository: Repository<CategoryEntity>,
     @InjectRepository(CatalogModelEntity)
-    private readonly catalog_model_repository: Repository<CatalogModelEntity>,
+    private readonly model_repository: Repository<CatalogModelEntity>,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
     @InjectRepository(VehiclePriceEntity)
@@ -526,7 +535,7 @@ export class TypeOrmVehicleRepository {
     if (models_slugs.length === 0) {
       return [];
     }
-    const rows = await this.catalog_model_repository
+    const rows = await this.model_repository
       .createQueryBuilder("catalog_model")
       .innerJoin(MakeEntity, "make", "make.id = catalog_model.make_id")
       .select("make.slug", "make_slug")
@@ -756,7 +765,7 @@ export class TypeOrmVehicleRepository {
       relations: {
         ...vehicle_catalog_relations,
         vehicle_prices: true,
-        version:{
+        version: {
           make: true,
           model: true,
           body_type: true,
@@ -853,12 +862,36 @@ export class TypeOrmVehicleRepository {
 
     const make_model_filter_mode =
       await this.resolveMakeModelFilterModeForFilter(filter);
+
     const apply_filters_options =
       make_model_filter_mode === undefined
         ? undefined
         : { make_model_filter_mode };
-    applyFilters(qb, filter, apply_filters_options);
 
+    let makes_slugs: string[] = [];
+    if (filter.makes_slugs && filter.makes_slugs.length > 0) {
+      const makes = await this.make_repository.find({
+        where: {
+          slug: In(filter.makes_slugs),
+        },
+      });
+      makes_slugs = makes.map((make) => make.slug);
+    }
+
+    let models_slugs: string[] = [];
+    if(filter.models_slugs && filter.models_slugs.length > 0) {
+      const models = await this.model_repository.find({
+        where: {
+          slug: In(filter.models_slugs),
+        },
+      });
+      models_slugs = models.map((model) => model.slug);
+    }
+
+
+    applyFilters(qb, { ...filter, makes_slugs, models_slugs }, apply_filters_options);
+
+    console.log(qb.getQueryAndParameters());
     const count_qb = qb.clone();
     (
       count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
@@ -986,6 +1019,30 @@ export class TypeOrmVehicleRepository {
       select: { id: true },
     });
     return row?.id ?? null;
+  }
+
+  /** Contacto del vendedor sin pasar por toPublicVehicleContact. */
+  async findSellerContactFields(
+    id: string,
+  ): Promise<SellerContactFields | null> {
+    const row = await this.vehicle_repository.findOne({
+      where: { id },
+      relations: { profile: true },
+    });
+    if (!row?.profile) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      ref: row.ref,
+      has_whatsapp: row.has_whatsapp,
+      show_phone: row.show_phone,
+      phone_code: row.phone_code,
+      phone: row.phone,
+      email: row.email,
+      profile_id: row.profile.id,
+    };
   }
 
   private build_owner_stats_map(

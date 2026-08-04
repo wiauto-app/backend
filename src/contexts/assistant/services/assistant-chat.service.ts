@@ -21,6 +21,7 @@ import { AssistantBuySystemPromptService } from "./assistant-buy-system-prompt.s
 import { AssistantConversationService } from "./assistant-conversation.service";
 import { AssistantQuotaService } from "./assistant-quota.service";
 import { AssistantBuyToolsService } from "../tools/assistant-buy-tools.service";
+import { AssistantFilterCatalogService } from "./assistant-filter-catalog.service";
 
 interface StreamChatOptions {
   messages: UIMessage[];
@@ -41,6 +42,7 @@ export class AssistantChatService {
     private readonly conversationService: AssistantConversationService,
     private readonly quotaService: AssistantQuotaService,
     private readonly buyToolsService: AssistantBuyToolsService,
+    private readonly filterCatalogService: AssistantFilterCatalogService,
   ) { }
 
   async streamChat({
@@ -62,7 +64,7 @@ export class AssistantChatService {
     await this.quotaService.consume(userId);
 
     if (mode === "buy_assistant") {
-      this.streamBuyAssistantChat({
+      await this.streamBuyAssistantChat({
         messages,
         resolvedConversationId,
         userId,
@@ -80,7 +82,7 @@ export class AssistantChatService {
     });
   }
 
-  private streamBuyAssistantChat({
+  private async streamBuyAssistantChat({
     messages,
     resolvedConversationId,
     userId,
@@ -92,14 +94,15 @@ export class AssistantChatService {
     userId: string;
     response: Response;
     initialFilters?: SearchVehiclesInput;
-  }): void {
+  }): Promise<void> {
+    const catalog = await this.filterCatalogService.getCatalog();
     const deepseek = createDeepSeek({
       apiKey: envs.DEEPSEEK_API_KEY,
     });
     const tools = this.buyToolsService.createBuyAssistantTools({
       initialFilters,
+      catalog,
     });
-
 
     const stream = createUIMessageStream({
       originalMessages: messages,
@@ -113,7 +116,10 @@ export class AssistantChatService {
       execute: async ({ writer }) => {
         const result = streamText({
           model: deepseek(envs.DEEPSEEK_MODEL),
-          system: this.buySystemPromptService.build({ initialFilters }),
+          system: this.buySystemPromptService.build({
+            initialFilters,
+            catalog,
+          }),
           messages: await convertToModelMessages(messages, { tools }),
           tools,
           stopWhen: stepCountIs(6),
