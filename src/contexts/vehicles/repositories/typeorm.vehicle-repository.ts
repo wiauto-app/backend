@@ -891,7 +891,6 @@ export class TypeOrmVehicleRepository {
 
     applyFilters(qb, { ...filter, makes_slugs, models_slugs }, apply_filters_options);
 
-    console.log(qb.getQueryAndParameters());
     const count_qb = qb.clone();
     (
       count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
