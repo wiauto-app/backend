@@ -1,11 +1,22 @@
-
-
 export const ONE_KB = 1024;
 export const ONE_MB = 1024 * 1024;
 export const SIX_MB = 6 * ONE_MB;
 export const TEN_MB = 10 * ONE_MB;
-export const ALLOWED_IMAGES_COUNT = 10;
-export const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+
+/** MIME admitidos en validación Multer / galería de vehículo. */
+export const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+] as const;
+
+export type AllowedImageMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
 /** Extensión canónica por MIME (una sola por archivo en storage) */
 export const mimetype_to_extension: Record<string, string> = {
@@ -13,6 +24,11 @@ export const mimetype_to_extension: Record<string, string> = {
   "image/jpg": ".jpg",
   "image/png": ".png",
   "image/webp": ".webp",
+  "image/avif": ".avif",
+  "image/heic": ".heic",
+  "image/heif": ".heif",
+  "image/heic-sequence": ".heic",
+  "image/heif-sequence": ".heif",
 };
 
 // queues

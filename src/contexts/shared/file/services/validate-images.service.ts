@@ -14,7 +14,7 @@ export class ValidateImagesService {
       if (!mimetype || !originalname || !size) {
         return { isValid: false, message: "El archivo no es válido" };
       }
-      if (!ALLOWED_MIME_TYPES.includes(mimetype)) {
+      if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(mimetype)) {
         return { isValid: false, message: "Tipo de imagen no permitido" };
       }
       if (size > SIX_MB) {

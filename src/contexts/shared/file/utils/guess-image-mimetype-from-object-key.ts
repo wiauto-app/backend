@@ -18,6 +18,12 @@ export const guess_image_mimetype_from_object_key = (
       return CONTENT_TYPES.IMAGE_PNG;
     case ".webp":
       return CONTENT_TYPES.IMAGE_WEBP;
+    case ".avif":
+      return CONTENT_TYPES.IMAGE_AVIF;
+    case ".heic":
+      return CONTENT_TYPES.IMAGE_HEIC;
+    case ".heif":
+      return CONTENT_TYPES.IMAGE_HEIF;
     default:
       return CONTENT_TYPES.IMAGE_JPEG;
   }
