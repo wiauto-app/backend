@@ -8250,6 +8250,76 @@
       ]
     },
     {
+      "name": "files",
+      "item": [
+        {
+          "name": "auth",
+          "item": [
+            {
+              "name": "subir imagen temporal de galería (WebP)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": [],
+                      "description": "Imagen (JPEG, PNG, WebP, AVIF, GIF, BMP, TIFF, HEIC/HEIF; MIME vacío/octet-stream se acepta por extensión). Máx. 10MB. HEIC se convierte con heic-convert y luego a WebP."
+                    }
+                  ]
+                },
+                "url": "{{base_url}}/v1/upload-temp-vehicle-image",
+                "description": "JWT (`JwtGuard`). Multipart campo `file`. HEIC/HEIF → JPEG (heic-convert) → WebP (Sharp). Guarda en `vehicles-images/temp/vehicle-gallery/{uuid}.webp`. Respuesta: `path` + `preview_url`."
+              },
+              "response": [
+                {
+                  "name": "200 OK — path y preview (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": "{{base_url}}/v1/upload-temp-vehicle-image"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"path\": \"vehicles-images/temp/vehicle-gallery/3fa85f64-5717-4562-b3fc-2c963f66afa6.webp\",\n    \"preview_url\": \"http://localhost:9000/vehicles-images/temp/vehicle-gallery/3fa85f64-5717-4562-b3fc-2c963f66afa6.webp\"\n  }\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "sistema",
       "item": [
         {

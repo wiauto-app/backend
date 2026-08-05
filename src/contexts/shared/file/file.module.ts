@@ -28,6 +28,9 @@ import { GenerateReadFileSignedUrlController } from "./api/generate-read-file-si
 import { GenerateReadFileSignedUrlService } from "./services/generate-read-file-signed-url.service";
 import { RemoveFilesService } from "./services/remove-files.service";
 import { RemoveFileController } from "./api/remove-file/remove-file.controller";
+import { UploadTempVehicleImageController } from "./api/upload-temp-vehicle-image/upload-temp-vehicle-image.controller";
+import { UploadTempVehicleImageService } from "./services/upload-temp-vehicle-image.service";
+import { ImageValidationPipe } from "./pipes/image-validation.pipe";
 
 @Module({
   controllers: [
@@ -35,6 +38,7 @@ import { RemoveFileController } from "./api/remove-file/remove-file.controller";
     ConfirmVideoUploadController,
     GenerateReadFileSignedUrlController,
     RemoveFileController,
+    UploadTempVehicleImageController,
   ],
   providers: [
     MinioService,
@@ -51,6 +55,8 @@ import { RemoveFileController } from "./api/remove-file/remove-file.controller";
     ConfirmVideoUploadService,
     GenerateReadFileSignedUrlService,
     RemoveFilesService,
+    UploadTempVehicleImageService,
+    ImageValidationPipe,
     PromoteTempStoragePathsService,
     FinalizeImageStoragePathService,
     MinioImageStorageFinalizationAdapter,
