@@ -187,9 +187,21 @@ export class AuthController {
     return this.authService.refreshToken(refreshToken);
   }
 
+  private clearPlatformCookies(res: Response): void {
+    res.clearCookie(REFRESH_TOKEN_NAME, authCookieConfig.refresh_token);
+    res.clearCookie(ACCESS_TOKEN_NAME, authCookieConfig.access_token);
+  }
+
   @Get("logout")
   @UseGuards(JwtGuard)
-  logout(@GetSessionId() session_id: string) {
-    return this.authService.logout(session_id);
+  async logout(
+    @GetSessionId() session_id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(session_id);
+    this.clearPlatformCookies(res);
+    return {
+      message: "Logout successful",
+    };
   }
 }
