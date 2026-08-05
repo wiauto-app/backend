@@ -188,8 +188,14 @@ export class AuthController {
   }
 
   private clearPlatformCookies(res: Response): void {
-    res.clearCookie(REFRESH_TOKEN_NAME, authCookieConfig.refresh_token);
-    res.clearCookie(ACCESS_TOKEN_NAME, authCookieConfig.access_token);
+    res.cookie(REFRESH_TOKEN_NAME, "", {
+      ...authCookieConfig.refresh_token,
+      maxAge: 0,
+    });
+    res.cookie(ACCESS_TOKEN_NAME, "", {
+      ...authCookieConfig.access_token,
+      maxAge: 0,
+    });
   }
 
   @Get("logout")
