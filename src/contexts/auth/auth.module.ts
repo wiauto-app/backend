@@ -5,6 +5,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { envs } from "@/src/common/envs";
 import { UserModule } from "../users/user.module";
 import { AuthController } from "./api/auth.controller";
+import { AdminAuthController } from "./api/admin-auth.controller";
 import { AuthService } from "./services/auth.service";
 import { PasswordService } from "./services/password.service";
 
@@ -50,6 +51,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
 @Module({
   controllers: [
     AuthController,
+    AdminAuthController,
     MeController,
     PasswordRecoveryController,
     EmailVerificationController,

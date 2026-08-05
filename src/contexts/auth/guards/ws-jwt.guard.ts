@@ -3,6 +3,10 @@ import { AuthGuard } from "@nestjs/passport";
 import type { Request } from "express";
 import type { Socket } from "socket.io";
 
+import { ADMIN_ACCESS_TOKEN_NAME } from "../admin-cookie.config";
+import { ACCESS_TOKEN_NAME } from "../cookie.config";
+import { isAdminAuthRequest } from "../utils/is-admin-auth-request";
+
 const parse_cookie_header = (cookie_header: string | undefined): Record<string, string> => {
   if (!cookie_header) return {};
   const cookies: Record<string, string> = {};
@@ -31,18 +35,23 @@ export class WsJwtGuard extends AuthGuard("jwt") {
     const auth_token_raw =
       typeof client.handshake.auth.token === "string" ? client.handshake.auth.token : undefined;
 
-    const token_from_auth = auth_token_raw ? strip_bearer_prefix(auth_token_raw) : undefined;
-    const token_from_cookie = cookies.access_token;
-    const token = token_from_auth ?? token_from_cookie;
-    if (token) {
-
-      request.headers.authorization = `Bearer ${token}`;
-    }
-
+    request.headers.origin =
+      typeof client.handshake.headers.origin === "string"
+        ? client.handshake.headers.origin
+        : request.headers.origin;
     request.cookies = {
       ...request.cookies,
-      access_token: token_from_cookie,
+      ...cookies,
     };
+
+    const token_from_auth = auth_token_raw ? strip_bearer_prefix(auth_token_raw) : undefined;
+    const token_from_cookie = isAdminAuthRequest(request)
+      ? cookies[ADMIN_ACCESS_TOKEN_NAME]
+      : cookies[ACCESS_TOKEN_NAME];
+    const token = token_from_auth ?? token_from_cookie;
+    if (token) {
+      request.headers.authorization = `Bearer ${token}`;
+    }
 
     return request;
   }

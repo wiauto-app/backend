@@ -12,6 +12,32 @@ import { RefreshTokenService } from "../services/refresh-token.service";
 import { SessionService } from "../services/session.service";
 import { authResponseConfig } from "../response.config";
 import { isTwoFactorChallengeAllowedPath } from "../constants/two-factor-challenge.constants";
+import { ACCESS_TOKEN_NAME } from "../cookie.config";
+import { ADMIN_ACCESS_TOKEN_NAME } from "../admin-cookie.config";
+import { isAdminAuthRequest } from "../utils/is-admin-auth-request";
+
+const extractAccessTokenFromRequest = (req: Request): string | null => {
+  const authorization = req.headers.authorization;
+  if (authorization?.startsWith("Bearer ")) {
+    const bearer = authorization.slice(7).trim();
+    if (bearer) {
+      return bearer;
+    }
+  }
+
+  const cookies = req.cookies as Record<string, string | undefined> | undefined;
+  if (!cookies) {
+    return null;
+  }
+
+  if (isAdminAuthRequest(req)) {
+    const admin_token = cookies[ADMIN_ACCESS_TOKEN_NAME]?.trim();
+    return admin_token ?? null;
+  }
+
+  const platform_token = cookies[ACCESS_TOKEN_NAME]?.trim();
+  return platform_token ?? null;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
@@ -23,21 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => {
-          const authorization = req.headers.authorization;
-          const cookie_access_token = req.cookies.access_token as string;
-          if (!authorization && !cookie_access_token) return null;
-
-          if (authorization?.startsWith("Bearer")) {
-            return authorization.slice(7);
-          }
-          if (cookie_access_token) {
-            return cookie_access_token;
-          }
-
-          return null;
-        },
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        extractAccessTokenFromRequest,
       ]),
       ignoreExpiration: false,
       secretOrKey: envs.JWT_SECRET,
@@ -53,7 +65,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
 
-    const scope = payload.scope
+    const scope = payload.scope;
 
     req.auth_session_id = payload.session_id;
     req.auth_scope = scope;

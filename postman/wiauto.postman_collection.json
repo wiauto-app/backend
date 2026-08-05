@@ -260,7 +260,7 @@
               "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
             },
             "url": "{{base_url}}/auth/admin/login",
-            "description": "Establece cookies `access_token` y `refresh_token`. Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda en scope `2fa_challenge`."
+            "description": "Establece cookies `wiauto_admin_access_token` y `wiauto_admin_refresh_token` (separadas de la plataforma). Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda en scope `2fa_challenge`."
           },
           "response": []
         },
@@ -270,7 +270,7 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/auth/admin/two-factor/challenge",
-            "description": "Requiere cookie `access_token` con scope `2fa_challenge`. Devuelve `{ email, type: \"2fa_required\" }`."
+            "description": "Requiere cookie `wiauto_admin_access_token` con scope `2fa_challenge`. Devuelve `{ email, type: \"2fa_required\" }`."
           },
           "response": []
         },
@@ -289,7 +289,7 @@
               "raw": "{\n  \"code\": \"123456\"\n}"
             },
             "url": "{{base_url}}/auth/admin/verify-2fa",
-            "description": "Cookie challenge + código TOTP de 6 dígitos. Actualiza `access_token` a scope `session`."
+            "description": "Cookie challenge + código TOTP de 6 dígitos. Actualiza `wiauto_admin_access_token` a scope `session`."
           },
           "response": []
         },
@@ -536,7 +536,7 @@
               "raw": "{\n  \"email\": \"admin@ejemplo.com\",\n  \"password\": \"password12\"\n}"
             },
             "url": "{{base_url}}/auth/admin/login",
-            "description": "Panel admin: setea cookies `access_token` y `refresh_token`. Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda con scope `2fa_challenge` (solo rutas de verificación)."
+            "description": "Panel admin (`AdminAuthController`): setea cookies `wiauto_admin_access_token` y `wiauto_admin_refresh_token`. Si el usuario tiene 2FA, `data.type` es `2fa_required` y el JWT queda con scope `2fa_challenge` (solo rutas de verificación)."
           },
           "response": [
             {
@@ -565,7 +565,7 @@
                 },
                 {
                   "key": "Set-Cookie",
-                  "value": "access_token=...; HttpOnly"
+                  "value": "wiauto_admin_access_token=...; HttpOnly"
                 }
               ],
               "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"message\": \"Login successful\",\n    \"data\": {\n      \"type\": \"session\",\n      \"email\": \"admin@ejemplo.com\"\n    }\n  }\n}"
@@ -605,7 +605,7 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/auth/admin/two-factor/challenge",
-            "description": "Requiere cookie `access_token` con scope `2fa_challenge`. Devuelve email y `type: 2fa_required` para reanudar el paso 2 en el login."
+            "description": "Requiere cookie `wiauto_admin_access_token` con scope `2fa_challenge`. Devuelve email y `type: 2fa_required` para reanudar el paso 2 en el login."
           },
           "response": []
         },
@@ -624,7 +624,7 @@
               "raw": "{\n  \"code\": \"123456\"\n}"
             },
             "url": "{{base_url}}/auth/admin/verify-2fa",
-            "description": "Completa el login admin con código TOTP de 6 dígitos. Actualiza cookie `access_token` a scope `session`."
+            "description": "Completa el login admin con código TOTP de 6 dígitos. Actualiza cookie `wiauto_admin_access_token` a scope `session`."
           },
           "response": []
         },
@@ -643,7 +643,7 @@
               "raw": "{\n  \"code\": \"ABCD-1234\"\n}"
             },
             "url": "{{base_url}}/auth/admin/verify-backup-code",
-            "description": "Completa el login admin con código de respaldo `XXXX-XXXX`. Consume el código y actualiza cookie `access_token` a scope `session`."
+            "description": "Completa el login admin con código de respaldo `XXXX-XXXX`. Consume el código y actualiza cookie `wiauto_admin_access_token` a scope `session`."
           },
           "response": []
         },

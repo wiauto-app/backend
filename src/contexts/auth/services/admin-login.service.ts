@@ -61,7 +61,7 @@ export class AdminLoginService {
     await this.suspensionService.assert_session_allowed_by_id(user.id);
 
     const previous_last_sign_in = user.last_sign_in;
-    const notify_new_login = previous_last_sign_in != null;
+    const notify_new_login = !!previous_last_sign_in;
 
     const { session_id, refresh_token, refresh_token_hash } = await this.authService.createSession(
       user,
@@ -80,12 +80,12 @@ export class AdminLoginService {
       notify_new_login: type === "2fa_challenge" ? notify_new_login : undefined,
     });
 
-    if (type === "session" && notify_new_login) {
+    if (type === "session" ) {
       this.authSecurityMailService.enqueueNewLogin({
         to: user.email,
         ip_address: request.ip ?? null,
         user_agent: normalizeUserAgent(
-          request.headers["user-agent"] as string | undefined,
+          request.headers["user-agent"],
         ),
         audience: "admin",
       });
@@ -96,5 +96,9 @@ export class AdminLoginService {
 
   async logout(session_id: string) {
     await this.authService.logout(session_id);
+  }
+
+  async refresh(refresh_token: string): Promise<SignInResult> {
+    return this.authService.refreshToken(refresh_token);
   }
 }
