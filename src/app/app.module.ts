@@ -18,6 +18,7 @@ import { ContactClicksModule } from "../contexts/vehicles/modules/contact-clicks
 import { ViewsModule } from "../contexts/vehicles/modules/views.module";
 import { ImpressionsModule } from "../contexts/vehicles/modules/impressions.module";
 import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
+import { VehicleEngagementModule } from "../contexts/vehicles/vehicle-engagement/vehicle-engagement.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
@@ -40,7 +41,8 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
 import { FinancingModule } from "../contexts/financing/financing.module";
 import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests/appraisal-requests.module";
 import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboard.module";
-import { WebhookModule } from "../contexts/strapi/webhook.module";
+import { NewsletterModule } from "../contexts/newsletter/newsletter.module";
+import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
 
 @Module({
   imports: [
@@ -59,6 +61,7 @@ import { WebhookModule } from "../contexts/strapi/webhook.module";
     ViewsModule,
     ImpressionsModule,
     VehicleListsModule,
+    VehicleEngagementModule,
     MailModule,
     TwoFactorAuthModule,
     FileModule,
@@ -78,7 +81,8 @@ import { WebhookModule } from "../contexts/strapi/webhook.module";
     FinancingModule,
     AppraisalRequestsModule,
     AdminDashboardModule,
-    WebhookModule,
+    NewsletterModule,
+    StrapiWebhookModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

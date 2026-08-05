@@ -105,6 +105,7 @@ import { VehicleService } from "./services/vehicle.service";
 import { VehicleFiltersService } from "./services/vehicle-filters.service";
 import { OwnerDashboardService } from "./services/owner-dashboard.service";
 import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
+import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement.module";
 
 @Module({
   controllers: [
@@ -224,6 +225,7 @@ import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
     DealershipInvitationModule,
     forwardRef(() => ChatModule),
     forwardRef(() => AlertsModule),
+    VehicleEngagementModule,
     VehicleSearchModule],
   exports: [
     VehicleService,

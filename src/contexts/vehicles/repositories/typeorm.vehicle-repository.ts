@@ -117,6 +117,7 @@ const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   make_name: entity.version.make.name,
   model_name: entity.version.model.name,
   version_name: entity.version.name,
+  fuel_name: entity.version.fuel_type.name,
 });
 
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
@@ -131,6 +132,9 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     version_summary: map_version_summary(entity),
     created_at: entity.created_at,
     publisher_type: entity.publisher_type,
+    power: entity.power,
+    transmission_type: entity.transmission_type,
+    displacement: entity.displacement,
     images: map_vehicle_list_images(entity.images),
     features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
       id: feature.id,
@@ -851,6 +855,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.profile", "profile")
       .leftJoinAndSelect("vehicle.version", "version")
+      .leftJoinAndSelect("version.fuel_type", "fuel_type")
       .leftJoinAndSelect("version.make", "version_make")
       .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect(
@@ -896,7 +901,10 @@ export class TypeOrmVehicleRepository {
       count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
     ).expressionMap.orderBys = [];
     count_qb.select("COUNT(DISTINCT vehicle.id)", "cnt");
-    const count_row = await count_qb.getRawOne<{ cnt: string }>();
+    const [count_row, rows] = await Promise.all([
+      count_qb.getRawOne<{ cnt: string }>(),
+      qb.getMany(),
+    ]);
     const total_count = Number(count_row?.cnt ?? 0);
 
     const order_field = order_by ?? "created_at";
@@ -904,7 +912,6 @@ export class TypeOrmVehicleRepository {
     apply_public_listing_order(qb, order_field, order_direction);
 
     qb.skip(skip).take(limit);
-    const rows = await qb.getMany();
     const vehicles = rows.map((row) => entity_to_list_item(row));
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
   }

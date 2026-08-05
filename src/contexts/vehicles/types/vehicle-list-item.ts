@@ -19,6 +19,8 @@ export interface VehicleVersionSummary {
   make_name: string;
   model_name: string;
   version_name: string;
+  fuel_name: string;
+
 }
 
 export interface VehicleListItemPublisher {
@@ -41,6 +43,9 @@ export interface VehicleListItem {
   version_summary: VehicleVersionSummary;
   created_at: Date;
   publisher_type: PublisherType;
+  power: number;
+  displacement: number;
+  transmission_type: TransmissionType;
   images: VehicleListItemImage[];
   features: VehicleListItemCatalogRef[];
   services: VehicleListItemCatalogRef[];

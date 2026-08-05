@@ -742,6 +742,30 @@ export class MailService {
     }
   }
 
+  async sendNewsAlertEmail(payload: {
+    to: string;
+    news_title: string;
+    news_summary: string;
+    news_url: string;
+    category_name: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderNewsAlert(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nueva noticia: ${payload.news_title}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la alerta de noticia a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendAppraisalRequestNotificationEmail(payload: {
     to: string;
     appraisal: {

@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AlertEntity } from "@/src/contexts/alerts/entities/alert.entity";
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
+import { NewsletterModule } from "@/src/contexts/newsletter/newsletter.module";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 import { User } from "../users/entities/user.entity";
 import { TypeOrmAdminProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.admin-profile-repository";
@@ -46,6 +47,7 @@ import { ProfileService } from "./services/profile.service";
   imports: [
     TypeOrmModule.forFeature([ProfileEntity, User, AlertEntity]),
     forwardRef(() => DealershipInvitationModule),
+    NewsletterModule,
   ],
 })
 export class ProfileModule {}

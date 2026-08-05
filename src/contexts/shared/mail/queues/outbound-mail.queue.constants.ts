@@ -315,3 +315,13 @@ export interface OutboundMailAccountDeletedJobData {
   to: string;
   occurred_at: string;
 }
+
+export const OUTBOUND_MAIL_JOB_NEWS_ALERT = "news_alert";
+
+export interface OutboundMailNewsAlertJobData {
+  to: string;
+  news_title: string;
+  news_summary: string;
+  news_url: string;
+  category_name: string;
+}

@@ -11,6 +11,7 @@ import {
 import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-invitation-repository";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
+import { NewsletterService } from "@/src/contexts/newsletter/services/newsletter.service";
 
 import {
   mapProfileToResponse,
@@ -79,6 +80,7 @@ export class ProfileService {
     private readonly dealership_invitation_repository: TypeOrmDealershipInvitationRepository,
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly alert_repository: TypeOrmAlertRepository,
+    private readonly newsletter_service: NewsletterService,
   ) {}
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
@@ -112,6 +114,7 @@ export class ProfileService {
 
     if (email) {
       await this.alert_repository.claimByEmail(email, input.id);
+      await this.newsletter_service.claimByEmail(email, input.id);
     }
 
     if (accepted_invitation && dealership_member_role) {

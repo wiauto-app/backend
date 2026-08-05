@@ -1,0 +1,52 @@
+---
+description: Generar migraciones TypeORM con `mig` al crear o cambiar entidades; no dejar solo el entity.
+alwaysApply: true
+---
+
+# Migraciones TypeORM — generarlas siempre
+
+Si creas o modificas una **entity TypeORM** (tabla nueva, columnas, índices, uniques, FKs), **debes generar la migración** en el mismo cambio. No dar por cerrado el trabajo solo con el `.entity.ts`.
+
+## Comando en este entorno
+
+En la máquina del desarrollador existe la función zsh `mig` (cwd = raíz del backend):
+
+```bash
+mig <nombre-migracion>
+# equivale a:
+npm run migration:generate -- src/database/migrations/<nombre-migracion>
+```
+
+Ejemplo:
+
+```bash
+mig CreateDismissedVehicles
+# o
+mig tabla-descartes
+```
+
+Aplicar / revertir / ver:
+
+```bash
+migrun                    # alias → npm run migration:run
+npm run migration:revert
+npm run migration:show
+```
+
+Si `mig` no está en el shell del agente, usar el equivalente `npm run migration:generate -- src/database/migrations/<Nombre>` desde la raíz de `wiauto-backend`.
+
+## Reglas
+
+1. **Preferir `migration:generate`** (diff entity ↔ BD) sobre escribir migraciones a mano.
+2. Usar `migration:create` solo para migraciones vacías/data-only cuando generate no aplique.
+3. Nombre en **PascalCase o kebab claro** y descriptivo (`CreateVehiclePriceWatches`, no `temp`).
+4. Tras generar: **revisar** el SQL del archivo, registrar la entity en el módulo/`TypeOrmModule.forFeature`, y **ejecutar** `migration:run` (o `migrun`) si el entorno local lo permite.
+5. No duplicar `CREATE TABLE` de una tabla que ya tenga migración aplicada.
+6. No editar migraciones ya aplicadas en otros entornos; crear una migración nueva.
+
+## Checklist al tocar entities
+
+- [ ] Entity(s) actualizadas
+- [ ] `mig <Nombre>` / `migration:generate` ejecutado
+- [ ] Archivo nuevo en `src/database/migrations/`
+- [ ] Migración aplicada en local (`migrun`) cuando proceda

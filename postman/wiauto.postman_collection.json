@@ -2600,7 +2600,14 @@
               "name": "obtener todos los vehículos",
               "request": {
                 "method": "GET",
-                "header": [],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "disabled": true,
+                    "description": "Opcional (`OptionalJwtGuard`). Con JWT, excluye vehículos descartados del perfil."
+                  }
+                ],
                 "url": {
                   "raw": "{{base_url}}/v1/vehicles?page=1&limit=20",
                   "query": [
@@ -2840,7 +2847,7 @@
                     }
                   ]
                 },
-                "description": "Parámetros en **Params** (todos los de `FindAllVehiclesHttpDto` + paginación): activa los que necesites. Arrays: repite la misma clave en la tabla. **Ubicación (PostGIS):** `provinces_slugs`, `comunities_slugs`, `municipalities_slugs` (intersectan `geom` con lat/lng del anuncio); opcional `lat`+`lng`+`radius` (metros). Si envías polígonos y radio, aplica **AND**. Requiere PostGIS y `slug` en tablas de localización. Respuesta (`PaginatedResult`): `{ \"data\": [ VehicleListItem... ], \"total\": number, \"page\": number, \"limit\": number }`."
+                "description": "Público con `OptionalJwtGuard`. Sin token: listado normal. Con Bearer JWT: fusiona IDs de `dismissed_vehicles` del perfil en `exclude_vehicle_ids`. Parámetros en **Params** (todos los de `FindAllVehiclesHttpDto` + paginación): activa los que necesites. Arrays: repite la misma clave en la tabla. **Ubicación (PostGIS):** `provinces_slugs`, `comunities_slugs`, `municipalities_slugs` (intersectan `geom` con lat/lng del anuncio); opcional `lat`+`lng`+`radius` (metros). Si envías polígonos y radio, aplica **AND**. Requiere PostGIS y `slug` en tablas de localización. Respuesta (`PaginatedResult`): `{ \"data\": [ VehicleListItem... ], \"total\": number, \"page\": number, \"limit\": number }`."
               },
               "response": [
                 {
@@ -4895,6 +4902,116 @@
                 ],
                 "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items/{{vehicle_id}}",
                 "description": "JWT (`JwtGuard`). Elimina el item y decrementa `vehicles.favorites` (mínimo 0)."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "vehicle-engagement",
+          "item": [
+            {
+              "name": "estado alerta bajada de precio",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/price-watch",
+                "description": "JWT (`JwtGuard`). 200 si el perfil tiene alerta activa; 404 si no."
+              },
+              "response": []
+            },
+            {
+              "name": "activar alerta bajada de precio",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/price-watch",
+                "description": "JWT (`JwtGuard`). Crea suscripción en `vehicle_price_watches` (unique profile+vehicle). Duplicado → 409. Incluye al perfil en fanout PRICE_DROP."
+              },
+              "response": []
+            },
+            {
+              "name": "desactivar alerta bajada de precio",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/price-watch",
+                "description": "JWT (`JwtGuard`). Elimina la suscripción de bajada de precio. 404 si no existe."
+              },
+              "response": []
+            },
+            {
+              "name": "estado descarte vehículo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/dismiss",
+                "description": "JWT (`JwtGuard`). 200 si el vehículo está descartado por el perfil; 404 si no."
+              },
+              "response": []
+            },
+            {
+              "name": "descartar vehículo",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/dismiss",
+                "description": "JWT (`JwtGuard`). Marca el vehículo como descartado para el perfil. Duplicado → 409. Se excluye en find-all autenticado."
+              },
+              "response": []
+            },
+            {
+              "name": "restaurar vehículo descartado",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/dismiss",
+                "description": "JWT (`JwtGuard`). Quita el descarte. 404 si no estaba descartado. Disponible para particular y profesional."
+              },
+              "response": []
+            },
+            {
+              "name": "listar vehículos descartados",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/dismissed-vehicles",
+                "description": "JWT (`JwtGuard`). Solo `profile.type === professional`. Devuelve items con preview del vehículo."
               },
               "response": []
             }
@@ -7089,6 +7206,92 @@
             ],
             "url": "{{base_url}}/v1/alerts/notifications/read-all",
             "description": "JWT. Marca todas las notificaciones del perfil como leídas. Respuesta: `{ updated }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "newsletter",
+      "item": [
+        {
+          "name": "suscribirse (público)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@example.com\"\n}"
+            },
+            "url": "{{base_url}}/v1/newsletter/subscribe",
+            "description": "Público. Upsert por email; defaults: todas las categorías + channel_email/push/in_app true. Si existe user con ese email, asigna profile_id."
+          },
+          "response": []
+        },
+        {
+          "name": "obtener preferencias (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/newsletter/me",
+            "description": "JWT. Create-if-missing con defaults de categorías y canales."
+          },
+          "response": []
+        },
+        {
+          "name": "actualizar preferencias (me)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled_category_slugs\": [\"novedades\", \"tendencias\"],\n  \"channel_email\": true,\n  \"channel_push\": true,\n  \"channel_in_app\": true,\n  \"channel_whatsapp\": false,\n  \"channel_sms\": false\n}"
+            },
+            "url": "{{base_url}}/v1/newsletter/me",
+            "description": "JWT. Actualiza categorías y/o flags channel_*."
+          },
+          "response": []
+        },
+        {
+          "name": "strapi webhook (entry.publish noticia)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Strapi-Webhook-Secret",
+                "value": "{{strapi_webhook_secret}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"entry.publish\",\n  \"model\": \"noticia\",\n  \"entry\": {\n    \"slug\": \"mi-noticia\",\n    \"titulo\": \"Título de la noticia\",\n    \"resumen\": \"Resumen breve\",\n    \"categoria_noticia\": {\n      \"slug\": \"novedades\",\n      \"nombre\": \"Novedades\"\n    }\n  }\n}"
+            },
+            "url": "{{base_url}}/strapi/webhook",
+            "description": "Webhook Strapi. Si STRAPI_WEBHOOK_SECRET está definido, enviar header X-Strapi-Webhook-Secret o Authorization Bearer. Fanout newsletter por categoría; encola news_alert si channel_email."
           },
           "response": []
         }

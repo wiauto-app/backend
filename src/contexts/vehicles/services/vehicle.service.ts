@@ -81,6 +81,7 @@ import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-p
 import { TypeOrmVehiclePriceRepository } from "@/src/contexts/vehicles/vehicle-prices/repositories/typeorm.vehicle-price.repository";
 import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
+import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
 
 export interface ValidateVehicleInput {
   battery_capacity: number;
@@ -143,6 +144,7 @@ export class VehicleService {
     private readonly vehicle_listing_expiry_scheduler: VehicleListingExpiryScheduler,
     private readonly entitlements_service: EntitlementsService,
     private readonly billing_notification_mail_service: BillingNotificationMailService,
+    private readonly dismissed_vehicles_service: DismissedVehiclesService,
   ) {}
 
   async create(
@@ -268,8 +270,28 @@ export class VehicleService {
 
   async findAll(
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
+    profile_id?: string,
   ): Promise<PaginatedResult<VehicleListItemDto>> {
-    const filter = new VehicleFilter({ ...find_all_vehicles_dto });
+    const exclude_vehicle_ids = [
+      ...find_all_vehicles_dto.exclude_vehicle_ids,
+    ];
+
+    if (profile_id) {
+      const dismissed_ids =
+        await this.dismissed_vehicles_service.findVehicleIdsByProfileId(
+          profile_id,
+        );
+      for (const vehicle_id of dismissed_ids) {
+        if (!exclude_vehicle_ids.includes(vehicle_id)) {
+          exclude_vehicle_ids.push(vehicle_id);
+        }
+      }
+    }
+
+    const filter = new VehicleFilter({
+      ...find_all_vehicles_dto,
+      exclude_vehicle_ids,
+    });
     return this.vehicle_repository.findAll(filter);
   }
 

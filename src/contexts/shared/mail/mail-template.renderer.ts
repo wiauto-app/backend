@@ -1019,6 +1019,36 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderNewsAlert(payload: {
+    news_title: string;
+    news_summary: string;
+    news_url: string;
+    category_name: string;
+  }): string {
+    const summary = payload.news_summary.trim();
+    const body = `
+      <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+        Categoría: <strong>${this.escapeHtml(payload.category_name)}</strong>
+      </p>
+      ${
+        summary
+          ? `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${this.escapeHtml(summary)}
+      </p>`
+          : ""
+      }`;
+
+    return this.renderBase({
+      preheader: summary || payload.news_title,
+      title: payload.news_title,
+      body,
+      cta_label: "Leer noticia",
+      cta_href: payload.news_url,
+      footer_note:
+        "Recibes este correo porque estás suscrito a las alertas de noticias de WiAuto. Puedes gestionar tus preferencias en Configuración.",
+    });
+  }
+
   renderAppraisalRequestNotification(payload: {
     appraisal: {
       vehicle_label: string;

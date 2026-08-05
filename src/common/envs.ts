@@ -104,6 +104,9 @@ const envsSchema = z.object({
     .string()
     .default("jaspers_market_order_confirmation_v1"),
   WHATSAPP_TEMPLATE_LANGUAGE: z.string().default("en_US"),
+
+  /** Secreto opcional para validar POST /strapi/webhook (header X-Strapi-Webhook-Secret o Authorization Bearer) */
+  STRAPI_WEBHOOK_SECRET: z.string().default(""),
 });
 
 const parsed_envs = envsSchema.parse(process.env);

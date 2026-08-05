@@ -8,6 +8,7 @@ import {
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { PublishedVehicleSnapshotPort } from "@/src/contexts/vehicles/ports/published-vehicle-snapshot.port";
 import { TypeOrmVehicleListItemRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-list-item-repository";
+import { VehiclePriceWatchService } from "@/src/contexts/vehicles/vehicle-engagement/services/vehicle-price-watch.service";
 
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
 import { Alert } from "../types/alert";
@@ -49,6 +50,7 @@ export class AlertNotificationService {
     private readonly preferences_repository: TypeOrmAlertNotificationPreferencesRepository,
     private readonly event_repository: TypeOrmAlertNotificationEventRepository,
     private readonly vehicle_list_item_repository: TypeOrmVehicleListItemRepository,
+    private readonly vehicle_price_watch_service: VehiclePriceWatchService,
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly alert_notification_dispatcher: AlertNotificationDispatcher,
     private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
@@ -121,6 +123,13 @@ export class AlertNotificationService {
           dto.vehicle_id,
         );
 
+      const price_watch_profile_ids =
+        event_type === ALERT_EVENT_TYPE.PRICE_DROP
+          ? await this.vehicle_price_watch_service.findProfileIdsByVehicleId(
+              dto.vehicle_id,
+            )
+          : [];
+
       const recipients_map = new Map<string, Recipient>();
       for (const recipient of alert_recipients) {
         const key =
@@ -129,7 +138,12 @@ export class AlertNotificationService {
         recipients_map.set(key, recipient);
       }
 
-      for (const profile_id of favorite_profile_ids) {
+      const extra_profile_ids = [
+        ...favorite_profile_ids,
+        ...price_watch_profile_ids,
+      ];
+
+      for (const profile_id of extra_profile_ids) {
         if (profile_id === snapshot.profile_id) {
           continue;
         }

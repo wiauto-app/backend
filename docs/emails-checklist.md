@@ -43,6 +43,7 @@ Estado al **2026-08-04**, según código en `wiauto-backend` (`mail-template.ren
 
 - [ ] Bienvenida (Automático)
 - [ ] Lanzamiento oficial (Manual)
+- [x] Alerta de noticia publicada (Automático) — job `news_alert` vía webhook Strapi `entry.publish` + `channel_email`
 - [ ] Novedades (Manual)
 - [ ] Consejos para comprar y vender (Manual)
 - [ ] Promociones (Manual)

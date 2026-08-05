@@ -9,6 +9,7 @@ import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { TypeOrmVehicleListItemRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-list-item-repository";
 import { VehicleListItemEntity } from "@/src/contexts/vehicles/entities/vehicle-list-item.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
+import { VehicleEngagementModule } from "@/src/contexts/vehicles/vehicle-engagement/vehicle-engagement.module";
 
 import { MailModule } from "@/src/contexts/shared/mail/mail.module";
 
@@ -67,6 +68,7 @@ import { AlertEmailNotificationService } from "./services/alert-email-notificati
     forwardRef(() => ProfileModule),
     MailModule,
     forwardRef(() => VehiclesModule),
+    VehicleEngagementModule,
   ],
 
   controllers: [
