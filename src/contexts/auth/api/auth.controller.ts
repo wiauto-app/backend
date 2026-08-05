@@ -11,7 +11,11 @@ import { JwtGuard } from "../guards/auth.guard";
 import { RefreshTokenGuard } from "../guards/refresh-token.guard";
 import { GetRefreshToken } from "../decorators/GetRefreshToken.decorator";
 import { TwoFactorLoginService } from "../services/two-factor-login.service";
-import { ACCESS_TOKEN_NAME, authCookieConfig } from "../cookie.config";
+import {
+  ACCESS_TOKEN_NAME,
+  REFRESH_TOKEN_NAME,
+  authCookieConfig,
+} from "../cookie.config";
 import { GetSessionId } from "../decorators/GetSessionId.decorator";
 import { TwoFactorChallengeScopeGuard } from "../guards/two-factor-challenge-scope.guard";
 import { GetSessionPayload } from "../decorators/GetSessionPayload.decorator";
@@ -43,9 +47,36 @@ export class AuthController {
     return this.registerService.register(registerDto);
   }
 
+  private setPlatformSessionCookies(
+    res: Response,
+    tokens: { token: string; refresh_token: string },
+  ): void {
+    res.cookie(
+      REFRESH_TOKEN_NAME,
+      tokens.refresh_token,
+      authCookieConfig.refresh_token,
+    );
+    res.cookie(
+      ACCESS_TOKEN_NAME,
+      tokens.token,
+      authCookieConfig.access_token,
+    );
+  }
+
   @Post("login")
-  login(@Body() loginDto: LoginDto, @Req() req: Request) {
-    return this.authService.signIn({ loginDto, request: req });
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.signIn({ loginDto, request: req });
+
+    this.setPlatformSessionCookies(res, {
+      token: result.token,
+      refresh_token: result.refresh_token,
+    });
+
+    return result;
   }
 
   @Get("two-factor/challenge")
