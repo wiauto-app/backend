@@ -5,7 +5,6 @@ import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
 import { AssistantQuotaService } from "@/src/contexts/assistant/services/assistant-quota.service";
-import type { PlanEffectConfig } from "@/src/contexts/billing/types/subscription-plan";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { FEATURED_DURATION_MS } from "@/src/contexts/vehicles/utils/owner-vehicle-rules";
@@ -13,7 +12,6 @@ import { VehicleSearchIndexer } from "@/src/contexts/vehicles/search/indexing/ve
 import {
   BILLING_INVOICE_STATUS,
   ONE_TIME_PURCHASE_STATUS,
-  SUBSCRIPTION_STATUS,
 } from "../types/billing.enums";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmStripeWebhookEventRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
@@ -396,7 +394,7 @@ export class StripeWebhookService {
         payment_intent_id,
       );
 
-      if (existing?.metadata?.effect_applied === true) {
+      if (existing?.metadata.effect_applied === true) {
         return;
       }
     }
@@ -429,7 +427,7 @@ export class StripeWebhookService {
     }
 
     const first_item = subscription.items.data[0];
-    const period_end = first_item?.current_period_end
+    const period_end = first_item.current_period_end
       ? new Date(first_item.current_period_end * 1000).toLocaleDateString("es-ES", {
           dateStyle: "long",
         })
@@ -471,7 +469,7 @@ export class StripeWebhookService {
     }
 
     const primitives = plan.toPrimitives();
-    const effect_config = (primitives.effect_config ?? {}) as PlanEffectConfig;
+    const effect_config = primitives.effect_config ?? {};
     const effect_type = effect_config.type;
 
     if (effect_type === "assistant_credits") {
@@ -487,11 +485,7 @@ export class StripeWebhookService {
       return;
     }
 
-    const is_feature_vehicle = effect_type === "feature_vehicle";
-
-    if (!is_feature_vehicle) {
-      return;
-    }
+  
 
     const vehicle_id = metadata.vehicle_id;
     if (typeof vehicle_id !== "string" || !vehicle_id) {
