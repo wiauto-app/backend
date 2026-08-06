@@ -12,7 +12,7 @@ contexts/<feature>/
   services/            # lógica de aplicación
   entities/            # TypeORM entities (campos snake_case)
   repositories/        # wrappers TypeORM concretos (SIN puerto abstracto)
-  clients/             # solo APIs/SDK externos (ApiVehiculo, Stripe, Minio, OpenSearch…)
+  clients/             # solo APIs/SDK externos (ApiVehiculo, Stripe, R2/ObjectStorage, OpenSearch…)
   exceptions/          # errores de aplicación
   types/               # read-models, filtros, enums, clases de dominio absorbidas
   ports/               # opcional: tokens abstractos solo para adapters externos
@@ -34,7 +34,7 @@ Globs TypeORM (`data-source` / `migrations-source`): `**/*.entity{.ts,.js}` — 
 
 ### Cuándo usar `clients/` / `ports/`
 
-- **Sí:** Minio, Stripe, OpenSearch, ApiVehiculo, notificaciones push/SMS stub, etc.
+- **Sí:** Cloudflare R2 / ObjectStorage, Stripe, OpenSearch, ApiVehiculo, notificaciones push/SMS stub, etc.
 - **No:** repositorios TypeORM ni “puertos” inventados para persistencia local.
 
 ### Naming
@@ -73,7 +73,7 @@ Completado el barrido estructural:
 
 Tokens `provide: …Port` que quedan a propósito para adapters externos:
 
-- `FileStoragePort`, `FileQueuePort`, `TempStoragePromotionPort`, `ImageStorageFinalizationPort`, `VideoProcessorPort` (Minio/ffmpeg/colas).
+- `FileStoragePort`, `FileQueuePort`, `TempStoragePromotionPort`, `ImageStorageFinalizationPort`, `VideoProcessorPort` (R2/ffmpeg/colas).
 - `AlertPushNotificationPort`, `AlertSmsNotificationPort` (stubs).
 - `ActiveFiltersLookupPort`, `PublishedVehicleSnapshotPort`, `ReverseGeocodingPort` (vehicles).
 - `ChatParticipantLookupPort` (lookup de perfiles para chat).

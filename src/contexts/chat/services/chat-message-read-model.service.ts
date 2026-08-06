@@ -1,11 +1,12 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { FileStoragePort } from "@/src/contexts/shared/file/ports/file-storage.port";
+import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
 
 import { CHAT_MESSAGE_TYPE, ChatMessage } from "../types/chatMessage";
 import { ChatMessageListItem } from "../types/chat-message-list-item";
 
-export const CHAT_ATTACHMENTS_BUCKET = "chat-attachments";
+export const CHAT_ATTACHMENTS_BUCKET = STORAGE_DIRECTORIES.CHAT_ATTACHMENTS;
 
 @Injectable()
 export class ChatMessageReadModelService {

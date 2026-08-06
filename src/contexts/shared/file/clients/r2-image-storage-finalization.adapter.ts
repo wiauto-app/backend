@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { MinioService } from "@/src/contexts/shared/minio-provider/minio.service";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 
 import { OptimizeImageService } from "../services/optimize-image.service";
 import { TempStoragePathInvalidException } from "../exceptions/temp-storage-path-invalid.exception";
@@ -17,7 +17,7 @@ import {
 import { guess_image_mimetype_from_object_key } from "../utils/guess-image-mimetype-from-object-key";
 import { normalize_image_filename_for_storage } from "../utils/normalize-image-filename-for-storage";
 
-const to_multer_file = (
+const toMulterFile = (
   buffer: Buffer,
   originalname: string,
   mimetype: string,
@@ -34,17 +34,17 @@ const to_multer_file = (
     path: "",
   }) as Express.Multer.File;
 
-const is_webp_object_key = (object_key: string): boolean =>
-  path.extname(object_key).toLowerCase() === ".webp";
+const isWebpObjectKey = (objectKey: string): boolean =>
+  path.extname(objectKey).toLowerCase() === ".webp";
 
 @Injectable()
-export class MinioImageStorageFinalizationAdapter
+export class R2ImageStorageFinalizationAdapter
   extends ImageStorageFinalizationPort
   implements TempStoragePromotionPort
 {
   constructor(
-    private readonly minio_service: MinioService,
-    private readonly optimize_image_service: OptimizeImageService,
+    private readonly objectStorageService: ObjectStorageService,
+    private readonly optimizeImageService: OptimizeImageService,
   ) {
     super();
   }
@@ -59,67 +59,67 @@ export class MinioImageStorageFinalizationAdapter
 
   async finalize_compound_path(compound_path: string): Promise<string> {
     const normalized = compound_path.trim().replace(/^\/+/, "");
-    const promoted_compound = is_temp_storage_path(normalized)
+    const promotedCompound = is_temp_storage_path(normalized)
       ? promote_temp_storage_path(normalized)
       : normalized;
 
-    const { bucket_name, object_key: dest_object_key } =
-      split_storage_compound_path(promoted_compound);
+    const { directory, object_key: destObjectKey } =
+      split_storage_compound_path(promotedCompound);
 
-    if (!is_temp_storage_path(normalized) && is_webp_object_key(dest_object_key)) {
-      return to_storage_pathname(promoted_compound);
+    if (!is_temp_storage_path(normalized) && isWebpObjectKey(destObjectKey)) {
+      return to_storage_pathname(promotedCompound);
     }
 
-    const source_compound = is_temp_storage_path(normalized)
+    const sourceCompound = is_temp_storage_path(normalized)
       ? normalized
-      : promoted_compound;
-    const { object_key: source_object_key } =
-      split_storage_compound_path(source_compound);
+      : promotedCompound;
+    const { object_key: sourceObjectKey } =
+      split_storage_compound_path(sourceCompound);
 
-    const source_buffer = await this.minio_service.getObjectBuffer(
-      bucket_name,
-      source_object_key,
+    const sourceBuffer = await this.objectStorageService.getObjectBuffer(
+      directory,
+      sourceObjectKey,
     );
 
-    if (!source_buffer) {
+    if (!sourceBuffer) {
       throw new Error(
-        `No se encontró la imagen en storage: ${bucket_name}/${source_object_key}`,
+        `No se encontró la imagen en storage: ${directory}/${sourceObjectKey}`,
       );
     }
 
-    const source_mimetype = guess_image_mimetype_from_object_key(source_object_key);
-    const multer_file = to_multer_file(
-      source_buffer,
-      path.basename(source_object_key),
-      source_mimetype,
+    const sourceMimetype = guess_image_mimetype_from_object_key(sourceObjectKey);
+    const multerFile = toMulterFile(
+      sourceBuffer,
+      path.basename(sourceObjectKey),
+      sourceMimetype,
     );
-    const [optimized] = await this.optimize_image_service.execute([multer_file], {
+    const [optimized] = await this.optimizeImageService.execute([multerFile], {
       diferente_sizes: false,
     });
-    const optimized_filename = normalize_image_filename_for_storage(
+    const optimizedFilename = normalize_image_filename_for_storage(
       optimized.large.originalname,
       CONTENT_TYPES.IMAGE_WEBP,
     );
-    const dest_dir = path.dirname(dest_object_key);
-    const final_object_key =
-      dest_dir && dest_dir !== "."
-        ? `${dest_dir}/${optimized_filename}`
-        : optimized_filename;
+    const destDir = path.dirname(destObjectKey);
+    const finalObjectKey =
+      destDir && destDir !== "."
+        ? `${destDir}/${optimizedFilename}`
+        : optimizedFilename;
 
-    await this.minio_service.putObjectToBucket(
-      bucket_name,
-      final_object_key,
+    await this.objectStorageService.putObjectToBucket(
+      directory,
+      finalObjectKey,
       optimized.large.buffer,
       CONTENT_TYPES.IMAGE_WEBP,
     );
 
-    if (source_object_key !== final_object_key) {
-      await this.minio_service.deleteObjectFromBucket(
-        bucket_name,
-        source_object_key,
+    if (sourceObjectKey !== finalObjectKey) {
+      await this.objectStorageService.deleteObjectFromBucket(
+        directory,
+        sourceObjectKey,
       );
     }
 
-    return to_storage_pathname(`${bucket_name}/${final_object_key}`);
+    return to_storage_pathname(`${directory}/${finalObjectKey}`);
   }
 }

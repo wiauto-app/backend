@@ -7,6 +7,7 @@ import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-
 
 import { UploadJob } from "../ports/file-queue.port";
 import { UploadImageService } from "../services/upload-image.service";
+import { STORAGE_DIRECTORIES } from "../storage-directories";
 import { UPLOAD_IMAGE_QUEUE } from "../media.constants";
 
 function queuedPayloadsToMulterFiles(job: UploadJob["files"]): Express.Multer.File[] {
@@ -31,7 +32,7 @@ export class ImageProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageProcessor.name);
 
   constructor(
-    private readonly upload_image_use_case: UploadImageService,
+    private readonly uploadImageService: UploadImageService,
     private readonly vehicleImageRepository: TypeOrmVehicleImagesRepository,
   ) {
     super();
@@ -41,7 +42,16 @@ export class ImageProcessor extends WorkerHost {
     try {
       const { files: payloads, path, entity, entityId } = job.data;
       const files = queuedPayloadsToMulterFiles(payloads);
-      const urls = await this.upload_image_use_case.execute(files, path, "queued");
+      const results = await this.uploadImageService.execute(files, {
+        directory: STORAGE_DIRECTORIES.VEHICLES_IMAGES,
+        keyPrefix: path,
+        fileNameStrategy: "prefixTimestamp",
+        fileNamePrefix: "queued",
+        optimize: { enabled: true, convertHeic: true },
+      });
+      const urls = results.map((result) =>
+        result.path.startsWith("/") ? result.path : `/${result.path}`,
+      );
 
       if (entity === "vehicle") {
         this.logger.log(`Saving ${urls.length} vehicle images for vehicle ${entityId}`);
@@ -52,7 +62,7 @@ export class ImageProcessor extends WorkerHost {
 
       this.logger.log(`Images uploaded successfully for ${entity} ${entityId}`);
     } catch (error) {
-      this.logger.error(`Error uploading images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.error(`Error uploading images: ${error instanceof Error ? error.message : "Unknown error"}`);
       throw error;
     }
   }

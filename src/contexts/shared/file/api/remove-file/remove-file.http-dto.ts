@@ -1,5 +1,6 @@
 import { IsArray, IsIn, IsNotEmpty, IsString } from "class-validator";
-import { envs } from "@/src/common/envs";
+
+import { STORAGE_DIRECTORY_VALUES } from "../../storage-directories";
 
 export class RemoveFilesHttpDto {
   @IsArray()
@@ -7,8 +8,9 @@ export class RemoveFilesHttpDto {
   @IsNotEmpty({ each: true })
   paths: string[];
 
+  /** Directorio lógico dentro del único bucket R2. */
   @IsString()
   @IsNotEmpty()
-  @IsIn(envs.MINIO_BUCKET_NAMES)
+  @IsIn(STORAGE_DIRECTORY_VALUES)
   bucket_name: string;
 }

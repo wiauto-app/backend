@@ -7,14 +7,14 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 
 import { VehicleImage } from "../types/vehicle-image";
 import { VehicleImagesEntity } from "../entities/vehicle-images.entity";
-import { MinioService } from "@/src/contexts/shared/minio-provider/minio.service";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 
 @Injectable()
 export class TypeOrmVehicleImagesRepository {
   constructor(
     @InjectRepository(VehicleImagesEntity)
     private readonly vehicleImagesRepository: Repository<VehicleImagesEntity>,
-    private readonly minioService: MinioService,
+    private readonly objectStorageService: ObjectStorageService,
   ) {}
 
   private to_entity(vehicleImage: VehicleImage): VehicleImagesEntity {
@@ -50,7 +50,7 @@ export class TypeOrmVehicleImagesRepository {
 
   async delete(vehicleImage: VehicleImage): Promise<void> {
     const p = vehicleImage.toPrimitives();
-    await lastValueFrom(this.minioService.deleteFileByUrl(p.url));
+    await lastValueFrom(this.objectStorageService.deleteFileByUrl(p.url));
     await this.vehicleImagesRepository.delete(p.id);
   }
 
@@ -59,7 +59,7 @@ export class TypeOrmVehicleImagesRepository {
       where: { vehicle: { id: vehicle_id } },
     });
     for (const row of rows) {
-      await lastValueFrom(this.minioService.deleteFileByUrl(row.url));
+      await lastValueFrom(this.objectStorageService.deleteFileByUrl(row.url));
     }
   }
 }

@@ -7,18 +7,20 @@ import { TempStoragePromotionPort } from "./ports/temp-storage-promotion.port";
 import { VideoProcessorPort } from "./ports/video-processor.port";
 import { FileQueueAdapter } from "./clients/file-queue.adapter";
 import { FfmpegAdapter } from "./clients/ffmpeg.adapter";
-import { MinioAdapter } from "./clients/minio.adapter";
-import { MinioImageStorageFinalizationAdapter } from "./clients/minio-image-storage-finalization.adapter";
+import { R2StorageAdapter } from "./clients/r2-storage.adapter";
+import { R2ImageStorageFinalizationAdapter } from "./clients/r2-image-storage-finalization.adapter";
 import { FinalizeImageStoragePathService } from "./services/finalize-image-storage-path.service";
 import { ImageStorageFinalizationPort } from "./ports/image-storage-finalization.port";
 import { PromoteTempStoragePathsService } from "./services/promote-temp-storage-paths.service";
 import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE } from "./media.constants";
 import { ImageProcessor } from "./processors/image.processor";
 import { VideoProcessor } from "./processors/video.processor";
-import { MinioService } from "../minio-provider/minio.service";
+import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/vehicle-images-persistence.module";
 import { OptimizeImageService } from "./services/optimize-image.service";
 import { UploadImageService } from "./services/upload-image.service";
+import { UploadVideoService } from "./services/upload-video.service";
+import { UploadFileService } from "./services/upload-file.service";
 import { ValidateImagesService } from "./services/validate-images.service";
 import { GenerateFileSignedUrlController } from "./api/generate-file-signed-url/generate-file-signed-url.controller";
 import { GenerateSignedUrlService } from "./services/generate-signed-url.service";
@@ -41,14 +43,16 @@ import { ImageValidationPipe } from "./pipes/image-validation.pipe";
     UploadTempVehicleImageController,
   ],
   providers: [
-    MinioService,
-    MinioAdapter,
+    ObjectStorageService,
+    R2StorageAdapter,
     {
       provide: FileStoragePort,
-      useExisting: MinioAdapter,
+      useExisting: R2StorageAdapter,
     },
 
     UploadImageService,
+    UploadVideoService,
+    UploadFileService,
     ValidateImagesService,
     OptimizeImageService,
     GenerateSignedUrlService,
@@ -59,14 +63,14 @@ import { ImageValidationPipe } from "./pipes/image-validation.pipe";
     ImageValidationPipe,
     PromoteTempStoragePathsService,
     FinalizeImageStoragePathService,
-    MinioImageStorageFinalizationAdapter,
+    R2ImageStorageFinalizationAdapter,
     {
       provide: TempStoragePromotionPort,
-      useExisting: MinioImageStorageFinalizationAdapter,
+      useExisting: R2ImageStorageFinalizationAdapter,
     },
     {
       provide: ImageStorageFinalizationPort,
-      useExisting: MinioImageStorageFinalizationAdapter,
+      useExisting: R2ImageStorageFinalizationAdapter,
     },
 
     FileQueueAdapter,
@@ -90,7 +94,10 @@ import { ImageValidationPipe } from "./pipes/image-validation.pipe";
   exports: [
     FileStoragePort,
     UploadImageService,
-    MinioService,
+    UploadVideoService,
+    UploadFileService,
+    ObjectStorageService,
+    RemoveFilesService,
     FileQueueAdapter,
     FileQueuePort,
     TempStoragePromotionPort,

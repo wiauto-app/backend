@@ -1,0 +1,13 @@
+# Plantilla — no contiene secretos.
+# Un solo bucket R2; las keys son directorio/resto (vehicles-images/...).
+# Desplegar en la cuenta Cloudflare de WiAuto y ajustar account_id / zone / bucket_name.
+
+name = "wiauto-media"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# routes = [{ pattern = "media.wiauto.es/*", zone_name = "wiauto.es" }]
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "wiauto-media"

@@ -43,32 +43,36 @@ export const promote_temp_storage_path = (stored_path: string): string => {
 
   if (without_temp.length < 2) {
     throw new Error(
-      'Ruta temporal inválida: se esperaba "bucket/.../archivo" tras quitar temp',
+      'Ruta temporal inválida: se esperaba "directorio/.../archivo" tras quitar temp',
     );
   }
 
   return without_temp.join("/");
 };
 
+/**
+ * Separa el directorio lógico (primer segmento) del resto de la key.
+ * En R2 hay un solo bucket físico; `directory` no es un bucket de Cloudflare.
+ */
 export const split_storage_compound_path = (
   compound_path: string,
-): { bucket_name: string; object_key: string } => {
+): { directory: string; object_key: string; bucket_name: string } => {
   const normalized = compound_path.trim().replace(/^\/+/, "");
   const first_slash = normalized.indexOf("/");
   if (first_slash <= 0) {
     throw new Error(
-      'Ruta de almacenamiento inválida: se esperaba "bucket/clave-del-objeto"',
+      'Ruta de almacenamiento inválida: se esperaba "directorio/clave-del-objeto"',
     );
   }
-  const bucket_name = normalized.slice(0, first_slash);
+  const directory = normalized.slice(0, first_slash);
   const object_key = normalized.slice(first_slash + 1);
   if (!object_key) {
     throw new Error("Ruta de almacenamiento inválida: falta la clave del objeto");
   }
-  return { bucket_name, object_key };
+  return { directory, object_key, bucket_name: directory };
 };
 
-/** Pathname persistido en BD (`/bucket/clave`). */
+/** Pathname persistido en BD (`/directorio/clave`). */
 export const to_storage_pathname = (compound_path: string): string => {
   const normalized = compound_path.trim().replace(/^\/+/, "");
   return `/${normalized}`;

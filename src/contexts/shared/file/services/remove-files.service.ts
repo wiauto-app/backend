@@ -1,14 +1,19 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { RemoveFilesDto } from "../dto/remove-files.dto";
-import { MinioService } from "@/src/contexts/shared/minio-provider/minio.service";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { firstValueFrom } from "rxjs";
 
-@Injectable()
+import { RemoveFilesDto } from "../dto/remove-files.dto";
 
+@Injectable()
 export class RemoveFilesService {
-  constructor(private readonly minioService: MinioService) {}
+  constructor(private readonly objectStorageService: ObjectStorageService) {}
 
   async execute(removeFilesDto: RemoveFilesDto): Promise<void> {
-    await firstValueFrom(this.minioService.deleteFiles(removeFilesDto.paths, removeFilesDto.bucket_name));
+    await firstValueFrom(
+      this.objectStorageService.deleteFiles(
+        removeFilesDto.paths,
+        removeFilesDto.bucket_name,
+      ),
+    );
   }
 }

@@ -28,19 +28,23 @@ export const CONTENT_TYPES = {
 export type ContentType = (typeof CONTENT_TYPES)[keyof typeof CONTENT_TYPES];
 
 export abstract class FileStoragePort {
-  abstract uploadFiles(files: Express.Multer.File[], storagePath: string): Promise<string[]>;
+  abstract uploadFiles(
+    files: Express.Multer.File[],
+    storagePath: string,
+    directory: string,
+  ): Promise<string[]>;
   abstract deleteFiles(urls: string[]): Promise<void>;
-  abstract downloadFile(fileKey: string): Promise<Buffer | null>;
-  /** Clave S3/MinIO en el bucket de vídeos. */
+  abstract downloadFile(storedPath: string): Promise<Buffer | null>;
+  /** Clave relativa bajo el directorio vehicles-videos. */
   abstract downloadVideoFile(file_key: string): Promise<Buffer | null>;
-  /** Sube o reemplaza el objeto en el bucket de vídeos bajo `file_key`. */
+  /** Sube o reemplaza el objeto de vídeo bajo `file_key`. */
   abstract replaceVideoObject(
     file_key: string,
     body: Buffer,
     content_type: ContentType,
   ): Promise<void>;
-  /** Borra un objeto en el bucket de vídeos (p. ej. clave antigua al pasar a `.mp4`). */
+  /** Borra un objeto de vídeo (p. ej. clave antigua al pasar a `.mp4`). */
   abstract deleteVideoObject(file_key: string): Promise<void>;
-  abstract generateSignedUrl(bucketName: string, fileKey: string, contentType: ContentType): Promise<string>;
-  abstract generateReadSignedUrl(bucketName: string, fileKey: string): Promise<{ signed_url: string }>;
+  abstract generateSignedUrl(directory: string, fileKey: string, contentType: ContentType): Promise<string>;
+  abstract generateReadSignedUrl(directory: string, fileKey: string): Promise<{ signed_url: string }>;
 }

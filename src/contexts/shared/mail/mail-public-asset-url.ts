@@ -2,7 +2,7 @@ import { envs } from "@/src/common/envs";
 
 /**
  * Absolutiza rutas de assets (imagen de vehículo, logo) para HTML de correo.
- * Las URLs de MinIO suelen guardarse como pathname (`/bucket/key`).
+ * Las URLs de media suelen guardarse como pathname (`/bucket/key`).
  */
 export const toAbsoluteMailAssetUrl = (
   path_or_url: string | null | undefined,
@@ -16,7 +16,7 @@ export const toAbsoluteMailAssetUrl = (
     return value;
   }
 
-  const base = envs.MINIO_ENDPOINT.replace(/\/$/, "");
+  const base = envs.R2_PUBLIC_URL.replace(/\/$/, "");
   const path = value.startsWith("/") ? value : `/${value}`;
   return `${base}${path}`;
 };

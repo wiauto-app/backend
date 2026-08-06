@@ -15,4 +15,4 @@ Seguir: [`docs/architecture-nest-lite.md`](../../docs/architecture-nest-lite.md)
 - No crear carpetas `domain/`, `application/`, `infrastructure/`, ni `*-use-case/`.
 - No crear `abstract class XxxRepository` ni `provide`/`useExisting` para repos TypeORM.
 - Controllers van en `api/`; entities TypeORM en `entities/`; lógica en `services/`.
-- `clients/` / `ports/` solo para APIs externas (Minio, Stripe, OpenSearch, etc.).
+- `clients/` / `ports/` solo para APIs externas (R2/ObjectStorage, Stripe, OpenSearch, etc.).

@@ -53,17 +53,14 @@ const envsSchema = z.object({
 
   REDIS_URL: z.string().default("redis://redis:6379"),
   
-  /** Base URL pública (navegador, presigned). Ej: http://localhost:9000 */
-  MINIO_ENDPOINT: z.string(),
-  /** API S3 del backend (mismo servicio, host interno en Docker: http://minio:9000) */
-  MINIO_S3_URL: z.string(),
-  MINIO_ACCESS_KEY: z.string(),
-  MINIO_SECRET_KEY: z.string(),
-
-  MINIO_VIDEO_BUCKET_NAME: z.string(),
-  MINIO_BUCKET_NAMES: z
-  .string()
-  .transform((value) => value.split(",")),
+  /** Endpoint S3 de cuenta R2. Ej: https://<ACCOUNT_ID>.r2.cloudflarestorage.com */
+  R2_S3_ENDPOINT: z.string(),
+  /** Base CDN pública path-style. Ej: https://media.wiauto.es */
+  R2_PUBLIC_URL: z.string(),
+  R2_ACCESS_KEY_ID: z.string(),
+  R2_SECRET_ACCESS_KEY: z.string(),
+  /** Único bucket R2 físico. Los “buckets” lógicos son directorios en código. */
+  R2_BUCKET_NAME: z.string(),
 
   OPENSEARCH_URL: z.string().default("http://localhost:9200"),
   OPENSEARCH_INDEX_HERO: z.string().default("vehicles_hero_v1"),

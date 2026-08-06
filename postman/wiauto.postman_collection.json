@@ -8370,7 +8370,7 @@
               "raw": "{\n  \"paths\": [\"vehicle-gallery/ejemplo-uuid.webp\"],\n  \"bucket_name\": \"vehicles-images\"\n}"
             },
             "url": "{{base_url}}/v1/files",
-            "description": "JWT. Body alineado con `RemoveFilesHttpDto`: `paths` son las claves S3 **dentro** del bucket (`bucket_name`), sin prefijo del nombre del bucket. `bucket_name` debe estar en la lista configurada (`MINIO_BUCKET_NAMES`)."
+            "description": "JWT. Body alineado con `RemoveFilesHttpDto`: `paths` son las claves S3 **dentro** del bucket (`bucket_name`), sin prefijo del nombre del bucket. `bucket_name` debe estar en la lista configurada (`R2_BUCKET_NAMES`)."
           },
           "response": []
         }

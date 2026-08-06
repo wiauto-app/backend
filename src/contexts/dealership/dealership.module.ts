@@ -19,8 +19,7 @@ import { UpdateDealershipSchedulesController } from "./api/v1/update-dealership-
 import { DealershipEntity } from "./entities/dealership.entity";
 import { DealershipInvitationModule } from "./modules/dealership-invitation.module";
 import { DealershipReviewsModule } from "./modules/dealership-reviews.module";
-import { RemoveFilesService } from "../shared/file/services/remove-files.service";
-import { MinioService } from "../shared/minio-provider/minio.service";
+import { FileModule } from "../shared/file/file.module";
 import { DealershipSchedule } from "./entities/dealership-schedule.entity";
 import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
 
@@ -28,6 +27,7 @@ import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
   imports: [
     TypeOrmModule.forFeature([DealershipEntity, DealershipSchedule, DealershipOpenTime]),
     DealershipInvitationModule,
+    FileModule,
     forwardRef(() => ProfileModule),
     forwardRef(() => DealershipReviewsModule)],
   controllers: [
@@ -43,8 +43,6 @@ import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
   providers: [
     DealershipService,
     DealershipScheduleService,
-    RemoveFilesService,
-    MinioService,
     RecalculateDealershipRatingService,
     TypeOrmDealershipRepository
   ],

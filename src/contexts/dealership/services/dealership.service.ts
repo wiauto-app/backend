@@ -3,6 +3,7 @@ import { ConflictException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { RemoveFilesService } from "@/src/contexts/shared/file/services/remove-files.service";
+import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
 
 import { Dealership, PrimitiveDealership } from "../types/dealership";
@@ -166,7 +167,7 @@ export class DealershipService {
       throw new DealershipNotFoundException(remove_dealership_dto.id);
     }
 
-    const bucket = "dealership-images";
+    const directory = STORAGE_DIRECTORIES.DEALERSHIP_IMAGES;
     const images = [
       dealership.avatar_url ? `/${dealership.avatar_url}` : undefined,
       dealership.banner_url ? `/${dealership.banner_url}` : undefined].filter((image) => image !== undefined);
@@ -175,11 +176,11 @@ export class DealershipService {
       .map((url) =>
         url
           .replace(/^\/+/, "")
-          .replace(`${bucket}/`, ""),
+          .replace(`${directory}/`, ""),
       );
     await this.remove_image_service.execute({
       paths: formated_images,
-      bucket_name: bucket,
+      bucket_name: directory,
     });
 
     await this.dealership_repository.delete(remove_dealership_dto.id);

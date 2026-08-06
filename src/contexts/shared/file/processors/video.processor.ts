@@ -53,7 +53,7 @@ export class VideoProcessor extends WorkerHost {
         await this.fileStoragePort.deleteVideoObject(file_key);
       }
       this.logger.log(
-        `Video optimizado en MinIO: ${file_key} -> ${file_key_final}`,
+        `Video optimizado en R2: ${file_key} -> ${file_key_final}`,
       );
     } catch (error) {
       this.logger.error(

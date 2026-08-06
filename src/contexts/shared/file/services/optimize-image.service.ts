@@ -4,27 +4,35 @@ import sharp from "sharp";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
-type optimized_image =
-  | {
-      large: Express.Multer.File;
-      medium: Express.Multer.File;
-      thumb: Express.Multer.File;
-    }
-  | {
-      large: Express.Multer.File;
-    };
+interface OptimizedImageSizes {
+  large: Express.Multer.File;
+  medium: Express.Multer.File;
+  thumb: Express.Multer.File;
+}
 
-function to_webp_multer_file(
+interface OptimizedImageSingle {
+  large: Express.Multer.File;
+}
+
+type OptimizedImage = OptimizedImageSizes | OptimizedImageSingle;
+
+export interface OptimizeImageOptions {
+  diferente_sizes?: boolean;
+  maxWidth?: number;
+  quality?: number;
+}
+
+function toWebpMulterFile(
   source: Express.Multer.File,
-  webp_buffer: Buffer,
+  webpBuffer: Buffer,
 ): Express.Multer.File {
   const parsed = path.parse(source.originalname);
   const originalname = path.format({ ...parsed, base: undefined, ext: ".webp" });
 
   return {
     ...source,
-    buffer: webp_buffer,
-    size: webp_buffer.length,
+    buffer: webpBuffer,
+    size: webpBuffer.length,
     mimetype: "image/webp",
     originalname,
   };
@@ -36,38 +44,46 @@ export class OptimizeImageService {
     files: Express.Multer.File[],
     {
       diferente_sizes = false,
-    }: {
-      diferente_sizes?: boolean;
-    },
-  ): Promise<optimized_image[]> {
-    const out: optimized_image[] = [];
+      maxWidth = 1920,
+      quality = 80,
+    }: OptimizeImageOptions = {},
+  ): Promise<OptimizedImage[]> {
+    const out: OptimizedImage[] = [];
 
     for (const file of files) {
       const base = sharp(file.buffer)
         .rotate()
         .resize({
-          width: 1920,
+          width: maxWidth,
           withoutEnlargement: true,
           fit: "inside",
         })
-        .webp({ quality: 80, effort: 4 });
+        .webp({ quality, effort: 4 });
 
       if (diferente_sizes) {
-        const [large_buf, medium_buf, thumb_buf] = await Promise.all([
+        const [largeBuf, mediumBuf, thumbBuf] = await Promise.all([
           base.clone().toBuffer(),
-          base.clone().resize(800, 800, { fit: "inside" }).webp({ quality: 80, effort: 4 }).toBuffer(),
-          base.clone().resize(300, 300, { fit: "inside" }).webp({ quality: 75, effort: 4 }).toBuffer(),
+          base
+            .clone()
+            .resize(800, 800, { fit: "inside" })
+            .webp({ quality, effort: 4 })
+            .toBuffer(),
+          base
+            .clone()
+            .resize(300, 300, { fit: "inside" })
+            .webp({ quality: Math.min(quality, 75), effort: 4 })
+            .toBuffer(),
         ]);
 
         out.push({
-          large: to_webp_multer_file(file, large_buf),
-          medium: to_webp_multer_file(file, medium_buf),
-          thumb: to_webp_multer_file(file, thumb_buf),
+          large: toWebpMulterFile(file, largeBuf),
+          medium: toWebpMulterFile(file, mediumBuf),
+          thumb: toWebpMulterFile(file, thumbBuf),
         });
       } else {
-        const large_buf = await base.clone().toBuffer();
+        const largeBuf = await base.clone().toBuffer();
         out.push({
-          large: to_webp_multer_file(file, large_buf),
+          large: toWebpMulterFile(file, largeBuf),
         });
       }
     }

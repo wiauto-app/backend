@@ -1,23 +1,38 @@
-import { FileStoragePort } from "../ports/file-storage.port";
 import { GenerateFileSignedUrlHttpDto } from "../api/generate-file-signed-url/generate-file-signed-url.http-dto";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
+import { UploadFileService } from "./upload-file.service";
+import { UploadVideoService } from "./upload-video.service";
 
 @Injectable()
 export class GenerateSignedUrlService {
   constructor(
-    private readonly fileStoragePort: FileStoragePort
-  ) { 
-  }
+    private readonly uploadFileService: UploadFileService,
+    private readonly uploadVideoService: UploadVideoService,
+  ) {}
 
-  async execute( generateVideoSignedUrlHttpDto: GenerateFileSignedUrlHttpDto ): Promise<{ signed_url: string }> {
-    const file_key = generateVideoSignedUrlHttpDto.file_key.replace(/^\/+/, "");
+  async execute(
+    generateFileSignedUrlHttpDto: GenerateFileSignedUrlHttpDto,
+  ): Promise<{ signed_url: string }> {
+    const fileKey = generateFileSignedUrlHttpDto.file_key.replace(/^\/+/, "");
+    const isVideo = generateFileSignedUrlHttpDto.content_type.startsWith("video/");
 
-    const signed_url = await this.fileStoragePort.generateSignedUrl(
-      generateVideoSignedUrlHttpDto.bucket_name,
-      file_key,
-      generateVideoSignedUrlHttpDto.content_type,
-    );
-    return { signed_url };
+    if (isVideo) {
+      const result = await this.uploadVideoService.createUploadUrl({
+        mode: "presigned",
+        directory: generateFileSignedUrlHttpDto.bucket_name,
+        fileKey,
+        contentType: generateFileSignedUrlHttpDto.content_type,
+      });
+      return { signed_url: result.signed_url };
+    }
+
+    const result = await this.uploadFileService.createUploadUrl({
+      mode: "presigned",
+      directory: generateFileSignedUrlHttpDto.bucket_name,
+      fileKey,
+      contentType: generateFileSignedUrlHttpDto.content_type,
+    });
+    return { signed_url: result.signed_url };
   }
 }

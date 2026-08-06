@@ -1,14 +1,14 @@
 import { Injectable, Logger } from "@nestjs/common";
 import sharp from "sharp";
 
-import { MinioService } from "@/src/contexts/shared/minio-provider/minio.service";
+import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { WikimediaCommonsClient } from "../clients/wikimedia-commons.client";
 import { resolveMakeLogoSearchQuery } from "../constants/make-logo-search-aliases";
 import { MakeNotFoundException } from "../exceptions/make-not-found.exception";
 import { TypeormMakeRepository } from "../repositories/typeorm.make-repository";
 import { Make } from "../types/make";
 
-const FILES_BUCKET = "files";
 const LOGO_SIZE = 256;
 
 export interface SyncMakeLogosInput {
@@ -36,7 +36,7 @@ export class SyncMakeLogosService {
   constructor(
     private readonly makes_repository: TypeormMakeRepository,
     private readonly wikimedia_client: WikimediaCommonsClient,
-    private readonly minio_service: MinioService,
+    private readonly objectStorageService: ObjectStorageService,
   ) {}
 
   async execute(input: SyncMakeLogosInput = {}): Promise<SyncMakeLogosResult> {
@@ -129,14 +129,14 @@ export class SyncMakeLogosService {
       .toBuffer();
 
     const object_key = `makes/${primitives.slug}.webp`;
-    await this.minio_service.putObjectToBucket(
-      FILES_BUCKET,
+    await this.objectStorageService.putObjectToBucket(
+      STORAGE_DIRECTORIES.FILES,
       object_key,
       webp_buffer,
       "image/webp",
     );
 
-    const image_url = `/${FILES_BUCKET}/${object_key}`;
+    const image_url = `/${STORAGE_DIRECTORIES.FILES}/${object_key}`;
     await this.makes_repository.save(
       make.update({ image_url }),
     );

@@ -90,7 +90,6 @@
     "heic-convert": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.0.1",
-    "minio": "^8.0.7",
     "openai": "^7.1.0",
     "otplib": "^13.4.0",
     "passport": "^0.7.0",
