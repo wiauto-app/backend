@@ -1,3 +1,4 @@
+import { envs } from "@/src/common/envs";
 import { CookieOptions } from "express";
 
 /** Cookies de la plataforma (frontend). El dashboard usa `admin-cookie.config`. */
@@ -12,6 +13,7 @@ export const authCookieConfig: Record<string, CookieOptions> = {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
+    domain: envs.ENVIRONMENT === "development" ? "localhost" : '.wiauto.es',
     path: "/",
     maxAge: MONTH,
   },
@@ -20,6 +22,7 @@ export const authCookieConfig: Record<string, CookieOptions> = {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
+    domain: envs.ENVIRONMENT === "development" ? "localhost" : '.wiauto.es',
     path: "/",
     maxAge: FIFTEEN_MINUTES,
   },

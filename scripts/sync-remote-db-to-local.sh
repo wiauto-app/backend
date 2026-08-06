@@ -8,7 +8,7 @@
 #
 # Variables opcionales (valores por defecto entre paréntesis):
 #   PGPASSWORD (wiautopassword), LOCAL_HOST (localhost), LOCAL_PORT (5432),
-#   REMOTE_HOST (89.167.121.207), REMOTE_PORT (5434), PGUSER (postgres),
+#   REMOTE_HOST (186.240.152.108), REMOTE_PORT (5434), PGUSER (postgres),
 #   PGDATABASE (wiauto), CONFIRM (debe ser "yes" para ejecutar el DROP SCHEMA)
 #
 set -euo pipefail
@@ -17,7 +17,7 @@ export PGPASSWORD="${PGPASSWORD:-wiautopassword}"
 
 LOCAL_HOST="${LOCAL_HOST:-localhost}"
 LOCAL_PORT="${LOCAL_PORT:-5433}"
-REMOTE_HOST="${REMOTE_HOST:-89.167.121.207}"
+REMOTE_HOST="${REMOTE_HOST:-186.240.152.108}"
 REMOTE_PORT="${REMOTE_PORT:-5434}"
 PGUSER="${PGUSER:-postgres}"
 PGDATABASE="${PGDATABASE:-wiauto}"
