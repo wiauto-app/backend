@@ -7,7 +7,7 @@ const envsSchema = z.object({
   PORT: z.coerce.number(),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
-  ENVIRONMENT: z.string().default("development"),
+  ENVIRONMENT: z.string(),
   /** Alineado con cookie access (15 min) en authCookieConfig */
   ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   
