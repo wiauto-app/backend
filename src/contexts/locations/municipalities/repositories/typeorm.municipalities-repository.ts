@@ -3,11 +3,16 @@ import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pag
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Like, Repository } from "typeorm";
 
 import { Municipality as MunicipalityEntity } from "../entities/municipality.entity";
 import { Municipality } from "../types/municipality";
 import { MunicipalityNotFoundException } from "../exceptions/municipality-not-found.exception";
+
+interface FindAllMunicipalitiesOptions {
+  ineCodePrefix?: string;
+}
+
 const MUNICIPALITY_SORT_KEYS = new Set([
   "id",
   "name",
@@ -39,13 +44,18 @@ export class TypeormMunicipalitiesRepository {
 
   async find_all(
     filter: CatalogPaginationFilter,
+    options?: FindAllMunicipalitiesOptions,
   ): Promise<PaginatedResult<Municipality>> {
+    const ineCodePrefix = options?.ineCodePrefix?.trim();
     return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
       map_row: mapRowToMunicipality,
       allowed_sort_keys: MUNICIPALITY_SORT_KEYS,
       default_sort_key: "name",
+      extra_filters: ineCodePrefix
+        ? { ineCode: Like(`${ineCodePrefix}%`) }
+        : undefined,
     });
   }
 

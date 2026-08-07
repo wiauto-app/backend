@@ -56,6 +56,14 @@ export class TypeormProvincesRepository {
     return mapRowToProvince(row);
   }
 
+  async findBySlug(slug: string): Promise<Province | null> {
+    const row = await this.repo.findOne({ where: { slug } });
+    if (!row) {
+      return null;
+    }
+    return mapRowToProvince(row);
+  }
+
   async save(province: Province): Promise<void> {
     const p = province.toPrimitives();
     const preloaded = await this.repo.preload({

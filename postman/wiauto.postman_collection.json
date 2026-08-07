@@ -6900,6 +6900,107 @@
       ]
     },
     {
+      "name": "locations",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "listar municipalities",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/municipalities?page=1&limit=100&province_slug=madrid",
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "municipalities"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Página (default 1)."
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100",
+                      "description": "Tamaño de página (1-100, default 10)."
+                    },
+                    {
+                      "key": "province_slug",
+                      "value": "madrid",
+                      "description": "Opcional. Slug de provincia; filtra municipios cuyo ineCode empieza por provinces.cod_prov."
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Búsqueda parcial por nombre.",
+                      "disabled": true
+                    },
+                    {
+                      "key": "order_by",
+                      "value": "name",
+                      "description": "Campo de ordenación permitido: id, name, slug, ineCode, nuts1, nuts2, nuts3.",
+                      "disabled": true
+                    },
+                    {
+                      "key": "order_direction",
+                      "value": "ASC",
+                      "description": "ASC | DESC",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "GET paginado de municipios. Query opcional `province_slug`: resuelve la provincia por slug y filtra `ineCode LIKE '{cod_prov}%'`. Sin el param, lista todos. `limit` máximo 100."
+              },
+              "response": []
+            },
+            {
+              "name": "listar provinces",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/provinces?page=1&limit=100",
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "provinces"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Página (default 1)."
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100",
+                      "description": "Tamaño de página (1-100, default 10)."
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Búsqueda parcial por nombre.",
+                      "disabled": true
+                    },
+                    {
+                      "key": "order_by",
+                      "value": "name",
+                      "disabled": true
+                    },
+                    {
+                      "key": "order_direction",
+                      "value": "ASC",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "GET paginado de provincias. `limit` máximo 100."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "chat",
       "item": [
         {

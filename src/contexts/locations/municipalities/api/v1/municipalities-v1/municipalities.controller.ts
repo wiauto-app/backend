@@ -1,8 +1,8 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import { Body, Controller, Get, Param, Patch, Query } from "@nestjs/common";
 
 import { MunicipalitiesService } from "@/src/contexts/locations/municipalities/services/municipalities.service";
 import { V1_MUNICIPALITIES } from "@/src/contexts/locations/api/route.constants";
+import { FindAllMunicipalitiesHttpDto } from "./dto/find-all-municipalities.http-dto";
 import { UpdateMunicipalityHttpDto } from "./dto/update-municipality.http-dto";
 
 @Controller(V1_MUNICIPALITIES)
@@ -12,7 +12,7 @@ export class MunicipalitiesController {
   ) {}
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllMunicipalitiesHttpDto) {
     return this.municipalities_service.findAll(query);
   }
 
