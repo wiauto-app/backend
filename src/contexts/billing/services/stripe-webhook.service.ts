@@ -433,7 +433,7 @@ export class StripeWebhookService {
         })
       : "el final del periodo actual";
 
-    let portal_url = `${envs.FRONTEND_URL}/monetizacion`;
+    let portal_url = `${envs.FRONTEND_URL}/usuario/monetizacion`;
 
     if (profile.stripe_customer_id) {
       try {

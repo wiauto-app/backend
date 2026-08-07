@@ -148,4 +148,4 @@ Tras login en el dashboard (`/subscription-plans`), crea/edita planes con precio
 
 ## Frontend
 
-Visita `$FRONTEND_URL/monetizacion` para contratar plan, comprar add-ons y ver facturas.
+Visita `$FRONTEND_URL/usuario/monetizacion` para contratar plan, comprar add-ons y ver facturas.

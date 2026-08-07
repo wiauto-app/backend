@@ -112,8 +112,8 @@ export const envs = {
   ...parsed_envs,
   STRIPE_SUCCESS_URL:
     process.env.STRIPE_SUCCESS_URL?.trim() ??
-    `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=success`,
+    `${parsed_envs.FRONTEND_URL}/usuario/monetizacion?checkout=success`,
   STRIPE_CANCEL_URL:
     process.env.STRIPE_CANCEL_URL?.trim() ??
-    `${parsed_envs.FRONTEND_URL}/monetizacion?checkout=cancel`,
+    `${parsed_envs.FRONTEND_URL}/usuario/monetizacion?checkout=cancel`,
 };

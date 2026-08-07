@@ -258,7 +258,7 @@ export class StripeClient {
   async createPortalSession(customer_id: string): Promise<string> {
     const session = await this.stripe.billingPortal.sessions.create({
       customer: customer_id,
-      return_url: `${envs.FRONTEND_URL}/monetizacion`,
+      return_url: `${envs.FRONTEND_URL}/usuario/monetizacion`,
     });
 
     if (!session.url) {
