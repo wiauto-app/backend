@@ -28,7 +28,7 @@ export class UserAuthProviderService {
   ): Promise<User | null> {
     const identity = await this.userAuthProviderRepository.findOne({
       where: { provider, provider_id },
-      relations: ["user", "user.profile", "user.profile.role"],
+      relations: ["user", "user.profile"],
     });
 
     return identity?.user ?? null;
