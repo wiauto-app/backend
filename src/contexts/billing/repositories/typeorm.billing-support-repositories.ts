@@ -195,7 +195,7 @@ export class TypeOrmBillingProfileRepository {
     return {
       id: profile.id,
       stripe_customer_id: profile.stripe_customer_id,
-      role_id: profile.role_id,
+      is_admin: profile.user?.is_admin === true,
       email: profile.user.email,
       name: profile.name,
       type: profile.type,
@@ -206,17 +206,6 @@ export class TypeOrmBillingProfileRepository {
     const preloaded = await this.profile_repository.preload({
       id: profile_id,
       stripe_customer_id,
-    });
-
-    if (preloaded) {
-      await this.profile_repository.save(preloaded);
-    }
-  }
-
-  async updateRoleId(profile_id: string, role_id: string | null): Promise<void> {
-    const preloaded = await this.profile_repository.preload({
-      id: profile_id,
-      role_id: role_id ?? undefined,
     });
 
     if (preloaded) {
@@ -248,7 +237,7 @@ export class TypeOrmBillingProfileRepository {
     return {
       id: profile.id,
       stripe_customer_id: profile.stripe_customer_id,
-      role_id: profile.role_id,
+      is_admin: profile.user?.is_admin === true,
       email: profile.user.email,
       name: profile.name,
       type: profile.type,

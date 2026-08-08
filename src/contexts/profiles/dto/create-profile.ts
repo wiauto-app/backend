@@ -10,7 +10,4 @@ export class CreateProfileDto {
   @IsOptional()
   @IsString()
   last_name?: string;
-
-  @IsUUID("4")
-  role_id: string;
 }

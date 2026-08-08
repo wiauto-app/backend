@@ -4,7 +4,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
@@ -38,8 +37,6 @@ export class EntitlementsService {
     private readonly billing_profile_repository: TypeOrmBillingProfileRepository,
     private readonly subscription_repository: TypeOrmSubscriptionRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
-    @InjectRepository(Roles)
-    private readonly roles_repository: Repository<Roles>,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
     @InjectRepository(SubscriptionEntity)
@@ -54,28 +51,23 @@ export class EntitlementsService {
 
   async resolve(profile_id: string): Promise<ResolvedEntitlements> {
     const profile = await this.billing_profile_repository.findById(profile_id);
-    if (profile?.role_id) {
-      const role = await this.roles_repository.findOne({
-        where: { id: profile.role_id },
-      });
-      if (role?.is_admin || role?.is_developer) {
-        const listings_used =
-          await this.vehicle_repository.count_active_by_profile_id(profile_id);
-        const features = buildUnlimitedEntitlementsMap();
-        return {
-          features,
-          source: "admin",
-          plan_id: null,
-          plan_name: null,
-          plan_version_id: null,
-          subscription_id: null,
-          dealership_id: null,
-          listings_used,
-          listings_scope: "profile",
-          is_unlimited: true,
-          quotas: toLegacyQuotas(features),
-        };
-      }
+    if (profile?.is_admin) {
+      const listings_used =
+        await this.vehicle_repository.count_active_by_profile_id(profile_id);
+      const features = buildUnlimitedEntitlementsMap();
+      return {
+        features,
+        source: "admin",
+        plan_id: null,
+        plan_name: null,
+        plan_version_id: null,
+        subscription_id: null,
+        dealership_id: null,
+        listings_used,
+        listings_scope: "profile",
+        is_unlimited: true,
+        quotas: toLegacyQuotas(features),
+      };
     }
 
     const own_subscription =
@@ -333,16 +325,6 @@ export class EntitlementsService {
       await this.subscription_repository.findActiveByProfileId(profile_id);
     const entitlements = await this.resolve(profile_id);
 
-    let effective_role: BillingMeSummary["effective_role"] = null;
-    if (profile?.role_id) {
-      const role = await this.roles_repository.findOne({
-        where: { id: profile.role_id },
-      });
-      if (role) {
-        effective_role = { id: role.id, name: role.name };
-      }
-    }
-
     const entitlements_map: BillingMeSummary["entitlements"] = {};
     for (const [feature, entitlement] of Object.entries(entitlements.features)) {
       let used: number | undefined;
@@ -374,7 +356,6 @@ export class EntitlementsService {
             cancel_at_period_end: subscription.cancel_at_period_end,
           }
         : null,
-      effective_role,
       entitlements: entitlements_map,
       vehicle_listings_used: entitlements.listings_used,
       vehicle_listings_max: entitlements.is_unlimited ? null : vehicles_limit,
@@ -388,13 +369,6 @@ export class EntitlementsService {
       plan_id: entitlements.plan_id,
       stripe_customer_id: profile?.stripe_customer_id ?? null,
     };
-  }
-
-  async getDefaultRoleId(): Promise<string | null> {
-    const role = await this.roles_repository.findOne({
-      where: { is_default: true },
-    });
-    return role?.id ?? null;
   }
 
   async getEntitlementsForVersion(plan_version_id: string) {

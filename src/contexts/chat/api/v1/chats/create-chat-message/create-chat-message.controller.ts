@@ -31,7 +31,7 @@ export class CreateChatMessageController {
     @Body() body: CreateChatMessageHttpDto,
   ) {
     const chat = await this.chat_service.findOne({ id: chat_id });
-    this.chat_access_service.assertChatParticipant(chat, sender_id);
+    await this.chat_access_service.assertChatAccess(chat, sender_id);
 
     const message = await this.chat_message_service.create({
       chat_id,

@@ -10,8 +10,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { DiscountCouponsService } from "../../../services/discount-coupons.service";
@@ -19,7 +18,7 @@ import { V1_BILLING_COUPONS } from "../../route.constants";
 import { CreateDiscountCouponHttpDto } from "./create-discount-coupon.http-dto";
 import { UpdateDiscountCouponHttpDto } from "./update-discount-coupon.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_BILLING_COUPONS)
 export class DiscountCouponsAdminController {
   constructor(

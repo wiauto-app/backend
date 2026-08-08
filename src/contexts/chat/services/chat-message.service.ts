@@ -1,14 +1,19 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { PaginationFilter } from "@/src/contexts/shared/types/pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/alert-processing-enqueue.service";
+import { NotificationChannelDispatcher } from "@/src/contexts/alerts/services/notification-channel-dispatcher.service";
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
+import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { ChatNotFoundException } from "../exceptions/chat-not-found.exception";
 import { ChatMessageNotFoundException } from "../exceptions/chat-message-not-found.exception";
+import { CHAT_TYPE, Chat } from "../types/chat";
 import {
   CHAT_MESSAGE_TYPE,
   ChatMessage,
@@ -32,6 +37,9 @@ export class ChatMessageService {
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly alert_processing_enqueue_service: AlertProcessingEnqueueService,
+    private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
+    @InjectRepository(User)
+    private readonly user_repository: Repository<User>,
   ) {}
 
   async create(
@@ -164,10 +172,15 @@ export class ChatMessageService {
   }
 
   private async enqueueMessageAlerts(
-    chat: { id: string; participants: string[]; vehicle_id: string | null },
+    chat: Chat,
     sender_id: string,
     content: string,
   ): Promise<void> {
+    if (chat.ticket_id || chat.chat_type === CHAT_TYPE.SUPPORT) {
+      await this.notifySupportChatMessage(chat, sender_id, content);
+      return;
+    }
+
     if (!chat.vehicle_id) {
       return;
     }
@@ -179,17 +192,10 @@ export class ChatMessageService {
 
     const owner_profile_id = vehicle.profile_id;
     const sender_is_owner = sender_id === owner_profile_id;
-    const sender_profile = await this.profile_repository.findOne(sender_id);
-    const sender_name = sender_profile
-      ? [sender_profile.name, sender_profile.last_name]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || "Alguien"
-      : "Alguien";
-    const message_excerpt =
-      content.trim().length > 160
-        ? `${content.trim().slice(0, 157)}...`
-        : content.trim();
+    const { sender_name, message_excerpt } = await this.buildSenderExcerpt(
+      sender_id,
+      content,
+    );
 
     for (const participant_id of chat.participants) {
       if (participant_id === sender_id) {
@@ -218,5 +224,72 @@ export class ChatMessageService {
         },
       });
     }
+  }
+
+  private async notifySupportChatMessage(
+    chat: Chat,
+    sender_id: string,
+    content: string,
+  ): Promise<void> {
+    const { sender_name, message_excerpt } = await this.buildSenderExcerpt(
+      sender_id,
+      content,
+    );
+    const title = "Nuevo mensaje de soporte";
+    const body = `${sender_name}: ${message_excerpt || "Nuevo mensaje"}`;
+    const data = {
+      chat_id: chat.id,
+      ticket_id: chat.ticket_id,
+      sender_name,
+      message_excerpt,
+    };
+
+    const recipient_ids = new Set<string>();
+
+    for (const participant_id of chat.participants) {
+      if (participant_id !== sender_id) {
+        recipient_ids.add(participant_id);
+      }
+    }
+
+    const admins = await this.user_repository.find({
+      where: { is_admin: true },
+      select: ["id"],
+    });
+    for (const admin of admins) {
+      if (admin.id !== sender_id) {
+        recipient_ids.add(admin.id);
+      }
+    }
+
+    await Promise.all(
+      [...recipient_ids].map((profile_id) =>
+        this.notification_channel_dispatcher.notify({
+          profile_id,
+          category: "new_message",
+          title,
+          body,
+          data,
+        }),
+      ),
+    );
+  }
+
+  private async buildSenderExcerpt(
+    sender_id: string,
+    content: string,
+  ): Promise<{ sender_name: string; message_excerpt: string }> {
+    const sender_profile = await this.profile_repository.findOne(sender_id);
+    const sender_name = sender_profile
+      ? [sender_profile.name, sender_profile.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || "Alguien"
+      : "Alguien";
+    const message_excerpt =
+      content.trim().length > 160
+        ? `${content.trim().slice(0, 157)}...`
+        : content.trim();
+    return { sender_name, message_excerpt };
   }
 }

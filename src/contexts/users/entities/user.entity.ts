@@ -36,6 +36,9 @@ export class User {
   is_email_verified: boolean;
 
   @Column({ type: "boolean", default: false })
+  is_admin: boolean;
+
+  @Column({ type: "boolean", default: false })
   two_factor_enabled: boolean;
 
   @Column({ type: "varchar", nullable: true, select: false })

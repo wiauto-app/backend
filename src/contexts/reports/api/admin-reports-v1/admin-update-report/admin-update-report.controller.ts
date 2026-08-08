@@ -2,13 +2,13 @@ import { Body, Controller, Param, ParseUUIDPipe, Patch, UseGuards } from "@nestj
 
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 import { ReportsService } from "@/src/contexts/reports/services/reports.service";
-import { AdminOnlyGuard } from "@/src/contexts/roles/guards/admin-only.guard";
+import { AdminGuard } from "@/src/contexts/auth/guards/admin.guard";
 
 import { V1_ADMIN_REPORTS } from "../../route.constants";
 import { AdminUpdateReportHttpDto } from "./admin-update-report.http-dto";
 
 @Controller(V1_ADMIN_REPORTS)
-@UseGuards(JwtGuard, AdminOnlyGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class AdminUpdateReportController {
   constructor(
     private readonly reports_service: ReportsService,

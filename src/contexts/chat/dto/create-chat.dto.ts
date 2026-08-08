@@ -4,4 +4,5 @@ export interface CreateChatDto {
   participants: string[];
   chat_type: ChatType;
   vehicle_id: string | null;
+  ticket_id?: string | null;
 }

@@ -19,6 +19,7 @@ import { AppleAuthGuard } from "./guards/apple-auth.guard";
 
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtGuard } from "./guards/auth.guard";
+import { AdminGuard } from "./guards/admin.guard";
 import { OptionalJwtGuard } from "./guards/optional-jwt.guard";
 import { MeService } from "./services/me.service";
 import { AccountSettingsService } from "./services/account-settings.service";
@@ -40,7 +41,6 @@ import { AdminLoginService } from "./services/admin-login.service";
 import { TwoFactorLoginService } from "./services/two-factor-login.service";
 import { TwoFactorChallengeScopeGuard } from "./guards/two-factor-challenge-scope.guard";
 import { RefreshTokenGuard } from "./guards/refresh-token.guard";
-import { RolesModule } from "../roles/roles.module";
 import { TwoFactorAuthModule } from "../2fa/2fa.module";
 import { RegisterService } from "./services/register.service";
 import { AuthSessionService } from "./services/auth-session.service";
@@ -71,6 +71,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     GoogleAuthGuard,
     AppleAuthGuard,
     RefreshTokenGuard,
+    AdminGuard,
 
     MeService,
     AccountSettingsService,
@@ -94,7 +95,6 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     }),
     forwardRef(() => UserModule),
     forwardRef(() => ProfileModule),
-    RolesModule,
     forwardRef(() => TwoFactorAuthModule),
     DealershipInvitationModule,
 
@@ -107,6 +107,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     JwtGuard,
     OptionalJwtGuard,
     GoogleAuthGuard,
+    AdminGuard,
     AuthService,
     AuthSecurityMailService,
     EmailVerificationService /*, AppleAuthGuard*/,

@@ -381,15 +381,9 @@ export class BillingSubscriptionProvisioningService {
     });
     const saved_user = await this.user_repository.save(created_user);
 
-    const default_role_id = await this.entitlements_service.getDefaultRoleId();
-    if (!default_role_id) {
-      throw new Error("No hay rol por defecto configurado para crear usuarios de billing");
-    }
-
     await this.profile_service.createProfile({
       id: saved_user.id,
       name,
-      role_id: default_role_id,
     });
 
     return {

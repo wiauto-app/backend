@@ -51,8 +51,7 @@ export class AdminLoginService {
       throw new UnauthorizedException(authResponseConfig.messages.USER_SUSPENDED);
     }
 
-    const role = user.profile.role;
-    if (!role || (!role.is_admin && !role.is_developer)) {
+    if (!user.is_admin) {
       throw new UnauthorizedException(
         authResponseConfig.messages.NO_ADMIN,
       );

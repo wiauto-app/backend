@@ -32,8 +32,6 @@ export interface CreatePlanPayload {
   /** @deprecated */
   audience?: string | null;
   billing_type?: string;
-  /** @deprecated */
-  role_id?: string | null;
   is_active?: boolean;
   is_featured?: boolean;
   sort_order?: number;
@@ -113,7 +111,6 @@ export class BillingPlansService {
       audience: payload.audience ?? null,
       billing_type: BILLING_TYPE.RECURRING,
       type: PLAN_TYPE.STANDARD,
-      role_id: payload.role_id ?? null,
       is_active: payload.is_active ?? true,
       is_featured: payload.is_featured ?? false,
       sort_order: payload.sort_order ?? 0,
@@ -187,8 +184,6 @@ export class BillingPlansService {
       audience:
         payload.audience !== undefined ? payload.audience : current.audience,
       billing_type: BILLING_TYPE.RECURRING,
-      role_id:
-        payload.role_id !== undefined ? payload.role_id : current.role_id,
       is_active: payload.is_active ?? current.is_active,
       is_featured: payload.is_featured ?? current.is_featured,
       sort_order: payload.sort_order ?? current.sort_order,

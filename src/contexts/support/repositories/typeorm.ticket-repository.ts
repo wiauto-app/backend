@@ -25,6 +25,7 @@ const entity_to_list_item = (row: TicketEntity): TicketListItem => ({
   status: row.status,
   profile_id: row.profile_id,
   profile_label: row.profile?.name ?? "",
+  chat_id: row.chat?.id ?? null,
   created_at: row.created_at,
   updated_at: row.updated_at,
   category: {
@@ -48,6 +49,7 @@ export class TypeOrmTicketRepository {
       .createQueryBuilder("ticket")
       .leftJoinAndSelect("ticket.category", "category")
       .leftJoinAndSelect("ticket.profile", "profile")
+      .leftJoinAndSelect("ticket.chat", "chat")
       .where("ticket.id = :id", { id })
       .getOne();
 
@@ -62,7 +64,8 @@ export class TypeOrmTicketRepository {
     const qb = this.ticket_repository
       .createQueryBuilder("ticket")
       .leftJoinAndSelect("ticket.category", "category")
-      .leftJoinAndSelect("ticket.profile", "profile");
+      .leftJoinAndSelect("ticket.profile", "profile")
+      .leftJoinAndSelect("ticket.chat", "chat");
 
     if (filter.profile_id) {
       qb.andWhere("ticket.profile_id = :profile_id", {

@@ -7,7 +7,6 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  IsUUID,
   ValidateNested,
 } from "class-validator";
 
@@ -44,11 +43,6 @@ export class UpdateSubscriptionPlanHttpDto {
   @IsOptional()
   @IsEnum(BILLING_TYPE)
   billing_type?: BillingType;
-
-  /** @deprecated Capacidades van por entitlements */
-  @IsOptional()
-  @IsUUID()
-  role_id?: string | null;
 
   @IsOptional()
   @IsBoolean()

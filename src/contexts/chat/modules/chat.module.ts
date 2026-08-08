@@ -5,6 +5,8 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { FileModule } from "@/src/contexts/shared/file/file.module";
+import { TicketEntity } from "@/src/contexts/support/entities/ticket.entity";
+import { User } from "@/src/contexts/users/entities/user.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 
 import { TypeOrmChatRepository } from "@/src/contexts/chat/repositories/typeorm.chat-repository";
@@ -49,7 +51,8 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     MarkChatMessagesReadController,
     FindChatMessageController,
     UpdateChatMessageController,
-    DeleteChatMessageController],
+    DeleteChatMessageController,
+  ],
   imports: [
     AuthModule,
     ProfileModule,
@@ -59,7 +62,11 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     TypeOrmModule.forFeature([
       ChatEntity,
       ChatMessageEntity,
-      ChatParticipantStateEntity])],
+      ChatParticipantStateEntity,
+      TicketEntity,
+      User,
+    ]),
+  ],
   providers: [
     ChatAccessService,
     ChatMessageGateway,
@@ -77,11 +84,14 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
       provide: ChatParticipantLookupPort,
       useExisting: TypeOrmChatParticipantLookupAdapter,
     },
-    WsJwtGuard],
+    WsJwtGuard,
+  ],
   exports: [
     TypeOrmChatRepository,
     TypeOrmChatMessageRepository,
     ChatService,
-    ChatMessageService],
+    ChatMessageService,
+    ChatAccessService,
+  ],
 })
 export class ChatModule {}

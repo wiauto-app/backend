@@ -10,8 +10,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { BillingPlansService } from "../../../services/billing-plans.service";
@@ -20,7 +19,7 @@ import { V1_BILLING_PLANS } from "../../route.constants";
 import { CreateSubscriptionPlanHttpDto } from "./create-subscription-plan.http-dto";
 import { UpdateSubscriptionPlanHttpDto } from "./update-subscription-plan.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_BILLING_PLANS)
 export class BillingPlansAdminController {
   constructor(private readonly billing_plans_service: BillingPlansService) {}

@@ -208,6 +208,7 @@ export class TypeOrmChatMessageRepository {
     chat.participants = row.participants;
     chat.chat_type = row.chat_type;
     chat.vehicle_id = row.vehicle_id;
+    chat.ticket_id = row.ticket_id;
     chat.created_at = row.created_at;
     chat.updated_at = row.updated_at;
     return chat;

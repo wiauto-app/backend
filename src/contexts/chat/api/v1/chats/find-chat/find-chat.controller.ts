@@ -23,7 +23,7 @@ export class FindChatController {
     @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     const chat = await this.chat_service.findOne({ id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
     return this.chat_read_model_service.toChatListItem(chat, user_id);
   }
 }

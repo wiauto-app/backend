@@ -1,8 +1,12 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { ChatModule } from "@/src/contexts/chat/modules/chat.module";
+import { User } from "@/src/contexts/users/entities/user.entity";
 
+import { TicketsAdminController } from "../api/admin-tickets-v1/tickets-admin.controller";
 import { CreateTicketController } from "../api/tickets-v1/create-ticket/create-ticket.controller";
 import { DeleteTicketController } from "../api/tickets-v1/delete-ticket/delete-ticket.controller";
 import { FindAllTicketsController } from "../api/tickets-v1/find-all-tickets/find-all-tickets.controller";
@@ -15,9 +19,11 @@ import { TicketCategoriesModule } from "./ticket-categories.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TicketEntity]),
+    TypeOrmModule.forFeature([TicketEntity, User]),
     TicketCategoriesModule,
     AuthModule,
+    forwardRef(() => ChatModule),
+    forwardRef(() => AlertsModule),
   ],
   controllers: [
     CreateTicketController,
@@ -25,6 +31,7 @@ import { TicketCategoriesModule } from "./ticket-categories.module";
     FindTicketController,
     UpdateTicketController,
     DeleteTicketController,
+    TicketsAdminController,
   ],
   providers: [TicketsService, TypeOrmTicketRepository],
   exports: [TicketsService],

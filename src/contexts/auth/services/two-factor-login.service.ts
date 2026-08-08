@@ -56,9 +56,7 @@ export class TwoFactorLoginService {
 
     if (session_payload.notify_new_login) {
       const session = await this.session_service.findOne(session_payload.session_id);
-      const role = user.profile?.role;
-      const audience =
-        role?.is_admin || role?.is_developer ? "admin" : "platform";
+      const audience = user.is_admin ? "admin" : "platform";
 
       this.auth_security_mail_service.enqueueNewLogin({
         to: user.email,

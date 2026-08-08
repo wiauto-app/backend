@@ -16,7 +16,6 @@ import { SessionService } from "./session.service";
 import { AuthSessionService } from "./auth-session.service";
 import { envs, MONTH } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
-import { RolesService } from "../../roles/services/roles.service";
 import { RefreshTokenEntity } from "../entities/refresh-token.entity";
 import { SessionEntity } from "../entities/session.entity";
 import { generateToken } from "../../shared/token_management/generate_token";
@@ -32,7 +31,6 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly authSessionService: AuthSessionService,
-    private readonly roleService: RolesService,
     @InjectDataSource()
     private readonly data_source: DataSource,
   ) { }
@@ -72,13 +70,8 @@ export class AuthService {
   }
 
   async signInWithOAuthProfile(profile: OAuthProfile, request: Request): Promise<SignInResult> {
-    const role = await this.roleService.findDefault();
-    if (!role) {
-      throw new UnauthorizedException(authResponseConfig.messages.ROLE_NOT_FOUND);
-    }
     const user = await this.userService.findOrCreateOAuthUser({
       ...profile,
-      role_id: role.id,
     });
 
     return this.authSessionService.establishSessionForUser(user, request);

@@ -34,7 +34,6 @@ interface FindOrCreateOAuthUserProfile {
   email?: string | null;
   first_name: string;
   last_name?: string | null;
-  role_id: string;
 }
 
 @Injectable()
@@ -77,7 +76,6 @@ export class UserService {
       id: user.id,
       name: registerUserDto.name,
       last_name: registerUserDto.last_name,
-      role_id: registerUserDto.role_id,
     });
 
     void this.emailVerificationService
@@ -118,7 +116,7 @@ export class UserService {
 
     const existingByEmail = await this.userRepository.findOne({
       where: { email },
-      relations: ["profile", "profile.role"],
+      relations: ["profile"],
     });
 
     if (existingByEmail) {
@@ -140,7 +138,6 @@ export class UserService {
       id: saved.id,
       name: profile.first_name,
       last_name: profile.last_name ?? undefined,
-      role_id: profile.role_id,
     });
     await this.userAuthProviderService.linkProvider(
       saved.id,
@@ -175,8 +172,8 @@ export class UserService {
       where: {
         email
       },
-      select: ["id", "email", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password", "is_suspended"],
-      relations: ["profile", "profile.role"]
+      select: ["id", "email", "last_sign_in", "is_email_verified", "is_admin", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password", "is_suspended"],
+      relations: ["profile"]
     })
     if (!user) {
       throw new NotFoundException("No se encontró el usuario")
@@ -226,8 +223,8 @@ export class UserService {
       where: {
         id
       },
-      ...(selectPrivateFields && { select: ["id", "email", "last_sign_in", "is_email_verified", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
-      relations: ["profile", "profile.role", "profile.vehicle_lists", "profile.vehicle_lists.items"]
+      ...(selectPrivateFields && { select: ["id", "email", "last_sign_in", "is_email_verified", "is_admin", "two_factor_enabled", "two_factor_secret", "two_factor_backup_codes", "created_at", "password"] }),
+      relations: ["profile", "profile.vehicle_lists", "profile.vehicle_lists.items"]
     })
 
     if (!user) {

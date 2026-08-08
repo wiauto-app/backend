@@ -84,13 +84,8 @@ export class PasswordRecoveryService {
       throw error;
     }
 
-    if (!user.password || !user.profile.role) {
+    if (!user.password || !user.is_admin) {
       this.logger.debug(`Admin password recovery requested for invalid account: ${email}`);
-      return;
-    }
-
-    if (!user.profile.role.is_admin && !user.profile.role.is_developer) {
-      this.logger.debug(`Admin password recovery requested for non-admin email: ${email}`);
       return;
     }
 
@@ -113,8 +108,7 @@ export class PasswordRecoveryService {
     }
 
     const user = await this.userService.findOne(payload.sub);
-    const role = user.profile.role;
-    if (!role || (!role.is_admin && !role.is_developer)) {
+    if (!user.is_admin) {
       throw new UnauthorizedException(authResponseConfig.messages.NO_ADMIN);
     }
 

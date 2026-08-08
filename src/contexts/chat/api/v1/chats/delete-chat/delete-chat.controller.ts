@@ -21,7 +21,7 @@ export class DeleteChatController {
     @Param("id", new ParseUUIDPipe()) id: string,
   ): Promise<void> {
     const chat = await this.chat_service.findOne({ id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
     await this.chat_service.delete({ id });
   }
 }

@@ -25,8 +25,6 @@ import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { FileModule } from "../contexts/shared/file/file.module";
-import { RolesModule } from "../contexts/roles/roles.module";
-import { PermissionModule } from "../contexts/users/permissions/permission.module";
 import { DealershipModule } from "../contexts/dealership/dealership.module";
 import { DealershipReviewsModule } from "../contexts/dealership/modules/dealership-reviews.module";
 import { ChatModule } from "../contexts/chat/modules/chat.module";
@@ -65,8 +63,6 @@ import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
     MailModule,
     TwoFactorAuthModule,
     FileModule,
-    RolesModule,
-    PermissionModule,
     DealershipModule,
     DealershipReviewsModule,
     ChatModule,

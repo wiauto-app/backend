@@ -68,10 +68,6 @@ export interface BillingMeSummary {
     current_period_end: Date | null;
     cancel_at_period_end: boolean;
   } | null;
-  effective_role: {
-    id: string;
-    name: string;
-  } | null;
   entitlements: Record<string, BillingMeEntitlementEntry>;
   /** @deprecated Preferir entitlements.vehicles */
   vehicle_listings_used: number;

@@ -1,5 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
-
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class AdminCreateUserDto {
   @IsEmail()
@@ -18,9 +17,9 @@ export class AdminCreateUserDto {
   @IsNotEmpty()
   last_name: string;
 
-  @IsUUID("4")
-  @IsNotEmpty()
-  role_id: string;
+  @IsOptional()
+  @IsBoolean()
+  is_admin?: boolean;
 
   @IsOptional()
   @IsString()

@@ -1,6 +1,6 @@
-import { Body, Controller, Param, Put } from "@nestjs/common";
+import { Body, Controller, Param, Put, UseGuards } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
+import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 
 import { DealershipTeamManagerGuard } from "../../../guards/dealership-team-manager.guard";
 import { DealershipScheduleService } from "../../../services/dealership-schedule.service";
@@ -15,10 +15,7 @@ export class UpdateDealershipSchedulesController {
   ) {}
 
   @Put(":id/schedules")
-  @AuthPermissions({
-    permissions: [],
-    extraGuards: [DealershipTeamManagerGuard],
-  })
+  @UseGuards(JwtGuard, DealershipTeamManagerGuard)
   run(
     @Param() params: FindDealershipHttpDto,
     @Body() body: UpdateDealershipSchedulesHttpDto,

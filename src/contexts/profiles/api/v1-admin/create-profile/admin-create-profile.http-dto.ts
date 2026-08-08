@@ -11,9 +11,6 @@ export class AdminCreateProfileHttpDto {
   @IsString()
   last_name: string;
 
-  @IsUUID("4")
-  role_id:string;
-
   @IsOptional()
   @IsString()
   avatar_url?:string;

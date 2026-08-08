@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -8,8 +8,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   last_name?: string;
-
-  @IsOptional()
-  @IsUUID("4")
-  role_id?: string;
 }

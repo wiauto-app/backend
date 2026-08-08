@@ -10,8 +10,8 @@ import {
 } from "@nestjs/common";
 
 /**
- * Tras `PermissionGuard` + `vehicles.create`, valida la cuota de anuncios
- * resuelta por plan del dealership / suscripción propia / free.
+ * Valida la cuota de anuncios resuelta por plan del dealership /
+ * suscripción propia / free (vía EntitlementsService).
  */
 @Injectable()
 export class VehicleCreationGuard implements CanActivate {
@@ -27,12 +27,7 @@ export class VehicleCreationGuard implements CanActivate {
     }
 
     const profile_id = user.id;
-    const role = user.profile.role;
-    if (!role?.id) {
-      throw new UnauthorizedException("Rol no encontrado");
-    }
-
-    if (role.is_admin || role.is_developer) {
+    if (user.is_admin) {
       const entitlements = await this.entitlements_service.resolve(profile_id);
       request.vehicle_listings_used = entitlements.listings_used;
       request.vehicle_listings_max = undefined;

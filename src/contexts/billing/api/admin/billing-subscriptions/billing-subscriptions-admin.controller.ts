@@ -8,8 +8,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
@@ -17,7 +16,7 @@ import { SubscriptionOverridesService } from "../../../services/subscription-ove
 import { V1_BILLING_SUBSCRIPTIONS } from "../../route.constants";
 import { ReplaceSubscriptionOverridesHttpDto } from "./replace-subscription-overrides.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_BILLING_SUBSCRIPTIONS)
 export class BillingSubscriptionsAdminController {
   constructor(

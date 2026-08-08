@@ -127,7 +127,7 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {
     const user_id = this.getUserIdFromClient(client);
     const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
 
     await client.join(this.getChatRoom(payload.chat_id));
 
@@ -150,7 +150,7 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {
     const user_id = this.getUserIdFromClient(client);
     const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
     await client.leave(this.getChatRoom(payload.chat_id));
     return { ok: true };
   }
@@ -163,7 +163,7 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {
     const user_id = this.getUserIdFromClient(client);
     const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
 
     client.to(this.getChatRoom(payload.chat_id)).emit(CHAT_SOCKET_EVENTS.TYPING_START, {
       chat_id: payload.chat_id,
@@ -180,7 +180,7 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {
     const user_id = this.getUserIdFromClient(client);
     const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
 
     client.to(this.getChatRoom(payload.chat_id)).emit(CHAT_SOCKET_EVENTS.TYPING_STOP, {
       chat_id: payload.chat_id,

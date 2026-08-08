@@ -7592,7 +7592,7 @@
                   "raw": "{\n  \"category_id\": \"{{ticket_category_id}}\",\n  \"title\": \"No puedo iniciar sesión\",\n  \"description\": \"Desde ayer el login devuelve error 500.\",\n  \"file_url\": null\n}"
                 },
                 "url": "{{base_url}}/v1/tickets",
-                "description": "JWT (`JwtGuard`). `profile_id` implícito desde el token. Valida que exista la categoría."
+                "description": "JWT (`JwtGuard`). `profile_id` implícito desde el token. Valida que exista la categoría. Crea también chat support + mensaje inicial; respuesta incluye chat_id."
               },
               "response": []
             },
@@ -7663,6 +7663,89 @@
                 "description": "JWT. Solo el dueño del ticket."
               },
               "response": []
+            }
+          ]
+        },
+        {
+          "name": "admin-tickets",
+          "item": [
+            {
+              "name": "listar tickets admin",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/tickets?page=1&limit=10",
+                "description": "JWT + AdminGuard. Listado global de tickets. Filtros: status, category_id, query."
+              }
+            },
+            {
+              "name": "obtener ticket admin",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/tickets/{{ticket_id}}",
+                "description": "JWT + AdminGuard."
+              }
+            },
+            {
+              "name": "actualizar ticket admin",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"in_progress\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/tickets/{{ticket_id}}",
+                "description": "JWT + AdminGuard. Puede cambiar cualquier status."
+              }
+            },
+            {
+              "name": "asegurar chat ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/tickets/{{ticket_id}}/ensure-chat",
+                "description": "JWT + AdminGuard. Crea chat support lazy si el ticket legacy no tiene chat."
+              }
+            },
+            {
+              "name": "eliminar ticket admin",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/tickets/{{ticket_id}}",
+                "description": "JWT + AdminGuard."
+              }
             }
           ]
         }

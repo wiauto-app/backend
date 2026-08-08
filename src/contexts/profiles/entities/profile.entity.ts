@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   JoinColumn,
-  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryColumn,
@@ -11,7 +10,6 @@ import {
 
 import { DealershipInvitationsEntity } from "@/src/contexts/dealership/entities/dealership-invitations.entity";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { ReviewEntity } from "@/src/contexts/vehicles/entities/review.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
@@ -41,9 +39,6 @@ export class ProfileEntity {
 
   @Column({ type: "varchar", nullable: true })
   dni: string | null;
-
-  @Column({ name: "role_id", nullable: true })
-  role_id: string;
 
   @Column({ name: "stripe_customer_id", type: "varchar", nullable: true })
   stripe_customer_id: string | null;
@@ -82,10 +77,6 @@ export class ProfileEntity {
 
   @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
   vehicles: Relation<VehicleEntity[]>;
-
-  @ManyToOne(() => Roles, (role) => role.profiles, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "role_id" })
-  role: Relation<Roles | null>;
 
   @OneToMany(() => ReviewEntity, (review) => review.profile)
   reviews: Relation<ReviewEntity[]>;

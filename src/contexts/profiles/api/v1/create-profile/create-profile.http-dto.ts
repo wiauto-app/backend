@@ -11,8 +11,4 @@ export class CreateProfileHttpDto {
   @IsOptional()
   @IsString()
   last_name?: string;
-
-  @IsOptional()
-  @IsUUID("4")
-  role_id?: string;
 }

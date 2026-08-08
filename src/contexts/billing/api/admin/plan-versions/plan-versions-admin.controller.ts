@@ -8,8 +8,7 @@ import {
   Put,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 
 import { PlanVersionsService } from "../../../services/plan-versions.service";
 import {
@@ -18,7 +17,7 @@ import {
 } from "../../route.constants";
 import { ReplacePlanEntitlementsHttpDto } from "./replace-plan-entitlements.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller()
 export class PlanVersionsAdminController {
   constructor(private readonly plan_versions_service: PlanVersionsService) {}

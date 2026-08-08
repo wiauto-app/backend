@@ -17,7 +17,6 @@ export class TypeOrmAdminProfileRepository {
       last_name: input.last_name ?? undefined,
       avatar_url: input.avatar_url ?? undefined,
       image_url: input.image_url ?? undefined,
-      role_id: input.role_id ?? undefined,
     });
   }
 
@@ -44,7 +43,6 @@ export class TypeOrmAdminProfileRepository {
       ...(input.image_url !== undefined
         ? { image_url: input.image_url ?? undefined }
         : {}),
-      ...(input.role_id !== undefined ? { role_id: input.role_id ?? undefined } : {}),
     });
 
     if (!preloaded) {

@@ -42,8 +42,6 @@ export interface PrimitiveSubscriptionPlan {
   audience?: string | null;
   billing_type: string;
   type?: string;
-  /** @deprecated */
-  role_id?: string | null;
   stripe_product_id?: string | null;
   is_active: boolean;
   is_featured: boolean;
@@ -72,10 +70,6 @@ export class SubscriptionPlan {
 
   get id(): string | undefined {
     return this.props.id;
-  }
-
-  get role_id(): string | null | undefined {
-    return this.props.role_id;
   }
 
   get stripe_product_id(): string | null | undefined {

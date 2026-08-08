@@ -2,15 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
 } from "typeorm";
 
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import {
   BILLING_TYPE,
   BillingType,
@@ -62,10 +59,6 @@ export class SubscriptionPlanEntity {
   })
   type!: PlanType;
 
-  /** @deprecated Capacidades van por entitlements; columna deprecada. */
-  @Column({ name: "role_id", nullable: true })
-  role_id!: string | null;
-
   @Column({ name: "stripe_product_id", type: "varchar", nullable: true })
   stripe_product_id!: string | null;
 
@@ -86,13 +79,6 @@ export class SubscriptionPlanEntity {
 
   @UpdateDateColumn({ name: "updated_at" })
   updated_at!: Date;
-
-  @ManyToOne(() => Roles, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({
-    name: "role_id",
-    foreignKeyConstraintName: "FK_subscription_plans_role",
-  })
-  role!: Relation<Roles | null>;
 
   @OneToMany(() => SubscriptionPlanPriceEntity, (price) => price.plan)
   prices!: Relation<SubscriptionPlanPriceEntity[]>;

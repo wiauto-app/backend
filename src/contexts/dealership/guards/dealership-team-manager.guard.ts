@@ -35,12 +35,7 @@ export class DealershipTeamManagerGuard implements CanActivate {
       throw new UnauthorizedException("Usuario no autenticado");
     }
 
-    const role = user.profile.role;
-    if (!role) {
-      throw new UnauthorizedException("Rol no encontrado");
-    }
-
-    if (role.is_admin || role.is_developer) {
+    if (user.is_admin) {
       return true;
     }
 

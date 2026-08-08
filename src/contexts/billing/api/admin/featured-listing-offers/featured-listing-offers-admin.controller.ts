@@ -10,8 +10,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { FeaturedListingOffersService } from "../../../services/featured-listing-offers.service";
@@ -19,7 +18,7 @@ import { V1_BILLING_FEATURED_LISTING_OFFERS } from "../../route.constants";
 import { CreateFeaturedListingOfferHttpDto } from "./create-featured-listing-offer.http-dto";
 import { UpdateFeaturedListingOfferHttpDto } from "./update-featured-listing-offer.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_BILLING_FEATURED_LISTING_OFFERS)
 export class FeaturedListingOffersAdminController {
   constructor(

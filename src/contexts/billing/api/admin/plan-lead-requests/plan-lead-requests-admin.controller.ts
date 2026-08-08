@@ -9,8 +9,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { PlanLeadRequestsService } from "../../../services/plan-lead-requests.service";
@@ -20,7 +19,7 @@ import {
   UpdatePlanLeadRequestHttpDto,
 } from "./update-plan-lead-request.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_ADMIN_PLAN_LEAD_REQUESTS)
 export class PlanLeadRequestsAdminController {
   constructor(private readonly plan_lead_requests_service: PlanLeadRequestsService) {}

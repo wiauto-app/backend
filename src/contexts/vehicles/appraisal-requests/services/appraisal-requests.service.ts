@@ -198,12 +198,7 @@ export class AppraisalRequestsService {
   private async findStaffEmails(): Promise<string[]> {
     const users = await this.user_repository
       .createQueryBuilder("user")
-      .innerJoin("user.profile", "profile")
-      .innerJoin("profile.role", "role")
-      .where("(role.is_admin = :is_admin OR role.is_developer = :is_developer)", {
-        is_admin: true,
-        is_developer: true,
-      })
+      .where("user.is_admin = :is_admin", { is_admin: true })
       .select(["user.email"])
       .getMany();
 

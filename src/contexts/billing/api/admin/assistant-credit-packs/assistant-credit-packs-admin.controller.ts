@@ -10,8 +10,7 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
+import { AuthAdmin } from "@/src/contexts/auth/decorators/auth-admin.decorator";
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 
 import { AssistantCreditPacksService } from "../../../services/assistant-credit-packs.service";
@@ -19,7 +18,7 @@ import { V1_BILLING_ASSISTANT_CREDIT_PACKS } from "../../route.constants";
 import { CreateAssistantCreditPackHttpDto } from "./create-assistant-credit-pack.http-dto";
 import { UpdateAssistantCreditPackHttpDto } from "./update-assistant-credit-pack.http-dto";
 
-@AuthPermissions(PermissionKeys.BILLING_MANAGE)
+@AuthAdmin()
 @Controller(V1_BILLING_ASSISTANT_CREDIT_PACKS)
 export class AssistantCreditPacksAdminController {
   constructor(

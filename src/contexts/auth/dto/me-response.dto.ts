@@ -1,4 +1,3 @@
-import { Roles } from "../../roles/entities/roles.entity";
 import { AuthProvider, User } from "../../users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
 import { DealershipMembershipDetail } from "@/src/contexts/dealership/types/dealership-membership-detail";
@@ -31,7 +30,7 @@ export class MeResponseDto {
   dni?: string | null;
   last_sign_in: Date | null;
   vehicle_lists: VehicleListEntity[];
-  role: Roles;
+  isAdmin: boolean;
   created_at: string;
   type: "session" | "2fa_challenge";
   dealership_membership?: MeDealershipMembershipDto | null;
@@ -54,6 +53,7 @@ export class MeResponseDto {
     dto.phone_code = profile.phone_code ?? undefined;
     dto.phone = profile.phone ?? undefined;
     dto.dni = profile.dni ?? undefined;
+    dto.isAdmin = user.is_admin === true;
     dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.vehicle_lists = profile.vehicle_lists;
     dto.dealership_membership = options.dealership_membership

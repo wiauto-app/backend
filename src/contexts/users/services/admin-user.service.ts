@@ -39,6 +39,7 @@ export class AdminUserService {
         email: createUserDto.email,
         password: hashed_password,
         is_email_verified: true,
+        is_admin: createUserDto.is_admin === true,
       });
       const saved_user = await user_repository.save(created_user);
 
@@ -46,7 +47,6 @@ export class AdminUserService {
         id: saved_user.id,
         name: createUserDto.name,
         last_name: createUserDto.last_name,
-        role_id: createUserDto.role_id,
         avatar_url: createUserDto.avatar_url,
       });
 
@@ -54,7 +54,7 @@ export class AdminUserService {
 
       const hydrated_user = await user_repository.findOne({
         where: { id: saved_user.id },
-        relations: ["profile", "profile.role"],
+        relations: ["profile"],
       });
 
       if (!hydrated_user) {
@@ -100,6 +100,7 @@ export class AdminUserService {
         id: updateUserDto.id,
         email: updateUserDto.email,
         password: hashedPassword ?? undefined,
+        is_admin: updateUserDto.is_admin,
         suspension_duration_type_id: updateUserDto.suspension_duration_type_id,
         suspension_reason: updateUserDto.suspension_reason,
       });
@@ -114,7 +115,6 @@ export class AdminUserService {
         id: updateUserDto.id,
         name: updateUserDto.name,
         last_name: updateUserDto.last_name,
-        role_id: updateUserDto.role_id,
         avatar_url: updateUserDto.avatar_url,
       });
 
@@ -126,7 +126,7 @@ export class AdminUserService {
 
       const hydrated_user = await user_repository.findOne({
         where: { id: updateUserDto.id },
-        relations: ["profile", "profile.role"],
+        relations: ["profile"],
       });
 
       if (!hydrated_user) {

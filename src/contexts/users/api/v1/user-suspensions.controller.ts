@@ -10,8 +10,7 @@ import {
 import { Request } from "express";
 
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
-import { RequireStaffRole } from "@/src/contexts/roles/decorators/require-staff-role.decorator";
-import { StaffRoleGuard } from "@/src/contexts/roles/guards/staff-role.guard";
+import { AdminGuard } from "@/src/contexts/auth/guards/admin.guard";
 
 import { SuspendUserBodyDto } from "../../dto/suspend-user.dto";
 import { SuspensionService } from "../../services/suspension.service";
@@ -19,8 +18,7 @@ import { V1_USER_SUSPENSIONS } from "../../route.constants";
 import { UnsuspendUserBodyDto } from "../../dto/admin/unsuspend-user.dto";
 
 @Controller(V1_USER_SUSPENSIONS)
-@UseGuards(JwtGuard, StaffRoleGuard)
-@RequireStaffRole()
+@UseGuards(JwtGuard, AdminGuard)
 export class UserSuspensionsController {
   constructor(private readonly suspension_service: SuspensionService) {}
 

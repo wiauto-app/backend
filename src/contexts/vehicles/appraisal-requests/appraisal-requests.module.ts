@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { MakeEntity } from "../catalog/makes/entities/make.entity";
@@ -31,7 +30,6 @@ import { AppraisalRequestsService } from "./services/appraisal-requests.service"
       CatalogYearEntity,
       VersionEntity,
       ProfileEntity,
-      Roles,
       User,
     ]),
   ],

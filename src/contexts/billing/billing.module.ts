@@ -5,7 +5,6 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { AssistantModule } from "@/src/contexts/assistant/assistant.module";
 import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
@@ -69,6 +68,8 @@ import { DiscountCouponsService } from "./services/discount-coupons.service";
 import { AssistantCreditPacksService } from "./services/assistant-credit-packs.service";
 import { FeaturedListingOffersService } from "./services/featured-listing-offers.service";
 import { StripeClient } from "./clients/stripe.client";
+import { SubscriptionGuard } from "./guards/subscription.guard";
+import { EntitlementGuard } from "./guards/entitlement.guard";
 import { AssistantCreditPacksAdminController } from "./api/admin/assistant-credit-packs/assistant-credit-packs-admin.controller";
 import { FeaturedListingOffersAdminController } from "./api/admin/featured-listing-offers/featured-listing-offers-admin.controller";
 import { FindAssistantCreditPacksCatalogController } from "./api/user/find-assistant-credit-packs-catalog/find-assistant-credit-packs-catalog.controller";
@@ -95,7 +96,6 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
       AssistantCreditPackEntity,
       FeaturedListingOfferEntity,
       ProfileEntity,
-      Roles,
       User,
       VehicleEntity,
       DealershipEntity,
@@ -144,6 +144,8 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
     StripeWebhookService,
     StripeClient,
     PasswordService,
+    SubscriptionGuard,
+    EntitlementGuard,
     TypeOrmSubscriptionPlanRepository,
     TypeOrmSubscriptionRepository,
     TypeOrmBillingInvoiceRepository,
@@ -154,6 +156,8 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
   ],
   exports: [
     EntitlementsService,
+    SubscriptionGuard,
+    EntitlementGuard,
     TypeOrmSubscriptionPlanRepository,
     BillingNotificationMailService,
   ],

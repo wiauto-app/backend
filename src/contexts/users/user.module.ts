@@ -5,7 +5,6 @@ import { PasswordService } from "../auth/services/password.service";
 import { AuthModule } from "../auth/auth.module";
 import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 import { ProfileModule } from "../profiles/profile.module";
-import { RolesModule } from "../roles/roles.module";
 import { UsersController } from "./api/v1/users.controller";
 import { UserSuspensionsController } from "./api/v1/user-suspensions.controller";
 import { User } from "./entities/user.entity";
@@ -19,17 +18,13 @@ import { AdminUsersController } from "./api/admin-v1/admin-users.controller";
 import { AdminUserService } from "./services/admin-user.service";
 import { AdminSuspensionController } from "./api/admin-v1/admin-suspension.controller";
 import { AdminSuspensionService } from "./services/admin-suspension.service";
-import { RolesPermissionsController } from "./roles-permissions/api/roles-permissions.controller";
-import { RolesPermissionsService } from "./roles-permissions/services/roles-permissions.service";
-import { RolesPermissionsEntity } from "./roles-permissions/entities/roles-permissions.entity";
 
 @Module({
-  controllers: [UsersController, UserSuspensionsController, AdminUsersController, AdminSuspensionController, RolesPermissionsController],
-  providers: [UserService, UserAuthProviderService, PasswordService, UserMailService, SuspensionService, AdminUserService, AdminSuspensionService, RolesPermissionsService],
+  controllers: [UsersController, UserSuspensionsController, AdminUsersController, AdminSuspensionController],
+  providers: [UserService, UserAuthProviderService, PasswordService, UserMailService, SuspensionService, AdminUserService, AdminSuspensionService],
   imports: [
-    TypeOrmModule.forFeature([User, UserAuthProvider, VehicleEntity, SuspensionDurationType, RolesPermissionsEntity]),
+    TypeOrmModule.forFeature([User, UserAuthProvider, VehicleEntity, SuspensionDurationType]),
     ProfileModule,
-    RolesModule,
     forwardRef(() => AuthModule),
   ],
   exports: [UserService, UserAuthProviderService, UserMailService, SuspensionService],

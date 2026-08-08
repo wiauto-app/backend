@@ -1,5 +1,4 @@
-import { IsEmail, IsOptional, IsString, IsUUID } from "class-validator";
-
+import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class AdminUpdateUserDto {
   @IsUUID("4")
@@ -21,9 +20,9 @@ export class AdminUpdateUserDto {
   @IsOptional()
   last_name?: string;
 
-  @IsUUID("4")
   @IsOptional()
-  role_id?: string;
+  @IsBoolean()
+  is_admin?: boolean;
 
   @IsUUID("4")
   @IsOptional()

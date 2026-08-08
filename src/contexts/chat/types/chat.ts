@@ -1,17 +1,19 @@
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
+
 export const CHAT_TYPE = {
   PRIVATE: "individual",
   GROUP: "group",
+  SUPPORT: "support",
 } as const;
 
 export type ChatType = (typeof CHAT_TYPE)[keyof typeof CHAT_TYPE];
-
 
 export class Chat {
   id: string;
   participants: string[];
   chat_type: ChatType;
   vehicle_id: string | null;
+  ticket_id: string | null;
   created_at: Date;
   updated_at: Date;
 
@@ -19,12 +21,14 @@ export class Chat {
     participants: string[];
     chat_type: ChatType;
     vehicle_id: string | null;
+    ticket_id?: string | null;
   }): Chat {
-    const chat = new Chat()
+    const chat = new Chat();
     chat.id = uuidv4();
     chat.participants = payload.participants;
     chat.chat_type = payload.chat_type;
     chat.vehicle_id = payload.vehicle_id;
+    chat.ticket_id = payload.ticket_id ?? null;
     chat.created_at = new Date();
     chat.updated_at = new Date();
     return chat;

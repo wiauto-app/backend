@@ -3,14 +3,6 @@ import type { User } from "@/src/contexts/users/entities/user.entity";
 
 import type { ProfileEntity } from "../entities/profile.entity";
 
-export interface ProfileRoleResponse {
-  id: string;
-  name: string;
-  is_admin: boolean;
-  is_developer: boolean;
-  is_default: boolean;
-}
-
 export interface ProfileUserResponse {
   id: string;
   email: string;
@@ -18,6 +10,7 @@ export interface ProfileUserResponse {
   has_password: boolean;
   last_sign_in: Date;
   is_email_verified: boolean;
+  is_admin: boolean;
   two_factor_enabled: boolean;
   is_suspended: boolean;
   suspension_reason: string | null;
@@ -33,8 +26,6 @@ export interface ProfileResponse {
   last_name?: string;
   avatar_url?: string;
   image_url?: string;
-  role_id: string;
-  role?: ProfileRoleResponse | null;
   user?: ProfileUserResponse | null;
   phone_code?: string | null;
   phone?: string | null;
@@ -68,6 +59,7 @@ export const mapUserToResponse = (user: User): ProfileUserResponse => {
     has_password: identity.has_password,
     last_sign_in: user.last_sign_in,
     is_email_verified: user.is_email_verified,
+    is_admin: user.is_admin === true,
     two_factor_enabled: user.two_factor_enabled,
     is_suspended: user.is_suspended,
     suspension_reason: user.suspension_reason,
@@ -85,18 +77,8 @@ export const mapProfileToResponse = (
   last_name: entity.last_name,
   avatar_url: entity.avatar_url,
   image_url: entity.image_url,
-  role_id: entity.role_id ?? entity.role?.id ?? "",
   phone_code: entity.phone_code,
   phone: entity.phone,
   dni: entity.dni,
-  role: entity.role
-    ? {
-        id: entity.role.id,
-        name: entity.role.name,
-        is_admin: entity.role.is_admin,
-        is_developer: entity.role.is_developer,
-        is_default: entity.role.is_default,
-      }
-    : null,
   user: entity.user ? mapUserToResponse(entity.user) : null,
 });

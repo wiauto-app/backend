@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class RegisterUserDto {
   @IsEmail()
@@ -14,7 +14,4 @@ export class RegisterUserDto {
   @IsOptional()
   @IsString()
   last_name?: string;
-
-  @IsUUID("4")
-  role_id: string;
 }

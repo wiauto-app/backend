@@ -1,3 +1,4 @@
+import { ChatEntity } from "@/src/contexts/chat/entities/chat.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import {
   Column,
@@ -5,6 +6,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
@@ -55,4 +57,8 @@ export class TicketEntity {
   @ManyToOne(() => ProfileEntity, { onDelete: "CASCADE" })
   @JoinColumn({ name: "profile_id" })
   profile: Relation<ProfileEntity>;
+
+  @OneToOne(() => ChatEntity, (chat) => chat.ticket)
+  chat: Relation<ChatEntity> | null;
 }
+

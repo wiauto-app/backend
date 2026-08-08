@@ -7,11 +7,12 @@ import {
   HttpStatus,
   Param,
   Patch,
+  UseGuards,
 } from "@nestjs/common";
 
 import { GetUser } from "@/src/contexts/auth/decorators/GetUser.decorator";
+import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 import { DealershipMembersService } from "@/src/contexts/dealership/services/dealership-members.service";
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
 import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { DealershipMemberGuard } from "../../../guards/dealership-member.guard";
@@ -27,14 +28,14 @@ export class DealershipTeamController {
   ) {}
 
   @Get(":id/team")
-  @AuthPermissions({ permissions: [], extraGuards: [DealershipMemberGuard] })
+  @UseGuards(JwtGuard, DealershipMemberGuard)
   findTeam(@Param("id") dealership_id: string) {
     return this.dealership_members_service.findTeam(dealership_id);
   }
 
   @Delete(":id/members/me")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @AuthPermissions({ permissions: [], extraGuards: [DealershipMemberSelfGuard] })
+  @UseGuards(JwtGuard, DealershipMemberSelfGuard)
   leaveTeam(@Param("id") dealership_id: string, @GetUser() user: User) {
     return this.dealership_members_service.leaveTeam({
       dealership_id,
@@ -43,7 +44,7 @@ export class DealershipTeamController {
   }
 
   @Patch(":id/members/:member_id")
-  @AuthPermissions({ permissions: [], extraGuards: [DealershipTeamManagerGuard] })
+  @UseGuards(JwtGuard, DealershipTeamManagerGuard)
   updateRole(
     @Param("id") dealership_id: string,
     @Param("member_id") member_id: string,
@@ -58,7 +59,7 @@ export class DealershipTeamController {
 
   @Delete(":id/members/:member_id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @AuthPermissions({ permissions: [], extraGuards: [DealershipTeamManagerGuard] })
+  @UseGuards(JwtGuard, DealershipTeamManagerGuard)
   removeMember(
     @Param("id") dealership_id: string,
     @Param("member_id") member_id: string,

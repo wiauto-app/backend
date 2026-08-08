@@ -21,7 +21,7 @@ export class FindChatMessageController {
     @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     const message = await this.chat_message_service.findOne({ id });
-    this.chat_access_service.assertChatParticipant(message.chat, user_id);
+    await this.chat_access_service.assertChatAccess(message.chat, user_id);
     return message;
   }
 }

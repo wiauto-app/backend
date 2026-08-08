@@ -35,7 +35,6 @@ export interface AdminCreateProfileInput {
   id: string;
   name: string;
   last_name: string;
-  role_id: string;
   avatar_url?: string;
   image_url?: string;
 }
@@ -44,14 +43,12 @@ export interface AdminUpdateProfileInput {
   id: string;
   name?: string;
   last_name?: string;
-  role_id?: string;
   avatar_url?: string;
   image_url?: string;
 }
 
 export interface FindAllProfilesInput {
   name?: string;
-  role_id?: string;
   email?: string;
   page?: number;
   limit?: number;
@@ -93,7 +90,6 @@ export class ProfileService {
     last_name?: string;
     avatar_url?: string;
     image_url?: string;
-    role_id: string;
   }): Promise<ProfileResponse> {
     const email = await this.profile_user_repository.findEmailById(input.id);
     const accepted_invitation = email
@@ -109,7 +105,6 @@ export class ProfileService {
       last_name: input.last_name,
       avatar_url: input.avatar_url,
       image_url: input.image_url,
-      role_id: input.role_id,
     });
 
     if (email) {
@@ -153,7 +148,6 @@ export class ProfileService {
       id: input.id,
       name: input.name,
       last_name: input.last_name,
-      role_id: input.role_id,
       avatar_url: input.avatar_url,
       image_url: input.image_url,
     });
@@ -193,7 +187,6 @@ export class ProfileService {
       order_by: input.order_by,
       order_direction: input.order_direction,
       name: input.name,
-      role_id: input.role_id,
       email: input.email,
     });
     const profiles = await this.profile_repository.findAll(filter);
@@ -233,7 +226,6 @@ export class ProfileService {
     last_name?: string;
     avatar_url?: string;
     image_url?: string;
-    role_id?: string;
     phone_code?: string;
     phone?: string;
     dni?: string;

@@ -1,6 +1,4 @@
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
-import { PermissionModule } from "@/src/contexts/users/permissions/permission.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
@@ -195,7 +193,6 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
       CatalogFuelTypeEntity,
       CatalogYearEntity,
       VersionEntity,
-      Roles,
       DealershipMembersEntity,
       VehiclePriceEntity,
       get_vehicle_images_entity()]),
@@ -217,7 +214,6 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     FeaturesModule,
     CatalogModule,
     AuthModule,
-    PermissionModule,
     ProfileModule,
     forwardRef(() => BillingModule),
     DealershipModule,

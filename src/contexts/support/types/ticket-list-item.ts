@@ -16,6 +16,7 @@ export interface TicketListItem {
   status: TicketStatus;
   profile_id: string;
   profile_label: string;
+  chat_id: string | null;
   created_at: Date;
   updated_at: Date;
   category: TicketCategoryRef;

@@ -13,10 +13,6 @@ export class AdminUpdateProfileHttpDto {
   @IsString()
   last_name?: string;
 
-  @IsUUID("4")
-  @IsOptional()
-  role_id?: string;
-
   @IsOptional()
   @IsString()
   avatar_url?: string;

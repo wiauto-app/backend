@@ -2,11 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
 } from "typeorm";
+
+import { TicketEntity } from "@/src/contexts/support/entities/ticket.entity";
 
 import { CHAT_TYPE, ChatType } from "../types/chat";
 import { ChatMessageEntity } from "./chat-message.orm.entity";
@@ -25,6 +29,9 @@ export class ChatEntity {
   @Column({ type: "uuid", nullable: true })
   vehicle_id: string | null;
 
+  @Column({ type: "uuid", nullable: true, unique: true })
+  ticket_id: string | null;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -33,5 +40,11 @@ export class ChatEntity {
 
   @OneToMany(() => ChatMessageEntity, (message: ChatMessageEntity) => message.chat)
   messages: Relation<ChatMessageEntity[]>;
-}
 
+  @OneToOne(() => TicketEntity, (ticket) => ticket.chat, {
+    onDelete: "SET NULL",
+    nullable: true,
+  })
+  @JoinColumn({ name: "ticket_id" })
+  ticket: Relation<TicketEntity> | null;
+}

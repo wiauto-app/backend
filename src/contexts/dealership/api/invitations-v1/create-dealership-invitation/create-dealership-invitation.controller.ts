@@ -1,9 +1,8 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
 
 import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
+import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 import { DealershipInvitationsService } from "@/src/contexts/dealership/services/dealership-invitations.service";
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
-import { PermissionKeys } from "@/src/contexts/users/permissions/lib/available-permission";
 
 import { DealershipTeamManagerGuard } from "../../../guards/dealership-team-manager.guard";
 import { V1_DEALERSHIP_INVITATIONS } from "../../route.constants";
@@ -16,10 +15,7 @@ export class CreateDealershipInvitationController {
   ) {}
 
   @Post()
-  @AuthPermissions({
-    permissions: [PermissionKeys.DEALERSHIPINVITATIONS_CREATE],
-    extraGuards: [DealershipTeamManagerGuard],
-  })
+  @UseGuards(JwtGuard, DealershipTeamManagerGuard)
   run(
     @Body() body: CreateDealershipInvitationHttpDto,
     @GetUserId() invited_by_id: string,

@@ -27,7 +27,7 @@ export class FindMessagesByChatController {
     @Query() query: PaginationHttpDto,
   ) {
     const chat = await this.chat_service.findOne({ id: chat_id });
-    this.chat_access_service.assertChatParticipant(chat, user_id);
+    await this.chat_access_service.assertChatAccess(chat, user_id);
     const messages = await this.chat_message_service.findByChat({
       chat_id,
       page: query.page,

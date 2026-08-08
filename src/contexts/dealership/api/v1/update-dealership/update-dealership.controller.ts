@@ -1,8 +1,8 @@
-import { Body, Controller, Param, Patch } from "@nestjs/common";
+import { Body, Controller, Param, Patch, UseGuards } from "@nestjs/common";
 
+import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
 import { DealershipMemberInputDto } from "../../../dto/dealership-member-input.dto";
 import { DealershipService } from "../../../services/dealership.service";
-import { AuthPermissions } from "@/src/contexts/users/permissions/decorators/authPermission.decorator";
 import { DealershipTeamManagerGuard } from "../../../guards/dealership-team-manager.guard";
 import { V1_DEALERSHIPS } from "../../route.constants";
 
@@ -14,7 +14,7 @@ export class UpdateDealershipController {
   constructor(private readonly dealership_service: DealershipService) {}
 
   @Patch(":id")
-  @AuthPermissions({ permissions: [], extraGuards: [DealershipTeamManagerGuard] })
+  @UseGuards(JwtGuard, DealershipTeamManagerGuard)
   run(
     @Param() params: FindDealershipHttpDto,
     @Body() update_dealership_http_dto: UpdateDealershipHttpDto,

@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
-import { AdminOnlyGuard } from "@/src/contexts/roles/guards/admin-only.guard";
+import { AdminGuard } from "@/src/contexts/auth/guards/admin.guard";
 
 import { AppraisalRequestsService } from "../../services/appraisal-requests.service";
 import { V1_ADMIN_APPRAISAL_REQUESTS } from "../route.constants";
@@ -18,7 +18,7 @@ import { FindAllAppraisalRequestsHttpDto } from "../../dto/find-all-appraisal-re
 import { RespondAppraisalRequestHttpDto } from "../../dto/respond-appraisal-request.http-dto";
 
 @Controller(V1_ADMIN_APPRAISAL_REQUESTS)
-@UseGuards(JwtGuard, AdminOnlyGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class AppraisalRequestsAdminController {
   constructor(private readonly appraisal_requests_service: AppraisalRequestsService) {}
 

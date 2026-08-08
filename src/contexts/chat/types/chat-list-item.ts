@@ -1,11 +1,21 @@
+import { TicketStatus } from "@/src/contexts/support/types/ticket";
+
 import { ChatType } from "./chat";
 import { ChatMessageType } from "./chatMessage";
 import { ChatParticipantSummary } from "./chat-participant-summary";
+
+export interface ChatTicketSummary {
+  id: string;
+  title: string;
+  status: TicketStatus;
+}
 
 export interface ChatListItem {
   id: string;
   chat_type: ChatType;
   vehicle_id: string | null;
+  ticket_id: string | null;
+  ticket: ChatTicketSummary | null;
   created_at: Date;
   updated_at: Date;
   other_participants: ChatParticipantSummary[];
@@ -14,4 +24,3 @@ export interface ChatListItem {
   last_message_at: Date | null;
   last_message_type: ChatMessageType | null;
 }
-

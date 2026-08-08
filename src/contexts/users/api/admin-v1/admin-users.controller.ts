@@ -4,10 +4,10 @@ import { AdminCreateUserDto } from "../../dto/admin/create-user.dto";
 import { AdminUserService } from "../../services/admin-user.service";
 import { AdminUpdateUserDto } from "../../dto/admin/update-user.dto";
 import { JwtGuard } from "../../../auth/guards/auth.guard";
-import { AdminOnlyGuard } from "../../../roles/guards/admin-only.guard";
+import { AdminGuard } from "@/src/contexts/auth/guards/admin.guard";
 
 @Controller(V1_ADMIN_USERS)
-@UseGuards(JwtGuard, AdminOnlyGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class AdminUsersController {
   constructor(private readonly adminUserService: AdminUserService) { }
 

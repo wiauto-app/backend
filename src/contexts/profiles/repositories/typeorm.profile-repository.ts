@@ -1,5 +1,4 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { Roles } from "@/src/contexts/roles/entities/roles.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -14,7 +13,6 @@ export interface SaveProfileInput {
   last_name?: string | null;
   avatar_url?: string | null;
   image_url?: string | null;
-  role_id?: string | null;
   phone_code?: string | null;
   phone?: string | null;
   dni?: string | null;
@@ -25,7 +23,6 @@ export interface UpdateProfileInput {
   last_name?: string | null;
   avatar_url?: string | null;
   image_url?: string | null;
-  role_id?: string | null;
   phone_code?: string | null;
   phone?: string | null;
   dni?: string | null;
@@ -45,8 +42,6 @@ export class TypeOrmProfileRepository {
       last_name: input.last_name ?? undefined,
       avatar_url: input.avatar_url ?? "",
       image_url: input.image_url ?? "",
-      role: input.role_id ? ({ id: input.role_id } as Roles) : null,
-      role_id: input.role_id ?? undefined,
       phone_code: input.phone_code ?? null,
       phone: input.phone ?? null,
       dni: input.dni ?? null,
@@ -65,7 +60,6 @@ export class TypeOrmProfileRepository {
     const skip = getSkip(filter.page, filter.limit);
     const qb = this.profileRepository
       .createQueryBuilder("p")
-      .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
       .addSelect("user.password")
@@ -79,10 +73,6 @@ export class TypeOrmProfileRepository {
     }
     if (filter.order_by) {
       qb.orderBy(`p.${filter.order_by}`, filter.order_direction);
-    }
-
-    if (filter.role_id) {
-      qb.andWhere("p.role_id = :role_id", { role_id: filter.role_id });
     }
 
     if (filter.name) {
@@ -100,7 +90,6 @@ export class TypeOrmProfileRepository {
   async findOne(id: string): Promise<ProfileEntity | null> {
     return this.profileRepository
       .createQueryBuilder("p")
-      .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
       .addSelect("user.password")
@@ -111,7 +100,6 @@ export class TypeOrmProfileRepository {
   async findByEmail(email: string): Promise<ProfileEntity | null> {
     return this.profileRepository
       .createQueryBuilder("p")
-      .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
       .addSelect("user.password")
@@ -126,7 +114,6 @@ export class TypeOrmProfileRepository {
 
     return this.profileRepository
       .createQueryBuilder("p")
-      .leftJoinAndSelect("p.role", "role")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
       .addSelect("user.password")
@@ -147,7 +134,6 @@ export class TypeOrmProfileRepository {
       ...(input.image_url !== undefined
         ? { image_url: input.image_url ?? "" }
         : {}),
-      ...(input.role_id !== undefined ? { role_id: input.role_id ?? undefined } : {}),
       ...(input.phone_code !== undefined
         ? { phone_code: input.phone_code }
         : {}),
