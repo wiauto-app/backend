@@ -115,6 +115,11 @@ export class AssistantCreditPacksService {
 
   async syncStripe(id: string): Promise<AssistantCreditPackEntity> {
     const pack = await this.findOne(id);
+    const title = pack.title?.trim();
+
+    if (!title) {
+      throw new BadRequestException("El título es obligatorio");
+    }
 
     if (pack.amount_cents <= 0) {
       throw new BadRequestException("El importe debe ser mayor que 0");
@@ -123,7 +128,7 @@ export class AssistantCreditPacksService {
     const stripe_product_id =
       await this.stripe_client.createOrUpdateOneTimeProduct({
         stripe_product_id: pack.stripe_product_id,
-        title: pack.title,
+        title,
         description: pack.description,
         is_active: pack.is_active,
         metadata: {

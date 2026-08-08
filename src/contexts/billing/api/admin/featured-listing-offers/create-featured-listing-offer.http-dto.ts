@@ -1,14 +1,18 @@
 import {
   IsBoolean,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
   Min,
+  MinLength,
 } from "class-validator";
 
 export class CreateFeaturedListingOfferHttpDto {
   @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
   title!: string;
 
   @IsOptional()

@@ -1,13 +1,17 @@
 import {
   IsBoolean,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Min,
+  MinLength,
 } from "class-validator";
 
 export class CreateAssistantCreditPackHttpDto {
   @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
   title!: string;
 
   @IsOptional()

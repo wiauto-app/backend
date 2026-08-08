@@ -119,6 +119,11 @@ export class FeaturedListingOffersService {
 
   async syncStripe(id: string): Promise<FeaturedListingOfferEntity> {
     const offer = await this.findOne(id);
+    const title = offer.title?.trim();
+
+    if (!title) {
+      throw new BadRequestException("El título es obligatorio");
+    }
 
     if (offer.amount_cents <= 0) {
       throw new BadRequestException("El importe debe ser mayor que 0");
@@ -127,7 +132,7 @@ export class FeaturedListingOffersService {
     const stripe_product_id =
       await this.stripe_client.createOrUpdateOneTimeProduct({
         stripe_product_id: offer.stripe_product_id,
-        title: offer.title,
+        title,
         description: offer.description,
         is_active: offer.is_active,
         metadata: {

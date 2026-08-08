@@ -231,22 +231,30 @@ export class StripeClient {
     is_active: boolean;
     metadata: Record<string, string>;
   }): Promise<string> {
+    const name = params.title?.trim();
+    if (!name) {
+      throw new Error(
+        "El título del producto es obligatorio para sincronizar con Stripe",
+      );
+    }
+
+    const description = params.description?.trim() || undefined;
+    const product_payload = {
+      name,
+      ...(description ? { description } : {}),
+      active: params.is_active,
+      metadata: params.metadata,
+    };
+
     if (params.stripe_product_id) {
-      await this.stripe.products.update(params.stripe_product_id, {
-        name: params.title,
-        description: params.description ?? undefined,
-        active: params.is_active,
-        metadata: params.metadata,
-      });
+      await this.stripe.products.update(
+        params.stripe_product_id,
+        product_payload,
+      );
       return params.stripe_product_id;
     }
 
-    const product = await this.stripe.products.create({
-      name: params.title,
-      description: params.description ?? undefined,
-      active: params.is_active,
-      metadata: params.metadata,
-    });
+    const product = await this.stripe.products.create(product_payload);
 
     return product.id;
   }
