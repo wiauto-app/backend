@@ -36,14 +36,16 @@ export class UpdateSubscriptionPlanHttpDto {
   @IsString()
   description?: string | null;
 
+  /** @deprecated Capacidades van por entitlements */
   @IsOptional()
   @IsEnum(PLAN_AUDIENCE)
-  audience?: PlanAudience;
+  audience?: PlanAudience | null;
 
   @IsOptional()
   @IsEnum(BILLING_TYPE)
   billing_type?: BillingType;
 
+  /** @deprecated Capacidades van por entitlements */
   @IsOptional()
   @IsUUID()
   role_id?: string | null;

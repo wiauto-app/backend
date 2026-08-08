@@ -15,6 +15,7 @@ import {
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_NEW_MESSAGE_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_CANCEL_SCHEDULED,
@@ -52,6 +53,7 @@ import {
   OutboundMailLeadNotificationJobData,
   OutboundMailNewMessageNotificationJobData,
   OutboundMailPlanLeadRequestNotificationJobData,
+  OutboundMailPlanLeadProposalJobData,
   OutboundMailPasswordRecoveryJobData,
   OutboundMailSellerVehicleJobData,
   OutboundMailSubscriptionCancelScheduledJobData,
@@ -140,6 +142,12 @@ export class OutboundMailProcessor extends WorkerHost {
         lead: data.lead,
         created_at: data.created_at,
       });
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL) {
+      const data = job.data as OutboundMailPlanLeadProposalJobData;
+      await this.mail_service.sendPlanLeadProposalEmail(data);
       return;
     }
 

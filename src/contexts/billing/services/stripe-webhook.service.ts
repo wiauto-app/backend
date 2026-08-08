@@ -11,6 +11,7 @@ import { FEATURED_DURATION_MS } from "@/src/contexts/vehicles/utils/owner-vehicl
 import { VehicleSearchIndexer } from "@/src/contexts/vehicles/search/indexing/vehicle-search-indexer.service";
 import {
   BILLING_INVOICE_STATUS,
+  ONE_TIME_PRODUCT_KIND,
   ONE_TIME_PURCHASE_STATUS,
 } from "../types/billing.enums";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
@@ -22,6 +23,8 @@ import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/reposi
 import { BillingNotificationMailService } from "../services/billing-notification-mail.service";
 import { StripeClient } from "../clients/stripe.client";
 import { BillingSubscriptionProvisioningService } from "./billing-subscription-provisioning.service";
+import { AssistantCreditPackEntity } from "../entities/assistant-credit-pack.entity";
+import { FeaturedListingOfferEntity } from "../entities/featured-listing-offer.entity";
 
 @HexInjectable()
 export class StripeWebhookService {
@@ -39,6 +42,10 @@ export class StripeWebhookService {
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     @InjectRepository(VehicleEntity)
     private readonly vehicle_repository: Repository<VehicleEntity>,
+    @InjectRepository(AssistantCreditPackEntity)
+    private readonly pack_repository_entity: Repository<AssistantCreditPackEntity>,
+    @InjectRepository(FeaturedListingOfferEntity)
+    private readonly offer_repository_entity: Repository<FeaturedListingOfferEntity>,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
     private readonly assistant_quota_service: AssistantQuotaService,
   ) {}
@@ -102,9 +109,7 @@ export class StripeWebhookService {
     }
 
     const profile_id = session.metadata?.profile_id;
-    const plan_id = session.metadata?.plan_id;
-
-    if (!profile_id || !plan_id) {
+    if (!profile_id) {
       return;
     }
 
@@ -116,7 +121,9 @@ export class StripeWebhookService {
 
       await this.handleOneTimePurchase({
         profile_id,
-        plan_id,
+        plan_id: session.metadata?.plan_id ?? null,
+        product_kind: session.metadata?.product_kind ?? null,
+        product_id: session.metadata?.product_id ?? null,
         payment_intent_id,
         metadata: session.metadata ?? {},
       });
@@ -180,6 +187,9 @@ export class StripeWebhookService {
       plan_id,
       customer_id,
       subscription,
+      {
+        plan_version_id: subscription.metadata.plan_version_id ?? null,
+      },
     );
 
     if (this.provisioning_service.isActiveSubscriptionStatus(subscription.status)) {
@@ -367,15 +377,23 @@ export class StripeWebhookService {
 
   private async handlePaymentIntentSucceeded(payment_intent: Stripe.PaymentIntent) {
     const profile_id = payment_intent.metadata.profile_id;
-    const plan_id = payment_intent.metadata.plan_id;
+    if (!profile_id) {
+      return;
+    }
 
-    if (!profile_id || !plan_id) {
+    const product_kind = payment_intent.metadata.product_kind ?? null;
+    const product_id = payment_intent.metadata.product_id ?? null;
+    const plan_id = payment_intent.metadata.plan_id ?? null;
+
+    if (!product_id && !plan_id) {
       return;
     }
 
     await this.handleOneTimePurchase({
       profile_id,
       plan_id,
+      product_kind,
+      product_id,
       payment_intent_id: payment_intent.id,
       metadata: payment_intent.metadata,
     });
@@ -383,11 +401,20 @@ export class StripeWebhookService {
 
   private async handleOneTimePurchase(params: {
     profile_id: string;
-    plan_id: string;
+    plan_id?: string | null;
+    product_kind?: string | null;
+    product_id?: string | null;
     payment_intent_id: string | null;
     metadata: Record<string, unknown>;
   }) {
-    const { profile_id, plan_id, payment_intent_id, metadata } = params;
+    const {
+      profile_id,
+      plan_id,
+      product_kind,
+      product_id,
+      payment_intent_id,
+      metadata,
+    } = params;
 
     if (payment_intent_id) {
       const existing = await this.purchase_repository.findByStripePaymentIntentId(
@@ -401,13 +428,21 @@ export class StripeWebhookService {
 
     await this.purchase_repository.create({
       profile_id,
-      plan_id,
+      plan_id: plan_id ?? null,
+      product_kind: product_kind ?? null,
+      product_id: product_id ?? null,
       stripe_payment_intent_id: payment_intent_id,
       status: ONE_TIME_PURCHASE_STATUS.COMPLETED,
       metadata,
     });
 
-    await this.applyOneTimeEffect(profile_id, plan_id, metadata);
+    await this.applyOneTimeEffect({
+      profile_id,
+      plan_id: plan_id ?? null,
+      product_kind: product_kind ?? null,
+      product_id: product_id ?? null,
+      metadata,
+    });
 
     if (payment_intent_id) {
       await this.purchase_repository.markEffectApplied(payment_intent_id);
@@ -458,11 +493,64 @@ export class StripeWebhookService {
     });
   }
 
-  private async applyOneTimeEffect(
-    profile_id: string,
-    plan_id: string,
-    metadata: Record<string, unknown>,
-  ) {
+  private async applyOneTimeEffect(params: {
+    profile_id: string;
+    plan_id?: string | null;
+    product_kind?: string | null;
+    product_id?: string | null;
+    metadata: Record<string, unknown>;
+  }) {
+    const { profile_id, plan_id, product_kind, product_id, metadata } = params;
+
+    if (
+      product_kind === ONE_TIME_PRODUCT_KIND.ASSISTANT_CREDIT_PACK &&
+      product_id
+    ) {
+      const pack = await this.pack_repository_entity.findOne({
+        where: { id: product_id },
+      });
+      if (!pack || pack.credits_quantity <= 0) {
+        this.logger.warn(
+          `Pack ${product_id} de consultas no válido para fulfillment`,
+        );
+        return;
+      }
+
+      await this.assistant_quota_service.addPurchasedCredits(
+        profile_id,
+        pack.credits_quantity,
+      );
+      return;
+    }
+
+    if (
+      product_kind === ONE_TIME_PRODUCT_KIND.FEATURED_LISTING_OFFER &&
+      product_id
+    ) {
+      const offer = await this.offer_repository_entity.findOne({
+        where: { id: product_id },
+      });
+      if (!offer || offer.duration_days <= 0) {
+        this.logger.warn(
+          `Oferta ${product_id} de destacar no válida para fulfillment`,
+        );
+        return;
+      }
+
+      await this.applyFeaturedListingEffect({
+        profile_id,
+        metadata,
+        duration_days: offer.duration_days,
+        boost_weight: offer.boost_weight,
+      });
+      return;
+    }
+
+    // Legacy: subscription_plans one_time + effect_config
+    if (!plan_id) {
+      return;
+    }
+
     const plan = await this.plan_repository.findOne(plan_id);
     if (!plan) {
       return;
@@ -485,9 +573,23 @@ export class StripeWebhookService {
       return;
     }
 
-  
+    if (effect_type === "feature_vehicle") {
+      await this.applyFeaturedListingEffect({
+        profile_id,
+        metadata,
+        duration_days: Math.round(FEATURED_DURATION_MS / (24 * 60 * 60 * 1000)),
+        boost_weight: 50,
+      });
+    }
+  }
 
-    const vehicle_id = metadata.vehicle_id;
+  private async applyFeaturedListingEffect(params: {
+    profile_id: string;
+    metadata: Record<string, unknown>;
+    duration_days: number;
+    boost_weight: number;
+  }) {
+    const vehicle_id = params.metadata.vehicle_id;
     if (typeof vehicle_id !== "string" || !vehicle_id) {
       return;
     }
@@ -497,17 +599,20 @@ export class StripeWebhookService {
       relations: { profile: true },
     });
 
-    if (!existing || existing.profile.id !== profile_id) {
+    if (!existing || existing.profile.id !== params.profile_id) {
       return;
     }
 
     const now = new Date();
-    const featured_expires_at = new Date(now.getTime() + FEATURED_DURATION_MS);
+    const featured_expires_at = new Date(
+      now.getTime() + params.duration_days * 24 * 60 * 60 * 1000,
+    );
 
     const preloaded = await this.vehicle_repository.preload({
       id: vehicle_id,
       is_featured: true,
       featured_expires_at,
+      featured_boost_weight: params.boost_weight,
     });
 
     if (!preloaded) {
@@ -517,7 +622,9 @@ export class StripeWebhookService {
     await this.vehicle_repository.save(preloaded);
     await this.vehicle_search_indexer.syncVehicle(vehicle_id, preloaded.status);
 
-    const profile = await this.billing_profile_repository.findById(profile_id);
+    const profile = await this.billing_profile_repository.findById(
+      params.profile_id,
+    );
     if (profile?.email) {
       await this.billing_notification_mail_service.enqueueFeaturedPurchased({
         to: profile.email,

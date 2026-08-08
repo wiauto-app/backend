@@ -1,7 +1,9 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional } from "class-validator";
+
+import { BILLING_TYPE, BillingType } from "../../../types/billing.enums";
 
 export class FindPublicPlansCatalogQueryHttpDto {
   @IsOptional()
-  @IsString()
-  audience?: string;
+  @IsEnum(BILLING_TYPE)
+  billing_type?: BillingType;
 }

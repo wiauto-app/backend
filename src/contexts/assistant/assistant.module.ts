@@ -4,6 +4,7 @@ import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { CatalogModule } from "@/src/contexts/vehicles/catalog/catalog.module";
+import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { AiSearchFiltersController } from "./api/ai-search-filters.controller";
 import { AssistantChatController } from "./api/assistant-chat.controller";
 import { AssistantConversationsController } from "./api/assistant-conversations.controller";
@@ -28,6 +29,7 @@ import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
   imports: [
     AuthModule,
     forwardRef(() => VehiclesModule),
+    forwardRef(() => BillingModule),
     CatalogModule,
     TypeOrmModule.forFeature([AssistantConversationEntity, ProfileEntity]),
   ],

@@ -14,6 +14,6 @@ export class FindBillingCatalogController {
 
   @Get()
   run(@Query() query: FindBillingCatalogQueryHttpDto) {
-    return this.billing_plans_service.findCatalog(query.audience);
+    return this.billing_plans_service.findCatalog(query.billing_type);
   }
 }

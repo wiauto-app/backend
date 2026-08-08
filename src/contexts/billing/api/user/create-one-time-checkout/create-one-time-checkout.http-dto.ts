@@ -1,8 +1,20 @@
 import { IsObject, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateOneTimeCheckoutHttpDto {
+  /** Pack de consultas del asistente */
+  @IsOptional()
   @IsUUID()
-  plan_price_id!: string;
+  pack_id?: string;
+
+  /** Oferta de destacar anuncio */
+  @IsOptional()
+  @IsUUID()
+  offer_id?: string;
+
+  /** @deprecated Preferir pack_id u offer_id */
+  @IsOptional()
+  @IsUUID()
+  plan_price_id?: string;
 
   @IsOptional()
   @IsObject()

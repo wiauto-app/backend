@@ -18,14 +18,13 @@ export class CreateOneTimeCheckoutController {
     @GetUserId() profile_id: string,
     @Body() body: CreateOneTimeCheckoutHttpDto,
   ) {
-    return this.checkout_service.createOneTimeCheckout(
-      profile_id,
-      body.plan_price_id,
-      body.metadata,
-      {
-        success_url: body.success_url,
-        cancel_url: body.cancel_url,
-      },
-    );
+    return this.checkout_service.createOneTimeCheckout(profile_id, {
+      pack_id: body.pack_id,
+      offer_id: body.offer_id,
+      plan_price_id: body.plan_price_id,
+      metadata: body.metadata,
+      success_url: body.success_url,
+      cancel_url: body.cancel_url,
+    });
   }
 }

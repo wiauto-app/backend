@@ -89,7 +89,9 @@ export class TypeOrmOneTimePurchaseRepository {
 
   async create(data: {
     profile_id: string;
-    plan_id: string;
+    plan_id?: string | null;
+    product_kind?: string | null;
+    product_id?: string | null;
     stripe_payment_intent_id: string | null;
     status: string;
     metadata: Record<string, unknown>;
@@ -106,7 +108,9 @@ export class TypeOrmOneTimePurchaseRepository {
 
     await this.purchase_repository.save({
       profile_id: data.profile_id,
-      plan_id: data.plan_id,
+      plan_id: data.plan_id ?? null,
+      product_kind: (data.product_kind as OneTimePurchaseEntity["product_kind"]) ?? null,
+      product_id: data.product_id ?? null,
       stripe_payment_intent_id: data.stripe_payment_intent_id,
       status: data.status as OneTimePurchaseEntity["status"],
       metadata: data.metadata,

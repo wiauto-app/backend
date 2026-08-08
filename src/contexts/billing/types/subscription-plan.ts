@@ -36,9 +36,13 @@ export interface PrimitivePlanPrice {
 export interface PrimitiveSubscriptionPlan {
   id?: string;
   name: string;
+  slug?: string | null;
   description?: string | null;
-  audience: string;
+  /** @deprecated */
+  audience?: string | null;
   billing_type: string;
+  type?: string;
+  /** @deprecated */
   role_id?: string | null;
   stripe_product_id?: string | null;
   is_active: boolean;

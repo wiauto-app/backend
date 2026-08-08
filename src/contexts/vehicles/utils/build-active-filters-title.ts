@@ -12,7 +12,7 @@ import {
 
 const PUBLISHER_TYPE_MAP: Record<PublisherType, string> = {
   [PUBLISHER_TYPE.PARTICULAR]: "particulares",
-  [PUBLISHER_TYPE.PROFESSIONAL]: "profesionales",
+  [PUBLISHER_TYPE.DEALERSHIP]: "concesionarias",
 };
 
 const TRANSMISSION_TYPE_MAP: Record<TransmissionType, string> = {

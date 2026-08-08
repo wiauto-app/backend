@@ -1,7 +1,6 @@
 import { Roles } from "../../roles/entities/roles.entity";
 import { AuthProvider, User } from "../../users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
-import { PublisherType } from "../../vehicles/types/vehicle";
 import { DealershipMembershipDetail } from "@/src/contexts/dealership/types/dealership-membership-detail";
 
 export class MeDealershipMembershipDto {
@@ -35,7 +34,6 @@ export class MeResponseDto {
   role: Roles;
   created_at: string;
   type: "session" | "2fa_challenge";
-  userType: PublisherType;
   dealership_membership?: MeDealershipMembershipDto | null;
   static fromUser(
     user: User,
@@ -58,7 +56,6 @@ export class MeResponseDto {
     dto.dni = profile.dni ?? undefined;
     dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.vehicle_lists = profile.vehicle_lists;
-    dto.userType = profile.type;
     dto.dealership_membership = options.dealership_membership
       ? {
           dealership_id: options.dealership_membership.dealership_id,

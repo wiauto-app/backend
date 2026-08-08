@@ -35,12 +35,17 @@ export class CreateSubscriptionPlanHttpDto {
   @IsString()
   description?: string | null;
 
+  /** @deprecated Capacidades van por entitlements */
+  @IsOptional()
   @IsEnum(PLAN_AUDIENCE)
-  audience!: PlanAudience;
+  audience?: PlanAudience | null;
 
+  /** Solo recurring; one_time se rechaza en el servicio */
+  @IsOptional()
   @IsEnum(BILLING_TYPE)
-  billing_type!: BillingType;
+  billing_type?: BillingType;
 
+  /** @deprecated Capacidades van por entitlements */
   @IsOptional()
   @IsUUID()
   role_id?: string | null;

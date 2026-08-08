@@ -13,6 +13,7 @@ import {
   OUTBOUND_MAIL_JOB_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_NEW_MESSAGE_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_CANCEL_SCHEDULED,
@@ -50,6 +51,7 @@ import {
   OutboundMailLeadNotificationJobData,
   OutboundMailNewMessageNotificationJobData,
   OutboundMailPlanLeadRequestNotificationJobData,
+  OutboundMailPlanLeadProposalJobData,
   OutboundMailPasswordRecoveryJobData,
   OutboundMailSellerVehicleJobData,
   OutboundMailSubscriptionCancelScheduledJobData,
@@ -110,6 +112,12 @@ export class OutboundMailEnqueueService {
       OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
       data,
     );
+  }
+
+  async enqueue_plan_lead_proposal(
+    data: OutboundMailPlanLeadProposalJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL, data);
   }
 
   async enqueue_subscription_welcome(

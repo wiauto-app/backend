@@ -1,6 +1,6 @@
 export const PLAN_AUDIENCE = {
   PARTICULAR: "particular",
-  PROFESSIONAL: "professional",
+  DEALERSHIP: "dealership",
   BUYER: "buyer",
 } as const;
 
@@ -44,6 +44,14 @@ export const ONE_TIME_PURCHASE_STATUS = {
 export type OneTimePurchaseStatus =
   (typeof ONE_TIME_PURCHASE_STATUS)[keyof typeof ONE_TIME_PURCHASE_STATUS];
 
+export const ONE_TIME_PRODUCT_KIND = {
+  ASSISTANT_CREDIT_PACK: "assistant_credit_pack",
+  FEATURED_LISTING_OFFER: "featured_listing_offer",
+} as const;
+
+export type OneTimeProductKind =
+  (typeof ONE_TIME_PRODUCT_KIND)[keyof typeof ONE_TIME_PRODUCT_KIND];
+
 export const BILLING_INVOICE_STATUS = {
   DRAFT: "draft",
   OPEN: "open",
@@ -54,3 +62,31 @@ export const BILLING_INVOICE_STATUS = {
 
 export type BillingInvoiceStatus =
   (typeof BILLING_INVOICE_STATUS)[keyof typeof BILLING_INVOICE_STATUS];
+
+export const PLAN_TYPE = {
+  STANDARD: "standard",
+  CUSTOM: "custom",
+} as const;
+
+export type PlanType = (typeof PLAN_TYPE)[keyof typeof PLAN_TYPE];
+
+export const PLAN_VERSION_STATUS = {
+  DRAFT: "draft",
+  PUBLISHED: "published",
+  ARCHIVED: "archived",
+} as const;
+
+export type PlanVersionStatus =
+  (typeof PLAN_VERSION_STATUS)[keyof typeof PLAN_VERSION_STATUS];
+
+export const PLAN_LEAD_STATUS = {
+  PENDING: "pending",
+  CONTACTED: "contacted",
+  PROPOSAL_SENT: "proposal_sent",
+  ACCEPTED: "accepted",
+  REJECTED: "rejected",
+  CANCELLED: "cancelled",
+} as const;
+
+export type PlanLeadStatus =
+  (typeof PLAN_LEAD_STATUS)[keyof typeof PLAN_LEAD_STATUS];

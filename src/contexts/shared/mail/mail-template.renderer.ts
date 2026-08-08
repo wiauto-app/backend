@@ -562,6 +562,37 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderPlanLeadProposal(payload: {
+    lead_name: string;
+    plan_name: string;
+    checkout_url: string;
+    notes: string | null;
+  }): string {
+    const escaped_name = this.escapeHtml(payload.lead_name);
+    const escaped_plan = this.escapeHtml(payload.plan_name);
+    const escaped_url = this.escapeHtml(payload.checkout_url);
+    const notes_html = payload.notes
+      ? `<p style="margin:16px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">${this.escapeHtml(payload.notes)}</p>`
+      : "";
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Hola ${escaped_name}, hemos preparado una propuesta personalizada basada en el plan <strong>${escaped_plan}</strong>.
+      </p>
+      ${notes_html}
+      <p style="margin:24px 0;">
+        <a href="${escaped_url}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;">
+          Revisar y contratar
+        </a>
+      </p>`;
+
+    return this.renderBase({
+      preheader: `Propuesta personalizada: ${payload.plan_name}`,
+      title: "Tu propuesta de plan WiAuto",
+      body,
+      footer_note: "Si no solicitaste esta propuesta, puedes ignorar este correo.",
+    });
+  }
+
   renderSubscriptionWelcome(payload: {
     plan_name: string;
     is_new_guest_user: boolean;

@@ -1,7 +1,5 @@
-import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 
 import { VehicleEntity } from "../entities/vehicle.entity";
@@ -12,6 +10,8 @@ import { DismissedVehicleEntity } from "./entities/dismissed-vehicle.entity";
 import { VehiclePriceWatchEntity } from "./entities/vehicle-price-watch.entity";
 import { DismissedVehiclesService } from "./services/dismissed-vehicles.service";
 import { VehiclePriceWatchService } from "./services/vehicle-price-watch.service";
+import { Module, forwardRef } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
 @Module({
   imports: [
@@ -22,6 +22,7 @@ import { VehiclePriceWatchService } from "./services/vehicle-price-watch.service
       ProfileEntity,
     ]),
     AuthModule,
+    forwardRef(() => BillingModule),
   ],
   controllers: [
     PriceWatchController,

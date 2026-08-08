@@ -11,7 +11,9 @@ import {
 
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import {
+  ONE_TIME_PRODUCT_KIND,
   ONE_TIME_PURCHASE_STATUS,
+  OneTimeProductKind,
   OneTimePurchaseStatus,
 } from "../types/billing.enums";
 import { SubscriptionPlanEntity } from "./subscription-plan.entity";
@@ -24,8 +26,21 @@ export class OneTimePurchaseEntity {
   @Column({ name: "profile_id" })
   profile_id!: string;
 
-  @Column({ name: "plan_id" })
-  plan_id!: string;
+  /** @deprecated Preferir product_kind + product_id */
+  @Column({ name: "plan_id", nullable: true })
+  plan_id!: string | null;
+
+  @Column({
+    name: "product_kind",
+    type: "enum",
+    enum: ONE_TIME_PRODUCT_KIND,
+    enumName: "one_time_product_kind_enum",
+    nullable: true,
+  })
+  product_kind!: OneTimeProductKind | null;
+
+  @Column({ name: "product_id", type: "uuid", nullable: true })
+  product_id!: string | null;
 
   @Column({ name: "stripe_payment_intent_id", type: "varchar", nullable: true })
   stripe_payment_intent_id!: string | null;
@@ -54,10 +69,13 @@ export class OneTimePurchaseEntity {
   })
   profile!: Relation<ProfileEntity>;
 
-  @ManyToOne(() => SubscriptionPlanEntity, { onDelete: "RESTRICT" })
+  @ManyToOne(() => SubscriptionPlanEntity, {
+    onDelete: "RESTRICT",
+    nullable: true,
+  })
   @JoinColumn({
     name: "plan_id",
     foreignKeyConstraintName: "FK_one_time_purchases_plan",
   })
-  plan!: Relation<SubscriptionPlanEntity>;
+  plan!: Relation<SubscriptionPlanEntity | null>;
 }

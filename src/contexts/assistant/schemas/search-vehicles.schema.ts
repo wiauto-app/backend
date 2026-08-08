@@ -30,7 +30,7 @@ export const searchVehiclesInputSchema = z.object({
   lng: z.number().optional(),
   radius: z.number().optional(),
   publisher_types: z
-    .array(z.enum([PUBLISHER_TYPE.PROFESSIONAL, PUBLISHER_TYPE.PARTICULAR]))
+    .array(z.enum([PUBLISHER_TYPE.DEALERSHIP, PUBLISHER_TYPE.PARTICULAR]))
     .optional(),
   is_seller_featured: z.boolean().optional(),
   warranty_slugs: z.array(z.string()).optional(),

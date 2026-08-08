@@ -69,6 +69,16 @@ export interface OutboundMailPlanLeadRequestNotificationJobData {
   created_at: string;
 }
 
+export const OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL = "plan_lead_proposal";
+
+export interface OutboundMailPlanLeadProposalJobData {
+  to: string;
+  lead_name: string;
+  plan_name: string;
+  checkout_url: string;
+  notes: string | null;
+}
+
 export const OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME = "subscription_welcome";
 
 export interface OutboundMailSubscriptionWelcomeJobData {

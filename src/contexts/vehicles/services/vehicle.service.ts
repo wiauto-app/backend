@@ -24,6 +24,7 @@ import {
   TransmissionType,
   Vehicle,
   VehicleUpdateFields,
+  type PublisherType,
 } from "../types/vehicle";
 import { ElectricDisplacementException } from "../exceptions/electric-displacement.exception";
 import { InvalidateVehicleVersionIdException } from "../exceptions/InvalidateVehicleVersionId.exception";
@@ -81,6 +82,7 @@ import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-p
 import { TypeOrmVehiclePriceRepository } from "@/src/contexts/vehicles/vehicle-prices/repositories/typeorm.vehicle-price.repository";
 import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
+import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
 
 export interface ValidateVehicleInput {
@@ -145,7 +147,18 @@ export class VehicleService {
     private readonly entitlements_service: EntitlementsService,
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     private readonly dismissed_vehicles_service: DismissedVehiclesService,
+    private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
   ) {}
+
+  private async resolvePublisherType(
+    profile_id: string,
+  ): Promise<PublisherType> {
+    const membership =
+      await this.dealership_member_repository.findOneByProfileId(profile_id);
+    return membership
+      ? PUBLISHER_TYPE.DEALERSHIP
+      : PUBLISHER_TYPE.PARTICULAR;
+  }
 
   async create(
     create_vehicle_dto: CreateVehicleDto,
@@ -167,6 +180,8 @@ export class VehicleService {
       create_vehicle_dto.lng,
     );
 
+    const publisher_type = await this.resolvePublisherType(publisher_profile_id);
+
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
@@ -176,8 +191,7 @@ export class VehicleService {
       condition: create_vehicle_dto.condition,
       description: create_vehicle_dto.description.trim(),
       version_id: create_vehicle_dto.version_id,
-      publisher_type:
-        create_vehicle_dto.publisher_type ?? PUBLISHER_TYPE.PARTICULAR,
+      publisher_type,
       transmission_type: create_vehicle_dto.transmission_type,
       traction_id: create_vehicle_dto.traction_id,
       power: create_vehicle_dto.power,
@@ -301,12 +315,14 @@ export class VehicleService {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
     }
 
-    const { id, images, price, vehicle_price_id, ...dto_fields } =
+    const { id, images, price, vehicle_price_id, publisher_type: _ignored, ...dto_fields } =
       update_vehicle_dto;
 
     const patch = Object.fromEntries(
       Object.entries(dto_fields as Record<string, unknown>),
     ) as VehicleUpdateFields;
+
+    patch.publisher_type = await this.resolvePublisherType(existing.profile_id);
 
     const coordinates_changed =
       (patch.lat !== undefined && patch.lat !== existing.lat) ||
@@ -662,6 +678,7 @@ export class VehicleService {
       const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
         is_featured: false,
         featured_expires_at: null,
+        featured_boost_weight: null,
       });
 
       await this.vehicle_repository.update(updated);

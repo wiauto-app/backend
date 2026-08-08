@@ -18,9 +18,11 @@ const entity_to_plan = (entity: SubscriptionPlanEntity): SubscriptionPlan =>
   SubscriptionPlan.fromPrimitives({
     id: entity.id,
     name: entity.name,
+    slug: entity.slug,
     description: entity.description,
     audience: entity.audience,
     billing_type: entity.billing_type,
+    type: entity.type,
     role_id: entity.role_id,
     stripe_product_id: entity.stripe_product_id,
     is_active: entity.is_active,
@@ -64,9 +66,11 @@ export class TypeOrmSubscriptionPlanRepository {
     const p = plan.toPrimitives();
     const saved = await this.plan_repository.save({
       name: p.name,
+      slug: p.slug ?? null,
       description: p.description ?? null,
-      audience: p.audience as SubscriptionPlanEntity["audience"],
+      audience: (p.audience ?? null) as SubscriptionPlanEntity["audience"],
       billing_type: p.billing_type as SubscriptionPlanEntity["billing_type"],
+      type: (p.type ?? "standard") as SubscriptionPlanEntity["type"],
       role_id: p.role_id ?? null,
       stripe_product_id: p.stripe_product_id ?? null,
       is_active: p.is_active,
@@ -90,9 +94,11 @@ export class TypeOrmSubscriptionPlanRepository {
     const preloaded = await this.plan_repository.preload({
       id: p.id,
       name: p.name,
+      slug: p.slug ?? null,
       description: p.description ?? null,
-      audience: p.audience as SubscriptionPlanEntity["audience"],
+      audience: (p.audience ?? null) as SubscriptionPlanEntity["audience"],
       billing_type: p.billing_type as SubscriptionPlanEntity["billing_type"],
+      type: (p.type ?? "standard") as SubscriptionPlanEntity["type"],
       role_id: p.role_id ?? null,
       stripe_product_id: p.stripe_product_id ?? null,
       is_active: p.is_active,
@@ -156,11 +162,16 @@ export class TypeOrmSubscriptionPlanRepository {
     );
   }
 
-  async findCatalog(audience?: string): Promise<SubscriptionPlan[]> {
+  async findCatalog(billing_type?: string): Promise<SubscriptionPlan[]> {
     const rows = await this.plan_repository.find({
       where: {
         is_active: true,
-        ...(audience ? { audience: audience as SubscriptionPlanEntity["audience"] } : {}),
+        ...(billing_type
+          ? {
+              billing_type:
+                billing_type as SubscriptionPlanEntity["billing_type"],
+            }
+          : {}),
       },
       relations: { prices: true, features: true },
       order: { sort_order: "ASC", name: "ASC" },

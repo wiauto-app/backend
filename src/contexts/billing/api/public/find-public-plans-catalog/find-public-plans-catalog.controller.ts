@@ -11,9 +11,9 @@ export class FindPublicPlansCatalogController {
   constructor(private readonly billing_plans_service: BillingPlansService) {}
 
   @Get()
-  async run(@Query() query: FindPublicPlansCatalogQueryHttpDto) {
-    const plans = await this.billing_plans_service.findCatalog(query.audience);
-
-    return plans.filter((plan) => plan.billing_type === BILLING_TYPE.RECURRING);
+  run(@Query() query: FindPublicPlansCatalogQueryHttpDto) {
+    return this.billing_plans_service.findCatalog(
+      query.billing_type ?? BILLING_TYPE.RECURRING,
+    );
   }
 }

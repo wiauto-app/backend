@@ -1,4 +1,4 @@
-import { PlanQuotas } from "./plan-quotas";
+import { EntitlementValue, EntitlementValueType } from "./entitlement-features";
 
 export interface PlanCatalogPrice {
   id: string;
@@ -14,58 +14,31 @@ export interface PlanCatalogFeature {
   included: boolean;
 }
 
+export interface PlanCatalogEntitlement {
+  feature: string;
+  value_type: EntitlementValueType;
+  value: EntitlementValue;
+}
+
 export interface PlanCatalogItem {
   id: string;
   name: string;
+  slug: string | null;
   description: string | null;
-  audience: string;
+  audience: string | null;
   billing_type: string;
+  type: string;
   is_featured: boolean;
   sort_order: number;
   effect_config?: Record<string, unknown>;
+  plan_version_id: string | null;
   prices: PlanCatalogPrice[];
   features: PlanCatalogFeature[];
+  entitlements: PlanCatalogEntitlement[];
 }
 
-export interface BillingMeQuotas extends PlanQuotas {}
-
-export interface BillingMeUsage {
-  listings_used: number;
-  listings_scope: "dealership" | "profile";
-  dealership_id: string | null;
-}
-
-export interface BillingMeSummary {
-  subscription: {
-    id: string;
-    plan_id: string;
-    plan_name: string;
-    status: string;
-    current_period_end: Date | null;
-    cancel_at_period_end: boolean;
-  } | null;
-  effective_role: {
-    id: string;
-    name: string;
-  } | null;
-  /** @deprecated Preferir `usage.listings_used` */
-  vehicle_listings_used: number;
-  /** @deprecated Preferir `quotas.max_listings` */
-  vehicle_listings_max: number | null;
-  quotas: BillingMeQuotas;
-  usage: BillingMeUsage;
-  source: "dealership" | "free";
-  plan_id: string | null;
-  stripe_customer_id: string | null;
-}
-
-export interface ResolvedEntitlements {
-  quotas: PlanQuotas;
-  source: BillingMeSummary["source"];
-  plan_id: string | null;
-  plan_name: string | null;
-  dealership_id: string | null;
-  listings_used: number;
-  listings_scope: BillingMeUsage["listings_scope"];
-  is_unlimited: boolean;
-}
+export type {
+  BillingMeSummary,
+  ResolvedEntitlements,
+  UsageCheckResult,
+} from "./entitlement-resolve";

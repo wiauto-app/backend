@@ -54,7 +54,7 @@ export const getVehicleEditUrl = (
   publisher_type: string,
 ): string => {
   const base =
-    publisher_type === "professional"
+    publisher_type === "dealership"
       ? FRONTEND_ROUTES.EDIT_VEHICLE_PROFESSIONAL
       : FRONTEND_ROUTES.EDIT_VEHICLE;
   return getFrontendPath(`${base}/${vehicle_id}`);

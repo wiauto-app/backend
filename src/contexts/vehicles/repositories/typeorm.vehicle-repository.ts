@@ -448,6 +448,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
     featured_expires_at: entity.featured_expires_at ?? null,
+    featured_boost_weight: entity.featured_boost_weight ?? null,
     expires_at: entity.expires_at,
     scheduled_publish_at: entity.scheduled_publish_at ?? null,
     renewed_at: entity.renewed_at ?? null,
@@ -712,6 +713,9 @@ export class TypeOrmVehicleRepository {
     }
     if (p.featured_expires_at !== undefined) {
       payload.featured_expires_at = p.featured_expires_at;
+    }
+    if (p.featured_boost_weight !== undefined) {
+      payload.featured_boost_weight = p.featured_boost_weight;
     }
     if (p.expires_at !== undefined) {
       payload.expires_at = p.expires_at;
@@ -1238,6 +1242,7 @@ export class TypeOrmVehicleRepository {
         renewed_at: entity.renewed_at ?? null,
         is_featured: entity.is_featured,
         featured_expires_at: entity.featured_expires_at ?? null,
+        featured_boost_weight: entity.featured_boost_weight ?? null,
         is_featured_active,
         can_feature: canFeatureVehicle({
           status: entity.status,
@@ -1360,6 +1365,7 @@ export class TypeOrmVehicleRepository {
       address_details: source.address_details ?? null,
       is_featured: false,
       featured_expires_at: null,
+      featured_boost_weight: null,
       views: 0,
       favorites: 0,
       shares: 0,

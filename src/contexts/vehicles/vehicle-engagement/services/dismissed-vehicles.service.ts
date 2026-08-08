@@ -2,19 +2,19 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { QueryFailedError, Repository } from "typeorm";
 
-import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
+import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
+import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
 
 import { VehicleEntity } from "../../entities/vehicle.entity";
 import { VehicleNotFoundException } from "../../exceptions/vehicle-not-found.exception";
 import type { VehicleListItemPreview } from "../../types/vehicle-list-detail";
-import { PUBLISHER_TYPE } from "../../types/vehicle";
 import type { VehicleImagesEntity } from "../../vehicle-images/entities/vehicle-images.entity";
 import type { VehiclePriceEntity } from "../../vehicle-prices/entities/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/types/vehicle-price";
 import { DismissedVehicleEntity } from "../entities/dismissed-vehicle.entity";
 import { DismissedVehicleAlreadyExistsException } from "../exceptions/dismissed-vehicle-already-exists.exception";
 import { DismissedVehicleNotFoundException } from "../exceptions/dismissed-vehicle-not-found.exception";
-import { DismissedVehiclesProfessionalRequiredException } from "../exceptions/dismissed-vehicles-professional-required.exception";
+import { DismissedVehiclesEntitlementRequiredException } from "../exceptions/dismissed-vehicles-entitlement-required.exception";
 import type { DismissedVehicleListItem } from "../types/dismissed-vehicle-list-item";
 
 interface CreateDismissedVehicleInput {
@@ -95,8 +95,7 @@ export class DismissedVehiclesService {
     private readonly dismissedRepository: Repository<DismissedVehicleEntity>,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
-    @InjectRepository(ProfileEntity)
-    private readonly profileRepository: Repository<ProfileEntity>,
+    private readonly entitlements_service: EntitlementsService,
   ) {}
 
   async create(
@@ -162,11 +161,12 @@ export class DismissedVehiclesService {
   async findAllForProfessional(
     profileId: string,
   ): Promise<DismissedVehicleListItem[]> {
-    const profile = await this.profileRepository.findOne({
-      where: { id: profileId },
-    });
-    if (!profile || profile.type !== PUBLISHER_TYPE.PROFESSIONAL) {
-      throw new DismissedVehiclesProfessionalRequiredException();
+    const allowed = await this.entitlements_service.has(
+      profileId,
+      ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
+    );
+    if (!allowed) {
+      throw new DismissedVehiclesEntitlementRequiredException();
     }
 
     const rows = await this.dismissedRepository.find({

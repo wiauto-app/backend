@@ -199,6 +199,14 @@
     {
       "key": "appraisal_request_id",
       "value": ""
+    },
+    {
+      "key": "assistant_credit_pack_id",
+      "value": ""
+    },
+    {
+      "key": "featured_listing_offer_id",
+      "value": ""
     }
   ],
   "item": [
@@ -2294,9 +2302,9 @@
                     },
                     {
                       "key": "publisher_type",
-                      "value": "professional",
+                      "value": "dealership",
                       "type": "text",
-                      "description": "professional | particular"
+                      "description": "dealership | particular"
                     },
                     {
                       "key": "transmission_type",
@@ -2479,9 +2487,9 @@
                         },
                         {
                           "key": "publisher_type",
-                          "value": "professional",
+                          "value": "dealership",
                           "type": "text",
-                          "description": "professional | particular"
+                          "description": "dealership | particular"
                         },
                         {
                           "key": "transmission_type",
@@ -2592,7 +2600,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"dealership\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -2722,9 +2730,9 @@
                     },
                     {
                       "key": "publisher_types",
-                      "value": "professional",
+                      "value": "dealership",
                       "disabled": true,
-                      "description": "professional|private|... (enum PUBLISHER_TYPE)."
+                      "description": "dealership|particular (enum PUBLISHER_TYPE)."
                     },
                     {
                       "key": "publisher_types",
@@ -3142,7 +3150,7 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T15:00:00.000Z\",\n    \"features_ids\": [\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"],\n    \"services_ids\": [\"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 25000,\n    \"mileage\": 45000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Toyota ejemplo venta\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"dealership\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T15:00:00.000Z\",\n    \"features_ids\": [\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"],\n    \"services_ids\": [\"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -3312,7 +3320,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 26000,\n    \"mileage\": 46000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Título actualizado mínimo cinco chars\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"professional\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
+                  "body": "{\n  \"vehicle\": {\n    \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"price\": 26000,\n    \"mileage\": 46000,\n    \"lat\": -12.0464,\n    \"lng\": -77.0428,\n    \"condition\": \"used\",\n    \"title\": \"Título actualizado mínimo cinco chars\",\n    \"description\": \"Descripción del anuncio con al menos diez caracteres para pasar validación.\",\n    \"publisher_type\": \"dealership\",\n    \"version_id\": 1,\n    \"status\": \"active\",\n    \"is_featured\": false,\n    \"expires_at\": \"2026-07-28T14:30:00.000Z\",\n    \"views\": 42,\n    \"transmission_type\": \"automatic\",\n    \"traction_id\": \"cccccccc-dddd-eeee-ffff-000000000099\",\n    \"power\": 150,\n    \"displacement\": 2000,\n    \"autonomy\": 0,\n    \"battery_capacity\": 0,\n    \"time_to_charge\": 0,\n    \"license_plate\": \"\",\n    \"phone_code\": \"+51\",\n    \"phone\": \"999999999\",\n    \"email\": \"vendedor@ejemplo.com\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\",\n    \"features_ids\": [\n      \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n    ],\n    \"services_ids\": [\n      \"bbbbbbbb-cccc-dddd-eeee-ffffffffffff\"\n    ],\n    \"vehicle_type_id\": \"cccccccc-dddd-eeee-ffff-000000000001\",\n    \"color_id\": \"dddddddd-eeee-ffff-0000-111111111111\",\n    \"dgt_label_id\": \"eeeeeeee-ffff-0000-1111-222222222222\",\n    \"warranty_type_id\": \"ffffffff-0000-1111-2222-333333333333\",\n    \"cuota_ids\": [\"00000000-1111-2222-3333-444444444444\"],\n    \"suggestions\": []\n  }\n}"
                 }
               ]
             },
@@ -5011,7 +5019,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/dismissed-vehicles",
-                "description": "JWT (`JwtGuard`). Solo `profile.type === professional`. Devuelve items con preview del vehículo."
+                "description": "JWT (`JwtGuard`). Requiere entitlement `dismissed_vehicles`. Devuelve items con preview del vehículo."
               },
               "response": []
             }
@@ -7900,7 +7908,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Plan Pro\",\n  \"audience\": \"professional\",\n  \"billing_type\": \"recurring\",\n  \"role_id\": \"{{role_id}}\",\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"Anuncios y soporte PRO\", \"included\": true}]\n}"
+                  "raw": "{\n  \"name\": \"Plan Pro\",\n  \"billing_type\": \"recurring\",\n  \"prices\": [{\"interval\": \"month\", \"amount_cents\": 1990, \"currency\": \"eur\"}],\n  \"features\": [{\"label\": \"Anuncios y soporte PRO\", \"included\": true}]\n}"
                 },
                 "url": "{{base_url}}/v1/billing/plans",
                 "description": "JWT + billing.manage. Planes sin quotas/is_custom (límites viven en dealership)."
@@ -7934,6 +7942,74 @@
                 ],
                 "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/sync-stripe",
                 "description": "Crea/actualiza Product y Prices en Stripe."
+              },
+              "response": []
+            },
+            {
+              "name": "feature catalog",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/feature-catalog",
+                "description": "JWT + billing.manage. Catálogo de features de entitlements."
+              },
+              "response": []
+            },
+            {
+              "name": "listar versiones plan",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/versions",
+                "description": "JWT + billing.manage. Lista versiones del plan."
+              },
+              "response": []
+            },
+            {
+              "name": "guardar entitlements draft",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"entitlements\": [\n    {\"feature\": \"vehicles\", \"value_type\": \"limit\", \"value\": {\"limit\": 50}},\n    {\"feature\": \"photos_per_vehicle\", \"value_type\": \"limit\", \"value\": {\"limit\": 20}},\n    {\"feature\": \"video_upload\", \"value_type\": \"boolean\", \"value\": {\"bool\": true}}\n  ]\n}"
+                },
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/versions/draft/entitlements",
+                "description": "JWT + billing.manage. Crea/actualiza entitlements en versión draft."
+              },
+              "response": []
+            },
+            {
+              "name": "publicar plan draft",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/publish",
+                "description": "JWT + billing.manage. Publica la versión draft actual."
               },
               "response": []
             },
@@ -7989,6 +8065,152 @@
                 "description": "JWT + billing.manage. Listado paginado de solicitudes de planes."
               },
               "response": []
+            },
+            {
+              "name": "detalle solicitud plan lead",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/plan-lead-requests/{{plan_lead_request_id}}",
+                "description": "JWT + billing.manage. Detalle de solicitud."
+              },
+              "response": []
+            },
+            {
+              "name": "crear propuesta plan lead",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"base_plan_id\": \"{{subscription_plan_id}}\",\n  \"proposed_price_cents\": 9900,\n  \"proposed_interval\": \"month\",\n  \"proposal_notes\": \"Propuesta personalizada\",\n  \"proposed_overrides\": [\n    {\"feature\": \"vehicles\", \"value_type\": \"limit\", \"value\": {\"limit\": 120}}\n  ]\n}"
+                },
+                "url": "{{base_url}}/v1/admin/plan-lead-requests/{{plan_lead_request_id}}/proposal",
+                "description": "JWT + billing.manage. Crea Price en Stripe, marca proposal_sent y envía email con checkout."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "admin assistant credit packs",
+          "item": [
+            {
+              "name": "list packs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/assistant-credit-packs?page=1&limit=10",
+                "description": "JWT + billing.manage"
+              }
+            },
+            {
+              "name": "crear pack",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Pack 50 consultas\",\n  \"credits_quantity\": 50,\n  \"amount_cents\": 999,\n  \"currency\": \"eur\"\n}"
+                },
+                "url": "{{base_url}}/v1/billing/assistant-credit-packs",
+                "description": "Crea pack y sincroniza Stripe"
+              }
+            },
+            {
+              "name": "sync stripe pack",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/assistant-credit-packs/{{assistant_credit_pack_id}}/sync-stripe"
+              }
+            }
+          ]
+        },
+        {
+          "name": "admin featured listing offers",
+          "item": [
+            {
+              "name": "list offers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/featured-listing-offers?page=1&limit=10",
+                "description": "JWT + billing.manage"
+              }
+            },
+            {
+              "name": "crear offer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Destacar 30 días\",\n  \"duration_days\": 30,\n  \"boost_weight\": 50,\n  \"amount_cents\": 1999,\n  \"currency\": \"eur\"\n}"
+                },
+                "url": "{{base_url}}/v1/billing/featured-listing-offers",
+                "description": "Crea oferta y sincroniza Stripe"
+              }
+            },
+            {
+              "name": "sync stripe offer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/featured-listing-offers/{{featured_listing_offer_id}}/sync-stripe"
+              }
             }
           ]
         },
@@ -8000,7 +8222,7 @@
               "request": {
                 "method": "GET",
                 "header": [],
-                "url": "{{base_url}}/v1/public/billing/plans/catalog?audience=professional",
+                "url": "{{base_url}}/v1/public/billing/plans/catalog?billing_type=recurring",
                 "description": "Catálogo público de suscripciones activas (sin JWT)."
               },
               "response": []
@@ -8058,7 +8280,7 @@
                     "value": "Bearer {{access_token}}"
                   }
                 ],
-                "url": "{{base_url}}/v1/billing/plans/catalog?audience=professional",
+                "url": "{{base_url}}/v1/billing/plans/catalog?billing_type=recurring",
                 "description": "Planes activos + precios + features."
               },
               "response": []
@@ -8117,10 +8339,63 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\",\n  \"metadata\": {\"vehicle_id\": \"{{vehicle_id}}\"}\n}"
+                  "raw": "{\n  \"pack_id\": \"{{assistant_credit_pack_id}}\"\n}"
                 },
                 "url": "{{base_url}}/v1/billing/checkout/one-time",
-                "description": "Devuelve checkout_url de Stripe Checkout (mode payment)."
+                "description": "Pago único. Exactamente uno de: pack_id, offer_id (+ metadata.vehicle_id) o plan_price_id legacy."
+              },
+              "response": []
+            },
+            {
+              "name": "checkout one-time featured",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"offer_id\": \"{{featured_listing_offer_id}}\",\n  \"metadata\": {\"vehicle_id\": \"{{vehicle_id}}\"}\n}"
+                },
+                "url": "{{base_url}}/v1/billing/checkout/one-time",
+                "description": "Destacar anuncio: offer_id + metadata.vehicle_id."
+              },
+              "response": []
+            },
+            {
+              "name": "assistant credit packs catalog",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/assistant-credit-packs/catalog",
+                "description": "Catálogo activo de packs de consultas (JWT)."
+              },
+              "response": []
+            },
+            {
+              "name": "featured listing offers catalog",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/featured-listing-offers/catalog",
+                "description": "Catálogo activo de ofertas de destacar (JWT)."
               },
               "response": []
             },
@@ -8135,7 +8410,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/billing/portal",
-                "description": "Devuelve portal_url del Customer Portal de Stripe."
+                "description": "Portal de cliente Stripe."
               },
               "response": []
             },

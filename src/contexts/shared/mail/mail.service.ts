@@ -306,6 +306,30 @@ export class MailService {
     }
   }
 
+  async sendPlanLeadProposalEmail(payload: {
+    to: string;
+    lead_name: string;
+    plan_name: string;
+    checkout_url: string;
+    notes: string | null;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderPlanLeadProposal(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Propuesta de plan WiAuto: ${payload.plan_name}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la propuesta de plan a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendSubscriptionWelcomeEmail(payload: {
     to: string;
     plan_name: string;

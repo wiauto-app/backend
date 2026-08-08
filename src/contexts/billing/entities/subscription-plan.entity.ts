@@ -15,10 +15,13 @@ import {
   BILLING_TYPE,
   BillingType,
   PLAN_AUDIENCE,
+  PLAN_TYPE,
   PlanAudience,
+  PlanType,
 } from "../types/billing.enums";
 import { SubscriptionPlanPriceEntity } from "./subscription-plan-price.entity";
 import { PlanFeatureEntity } from "./plan-feature.entity";
+import { PlanVersionEntity } from "./plan-version.entity";
 
 @Entity({ name: "subscription_plans" })
 export class SubscriptionPlanEntity {
@@ -28,15 +31,20 @@ export class SubscriptionPlanEntity {
   @Column()
   name!: string;
 
+  @Column({ type: "varchar", unique: true, nullable: true })
+  slug!: string | null;
+
   @Column({ type: "text", nullable: true })
   description!: string | null;
 
+  /** @deprecated Capacidades van por entitlements; columna deprecada. */
   @Column({
     type: "enum",
     enum: PLAN_AUDIENCE,
     enumName: "subscription_plan_audience_enum",
+    nullable: true,
   })
-  audience!: PlanAudience;
+  audience!: PlanAudience | null;
 
   @Column({
     name: "billing_type",
@@ -46,6 +54,15 @@ export class SubscriptionPlanEntity {
   })
   billing_type!: BillingType;
 
+  @Column({
+    type: "enum",
+    enum: PLAN_TYPE,
+    enumName: "subscription_plan_type_enum",
+    default: PLAN_TYPE.STANDARD,
+  })
+  type!: PlanType;
+
+  /** @deprecated Capacidades van por entitlements; columna deprecada. */
   @Column({ name: "role_id", nullable: true })
   role_id!: string | null;
 
@@ -82,4 +99,7 @@ export class SubscriptionPlanEntity {
 
   @OneToMany(() => PlanFeatureEntity, (feature) => feature.plan)
   features!: Relation<PlanFeatureEntity[]>;
+
+  @OneToMany(() => PlanVersionEntity, (version) => version.plan)
+  versions!: Relation<PlanVersionEntity[]>;
 }

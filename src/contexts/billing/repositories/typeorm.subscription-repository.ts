@@ -18,8 +18,10 @@ export class TypeOrmSubscriptionRepository {
   async upsert(data: {
     profile_id: string;
     plan_id: string;
+    plan_version_id?: string | null;
     stripe_customer_id: string;
     stripe_subscription_id: string;
+    stripe_price_id?: string | null;
     status: string;
     current_period_start: Date | null;
     current_period_end: Date | null;
@@ -34,7 +36,15 @@ export class TypeOrmSubscriptionRepository {
         id: existing.id,
         profile_id: data.profile_id,
         plan_id: data.plan_id,
+        plan_version_id:
+          data.plan_version_id !== undefined
+            ? data.plan_version_id
+            : existing.plan_version_id,
         stripe_customer_id: data.stripe_customer_id,
+        stripe_price_id:
+          data.stripe_price_id !== undefined
+            ? data.stripe_price_id
+            : existing.stripe_price_id,
         status: data.status as SubscriptionEntity["status"],
         current_period_start: data.current_period_start,
         current_period_end: data.current_period_end,
@@ -50,8 +60,10 @@ export class TypeOrmSubscriptionRepository {
     await this.subscription_repository.save({
       profile_id: data.profile_id,
       plan_id: data.plan_id,
+      plan_version_id: data.plan_version_id ?? null,
       stripe_customer_id: data.stripe_customer_id,
       stripe_subscription_id: data.stripe_subscription_id,
+      stripe_price_id: data.stripe_price_id ?? null,
       status: data.status as SubscriptionEntity["status"],
       current_period_start: data.current_period_start,
       current_period_end: data.current_period_end,
@@ -61,10 +73,10 @@ export class TypeOrmSubscriptionRepository {
 
   async findActiveByProfileId(profile_id: string) {
     const row = await this.subscription_repository.findOne({
-      where: {
-        profile_id,
-        status: SUBSCRIPTION_STATUS.ACTIVE,
-      },
+      where: [
+        { profile_id, status: SUBSCRIPTION_STATUS.ACTIVE },
+        { profile_id, status: SUBSCRIPTION_STATUS.TRIALING },
+      ],
       relations: { plan: true },
       order: { created_at: "DESC" },
     });
@@ -76,6 +88,7 @@ export class TypeOrmSubscriptionRepository {
     return {
       id: row.id,
       plan_id: row.plan_id,
+      plan_version_id: row.plan_version_id,
       status: row.status,
       current_period_end: row.current_period_end,
       cancel_at_period_end: row.cancel_at_period_end,

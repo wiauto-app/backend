@@ -16,7 +16,14 @@ import { ReviewEntity } from "@/src/contexts/vehicles/entities/review.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
-import { PUBLISHER_TYPE, PublisherType } from "@/src/contexts/vehicles/types/vehicle";
+
+/** Legacy account-type column; no longer written or read by product flows. */
+export const PROFILE_TYPE = {
+  PROFESSIONAL: "professional",
+  PARTICULAR: "particular",
+} as const;
+
+export type ProfileType = (typeof PROFILE_TYPE)[keyof typeof PROFILE_TYPE];
 
 @Entity({ name: "profile" })
 export class ProfileEntity {
@@ -56,8 +63,13 @@ export class ProfileEntity {
   @Column({ type: "varchar", nullable: true })
   phone_code: string | null;
 
-  @Column({ type: "enum", enum: PUBLISHER_TYPE, default: PUBLISHER_TYPE.PARTICULAR })
-  type: PublisherType;
+  @Column({
+    type: "enum",
+    enum: PROFILE_TYPE,
+    enumName: "profile_type_enum",
+    default: PROFILE_TYPE.PARTICULAR,
+  })
+  type: ProfileType;
 
   @Column({ type: "varchar", nullable: true })
   phone: string | null;

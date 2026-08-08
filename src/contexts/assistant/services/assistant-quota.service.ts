@@ -1,9 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
+import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
+import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
 import { AssistantQuotaExceededException } from "../exceptions/assistant-quota-exceeded.exception";
 import type { AssistantQuotaBalance } from "../types/assistant-quota";
 
@@ -19,6 +27,8 @@ export class AssistantQuotaService {
   constructor(
     @InjectRepository(ProfileEntity)
     private readonly profileRepository: Repository<ProfileEntity>,
+    @Inject(forwardRef(() => EntitlementsService))
+    private readonly entitlements_service: EntitlementsService,
   ) {}
 
   private async findProfileOrThrow(profileId: string): Promise<ProfileEntity> {
@@ -78,21 +88,67 @@ export class AssistantQuotaService {
     return this.profileRepository.save(preloaded);
   }
 
+  private async getPlanAiRemaining(profileId: string): Promise<{
+    unlimited: boolean;
+    remaining: number;
+  }> {
+    const check = await this.entitlements_service.checkUsage(
+      profileId,
+      ENTITLEMENT_FEATURE.AI_REQUESTS,
+    );
+    if (check.limit === null) {
+      return { unlimited: true, remaining: Number.MAX_SAFE_INTEGER };
+    }
+    return { unlimited: false, remaining: check.remaining ?? 0 };
+  }
+
   async getBalance(profileId: string): Promise<AssistantQuotaBalance> {
     const profile = await this.findProfileOrThrow(profileId);
     const normalized = await this.resetMonthlyQuotaIfNeeded(profile);
-    return this.resolveBalance(normalized);
+    const balance = this.resolveBalance(normalized);
+    const plan = await this.getPlanAiRemaining(profileId);
+
+    if (plan.unlimited) {
+      return {
+        ...balance,
+        totalRemaining: Number.MAX_SAFE_INTEGER,
+      };
+    }
+
+    if (plan.remaining > 0) {
+      return {
+        ...balance,
+        totalRemaining: balance.totalRemaining + plan.remaining,
+      };
+    }
+
+    return balance;
   }
 
   async assertCanConsume(profileId: string): Promise<void> {
-    const balance = await this.getBalance(profileId);
+    const plan = await this.getPlanAiRemaining(profileId);
+    if (plan.unlimited || plan.remaining > 0) {
+      return;
+    }
 
+    const profile = await this.findProfileOrThrow(profileId);
+    const normalized = await this.resetMonthlyQuotaIfNeeded(profile);
+    const balance = this.resolveBalance(normalized);
     if (balance.totalRemaining <= 0) {
       throw new AssistantQuotaExceededException();
     }
   }
 
   async consume(profileId: string): Promise<AssistantQuotaBalance> {
+    const plan = await this.getPlanAiRemaining(profileId);
+    if (plan.unlimited || plan.remaining > 0) {
+      await this.entitlements_service.incrementMeteredUsage(
+        profileId,
+        ENTITLEMENT_FEATURE.AI_REQUESTS,
+      );
+      return this.getBalance(profileId);
+    }
+
     const profile = await this.findProfileOrThrow(profileId);
     const normalized = await this.resetMonthlyQuotaIfNeeded(profile);
     const balance = this.resolveBalance(normalized);

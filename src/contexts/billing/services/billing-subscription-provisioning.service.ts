@@ -7,7 +7,6 @@ import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-in
 import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { ProfileService } from "@/src/contexts/profiles/services/profile.service";
-import { PUBLISHER_TYPE } from "@/src/contexts/vehicles/types/vehicle";
 import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -17,9 +16,13 @@ import { SUBSCRIPTION_STATUS } from "../types/billing.enums";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
 import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
+import { TypeOrmPlanLeadRequestRepository } from "@/src/contexts/billing/repositories/typeorm.plan-lead-request-repository";
 import { BillingNotificationMailService } from "../services/billing-notification-mail.service";
 import { StripeClient } from "../clients/stripe.client";
 import { EntitlementsService } from "./entitlements.service";
+import { SubscriptionOverridesService } from "./subscription-overrides.service";
+import { PLAN_LEAD_STATUS } from "../types/billing.enums";
+import { SubscriptionEntity } from "../entities/subscription.entity";
 
 export type ProvisionCheckoutResult = {
   profile_id: string;
@@ -40,12 +43,16 @@ export class BillingSubscriptionProvisioningService {
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     private readonly password_service: PasswordService,
     private readonly profile_service: ProfileService,
+    private readonly overrides_service: SubscriptionOverridesService,
+    private readonly plan_lead_request_repository: TypeOrmPlanLeadRequestRepository,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
     @InjectRepository(DealershipEntity)
     private readonly dealership_repository: Repository<DealershipEntity>,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
+    @InjectRepository(SubscriptionEntity)
+    private readonly subscription_entity_repository: Repository<SubscriptionEntity>,
   ) {}
 
   async provisionFromCheckoutSession(
@@ -57,9 +64,16 @@ export class BillingSubscriptionProvisioningService {
 
     const full_session = await this.stripe_client.retrieveCheckoutSession(session.id);
     const plan_id = full_session.metadata?.plan_id;
+    const plan_version_id = full_session.metadata?.plan_version_id;
+    const lead_request_id = full_session.metadata?.lead_request_id;
 
     if (!plan_id) {
       this.logger.warn(`Checkout ${session.id} sin plan_id en metadata`);
+      return null;
+    }
+
+    if (!plan_version_id) {
+      this.logger.warn(`Checkout ${session.id} sin plan_version_id en metadata`);
       return null;
     }
 
@@ -102,9 +116,25 @@ export class BillingSubscriptionProvisioningService {
     await this.stripe_client.updateSubscriptionMetadata(subscription.id, {
       profile_id,
       plan_id,
+      plan_version_id,
+      ...(lead_request_id ? { lead_request_id } : {}),
     });
 
-    await this.syncSubscriptionRecord(profile_id, plan_id, customer_id, subscription);
+    const stripe_price_id =
+      typeof subscription.items.data[0]?.price === "string"
+        ? subscription.items.data[0]?.price
+        : subscription.items.data[0]?.price?.id ?? null;
+
+    await this.syncSubscriptionRecord(
+      profile_id,
+      plan_id,
+      customer_id,
+      subscription,
+      {
+        plan_version_id,
+        stripe_price_id,
+      },
+    );
     await this.applyPlanEntitlements(profile_id, plan_id);
 
     const dealership_id =
@@ -112,6 +142,33 @@ export class BillingSubscriptionProvisioningService {
       subscription.metadata?.dealership_id ??
       undefined;
     await this.linkDealershipPlan(profile_id, plan_id, dealership_id);
+
+    if (lead_request_id) {
+      const local_subscription =
+        await this.subscription_entity_repository.findOne({
+          where: { stripe_subscription_id: subscription.id },
+        });
+      if (local_subscription) {
+        await this.applyLeadProposalExtras(lead_request_id, local_subscription.id);
+      }
+    }
+
+    if (subscription.items.data[0]?.current_period_start) {
+      const local_subscription =
+        await this.subscription_entity_repository.findOne({
+          where: { stripe_subscription_id: subscription.id },
+        });
+      if (
+        local_subscription?.current_period_start &&
+        local_subscription.current_period_end
+      ) {
+        await this.entitlements_service.rotateUsagePeriod(
+          local_subscription.id,
+          local_subscription.current_period_start,
+          local_subscription.current_period_end,
+        );
+      }
+    }
 
     const profile = await this.billing_profile_repository.findById(profile_id);
     const plan = await this.plan_repository.findOne(plan_id);
@@ -128,18 +185,11 @@ export class BillingSubscriptionProvisioningService {
     return { profile_id, plan_id, is_new_guest_user };
   }
 
-  async applyPlanEntitlements(profile_id: string, plan_id: string): Promise<void> {
-    const plan = await this.plan_repository.findOne(plan_id);
-    const role_id = plan?.toPrimitives().role_id;
-
-    if (role_id) {
-      await this.billing_profile_repository.updateRoleId(profile_id, role_id);
-    }
-
-    await this.billing_profile_repository.updatePublisherType(
-      profile_id,
-      PUBLISHER_TYPE.PROFESSIONAL,
-    );
+  async applyPlanEntitlements(
+    _profile_id: string,
+    _plan_id: string,
+  ): Promise<void> {
+    // Capacidades = entitlements de PlanVersion; no mutar roles del perfil.
   }
 
   async linkDealershipPlan(
@@ -195,12 +245,6 @@ export class BillingSubscriptionProvisioningService {
   }
 
   async revokePlanEntitlements(profile_id: string): Promise<void> {
-    const default_role_id = await this.entitlements_service.getDefaultRoleId();
-    await this.billing_profile_repository.updateRoleId(profile_id, default_role_id);
-    await this.billing_profile_repository.updatePublisherType(
-      profile_id,
-      PUBLISHER_TYPE.PARTICULAR,
-    );
     await this.clearDealershipPlan(profile_id);
   }
 
@@ -209,6 +253,10 @@ export class BillingSubscriptionProvisioningService {
     plan_id: string,
     customer_id: string,
     subscription: Stripe.Subscription,
+    options?: {
+      plan_version_id?: string | null;
+      stripe_price_id?: string | null;
+    },
   ): Promise<void> {
     const first_item = subscription.items.data[0];
     const period_start = first_item?.current_period_start
@@ -218,15 +266,61 @@ export class BillingSubscriptionProvisioningService {
       ? new Date(first_item.current_period_end * 1000)
       : null;
 
+    const plan_version_id =
+      options?.plan_version_id ??
+      subscription.metadata?.plan_version_id ??
+      null;
+
+    const stripe_price_id =
+      options?.stripe_price_id ??
+      (typeof first_item?.price === "string"
+        ? first_item.price
+        : first_item?.price?.id ?? null);
+
     await this.subscription_repository.upsert({
       profile_id,
       plan_id,
+      plan_version_id,
       stripe_customer_id: customer_id,
       stripe_subscription_id: subscription.id,
+      stripe_price_id,
       status: subscription.status,
       current_period_start: period_start,
       current_period_end: period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
+    });
+
+    const local = await this.subscription_entity_repository.findOne({
+      where: { stripe_subscription_id: subscription.id },
+    });
+    if (local && period_start && period_end) {
+      await this.entitlements_service.rotateUsagePeriod(
+        local.id,
+        period_start,
+        period_end,
+      );
+    }
+  }
+
+  private async applyLeadProposalExtras(
+    lead_request_id: string,
+    subscription_id: string,
+  ): Promise<void> {
+    const lead = await this.plan_lead_request_repository.findById(lead_request_id);
+    if (!lead) {
+      return;
+    }
+
+    if (lead.proposed_overrides?.length) {
+      await this.overrides_service.copyProposedOverrides(
+        subscription_id,
+        lead.proposed_overrides,
+      );
+    }
+
+    await this.plan_lead_request_repository.preloadAndSave({
+      id: lead.id,
+      status: PLAN_LEAD_STATUS.ACCEPTED,
     });
   }
 

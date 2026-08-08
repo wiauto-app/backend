@@ -13,6 +13,14 @@ export interface PlanLeadRequestNotificationPayload {
   created_at: string;
 }
 
+export interface PlanLeadProposalNotificationPayload {
+  to: string;
+  lead_name: string;
+  plan_name: string;
+  checkout_url: string;
+  notes: string | null;
+}
+
 @Injectable()
 export class PlanLeadRequestNotificationMailService {
   constructor(
@@ -29,5 +37,17 @@ export class PlanLeadRequestNotificationMailService {
         }),
       ),
     );
+  }
+
+  async notifyProposal(
+    payload: PlanLeadProposalNotificationPayload,
+  ): Promise<void> {
+    await this.outbound_mail_enqueue_service.enqueue_plan_lead_proposal({
+      to: payload.to,
+      lead_name: payload.lead_name,
+      plan_name: payload.plan_name,
+      checkout_url: payload.checkout_url,
+      notes: payload.notes,
+    });
   }
 }

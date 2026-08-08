@@ -8,6 +8,7 @@ import { Repository } from "typeorm";
 
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
+import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
 import {
   PlanEffectConfig,
   PrimitiveSubscriptionPlan,
@@ -17,15 +18,21 @@ import { PlanNotFoundException } from "../exceptions/billing.exceptions";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
 import { StripeClient } from "../clients/stripe.client";
-import { BILLING_TYPE } from "../types/billing.enums";
+import { BILLING_TYPE, ONE_TIME_PRODUCT_KIND, PLAN_TYPE } from "../types/billing.enums";
 import { SubscriptionEntity } from "../entities/subscription.entity";
 import { OneTimePurchaseEntity } from "../entities/one-time-purchase.entity";
+import { PlanVersionsService } from "./plan-versions.service";
+import { AssistantCreditPacksService } from "./assistant-credit-packs.service";
+import { FeaturedListingOffersService } from "./featured-listing-offers.service";
+import { FREE_ENTITLEMENTS } from "../types/entitlement-features";
 
 export interface CreatePlanPayload {
   name: string;
   description?: string | null;
-  audience: string;
-  billing_type: string;
+  /** @deprecated */
+  audience?: string | null;
+  billing_type?: string;
+  /** @deprecated */
   role_id?: string | null;
   is_active?: boolean;
   is_featured?: boolean;
@@ -82,6 +89,7 @@ export class BillingPlansService {
   constructor(
     private readonly plan_repository: TypeOrmSubscriptionPlanRepository,
     private readonly stripe_client: StripeClient,
+    private readonly plan_versions_service: PlanVersionsService,
     @InjectRepository(SubscriptionEntity)
     private readonly subscription_repository: Repository<SubscriptionEntity>,
     @InjectRepository(OneTimePurchaseEntity)
@@ -89,13 +97,22 @@ export class BillingPlansService {
   ) {}
 
   async create(payload: CreatePlanPayload) {
+    if (payload.billing_type === BILLING_TYPE.ONE_TIME) {
+      throw new BadRequestException(
+        "Los productos de pago único se gestionan en Consultas del asistente o Destacar anuncios",
+      );
+    }
+
     const effect_config = normalizeEffectConfig(payload.effect_config);
+    const slug = slugify(payload.name) || `plan-${Date.now()}`;
 
     const plan = SubscriptionPlan.create({
       name: payload.name,
+      slug,
       description: payload.description ?? null,
-      audience: payload.audience,
-      billing_type: payload.billing_type,
+      audience: payload.audience ?? null,
+      billing_type: BILLING_TYPE.RECURRING,
+      type: PLAN_TYPE.STANDARD,
       role_id: payload.role_id ?? null,
       is_active: payload.is_active ?? true,
       is_featured: payload.is_featured ?? false,
@@ -116,7 +133,15 @@ export class BillingPlansService {
     });
 
     const created = await this.plan_repository.create(plan);
-    return serializePlan(created);
+    const plan_id = created.toPrimitives().id!;
+
+    await this.plan_versions_service.replaceDraftEntitlements(
+      plan_id,
+      FREE_ENTITLEMENTS,
+    );
+    await this.plan_versions_service.publish(plan_id);
+
+    return serializePlan(await this.findOneEntity(plan_id));
   }
 
   async findAll(params: { page: number; limit: number; search?: string }) {
@@ -138,18 +163,32 @@ export class BillingPlansService {
   }
 
   async update(id: string, payload: UpdatePlanPayload) {
+    if (payload.billing_type === BILLING_TYPE.ONE_TIME) {
+      throw new BadRequestException(
+        "Los productos de pago único se gestionan en Consultas del asistente o Destacar anuncios",
+      );
+    }
+
     const existing = await this.findOneEntity(id);
     const current = existing.toPrimitives();
+    const next_name = payload.name ?? current.name;
+    const slug =
+      payload.name && payload.name !== current.name
+        ? slugify(payload.name) || current.slug || id
+        : current.slug ?? (slugify(current.name) || id);
 
     const updated = existing.applyUpdates({
-      name: payload.name ?? current.name,
+      name: next_name,
+      slug,
       description:
         payload.description !== undefined
           ? payload.description
           : current.description,
-      audience: payload.audience ?? current.audience,
-      billing_type: payload.billing_type ?? current.billing_type,
-      role_id: payload.role_id !== undefined ? payload.role_id : current.role_id,
+      audience:
+        payload.audience !== undefined ? payload.audience : current.audience,
+      billing_type: BILLING_TYPE.RECURRING,
+      role_id:
+        payload.role_id !== undefined ? payload.role_id : current.role_id,
       is_active: payload.is_active ?? current.is_active,
       is_featured: payload.is_featured ?? current.is_featured,
       sort_order: payload.sort_order ?? current.sort_order,
@@ -226,36 +265,50 @@ export class BillingPlansService {
     return serializePlan(await this.findOneEntity(id));
   }
 
-  async findCatalog(audience?: string) {
-    const plans = await this.plan_repository.findCatalog(audience);
+  async findCatalog(billing_type?: string) {
+    const plans = await this.plan_repository.findCatalog(billing_type);
 
-    return plans.map((plan) => {
-      const p = plan.toPrimitives();
-      return {
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        audience: p.audience,
-        billing_type: p.billing_type,
-        is_featured: p.is_featured,
-        sort_order: p.sort_order,
-        effect_config: p.effect_config ?? {},
-        prices: (p.prices ?? [])
-          .filter((price) => price.is_active)
-          .map((price) => ({
-            id: price.id,
-            interval: price.interval,
-            amount_cents: price.amount_cents,
-            currency: price.currency,
+    return Promise.all(
+      plans.map(async (plan) => {
+        const p = plan.toPrimitives();
+        const published = p.id
+          ? await this.plan_versions_service.findPublishedByPlanId(p.id)
+          : null;
+
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug ?? null,
+          description: p.description,
+          audience: p.audience ?? null,
+          billing_type: p.billing_type,
+          type: p.type ?? PLAN_TYPE.STANDARD,
+          is_featured: p.is_featured,
+          sort_order: p.sort_order,
+          effect_config: p.effect_config ?? {},
+          plan_version_id: published?.id ?? null,
+          prices: (p.prices ?? [])
+            .filter((price) => price.is_active)
+            .map((price) => ({
+              id: price.id,
+              interval: price.interval,
+              amount_cents: price.amount_cents,
+              currency: price.currency,
+            })),
+          features: (p.features ?? []).map((feature) => ({
+            id: feature.id,
+            label: feature.label,
+            description: feature.description ?? null,
+            included: feature.included,
           })),
-        features: (p.features ?? []).map((feature) => ({
-          id: feature.id,
-          label: feature.label,
-          description: feature.description ?? null,
-          included: feature.included,
-        })),
-      };
-    });
+          entitlements: (published?.entitlements ?? []).map((item) => ({
+            feature: item.feature,
+            value_type: item.value_type,
+            value: item.value,
+          })),
+        };
+      }),
+    );
   }
 }
 
@@ -265,6 +318,9 @@ export class BillingCheckoutService {
     private readonly plan_repository: TypeOrmSubscriptionPlanRepository,
     private readonly billing_profile_repository: TypeOrmBillingProfileRepository,
     private readonly stripe_client: StripeClient,
+    private readonly plan_versions_service: PlanVersionsService,
+    private readonly assistant_credit_packs_service: AssistantCreditPacksService,
+    private readonly featured_listing_offers_service: FeaturedListingOffersService,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
   ) {}
@@ -330,6 +386,15 @@ export class BillingCheckoutService {
 
   async createSubscriptionCheckout(profile_id: string, plan_price_id: string) {
     const price = await this.resolveRecurringPrice(plan_price_id);
+    const published = await this.plan_versions_service.findPublishedByPlanId(
+      price.plan_id,
+    );
+    if (!published) {
+      throw new BadRequestException(
+        "El plan no tiene una versión publicada de entitlements",
+      );
+    }
+
     const dealership_id = await this.resolveDealershipId(profile_id);
     const customer_id = await this.resolveCustomer(profile_id);
     const checkout_url = await this.stripe_client.createSubscriptionCheckout({
@@ -338,6 +403,7 @@ export class BillingCheckoutService {
       profile_id,
       plan_id: price.plan_id,
       plan_price_id,
+      plan_version_id: published.id,
       dealership_id,
     });
 
@@ -346,11 +412,20 @@ export class BillingCheckoutService {
 
   private async createGuestSubscriptionCheckout(plan_price_id: string) {
     const price = await this.resolveRecurringPrice(plan_price_id);
+    const published = await this.plan_versions_service.findPublishedByPlanId(
+      price.plan_id,
+    );
+    if (!published) {
+      throw new BadRequestException(
+        "El plan no tiene una versión publicada de entitlements",
+      );
+    }
 
     const checkout_url = await this.stripe_client.createGuestSubscriptionCheckout({
       stripe_price_id: price.stripe_price_id!,
       plan_id: price.plan_id,
       plan_price_id,
+      plan_version_id: published.id,
     });
 
     return { checkout_url };
@@ -358,13 +433,89 @@ export class BillingCheckoutService {
 
   async createOneTimeCheckout(
     profile_id: string,
-    plan_price_id: string,
-    metadata?: Record<string, string>,
-    checkout_urls?: {
+    params: {
+      pack_id?: string;
+      offer_id?: string;
+      /** @deprecated Preferir pack_id u offer_id */
+      plan_price_id?: string;
+      metadata?: Record<string, string>;
       success_url?: string;
       cancel_url?: string;
     },
   ) {
+    const selected = [params.pack_id, params.offer_id, params.plan_price_id].filter(
+      Boolean,
+    );
+    if (selected.length !== 1) {
+      throw new BadRequestException(
+        "Debes indicar exactamente uno de: pack_id, offer_id o plan_price_id",
+      );
+    }
+
+    const customer_id = await this.resolveCustomer(profile_id);
+
+    if (params.pack_id) {
+      const pack = await this.assistant_credit_packs_service.findOne(
+        params.pack_id,
+      );
+      if (!pack.is_active) {
+        throw new BadRequestException("El pack no está activo");
+      }
+      if (!pack.stripe_price_id) {
+        throw new BadRequestException(
+          "El pack no está sincronizado con Stripe",
+        );
+      }
+
+      const checkout_url = await this.stripe_client.createOneTimeCheckout({
+        customer_id,
+        stripe_price_id: pack.stripe_price_id,
+        profile_id,
+        product_kind: ONE_TIME_PRODUCT_KIND.ASSISTANT_CREDIT_PACK,
+        product_id: pack.id,
+        metadata: params.metadata,
+        success_url: params.success_url,
+        cancel_url: params.cancel_url,
+      });
+
+      return { checkout_url };
+    }
+
+    if (params.offer_id) {
+      const offer = await this.featured_listing_offers_service.findOne(
+        params.offer_id,
+      );
+      if (!offer.is_active) {
+        throw new BadRequestException("La oferta no está activa");
+      }
+      if (!offer.stripe_price_id) {
+        throw new BadRequestException(
+          "La oferta no está sincronizada con Stripe",
+        );
+      }
+
+      const vehicle_id = params.metadata?.vehicle_id;
+      if (!vehicle_id) {
+        throw new BadRequestException(
+          "Debes indicar vehicle_id en metadata para destacar un anuncio",
+        );
+      }
+
+      const checkout_url = await this.stripe_client.createOneTimeCheckout({
+        customer_id,
+        stripe_price_id: offer.stripe_price_id,
+        profile_id,
+        product_kind: ONE_TIME_PRODUCT_KIND.FEATURED_LISTING_OFFER,
+        product_id: offer.id,
+        metadata: params.metadata,
+        success_url: params.success_url,
+        cancel_url: params.cancel_url,
+      });
+
+      return { checkout_url };
+    }
+
+    const plan_price_id = params.plan_price_id!;
     const price = await this.plan_repository.findPriceById(plan_price_id);
     if (!price?.stripe_price_id) {
       throw new BadRequestException("El precio no está sincronizado con Stripe");
@@ -375,16 +526,15 @@ export class BillingCheckoutService {
       throw new BadRequestException("El plan no es de pago único");
     }
 
-    const customer_id = await this.resolveCustomer(profile_id);
     const checkout_url = await this.stripe_client.createOneTimeCheckout({
       customer_id,
       stripe_price_id: price.stripe_price_id,
       profile_id,
       plan_id: price.plan_id,
       plan_price_id,
-      metadata,
-      success_url: checkout_urls?.success_url,
-      cancel_url: checkout_urls?.cancel_url,
+      metadata: params.metadata,
+      success_url: params.success_url,
+      cancel_url: params.cancel_url,
     });
 
     return { checkout_url };

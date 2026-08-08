@@ -2,7 +2,7 @@ import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import type { VehicleAddressDetails } from "./vehicle-address-details";
 
 export const PUBLISHER_TYPE = {
-  PROFESSIONAL: "professional",
+  DEALERSHIP: "dealership",
   PARTICULAR: "particular",
 } as const;
 export type PublisherType = (typeof PUBLISHER_TYPE)[keyof typeof PUBLISHER_TYPE];
@@ -45,6 +45,7 @@ export interface PrimitiveVehicle {
   status_change_message?: string | null;
   is_featured?: boolean;
   featured_expires_at?: Date | null;
+  featured_boost_weight?: number | null;
   expires_at?: Date;
   scheduled_publish_at?: Date | null;
   renewed_at?: Date | null;
@@ -148,7 +149,9 @@ export class Vehicle {
       expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90),
       scheduled_publish_at: null,
       renewed_at: null,
+      is_featured: false,
       featured_expires_at: null,
+      featured_boost_weight: null,
     });
   }
 

@@ -71,6 +71,9 @@ export class VehicleEntity {
   @Column({ name: "featured_expires_at", type: "timestamp", nullable: true })
   featured_expires_at: Date | null;
 
+  @Column({ name: "featured_boost_weight", type: "int", nullable: true })
+  featured_boost_weight: number | null;
+
   @Column({ default: 0 })
   views: number;
 
@@ -83,7 +86,12 @@ export class VehicleEntity {
   @Column({ type: "numeric", precision: 2, scale: 1, nullable: true })
   rating: number | null;
 
-  @Column({ type: "enum", enum: PUBLISHER_TYPE, default: PUBLISHER_TYPE.PROFESSIONAL })
+  @Column({
+    type: "enum",
+    enum: PUBLISHER_TYPE,
+    enumName: "vehicles_publisher_type_enum",
+    default: PUBLISHER_TYPE.PARTICULAR,
+  })
   publisher_type: PublisherType;
 
   @Column()

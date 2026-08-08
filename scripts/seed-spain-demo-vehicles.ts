@@ -31,7 +31,7 @@ interface demo_vehicle_row {
   price: number;
   mileage: number;
   condition: "new" | "used";
-  publisher_type: "professional" | "particular";
+  publisher_type: "dealership" | "particular";
   transmission_type: "manual" | "automatic";
   power: number;
   displacement: number;

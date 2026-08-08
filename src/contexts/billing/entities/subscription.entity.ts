@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
@@ -15,6 +16,9 @@ import {
   SubscriptionStatus,
 } from "../types/billing.enums";
 import { SubscriptionPlanEntity } from "./subscription-plan.entity";
+import { PlanVersionEntity } from "./plan-version.entity";
+import { SubscriptionEntitlementOverrideEntity } from "./subscription-entitlement-override.entity";
+import { SubscriptionUsageEntity } from "./subscription-usage.entity";
 
 @Entity({ name: "subscriptions" })
 export class SubscriptionEntity {
@@ -27,11 +31,17 @@ export class SubscriptionEntity {
   @Column({ name: "plan_id" })
   plan_id!: string;
 
+  @Column({ name: "plan_version_id", nullable: true })
+  plan_version_id!: string | null;
+
   @Column({ name: "stripe_customer_id" })
   stripe_customer_id!: string;
 
   @Column({ name: "stripe_subscription_id", unique: true })
   stripe_subscription_id!: string;
+
+  @Column({ name: "stripe_price_id", type: "varchar", nullable: true })
+  stripe_price_id!: string | null;
 
   @Column({
     type: "enum",
@@ -69,4 +79,20 @@ export class SubscriptionEntity {
     foreignKeyConstraintName: "FK_subscriptions_plan",
   })
   plan!: Relation<SubscriptionPlanEntity>;
+
+  @ManyToOne(() => PlanVersionEntity, { onDelete: "RESTRICT", nullable: true })
+  @JoinColumn({
+    name: "plan_version_id",
+    foreignKeyConstraintName: "FK_subscriptions_plan_version",
+  })
+  plan_version!: Relation<PlanVersionEntity | null>;
+
+  @OneToMany(
+    () => SubscriptionEntitlementOverrideEntity,
+    (override) => override.subscription,
+  )
+  overrides!: Relation<SubscriptionEntitlementOverrideEntity[]>;
+
+  @OneToMany(() => SubscriptionUsageEntity, (usage) => usage.subscription)
+  usage!: Relation<SubscriptionUsageEntity[]>;
 }
