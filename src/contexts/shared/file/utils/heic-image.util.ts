@@ -1,6 +1,8 @@
 import convert from "heic-convert";
 
-/** Brands ISO-BMFF frecuentes en contenedores HEIC/HEIF de Apple y genéricos. */
+import { isAvifBuffer } from "./avif-image.util";
+
+/** Brands HEIC/HEIF específicos (no incluir mif1/msf1 solos: también los usa AVIF). */
 const HEIF_BRANDS = new Set([
   "heic",
   "heix",
@@ -10,8 +12,6 @@ const HEIF_BRANDS = new Set([
   "heis",
   "hevm",
   "hevs",
-  "mif1",
-  "msf1",
   "heif",
 ]);
 
@@ -24,33 +24,33 @@ const HEIC_MIME_TYPES = new Set([
 
 const HEIC_EXTENSIONS = new Set([".heic", ".heif"]);
 
+const collectFtypBrands = (buffer: Buffer): string[] => {
+  if (buffer.length < 12 || buffer.toString("ascii", 4, 8) !== "ftyp") {
+    return [];
+  }
+
+  const brands = [buffer.toString("ascii", 8, 12).toLowerCase()];
+  for (let offset = 16; offset + 4 <= Math.min(buffer.length, 64); offset += 4) {
+    brands.push(buffer.toString("ascii", offset, offset + 4).toLowerCase());
+  }
+  return brands;
+};
+
 /**
  * Detecta HEIC/HEIF por magic bytes (`ftyp` + brand).
- * Estructura típica: [size:4][ftyp:4][major_brand:4]…
+ * Excluye AVIF (mismo contenedor ISO-BMFF / mif1).
  */
 export const isHeicOrHeifBuffer = (buffer: Buffer): boolean => {
-  if (buffer.length < 12) {
+  if (isAvifBuffer(buffer)) {
     return false;
   }
 
-  if (buffer.toString("ascii", 4, 8) !== "ftyp") {
+  const brands = collectFtypBrands(buffer);
+  if (brands.length === 0) {
     return false;
   }
 
-  const majorBrand = buffer.toString("ascii", 8, 12).toLowerCase();
-  if (HEIF_BRANDS.has(majorBrand)) {
-    return true;
-  }
-
-  // Compat brands adicionales a partir del offset 16
-  for (let offset = 16; offset + 4 <= Math.min(buffer.length, 64); offset += 4) {
-    const brand = buffer.toString("ascii", offset, offset + 4).toLowerCase();
-    if (HEIF_BRANDS.has(brand)) {
-      return true;
-    }
-  }
-
-  return false;
+  return brands.some((brand) => HEIF_BRANDS.has(brand));
 };
 
 export const isHeicByMimeOrName = (
@@ -72,6 +72,11 @@ export const isHeicByMimeOrName = (
 };
 
 export const shouldConvertHeic = (file: Express.Multer.File): boolean => {
+  // MIME/nombre AVIF gana; evita heic-convert sobre AVIF mal etiquetado.
+  if (isAvifBuffer(file.buffer)) {
+    return false;
+  }
+
   if (isHeicByMimeOrName(file.mimetype, file.originalname)) {
     return true;
   }

@@ -1,12 +1,16 @@
 import path from "node:path";
 
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, Logger } from "@nestjs/common";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
 import { CONTENT_TYPES } from "../ports/file-storage.port";
+import {
+  convertAvifToJpegBuffer,
+  shouldConvertAvif,
+} from "../utils/avif-image.util";
 import {
   convertHeicToJpegBuffer,
   shouldConvertHeic,
@@ -25,7 +29,10 @@ export interface UploadImageOptimizeOptions {
   maxWidth?: number;
   quality?: number;
   multipleSizes?: boolean;
+  /** Preconversión HEIC/HEIF → JPEG antes de Sharp → WebP. @default true */
   convertHeic?: boolean;
+  /** Preconversión AVIF → JPEG antes de Sharp → WebP. @default true */
+  convertAvif?: boolean;
 }
 
 export interface UploadImageOptions {
@@ -47,6 +54,8 @@ export interface UploadImageResult {
 
 @Injectable()
 export class UploadImageService {
+  private readonly logger = new Logger(UploadImageService.name);
+
   constructor(
     private readonly objectStorageService: ObjectStorageService,
     private readonly validateImagesService: ValidateImagesService,
@@ -57,7 +66,7 @@ export class UploadImageService {
     files: Express.Multer.File[],
     options: UploadImageOptions,
   ): Promise<UploadImageResult[]> {
-    if (!files.length) {
+    if (files.length === 0) {
       throw new BadRequestException("Debes enviar al menos una imagen");
     }
 
@@ -69,11 +78,15 @@ export class UploadImageService {
     const optimizeOptions = options.optimize ?? { enabled: true };
     const shouldOptimize = optimizeOptions.enabled !== false;
     const shouldConvertHeicFlag = optimizeOptions.convertHeic !== false;
+    const shouldConvertAvifFlag = optimizeOptions.convertAvif !== false;
 
     const preparedFiles: Express.Multer.File[] = [];
     for (const file of files) {
       preparedFiles.push(
-        shouldConvertHeicFlag ? await this.prepareForOptimization(file) : file,
+        await this.prepareForOptimization(file, {
+          convertAvif: shouldConvertAvifFlag,
+          convertHeic: shouldConvertHeicFlag,
+        }),
       );
     }
 
@@ -93,12 +106,17 @@ export class UploadImageService {
       }
     }
 
-    const keyPrefix = options.keyPrefix.replace(/^\/+|\/+$/g, "");
+    const keyPrefix = options.keyPrefix.replaceAll(/^\/+|\/+$/g, "");
     const strategy = options.fileNameStrategy ?? "prefixTimestamp";
     const results: UploadImageResult[] = [];
 
     for (const file of workingFiles) {
-      const objectKey = this.buildObjectKey(file, keyPrefix, strategy, options.fileNamePrefix);
+      const objectKey = this.buildObjectKey(
+        file,
+        keyPrefix,
+        strategy,
+        options.fileNamePrefix,
+      );
       const contentType = file.mimetype || CONTENT_TYPES.IMAGE_WEBP;
       const body = Buffer.isBuffer(file.buffer)
         ? file.buffer
@@ -147,24 +165,41 @@ export class UploadImageService {
       return `${keyPrefix}/${safeStem}`;
     }
 
-    const prefix = fileNamePrefix?.trim() || "img";
+    const prefix = fileNamePrefix?.trim();
     return `${keyPrefix}/${prefix}-${Date.now()}-${safeStem}`;
   }
 
   /**
-   * HEIC/HEIF: Sharp local suele fallar sin codec libheif.
-   * Convertimos a JPEG con `heic-convert` y luego Sharp → WebP.
+   * AVIF / HEIC/HEIF → JPEG intermedio; luego OptimizeImageService → WebP.
+   * AVIF se evalúa antes que HEIC porque comparten contenedor ISO-BMFF (mif1).
    */
   private async prepareForOptimization(
     file: Express.Multer.File,
+    flags: { convertAvif: boolean; convertHeic: boolean },
   ): Promise<Express.Multer.File> {
-    if (!shouldConvertHeic(file)) {
-      return file;
+    if (flags.convertAvif && shouldConvertAvif(file)) {
+      return this.convertBufferToJpegMulterFile(file, "image.avif", async () =>
+        convertAvifToJpegBuffer(file.buffer),
+      );
     }
 
+    if (flags.convertHeic && shouldConvertHeic(file)) {
+      return this.convertBufferToJpegMulterFile(file, "image.heic", async () =>
+        convertHeicToJpegBuffer(file.buffer),
+      );
+    }
+
+    return file;
+  }
+
+  private async convertBufferToJpegMulterFile(
+    file: Express.Multer.File,
+    fallbackName: string,
+    convert: () => Promise<Buffer>,
+  ): Promise<Express.Multer.File> {
     try {
-      const jpegBuffer = await convertHeicToJpegBuffer(file.buffer);
-      const parsed = path.parse(file.originalname || "image.heic");
+      const jpegBuffer = await convert();
+      const parsed = path.parse(file.originalname || fallbackName);
       const originalname = path.format({
         ...parsed,
         base: undefined,
@@ -178,9 +213,11 @@ export class UploadImageService {
         mimetype: CONTENT_TYPES.IMAGE_JPEG,
         originalname,
       };
-    } catch {
+    } catch (error) {
+      this.logger.error(`Error al preconvertir imagen (${fallbackName})`, error);
+      const formatLabel = fallbackName.includes("avif") ? "AVIF" : "HEIC/HEIF";
       throw new BadRequestException(
-        "No se pudo leer el archivo HEIC/HEIF. Convierte la foto a JPEG o PNG e inténtalo de nuevo.",
+        `No se pudo leer el archivo ${formatLabel}. Convierte la foto a JPEG o PNG e inténtalo de nuevo.`,
       );
     }
   }

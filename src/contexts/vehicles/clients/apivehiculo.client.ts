@@ -153,9 +153,7 @@ export class ApiVehiculoClient {
       throw new VehicleExternalLookupConfigException();
     }
     if (!response.ok) {
-      this.logger.error(
-        `ApiVehiculo subscription unexpected status=${response.status}`,
-      );
+     
       throw new VehicleExternalLookupConfigException();
     }
 

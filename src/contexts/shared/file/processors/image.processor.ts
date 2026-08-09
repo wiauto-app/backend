@@ -47,7 +47,7 @@ export class ImageProcessor extends WorkerHost {
         keyPrefix: path,
         fileNameStrategy: "prefixTimestamp",
         fileNamePrefix: "queued",
-        optimize: { enabled: true, convertHeic: true },
+        optimize: { enabled: true, convertHeic: true, convertAvif: true },
       });
       const urls = results.map((result) =>
         result.path.startsWith("/") ? result.path : `/${result.path}`,
