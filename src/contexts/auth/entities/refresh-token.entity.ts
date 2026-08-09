@@ -28,7 +28,7 @@ export class RefreshTokenEntity {
   @Column({ nullable: true, type: "uuid" })
   parent_id: string | null;
 
-  @Column()
+  @Column({ type: "uuid" })
   session_id: string;
 
   @ManyToOne(() => SessionEntity, (session) => session.refresh_tokens,{

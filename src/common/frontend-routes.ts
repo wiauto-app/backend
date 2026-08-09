@@ -74,7 +74,7 @@ export const getMessagesUrl = (chat_id?: string): string => {
 export const getContactsUrl = (): string => getFrontendUrl("CONTACTS");
 
 export const getMailBrandLogoUrl = (): string => {
-  const override = envs.MAIL_BRAND_LOGO_URL?.trim();
+  const override = envs.MAIL_BRAND_LOGO_URL.trim();
   if (override) {
     return override;
   }
