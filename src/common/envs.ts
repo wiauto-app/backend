@@ -43,9 +43,9 @@ const envsSchema = z.object({
 
   /** Override opcional del endpoint GET confirm; por defecto BACKEND_URL/auth/email-verification/confirm */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string().default(""),
-  FRONTEND_URL: z.string().default("http://localhost:3000"),
+  FRONTEND_URL: z.string(),
   /** Origen del dashboard admin (allowlist de redirect_url en password recovery) */
-  DASHBOARD_URL: z.string().default("http://localhost:5173"),
+  DASHBOARD_URL: z.string(),
 
   BACKEND_URL: z.string().default("http://localhost:4000"),
   /** Segundos hasta expirar el enlace de verificación (por defecto 48 h) */

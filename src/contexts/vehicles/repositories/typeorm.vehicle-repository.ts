@@ -963,6 +963,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("vehicle.profile", "profile")
       .leftJoinAndSelect("vehicle.version", "version")
       .leftJoinAndSelect("version.make", "version_make")
+      .leftJoinAndSelect("version.fuel_type", "version_fuel_type")
       .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect(
         "vehicle.vehicle_prices",

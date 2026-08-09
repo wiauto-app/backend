@@ -62,7 +62,7 @@ export class AdminLoginService {
     const previous_last_sign_in = user.last_sign_in;
     const notify_new_login = !!previous_last_sign_in;
 
-    const { session_id, refresh_token, refresh_token_hash } = await this.authService.createSession(
+    const { session_id, refresh_token_hash } = await this.authService.createSession(
       user,
       request,
     );
@@ -90,7 +90,7 @@ export class AdminLoginService {
       });
     }
 
-    return { type, token, refresh_token };
+    return { type, token, refresh_token:refresh_token_hash };
   }
 
   async logout(session_id: string) {

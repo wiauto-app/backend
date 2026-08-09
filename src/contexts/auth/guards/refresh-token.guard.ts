@@ -10,6 +10,7 @@ export class RefreshTokenGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const cookies = request.cookies as Record<string, string | undefined> | undefined;
+
     const cookie_name = isAdminAuthRequest(request)
       ? ADMIN_REFRESH_TOKEN_NAME
       : REFRESH_TOKEN_NAME;
