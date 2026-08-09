@@ -62,7 +62,7 @@ export class RefreshTokenService {
   async findByTokenHash(token_hash: string): Promise<RefreshTokenEntity> {
     const refresh_token = await this.refresh_token_repository.findOne({
       where: { token_hash, revoked: false, expires_at: MoreThan(new Date()) },
-      relations: ["session"],
+      relations: ["session", "user"],
     });
     if (!refresh_token) {
       throw new UnauthorizedException(authResponseConfig.messages.NOT_FOUND_TOKEN);
@@ -73,8 +73,8 @@ export class RefreshTokenService {
     return refresh_token;
   }
 
-  async findByRawToken(raw_token: string): Promise<RefreshTokenEntity> {
-    return this.findByTokenHash(hashToken(raw_token));
+  async findByRawToken(hashedToken: string): Promise<RefreshTokenEntity> {
+    return this.findByTokenHash(hashedToken);
   }
 
   async findRevokedByTokenHash(token_hash: string): Promise<RefreshTokenEntity | null> {

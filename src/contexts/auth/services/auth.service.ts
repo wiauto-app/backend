@@ -1,8 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectDataSource } from "@nestjs/typeorm";
 import { Request } from "express";
-import { DataSource } from "typeorm";
 
 import { SuspensionService } from "../../users/services/suspension.service";
 import { UserService } from "../../users/services/user.service";
@@ -14,12 +12,8 @@ import { PasswordService } from "./password.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { SessionService } from "./session.service";
 import { AuthSessionService } from "./auth-session.service";
-import { envs, MONTH } from "@/src/common/envs";
+import { envs } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
-import { RefreshTokenEntity } from "../entities/refresh-token.entity";
-import { SessionEntity } from "../entities/session.entity";
-import { generateToken } from "../../shared/token_management/generate_token";
-import { hashToken } from "../../shared/token_management/hash_token";
 
 @Injectable()
 export class AuthService {
@@ -31,8 +25,6 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly authSessionService: AuthSessionService,
-    @InjectDataSource()
-    private readonly data_source: DataSource,
   ) { }
 
   async signIn({
@@ -97,7 +89,7 @@ export class AuthService {
       refreshToken_hash: refresh_token_hash,
       scope:
         scope ?? (user.two_factor_enabled ? "2fa_challenge" : "session"),
-      ...(notify_new_login !== undefined ? { notify_new_login } : {}),
+      ...(notify_new_login !== undefined && notify_new_login ? { notify_new_login } : {}),
     };
     return this.jwtService.sign(payload, {
       expiresIn: envs.ACCESS_TOKEN_EXPIRES_IN as any,
@@ -128,103 +120,20 @@ export class AuthService {
     await this.sessionService.delete(session_id);
   }
 
-  async refreshToken(raw_token: string): Promise<SignInResult> {
-    const token_hash = hashToken(raw_token);
-    const revoked = await this.refreshTokenService.findRevokedByTokenHash(token_hash);
-    if (revoked) {
-      return this.resolveRevokedRefreshReuse(revoked);
-    }
-
-    const refresh_token = await this.refreshTokenService.findByRawToken(raw_token);
-    const user = await this.userService.findOne(refresh_token.session.user_id);
-
-    const { raw_token: new_raw_token, refresh_token_hash } = await this.data_source.transaction(
-      async (manager) => {
-        await manager.update(RefreshTokenEntity, { session_id: refresh_token.session_id }, { revoked: true });
-
-        const raw_new_token = generateToken();
-        const new_refresh_token = manager.create(RefreshTokenEntity, {
-          user_id: user.id,
-          token_hash: hashToken(raw_new_token),
-          session_id: refresh_token.session_id,
-          revoked: false,
-          expires_at: new Date(Date.now() + MONTH),
-          parent_id: refresh_token.id,
-        });
-        const saved_refresh_token = await manager.save(new_refresh_token);
-
-        const session_updated = await manager.preload(SessionEntity, {
-          id: refresh_token.session_id,
-          refreshed_at: new Date(),
-          expires_at: new Date(Date.now() + MONTH),
-        });
-        if (!session_updated) {
-          throw new UnauthorizedException(authResponseConfig.messages.SESSION_NOT_FOUND);
-        }
-        await manager.save(session_updated);
-
-        return {
-          raw_token: raw_new_token,
-          refresh_token_hash: saved_refresh_token.token_hash,
-        };
-      },
-    );
-
-    this.refreshTokenService.rememberRotationForGrace(
-      refresh_token.id,
-      new_raw_token,
-      refresh_token_hash,
-    );
-
-    const scope = user.two_factor_enabled ? "2fa_challenge" : "session";
-    const token = this.createToken({
-      user,
-      session_id: refresh_token.session_id,
-      refresh_token_hash,
-      scope,
-    });
+  async refreshToken(hashedToken: string): Promise<SignInResult> {
+    const refreshToken = await this.refreshTokenService.findByTokenHash(hashedToken);
+    const accessToken = this.createToken({
+      refresh_token_hash: refreshToken.token_hash,
+      session_id: refreshToken.session_id,
+      user: refreshToken.user,
+      notify_new_login: false,
+      scope: "session",
+    })
     return {
-      type: scope,
-      token,
-      refresh_token: new_raw_token,
-    };
-  }
-
-  /**
-   * Reuso concurrente del padre ya rotado: si hay hijo reciente y sesión activa,
-   * devolver los tokens del hijo. Si no hay hijo válido, invalidar la sesión.
-   */
-  private async resolveRevokedRefreshReuse(
-    revoked: RefreshTokenEntity,
-  ): Promise<SignInResult> {
-    const child =
-      await this.refreshTokenService.findRecentActiveChildByParentId(revoked.id);
-    const session = revoked.session;
-    const session_active =
-      Boolean(session) && session.expires_at.getTime() > Date.now();
-
-    if (child && session_active) {
-      const cached = this.refreshTokenService.getGraceRotation(revoked.id);
-      if (cached && cached.token_hash === child.token_hash) {
-        const user = await this.userService.findOne(revoked.user_id);
-        const scope = user.two_factor_enabled ? "2fa_challenge" : "session";
-        const token = this.createToken({
-          user,
-          session_id: revoked.session_id,
-          refresh_token_hash: child.token_hash,
-          scope,
-        });
-        return {
-          type: scope,
-          token,
-          refresh_token: cached.raw_token,
-        };
-      }
-      // Hijo válido pero sin raw en cache: no borrar sesión (otra instancia pudo rotar).
-      throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
+      type: "session",
+      token: accessToken,
+      refresh_token: refreshToken.token_hash,
     }
-
-    await this.sessionService.delete(revoked.session_id);
-    throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
   }
+
 }

@@ -14,6 +14,7 @@ import {
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { SuspensionDurationType } from "./suspension_duration_type.entity";
 import { UserAuthProvider } from "./user-auth-provider.entity";
+import { RefreshTokenEntity } from "../../auth/entities/refresh-token.entity";
 
 export type AuthProvider = "local" | "google" | "apple";
 
@@ -81,4 +82,7 @@ export class User {
 
   @OneToMany(() => UserAuthProvider, (authProvider) => authProvider.user)
   auth_providers: Relation<UserAuthProvider[]>;
+
+  @OneToMany(() => RefreshTokenEntity, (refreshToken) => refreshToken.user)
+  refresh_tokens: Relation<RefreshTokenEntity[]>;
 }

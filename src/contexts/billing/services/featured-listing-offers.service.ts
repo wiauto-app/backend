@@ -84,24 +84,7 @@ export class FeaturedListingOffersService {
 
     const preloaded = await this.offer_repository.preload({
       id,
-      ...(dto.title !== undefined ? { title: dto.title } : {}),
-      ...(dto.description !== undefined
-        ? { description: dto.description }
-        : {}),
-      ...(dto.duration_days !== undefined
-        ? { duration_days: dto.duration_days }
-        : {}),
-      ...(dto.boost_weight !== undefined
-        ? { boost_weight: dto.boost_weight }
-        : {}),
-      ...(dto.amount_cents !== undefined
-        ? { amount_cents: dto.amount_cents }
-        : {}),
-      ...(dto.currency !== undefined
-        ? { currency: dto.currency.toLowerCase() }
-        : {}),
-      ...(dto.is_active !== undefined ? { is_active: dto.is_active } : {}),
-      ...(dto.sort_order !== undefined ? { sort_order: dto.sort_order } : {}),
+      ...dto,
     });
 
     if (!preloaded) {
@@ -119,7 +102,7 @@ export class FeaturedListingOffersService {
 
   async syncStripe(id: string): Promise<FeaturedListingOfferEntity> {
     const offer = await this.findOne(id);
-    const title = offer.title?.trim();
+    const title = offer.title.trim();
 
     if (!title) {
       throw new BadRequestException("El título es obligatorio");

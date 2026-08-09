@@ -9,7 +9,7 @@ const envsSchema = z.object({
   JWT_SECRET: z.string(),
   ENVIRONMENT: z.string(),
   /** Alineado con cookie access (15 min) en authCookieConfig */
-  ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
+  ACCESS_TOKEN_EXPIRES_IN: z.string().default("1m"),
   
   /** Callback Next (ej. http://localhost:3000/api/auth/callback) — OAuth y verificación de email */
   FRONTEND_REDIRECT_URL: z.string().default(""),

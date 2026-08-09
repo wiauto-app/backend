@@ -18,18 +18,26 @@ export class MeService {
   ) {}
 
   async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {
+    // const cached = await this.cacheManager.get<MeResponseDto>(`me:${user.id}`);
+    // if (cached) {
+    //   return cached;
+    // }
     const [membership_detail, identity] = await Promise.all([
       user.profile.id
         ? this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
         : Promise.resolve(null),
       this.user_auth_provider_service.getAuthIdentitySummary(user.id),
     ]);
-    return MeResponseDto.fromUser(user, {
+    const me =  MeResponseDto.fromUser(user, {
       providers: identity.providers,
       has_password: identity.has_password,
       scope,
       dealership_membership: membership_detail,
     });
+
+    //1 minute
+    // await this.cacheManager.set(`me:${user.id}`, me, 60);
+    return me;
   }
 
   async deleteAccount(user_id: string, session_id: string): Promise<{ message: string; data: null }> {

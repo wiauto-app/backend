@@ -1,0 +1,124 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class RefreshUserRelation1786247217650 implements MigrationInterface {
+    name = 'RefreshUserRelation1786247217650'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "dealership_open_times" DROP CONSTRAINT "FK_dealership_open_times_schedule"`);
+        await queryRunner.query(`ALTER TABLE "dealership_schedules" DROP CONSTRAINT "FK_dealership_schedules_dealership"`);
+        await queryRunner.query(`ALTER TABLE "dealerships" DROP CONSTRAINT "FK_dealerships_billing_plan"`);
+        await queryRunner.query(`ALTER TABLE "leads" DROP CONSTRAINT "FK_leads_dealership_id"`);
+        await queryRunner.query(`ALTER TABLE "leads" DROP CONSTRAINT "FK_leads_seller_profile_id"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_appraisal_requests_make_id"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_appraisal_requests_model_id"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_appraisal_requests_version_id"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_appraisal_requests_year_id"`);
+        await queryRunner.query(`ALTER TABLE "chats" DROP CONSTRAINT "FK_chats_ticket_id"`);
+        await queryRunner.query(`ALTER TABLE "alerts" DROP CONSTRAINT "FK_alerts_profile_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_dealership_open_times_schedule_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_dealership_schedules_dealership_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_dealerships_billing_plan_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_vehicles_rating"`);
+        await queryRunner.query(`DROP INDEX "public"."UQ_vehicles_ref"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_discount_coupons_active"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_notifications_profile_id_created_at"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_notifications_profile_id_read_at"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_vehicle_price_watches_profile_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_vehicle_price_watches_vehicle_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_dismissed_vehicles_profile_id"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_dismissed_vehicles_vehicle_id"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" DROP CONSTRAINT "CHK_discount_coupons_discount"`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ADD CONSTRAINT "UQ_90bd206d5b617610bc1adda81b0" UNIQUE ("ref")`);
+        await queryRunner.query(`ALTER TYPE "public"."vehicles_publisher_type_enum" RENAME TO "vehicles_publisher_type_enum_old"`);
+        await queryRunner.query(`CREATE TYPE "public"."vehicles_publisher_type_enum" AS ENUM('dealership', 'particular')`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" TYPE "public"."vehicles_publisher_type_enum" USING "publisher_type"::"text"::"public"."vehicles_publisher_type_enum"`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" SET DEFAULT 'particular'`);
+        await queryRunner.query(`DROP TYPE "public"."vehicles_publisher_type_enum_old"`);
+        await queryRunner.query(`ALTER TYPE "public"."profile_type_enum" RENAME TO "profile_type_enum_old"`);
+        await queryRunner.query(`CREATE TYPE "public"."profile_type_enum" AS ENUM('professional', 'particular')`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" TYPE "public"."profile_type_enum" USING "type"::"text"::"public"."profile_type_enum"`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" SET DEFAULT 'particular'`);
+        await queryRunner.query(`DROP TYPE "public"."profile_type_enum_old"`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" DROP COLUMN "user_id"`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD "user_id" uuid NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "plan_lead_requests" ALTER COLUMN "cars_quantity" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" DROP COLUMN "created_at"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" ADD "created_at" TIMESTAMP NOT NULL DEFAULT now()`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" DROP COLUMN "updated_at"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" ADD "updated_at" TIMESTAMP NOT NULL DEFAULT now()`);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_57fd53bd8b39fe19d2be8136f6" ON "newsletter_subscriptions" ("email") `);
+        await queryRunner.query(`ALTER TABLE "dealership_open_times" ADD CONSTRAINT "FK_8457dc163b369c15bcc998e96d9" FOREIGN KEY ("schedule_id") REFERENCES "dealership_schedules"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "dealership_schedules" ADD CONSTRAINT "FK_e353835e262fe867891738e44bd" FOREIGN KEY ("dealership_id") REFERENCES "dealerships"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "leads" ADD CONSTRAINT "FK_7012dbcd83fb8dc4e4ad1ae8469" FOREIGN KEY ("seller_profile_id") REFERENCES "profile"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "leads" ADD CONSTRAINT "FK_909c940068c2c098af9b3034a3c" FOREIGN KEY ("dealership_id") REFERENCES "dealerships"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_c58554668362019e874951cb417" FOREIGN KEY ("make_id") REFERENCES "make"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_5cd67dd41e589f8d7033c6cd658" FOREIGN KEY ("model_id") REFERENCES "model"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_57f1e5ffcb94370fac24e9dfeb9" FOREIGN KEY ("year_id") REFERENCES "year"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_4dadf1a304d8ce509ba7e70218c" FOREIGN KEY ("version_id") REFERENCES "version"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD CONSTRAINT "FK_3ddc983c5f7bcf132fd8732c3f4" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "chats" ADD CONSTRAINT "FK_f09f44006d6e58374269bca1d84" FOREIGN KEY ("ticket_id") REFERENCES "tickets"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "alerts" ADD CONSTRAINT "FK_f3147b52731056a05d753d79982" FOREIGN KEY ("profile_id") REFERENCES "profile"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "alerts" DROP CONSTRAINT "FK_f3147b52731056a05d753d79982"`);
+        await queryRunner.query(`ALTER TABLE "chats" DROP CONSTRAINT "FK_f09f44006d6e58374269bca1d84"`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" DROP CONSTRAINT "FK_3ddc983c5f7bcf132fd8732c3f4"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_4dadf1a304d8ce509ba7e70218c"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_57f1e5ffcb94370fac24e9dfeb9"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_5cd67dd41e589f8d7033c6cd658"`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" DROP CONSTRAINT "FK_c58554668362019e874951cb417"`);
+        await queryRunner.query(`ALTER TABLE "leads" DROP CONSTRAINT "FK_909c940068c2c098af9b3034a3c"`);
+        await queryRunner.query(`ALTER TABLE "leads" DROP CONSTRAINT "FK_7012dbcd83fb8dc4e4ad1ae8469"`);
+        await queryRunner.query(`ALTER TABLE "dealership_schedules" DROP CONSTRAINT "FK_e353835e262fe867891738e44bd"`);
+        await queryRunner.query(`ALTER TABLE "dealership_open_times" DROP CONSTRAINT "FK_8457dc163b369c15bcc998e96d9"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_57fd53bd8b39fe19d2be8136f6"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" DROP COLUMN "updated_at"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" ADD "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" DROP COLUMN "created_at"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" ADD "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()`);
+        await queryRunner.query(`ALTER TABLE "plan_lead_requests" ALTER COLUMN "cars_quantity" SET DEFAULT ''`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" DROP COLUMN "user_id"`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD "user_id" character varying NOT NULL`);
+        await queryRunner.query(`CREATE TYPE "public"."profile_type_enum_old" AS ENUM('professional', 'particular')`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" TYPE "public"."profile_type_enum_old" USING "type"::"text"::"public"."profile_type_enum_old"`);
+        await queryRunner.query(`ALTER TABLE "profile" ALTER COLUMN "type" SET DEFAULT 'particular'`);
+        await queryRunner.query(`DROP TYPE "public"."profile_type_enum"`);
+        await queryRunner.query(`ALTER TYPE "public"."profile_type_enum_old" RENAME TO "profile_type_enum"`);
+        await queryRunner.query(`CREATE TYPE "public"."vehicles_publisher_type_enum_old" AS ENUM('particular', 'dealership')`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" TYPE "public"."vehicles_publisher_type_enum_old" USING "publisher_type"::"text"::"public"."vehicles_publisher_type_enum_old"`);
+        await queryRunner.query(`ALTER TABLE "vehicles" ALTER COLUMN "publisher_type" SET DEFAULT 'particular'`);
+        await queryRunner.query(`DROP TYPE "public"."vehicles_publisher_type_enum"`);
+        await queryRunner.query(`ALTER TYPE "public"."vehicles_publisher_type_enum_old" RENAME TO "vehicles_publisher_type_enum"`);
+        await queryRunner.query(`ALTER TABLE "vehicles" DROP CONSTRAINT "UQ_90bd206d5b617610bc1adda81b0"`);
+        await queryRunner.query(`ALTER TABLE "discount_coupons" ADD CONSTRAINT "CHK_discount_coupons_discount" CHECK ((((percent_off IS NOT NULL) AND (amount_off_cents IS NULL)) OR ((percent_off IS NULL) AND (amount_off_cents IS NOT NULL))))`);
+        await queryRunner.query(`CREATE INDEX "IDX_dismissed_vehicles_vehicle_id" ON "dismissed_vehicles" ("vehicle_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_dismissed_vehicles_profile_id" ON "dismissed_vehicles" ("profile_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_vehicle_price_watches_vehicle_id" ON "vehicle_price_watches" ("vehicle_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_vehicle_price_watches_profile_id" ON "vehicle_price_watches" ("profile_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_notifications_profile_id_read_at" ON "notifications" ("profile_id", "read_at") `);
+        await queryRunner.query(`CREATE INDEX "IDX_notifications_profile_id_created_at" ON "notifications" ("created_at", "profile_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_discount_coupons_active" ON "discount_coupons" ("active") `);
+        await queryRunner.query(`CREATE UNIQUE INDEX "UQ_vehicles_ref" ON "vehicles" ("ref") `);
+        await queryRunner.query(`CREATE INDEX "IDX_vehicles_rating" ON "vehicles" ("rating") `);
+        await queryRunner.query(`CREATE INDEX "IDX_dealerships_billing_plan_id" ON "dealerships" ("billing_plan_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_dealership_schedules_dealership_id" ON "dealership_schedules" ("dealership_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_dealership_open_times_schedule_id" ON "dealership_open_times" ("schedule_id") `);
+        await queryRunner.query(`ALTER TABLE "alerts" ADD CONSTRAINT "FK_alerts_profile_id" FOREIGN KEY ("profile_id") REFERENCES "profile"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "chats" ADD CONSTRAINT "FK_chats_ticket_id" FOREIGN KEY ("ticket_id") REFERENCES "tickets"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_appraisal_requests_year_id" FOREIGN KEY ("year_id") REFERENCES "year"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_appraisal_requests_version_id" FOREIGN KEY ("version_id") REFERENCES "version"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_appraisal_requests_model_id" FOREIGN KEY ("model_id") REFERENCES "model"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "appraisal_requests" ADD CONSTRAINT "FK_appraisal_requests_make_id" FOREIGN KEY ("make_id") REFERENCES "make"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "leads" ADD CONSTRAINT "FK_leads_seller_profile_id" FOREIGN KEY ("seller_profile_id") REFERENCES "profile"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "leads" ADD CONSTRAINT "FK_leads_dealership_id" FOREIGN KEY ("dealership_id") REFERENCES "dealerships"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "dealerships" ADD CONSTRAINT "FK_dealerships_billing_plan" FOREIGN KEY ("billing_plan_id") REFERENCES "subscription_plans"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "dealership_schedules" ADD CONSTRAINT "FK_dealership_schedules_dealership" FOREIGN KEY ("dealership_id") REFERENCES "dealerships"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "dealership_open_times" ADD CONSTRAINT "FK_dealership_open_times_schedule" FOREIGN KEY ("schedule_id") REFERENCES "dealership_schedules"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+}

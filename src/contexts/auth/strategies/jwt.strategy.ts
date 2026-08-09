@@ -54,14 +54,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       ignoreExpiration: false,
       secretOrKey: envs.JWT_SECRET,
       passReqToCallback: true,
+
     });
   }
 
   async validate(req: Request, payload: SessionPayload): Promise<User> {
     await this.suspensionService.assert_session_allowed_by_id(payload.id);
-    await this.sessionService.findActiveById(payload.session_id);
+    const session = await this.sessionService.findActiveById(payload.session_id);
     const refresh_token = await this.refreshTokenService.findByTokenHash(payload.refreshToken_hash);
-    if (refresh_token.session_id !== payload.session_id) {
+    if (refresh_token.session_id !== session.id) {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_TOKEN);
     }
 
