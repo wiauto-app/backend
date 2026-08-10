@@ -1,9 +1,6 @@
-```yaml
+
 services:
 
-  # ============================================================
-  # WIAUTO BACKEND - NestJS
-  # ============================================================
   wiauto-backend:
     container_name: wiauto-backend
 
@@ -48,9 +45,6 @@ services:
         max-file: "3"
 
 
-  # ============================================================
-  # POSTGRESQL + POSTGIS
-  # ============================================================
   postgres:
     image: postgis/postgis:18-3.6
     container_name: wiauto-postgres
@@ -105,9 +99,7 @@ services:
         max-file: "3"
 
 
-  # ============================================================
-  # REDIS
-  # ============================================================
+
   redis:
     image: redis:7-alpine
     container_name: wiauto-redis
@@ -162,9 +154,7 @@ services:
         max-file: "3"
 
 
-  # ============================================================
-  # OPENSEARCH
-  # ============================================================
+
   opensearch:
     image: opensearchproject/opensearch:2.19.0
     container_name: wiauto-opensearch
@@ -236,9 +226,7 @@ services:
         max-file: "3"
 
 
-# ==============================================================
-# VOLUMES
-# ==============================================================
+
 volumes:
 
   postgres_data:
@@ -251,9 +239,7 @@ volumes:
     name: wiauto_opensearch_data
 
 
-# ==============================================================
-# NETWORK
-# ==============================================================
+
 networks:
 
   wiauto-network:
