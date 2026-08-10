@@ -43,7 +43,7 @@ export class NewsletterService {
           }
         }
       }
-      return existing;
+      throw new BadRequestException("El correo electrónico ya está suscrito");
     }
 
     const profile_id = await this.findProfileIdByEmail(email);
