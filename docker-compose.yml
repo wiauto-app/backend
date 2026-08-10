@@ -1,103 +1,262 @@
+```yaml
 services:
+
+  # ============================================================
+  # WIAUTO BACKEND - NestJS
+  # ============================================================
   wiauto-backend:
     container_name: wiauto-backend
+
     build:
-      target: production
       context: .
+      target: production
       args:
-        - PORT=${PORT:-4000}
+        PORT: ${PORT:-4000}
+
+    restart: unless-stopped
+
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
-    env_file: .env
+
+    env_file:
+      - .env
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
 
     networks:
       - wiauto-network
 
-    depends_on:
-      - postgres
-      - redis
-
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: "512m"
+          cpus: "2"
+          memory: 2G
         reservations:
-          cpus: "0.25"
-          memory: "256m"
+          cpus: "0.5"
+          memory: 512M
 
-  opensearch:
-    image: opensearchproject/opensearch:2.19.0
-    container_name: wiauto-opensearch
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+
+  # ============================================================
+  # POSTGRESQL + POSTGIS
+  # ============================================================
+  postgres:
+    image: postgis/postgis:18-3.6
+    container_name: wiauto-postgres
+
+    platform: linux/amd64
+
     restart: unless-stopped
+
     environment:
-      - cluster.name=wiauto-opensearch
-      - node.name=wiauto-opensearch-node
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - DISABLE_INSTALL_DEMO_CONFIG=true
-      - DISABLE_SECURITY_PLUGIN=true
-      - DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=odP.L97brnxM%
-      - cluster.routing.allocation.disk.threshold_enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wiautopassword
+      POSTGRES_DB: wiauto
+
+    env_file:
+      - .env
+
+    # Si no necesitas acceso externo a PostgreSQL,
+    # puedes eliminar completamente este bloque.
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    networks:
+      - wiauto-network
+
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s >/dev/null || exit 1",
+          "pg_isready -U postgres -d wiauto"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+        reservations:
+          cpus: "1"
+          memory: 1G
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+
+  # ============================================================
+  # REDIS
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: wiauto-redis
+
+    restart: unless-stopped
+
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - "384mb"
+      - --maxmemory-policy
+      - allkeys-lru
+
+    # Si no necesitas acceso externo a Redis,
+    # puedes eliminar completamente este bloque.
+    ports:
+      - "6381:6379"
+
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - wiauto-network
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+  # ============================================================
+  # OPENSEARCH
+  # ============================================================
+  opensearch:
+    image: opensearchproject/opensearch:2.19.0
+    container_name: wiauto-opensearch
+
+    restart: unless-stopped
+
+    environment:
+      cluster.name: wiauto-opensearch
+      node.name: wiauto-opensearch-node
+
+      discovery.type: single-node
+
+      bootstrap.memory_lock: "true"
+
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI: "true"
+
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=512m"
+
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "odP.L97brnxM%"
+
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+      nofile:
+        soft: 65536
+        hard: 65536
+
+    # Si solamente lo consume el backend,
+    # puedes eliminar este bloque.
+    ports:
+      - "9200:9200"
+
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+    networks:
+      - wiauto-network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s >/dev/null || exit 1"
         ]
       interval: 15s
       timeout: 10s
       retries: 20
       start_period: 90s
-    ports:
-      - "9200:9200"
-    volumes:
-      - opensearch_data:/usr/share/opensearch/data
-    networks:
-      - wiauto-network
 
-  postgres:
-    image: postgis/postgis:18-3.6
-    platform: linux/amd64
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=wiautopassword
-      - POSTGRES_DB=wiauto
-    networks:
-      - wiauto-network
-    env_file: .env
-    ports:
-      - 5434:5432
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d wiauto"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 3G
+        reservations:
+          cpus: "1"
+          memory: 2G
 
-  redis:
-    image: redis
-    networks:
-      - wiauto-network
-    ports:
-      - 6381:6379
-    volumes:
-      - redis_data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
 
+
+# ==============================================================
+# VOLUMES
+# ==============================================================
 volumes:
+
   postgres_data:
+    name: wiauto_postgres_data
+
   redis_data:
+    name: wiauto_redis_data
+
   opensearch_data:
+    name: wiauto_opensearch_data
+
+
+# ==============================================================
+# NETWORK
+# ==============================================================
 networks:
+
   wiauto-network:
+    name: wiauto-network
     driver: bridge
+```
