@@ -7,6 +7,7 @@ import { UserService } from "@/src/contexts/users/services/user.service";
 import { MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
 import { AuthService } from "./auth.service";
+import { Cache } from "cache-manager";
 
 @Injectable()
 export class MeService {
@@ -15,13 +16,14 @@ export class MeService {
     private readonly user_auth_provider_service: UserAuthProviderService,
     private readonly user_service: UserService,
     private readonly auth_service: AuthService,
+    private readonly cacheManager: Cache,
   ) {}
 
   async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {
-    // const cached = await this.cacheManager.get<MeResponseDto>(`me:${user.id}`);
-    // if (cached) {
-    //   return cached;
-    // }
+    const cached = await this.cacheManager.get<MeResponseDto>(`me:${user.id}`);
+    if (cached) {
+      return cached;
+    }
     const [membership_detail, identity] = await Promise.all([
       user.profile.id
         ? this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
@@ -35,8 +37,8 @@ export class MeService {
       dealership_membership: membership_detail,
     });
 
-    //1 minute
-    // await this.cacheManager.set(`me:${user.id}`, me, 60);
+    //5 minute
+    await this.cacheManager.set(`me:${user.id}`, me, 60);
     return me;
   }
 
