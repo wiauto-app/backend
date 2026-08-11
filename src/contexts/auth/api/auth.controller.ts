@@ -183,8 +183,10 @@ export class AuthController {
 
   @Post("refresh")
   @UseGuards(RefreshTokenGuard)
-  refreshToken(@GetRefreshToken() refreshToken: string) {
-    return this.authService.refreshToken(refreshToken);
+  async refreshToken(@GetRefreshToken() refreshToken: string,@Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.refreshToken(refreshToken);
+    res.cookie(ACCESS_TOKEN_NAME, result.token, authCookieConfig.access_token);
+    return result;
   }
 
   private clearPlatformCookies(res: Response): void {

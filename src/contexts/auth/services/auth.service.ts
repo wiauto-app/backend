@@ -129,6 +129,7 @@ export class AuthService {
       notify_new_login: false,
       scope: "session",
     })
+    
     return {
       type: "session",
       token: accessToken,
