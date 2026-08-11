@@ -2,6 +2,11 @@ import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto
 import { IsNumber, IsOptional } from "class-validator";
 
 export class FindAllVersionsHttpDto extends PaginationHttpDto {
+
+  @IsOptional()
+  @IsNumber()
+  make_id?: number;
+
   @IsOptional()
   @IsNumber()
   model_id?: number;
@@ -9,6 +14,10 @@ export class FindAllVersionsHttpDto extends PaginationHttpDto {
   @IsOptional()
   @IsNumber()
   fuel_type_id?: number;
+
+  @IsOptional()
+  @IsNumber()
+  body_type_id?: number;
 
   @IsOptional()
   @IsNumber()

@@ -44,7 +44,15 @@ export class TypeormCatalogVersionRepository {
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogVersion>> {
+    console.log(filter);
     const extra_filters: FindOptionsWhere<VersionEntity> = {};
+
+    if (filter.make_id != null) {
+      extra_filters.make_id = filter.make_id;
+    }
+    if (filter.body_type_id != null) {
+      extra_filters.body_type_id = filter.body_type_id;
+    }
     if (filter.model_id != null) {
       extra_filters.model_id = filter.model_id;
     }

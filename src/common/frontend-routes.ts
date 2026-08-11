@@ -24,7 +24,7 @@ export const FRONTEND_ROUTES = {
   VEHICLE_DETAIL: "/vehiculo",
   EDIT_VEHICLE: "/editar-vehiculo",
   EDIT_VEHICLE_PROFESSIONAL: "/editar-vehiculo-profesional",
-  CREATE_VEHICLE: "/crear-vehiculo",
+  CREATE_VEHICLE: "/publicar",
   SELL_VEHICLE: "/vender-vehiculo",
   MY_LISTINGS: "/mis-anuncios",
   MESSAGES: "/mensajes",
