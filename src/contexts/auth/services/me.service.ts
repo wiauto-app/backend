@@ -7,7 +7,7 @@ import { UserService } from "@/src/contexts/users/services/user.service";
 import { MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
 import { AuthService } from "./auth.service";
-import { Cache } from "cache-manager";
+import { Cache } from "@nestjs/cache-manager";
 
 @Injectable()
 export class MeService {
