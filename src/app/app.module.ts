@@ -6,7 +6,7 @@ import KeyvRedis from '@keyv/redis';
 import { HealthModule } from "@/app/health/health.module";
 import { UserModule } from "@/contexts/users/user.module";
 import { LoggerModule } from "@/shared/logger/logger.module";
-
+import * as admin from "firebase-admin";
 import { typeOrmConfig } from "../database/data-source";
 import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
@@ -122,4 +122,15 @@ import { ProfileDevicesModule } from "../contexts/profile_devices/profile-device
     }),
   ],
 })
-export class AppModule { }
+export class AppModule {
+
+  constructor() {
+    admin.initializeApp({
+      credential: admin.cert({
+        projectId: envs.FIREBASE_PROJECT_ID,
+        clientEmail: envs.FIREBASE_CLIENT_EMAIL,
+        privateKey: envs.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }),
+    });
+  }
+}

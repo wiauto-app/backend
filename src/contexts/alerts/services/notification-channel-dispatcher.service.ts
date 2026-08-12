@@ -85,10 +85,10 @@ export class NotificationChannelDispatcher {
         continue;
       }
 
-      if (channel === "push") {
-        sends.push(this.push_channel.send(input));
-        continue;
-      }
+      // if (channel === "push") {
+      //   sends.push(this.push_channel.send(input));
+      //   continue;
+      // }
 
       if (channel === "sms") {
         sends.push(this.sms_channel.send(input));
