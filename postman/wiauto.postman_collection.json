@@ -1412,7 +1412,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"token\": \"{{token}}\",\n  \"platform\": \"{{platform}}\"\n}"
+                  "raw": "{\n  \"token\": \"{{token}}\",\n  \"platform\": \"{{platform}}\"\n \"deviceId\": \"{{deviceId}}\",\n  \"deviceName\": \"{{deviceName}}\",\n  \"osVersion\": \"{{osVersion}}\",\n  \"appVersion\": \"{{appVersion}}\"\n}"
                 },
                 "url": "{{base_url}}/v1/profile-devices",
                 "description": "JWT. `token` = FCM registration token. `platform` = ios o android."
