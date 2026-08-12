@@ -120,32 +120,20 @@ export interface ApiVehiculoSubscriptionMe {
 export class ApiVehiculoClient {
   private readonly logger = new Logger(ApiVehiculoClient.name);
 
-  private resolveApiKey(): string {
-    const api_key = envs.APIVEHICULO_API_KEY.trim();
-    if (!api_key) {
-      throw new VehicleExternalLookupConfigException();
-    }
-    return api_key;
-  }
-
   private buildUrl(path: string): string {
-    const base = envs.APIVEHICULO_BASE_URL.replace(/\/$/, "");
-    const normalized_path = path.replace(/^\//, "");
-    return `${base}/${normalized_path}`;
+    return `${envs.APIVEHICULO_BASE_URL}/${path}`;
   }
 
   async getSubscriptionMe(): Promise<ApiVehiculoSubscriptionMe> {
-    const api_key = this.resolveApiKey();
     const url = this.buildUrl("subscriptions/me");
-
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${api_key}`,
+        Authorization: `Bearer ${envs.APIVEHICULO_API_KEY}`,
         Accept: "application/json",
       },
     });
-
+    const data = await response.text();
     if (response.status === 401 || response.status === 403) {
       this.logger.error(
         `ApiVehiculo subscription auth error status=${response.status}`,
@@ -157,11 +145,10 @@ export class ApiVehiculoClient {
       throw new VehicleExternalLookupConfigException();
     }
 
-    return (await response.json()) as ApiVehiculoSubscriptionMe;
+    return JSON.parse(data) as ApiVehiculoSubscriptionMe;
   }
 
   async lookup(query: VehicleExternalLookupQuery): Promise<ApiVehicleData> {
-    const api_key = this.resolveApiKey();
 
     const has_plate =
       typeof query.plate === "string" && query.plate.trim().length > 0;
@@ -190,7 +177,7 @@ export class ApiVehiculoClient {
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${api_key}`,
+        Authorization: `Bearer ${envs.APIVEHICULO_API_KEY}`,
         Accept: "application/json",
       },
     });

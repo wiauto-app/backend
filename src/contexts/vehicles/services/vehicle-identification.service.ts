@@ -72,8 +72,8 @@ export class VehicleIdentificationService {
 
   async getAvailability(): Promise<VehicleIdentificationAvailabilityResult> {
     const subscription = await this.api_vehiculo_client.getSubscriptionMe();
-    const remaining_requests = Number(subscription?.remainingRequests) || 0;
-    const total_requests = Number(subscription?.totalRequests) || 0;
+    const remaining_requests = Number(subscription.remainingRequests) || 0;
+    const total_requests = Number(subscription.totalRequests) || 0;
 
     return {
       available: remaining_requests > 0,
