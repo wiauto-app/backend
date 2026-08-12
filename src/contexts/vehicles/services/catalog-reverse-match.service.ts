@@ -29,7 +29,7 @@ export class CatalogReverseMatchService {
   ) { }
 
   async execute(api_data: ApiVehicleData): Promise<ApiVehicleResponse> {
-    const version_label = api_data.version?.trim();
+    const version_label = api_data.version;
     if (!version_label) {
       throw new BadRequestException("Version is required");
     }

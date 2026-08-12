@@ -6,16 +6,15 @@ import { LoginDto } from "../dto/login.dto";
 import { SignInResult } from "../types/auth.types";
 import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthService } from "./auth.service";
-import { PasswordService } from "./password.service";
 import { SuspensionService } from "../../users/services/suspension.service";
 import { authResponseConfig } from "../response.config";
 import { normalizeUserAgent } from "../utils/normalize-user-agent";
+import { comparePassword } from "../utils/passwordUtils";
 
 @Injectable()
 export class AdminLoginService {
   constructor(
     private readonly userService: UserService,
-    private readonly passwordService: PasswordService,
     private readonly suspensionService: SuspensionService,
     private readonly authService: AuthService,
     private readonly authSecurityMailService: AuthSecurityMailService,
@@ -35,7 +34,7 @@ export class AdminLoginService {
       throw new UnauthorizedException(authResponseConfig.messages.DIFFERENT_PROVIDER);
     }
 
-    const is_valid_password = await this.passwordService.comparePassword(
+    const is_valid_password = await comparePassword(
       adminLoginDto.password,
       user.password,
     );

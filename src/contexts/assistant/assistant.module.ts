@@ -1,6 +1,5 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { CatalogModule } from "@/src/contexts/vehicles/catalog/catalog.module";
@@ -27,7 +26,6 @@ import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
 
 @Module({
   imports: [
-    AuthModule,
     forwardRef(() => VehiclesModule),
     forwardRef(() => BillingModule),
     CatalogModule,

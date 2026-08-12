@@ -1,4 +1,3 @@
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 
@@ -21,7 +20,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
       VehicleEntity,
       ProfileEntity,
     ]),
-    AuthModule,
     forwardRef(() => BillingModule),
   ],
   controllers: [

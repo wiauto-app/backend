@@ -7,7 +7,6 @@ import { UserModule } from "../users/user.module";
 import { AuthController } from "./api/auth.controller";
 import { AdminAuthController } from "./api/admin-auth.controller";
 import { AuthService } from "./services/auth.service";
-import { PasswordService } from "./services/password.service";
 
 import { GoogleTokenService } from "./services/google-token.service";
 import { GoogleStrategy } from "./strategies/google.strategy";
@@ -47,6 +46,7 @@ import { AuthSessionService } from "./services/auth-session.service";
 import { AuthSecurityMailService } from "./services/auth-security-mail.service";
 import { ProfileEntity } from "../profiles/entities/profile.entity";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
+import { BillingModule } from "../billing/billing.module";
 
 @Module({
   controllers: [
@@ -60,7 +60,6 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
     AuthService,
     AuthSessionService,
     AuthSecurityMailService,
-    PasswordService,
     GoogleTokenService,
     AppleTokenService,
     JwtStrategy,
@@ -100,7 +99,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
 
     TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity, ProfileEntity]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
-
+    BillingModule
 
   ],
   exports: [

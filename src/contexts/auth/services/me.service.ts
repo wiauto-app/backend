@@ -8,14 +8,16 @@ import { MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
 import { AuthService } from "./auth.service";
 import { Cache } from "@nestjs/cache-manager";
+import { EntitlementsService } from "../../billing/services/entitlements.service";
 
 @Injectable()
 export class MeService {
   constructor(
-    private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-    private readonly user_auth_provider_service: UserAuthProviderService,
-    private readonly user_service: UserService,
-    private readonly auth_service: AuthService,
+    private readonly dealershipMemberRepository: TypeOrmDealershipMemberRepository,
+    private readonly userAuthProviderService: UserAuthProviderService,
+    private readonly entitlementsService: EntitlementsService,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
     private readonly cacheManager: Cache,
   ) {}
 
@@ -24,17 +26,19 @@ export class MeService {
     if (cached) {
       return cached;
     }
-    const [membership_detail, identity] = await Promise.all([
+    const [membership_detail, identity, billingSummary] = await Promise.all([
       user.profile.id
-        ? this.dealership_member_repository.findMembershipDetailByProfileId(user.profile.id)
+        ? this.dealershipMemberRepository.findMembershipDetailByProfileId(user.profile.id)
         : Promise.resolve(null),
-      this.user_auth_provider_service.getAuthIdentitySummary(user.id),
+      this.userAuthProviderService.getAuthIdentitySummary(user.id),
+      this.entitlementsService.getBillingMe(user.id),
     ]);
     const me =  MeResponseDto.fromUser(user, {
       providers: identity.providers,
       has_password: identity.has_password,
       scope,
       dealership_membership: membership_detail,
+      billing_summary: billingSummary,
     });
 
     //5 minute
@@ -43,9 +47,9 @@ export class MeService {
   }
 
   async deleteAccount(user_id: string, session_id: string): Promise<{ message: string; data: null }> {
-    await this.user_service.remove(user_id);
+    await this.userService.remove(user_id);
     try {
-      await this.auth_service.logout(session_id);
+      await this.authService.logout(session_id);
     } catch {
       // La cuenta ya se eliminó; limpiar sesión es best-effort.
     }

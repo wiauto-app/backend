@@ -1,6 +1,7 @@
 import { AuthProvider, User } from "../../users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
 import { DealershipMembershipDetail } from "@/src/contexts/dealership/types/dealership-membership-detail";
+import { BillingMeSummary } from "../../billing/types/entitlement-resolve";
 
 export class MeDealershipMembershipDto {
   dealership_id: string;
@@ -10,6 +11,7 @@ export class MeDealershipMembershipDto {
 }
 
 interface MeResponseFromUserOptions {
+  billing_summary?: BillingMeSummary | null;
   providers: AuthProvider[];
   has_password: boolean;
   scope?: "session" | "2fa_challenge";
@@ -34,6 +36,7 @@ export class MeResponseDto {
   created_at: string;
   type: "session" | "2fa_challenge";
   dealership_membership?: MeDealershipMembershipDto | null;
+  billing_summary?: BillingMeSummary | null;
   static fromUser(
     user: User,
     options: MeResponseFromUserOptions,
@@ -53,16 +56,17 @@ export class MeResponseDto {
     dto.phone_code = profile.phone_code ?? undefined;
     dto.phone = profile.phone ?? undefined;
     dto.dni = profile.dni ?? undefined;
-    dto.isAdmin = user.is_admin === true;
+    dto.isAdmin = user.is_admin;
     dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
+    dto.billing_summary = options.billing_summary;
     dto.vehicle_lists = profile.vehicle_lists;
     dto.dealership_membership = options.dealership_membership
       ? {
-          dealership_id: options.dealership_membership.dealership_id,
-          dealership_name: options.dealership_membership.dealership_name,
-          member_id: options.dealership_membership.member_id,
-          role: options.dealership_membership.role,
-        }
+        dealership_id: options.dealership_membership.dealership_id,
+        dealership_name: options.dealership_membership.dealership_name,
+        member_id: options.dealership_membership.member_id,
+        role: options.dealership_membership.role,
+      }
       : null;
     return dto;
   }

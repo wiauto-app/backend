@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { AlertProcessingEnqueueModule } from "@/src/contexts/alerts/queues/alert-processing-enqueue.module";
 
 import { FindVehiclePricesByVehicleIdService } from "./services/find-vehicle-prices-by-vehicle-id.service";
@@ -13,7 +12,6 @@ import { VehicleSearchModule } from "../search/vehicle-search.module";
   imports: [
     VehiclePricesPersistenceModule,
     VehicleSearchModule,
-    AuthModule,
     AlertProcessingEnqueueModule,
   ],
   controllers: [FindVehiclePricesByVehicleIdController],

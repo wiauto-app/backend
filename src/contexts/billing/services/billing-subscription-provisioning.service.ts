@@ -4,7 +4,6 @@ import { Logger } from "@nestjs/common";
 import Stripe from "stripe";
 
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { ProfileService } from "@/src/contexts/profiles/services/profile.service";
 import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
@@ -23,8 +22,9 @@ import { EntitlementsService } from "./entitlements.service";
 import { SubscriptionOverridesService } from "./subscription-overrides.service";
 import { PLAN_LEAD_STATUS } from "../types/billing.enums";
 import { SubscriptionEntity } from "../entities/subscription.entity";
+import { hashPassword } from "@/src/contexts/auth/utils/passwordUtils";
 
-export type ProvisionCheckoutResult = {
+export interface ProvisionCheckoutResult {
   profile_id: string;
   plan_id: string;
   is_new_guest_user: boolean;
@@ -41,7 +41,6 @@ export class BillingSubscriptionProvisioningService {
     private readonly plan_repository: TypeOrmSubscriptionPlanRepository,
     private readonly entitlements_service: EntitlementsService,
     private readonly billing_notification_mail_service: BillingNotificationMailService,
-    private readonly password_service: PasswordService,
     private readonly profile_service: ProfileService,
     private readonly overrides_service: SubscriptionOverridesService,
     private readonly plan_lead_request_repository: TypeOrmPlanLeadRequestRepository,
@@ -372,7 +371,7 @@ export class BillingSubscriptionProvisioningService {
     }
 
     const temporary_password = randomBytes(12).toString("base64url");
-    const hashed_password = await this.password_service.hashPassword(temporary_password);
+    const hashed_password = await hashPassword(temporary_password);
 
     const created_user = this.user_repository.create({
       email,

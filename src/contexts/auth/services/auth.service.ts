@@ -8,19 +8,18 @@ import { LoginDto } from "../dto/login.dto";
 import { User } from "../../users/entities/user.entity";
 import { OAuthProfile } from "../strategies/google.strategy";
 import { SessionPayload, SignInResult } from "../types/auth.types";
-import { PasswordService } from "./password.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { SessionService } from "./session.service";
 import { AuthSessionService } from "./auth-session.service";
 import { envs } from "@/src/common/envs";
 import { authResponseConfig } from "../response.config";
+import { comparePassword } from "../utils/passwordUtils";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly suspensionService: SuspensionService,
-    private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly sessionService: SessionService,
     private readonly refreshTokenService: RefreshTokenService,
@@ -43,7 +42,7 @@ export class AuthService {
       return this.authSessionService.establishSessionForUser(user, request);
     }
 
-    const isValidPassword = ignorePassword ? true : await this.passwordService.comparePassword(loginDto.password, user.password);
+    const isValidPassword = ignorePassword ? true : await comparePassword(loginDto.password, user.password);
 
     if (!isValidPassword) {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);

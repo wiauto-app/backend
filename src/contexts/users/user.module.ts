@@ -1,7 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { PasswordService } from "../auth/services/password.service";
 import { AuthModule } from "../auth/auth.module";
 import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 import { ProfileModule } from "../profiles/profile.module";
@@ -21,7 +20,7 @@ import { AdminSuspensionService } from "./services/admin-suspension.service";
 
 @Module({
   controllers: [UsersController, UserSuspensionsController, AdminUsersController, AdminSuspensionController],
-  providers: [UserService, UserAuthProviderService, PasswordService, UserMailService, SuspensionService, AdminUserService, AdminSuspensionService],
+  providers: [UserService, UserAuthProviderService, UserMailService, SuspensionService, AdminUserService, AdminSuspensionService],
   imports: [
     TypeOrmModule.forFeature([User, UserAuthProvider, VehicleEntity, SuspensionDurationType]),
     ProfileModule,

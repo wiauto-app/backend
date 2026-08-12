@@ -1,4 +1,3 @@
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
@@ -209,7 +208,6 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     CategoriesModule,
     FeaturesModule,
     CatalogModule,
-    AuthModule,
     ProfileModule,
     forwardRef(() => BillingModule),
     DealershipModule,

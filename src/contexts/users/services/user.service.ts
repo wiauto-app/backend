@@ -15,7 +15,6 @@ import { VehicleEntity } from "../../vehicles/entities/vehicle.entity";
 import { User } from "../entities/user.entity";
 import { OAuthProvider } from "../entities/user-auth-provider.entity";
 import { RegisterUserDto } from '../dto/register-user.dto'
-import { PasswordService } from "../../auth/services/password.service";
 import { UpdateEmailDto } from "../dto/update-email.dto";
 import { ApiResponse } from "@/src/common/types/default.types";
 import { UpdatePasswordDto } from "../dto/update-password.dto";
@@ -27,6 +26,7 @@ import { AuthSecurityMailService } from "../../auth/services/auth-security-mail.
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { UserAuthProviderService } from "./user-auth-provider.service";
 import { authResponseConfig } from "../../auth/response.config";
+import { comparePassword, hashPassword } from "../../auth/utils/passwordUtils";
 
 interface FindOrCreateOAuthUserProfile {
   provider: OAuthProvider;
@@ -45,7 +45,6 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
-    private readonly passwordService: PasswordService,
     private readonly profileService: ProfileService,
     private readonly profileRepository: TypeOrmProfileRepository,
     private readonly userAuthProviderService: UserAuthProviderService,
@@ -65,7 +64,7 @@ export class UserService {
       throw new ConflictException("Ya existe un usuario registrado con ese email")
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(registerUserDto.password)
+    const hashedPassword = await hashPassword(registerUserDto.password)
 
     const createdUser = this.userRepository.create({
       email: registerUserDto.email,
@@ -306,7 +305,7 @@ export class UserService {
       );
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(newPassword);
+    const hashedPassword = await hashPassword(newPassword);
     const updated = await this.userRepository.preload({
       id,
       password: hashedPassword,
@@ -335,7 +334,7 @@ export class UserService {
       );
     }
 
-    const is_valid_password = await this.passwordService.comparePassword(
+    const is_valid_password = await comparePassword(
       updatePasswordDto.current_password,
       user.password,
     );
@@ -343,7 +342,7 @@ export class UserService {
       throw new UnauthorizedException("La contraseña ingresada no es correcta");
     }
 
-    const hashed_password = await this.passwordService.hashPassword(
+    const hashed_password = await hashPassword(
       updatePasswordDto.password,
     );
 

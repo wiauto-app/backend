@@ -4,17 +4,16 @@ import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ConflictException, NotFoundException } from "@nestjs/common";
-import { PasswordService } from "../../auth/services/password.service";
 import { AuthSecurityMailService } from "../../auth/services/auth-security-mail.service";
 import { AdminUpdateUserDto } from "../dto/admin/update-user.dto";
 import { ProfileEntity } from "../../profiles/entities/profile.entity";
+import { hashPassword } from "../../auth/utils/passwordUtils";
 
 @Injectable()
 export class AdminUserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly passwordService: PasswordService,
     private readonly authSecurityMailService: AuthSecurityMailService,
   ) { }
 
@@ -31,7 +30,7 @@ export class AdminUserService {
         throw new ConflictException("Ya existe un usuario registrado con ese email");
       }
 
-      const hashed_password = await this.passwordService.hashPassword(
+      const hashed_password = await hashPassword(
         createUserDto.password,
       );
 
@@ -71,7 +70,7 @@ export class AdminUserService {
   async update(updateUserDto: AdminUpdateUserDto): Promise<User> {
     let hashedPassword: string | undefined;
     if (updateUserDto.password) {
-      hashedPassword = await this.passwordService.hashPassword(updateUserDto.password)
+      hashedPassword = await hashPassword(updateUserDto.password)
     }
 
     const user = await this.userRepository.manager.transaction(async (entity_manager) => {

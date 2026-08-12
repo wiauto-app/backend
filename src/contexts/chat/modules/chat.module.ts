@@ -1,7 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { FileModule } from "@/src/contexts/shared/file/file.module";
@@ -54,7 +53,6 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     DeleteChatMessageController,
   ],
   imports: [
-    AuthModule,
     ProfileModule,
     FileModule,
     forwardRef(() => AlertsModule),

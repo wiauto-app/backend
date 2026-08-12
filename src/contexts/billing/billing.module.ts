@@ -1,9 +1,7 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { AssistantModule } from "@/src/contexts/assistant/assistant.module";
-import { PasswordService } from "@/src/contexts/auth/services/password.service";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
@@ -77,7 +75,6 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
 
 @Module({
   imports: [
-    AuthModule,
     forwardRef(() => AssistantModule),
     ProfileModule,
     TypeOrmModule.forFeature([
@@ -143,7 +140,6 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
     BillingNotificationMailService,
     StripeWebhookService,
     StripeClient,
-    PasswordService,
     SubscriptionGuard,
     EntitlementGuard,
     TypeOrmSubscriptionPlanRepository,
