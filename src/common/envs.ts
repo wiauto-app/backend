@@ -104,6 +104,8 @@ const envsSchema = z.object({
 
   /** Secreto opcional para validar POST /strapi/webhook (header X-Strapi-Webhook-Secret o Authorization Bearer) */
   STRAPI_WEBHOOK_SECRET: z.string().default(""),
+
+  ADMIN_PASSWORD: z.string(),
 });
 
 const parsed_envs = envsSchema.parse(process.env);
