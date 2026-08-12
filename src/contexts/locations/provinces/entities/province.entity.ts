@@ -44,6 +44,15 @@ export class Provinces {
   })
   geom: string;
 
+  @Index({ spatial: true })
+  @Column({
+    type: "geometry",
+    spatialFeatureType: "Point",
+    srid: 4326,
+    nullable: true,
+  })
+  center: string | null;
+
   @BeforeInsert()
   @BeforeUpdate()
   private sync_slug_from_name(): void {

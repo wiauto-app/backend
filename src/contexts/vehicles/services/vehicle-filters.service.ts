@@ -1,6 +1,5 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
-import { ActiveFiltersLookupPort } from "../ports/active-filters-lookup.port";
 import { CatalogFuelTypesService } from "../catalog/fuel_types/services/catalog-fuel-types.service";
 import { ActiveFiltersResponse } from "../types/active-filters-response";
 import { FindActiveFiltersDto } from "../dto/find-active-filters.dto";
@@ -14,6 +13,7 @@ import { TractionsService } from "./tractions.service";
 import { VehicleTypesService } from "./vehicle-types.service";
 import { WarrantyTypesService } from "./warranty-types.service";
 import { buildActiveFiltersTitle } from "../utils/build-active-filters-title";
+import { TypeOrmActiveFilters } from "../clients/typeorm-active-filters";
 
 @Injectable()
 export class VehicleFiltersService {
@@ -27,7 +27,7 @@ export class VehicleFiltersService {
     private readonly dgt_labels_service: DgtLabelsService,
     private readonly features_service: FeaturesService,
     private readonly fuel_types_service: CatalogFuelTypesService,
-    private readonly active_filters_lookup_port: ActiveFiltersLookupPort,
+    private readonly typeormActiveFilters: TypeOrmActiveFilters,
   ) { }
 
   async findFilters() {
@@ -122,7 +122,7 @@ export class VehicleFiltersService {
   async findActiveFilters(
     find_active_filters_dto: FindActiveFiltersDto,
   ): Promise<ActiveFiltersResponse> {
-    const resolved = await this.active_filters_lookup_port.resolveResolved(
+    const resolved = await this.typeormActiveFilters.resolveResolved(
       find_active_filters_dto,
     );
 

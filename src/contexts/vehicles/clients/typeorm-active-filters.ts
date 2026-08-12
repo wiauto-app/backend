@@ -16,7 +16,6 @@ import { TractionEntity } from "../entities/traction.entity";
 import { CuotaEntity } from "../entities/cuota.entity";
 import { FeaturesEntity } from "../entities/features.entity";
 import { CategoryEntity } from "../entities/category.entity";
-import { ActiveFiltersLookupPort } from "../ports/active-filters-lookup.port";
 import { FindActiveFiltersDto } from "../dto/find-active-filters.dto";
 import { ActiveFiltersResolved } from "../types/active-filters-response";
 import { ActiveFilterItem } from "../types/active-filter-item";
@@ -28,7 +27,7 @@ import {
 } from "./active-filters-lookup.utils";
 
 @Injectable()
-export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
+export class TypeOrmActiveFilters {
   constructor(
     @InjectRepository(VehicleTypeEntity)
     private readonly vehicle_type_repository: Repository<VehicleTypeEntity>,
@@ -61,7 +60,6 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
     @InjectRepository(CategoryEntity)
     private readonly category_repository: Repository<CategoryEntity>,
   ) {
-    super();
   }
 
   async resolveResolved(
@@ -135,7 +133,7 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
       vehicle_type_row,
       make_rows,
       model_rows,
-      province_rows,
+      provinces,
       community_rows,
       municipality_rows,
       service_rows,
@@ -165,8 +163,8 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
         : Promise.resolve([]),
       municipalities_slugs.length > 0
         ? this.municipality_repository.find({
-            where: { slug: In(municipalities_slugs) },
-          })
+          where: { slug: In(municipalities_slugs) },
+        })
         : Promise.resolve([]),
       service_slugs.length > 0
         ? this.service_repository.find({ where: { slug: In(service_slugs) } })
@@ -199,10 +197,10 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
 
     const vehicle_type: ActiveFilterItem | null = vehicle_type_row
       ? {
-          id: vehicle_type_row.id,
-          slug: vehicle_type_row.slug,
-          name: vehicle_type_row.name,
-        }
+        id: vehicle_type_row.id,
+        slug: vehicle_type_row.slug,
+        name: vehicle_type_row.name,
+      }
       : null;
 
     const makes = order_active_filter_items_by_slugs(
@@ -234,14 +232,7 @@ export class TypeOrmActiveFiltersLookupAdapter extends ActiveFiltersLookupPort {
       categories_slugs,
     );
 
-    const provinces = order_active_filter_items_by_slugs(
-      province_rows.map((row) => ({
-        id: row.id,
-        slug: row.slug,
-        name: row.name,
-      })),
-      provinces_slugs,
-    );
+  
 
     const communities = order_active_filter_items_by_slugs(
       community_rows.map((row) => ({

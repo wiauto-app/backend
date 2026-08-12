@@ -70,8 +70,7 @@ import { ReverseGeocodingService } from "./services/reverse-geocoding.service";
 import { VehicleSearchModule } from "./search/vehicle-search.module";
 import { FindFiltersController } from "./api/filters-v1/find-filters.controller";
 import { FindActiveFiltersController } from "./api/filters-v1/find-active-filters.controller";
-import { ActiveFiltersLookupPort } from "./ports/active-filters-lookup.port";
-import { TypeOrmActiveFiltersLookupAdapter } from "./clients/typeorm-active-filters-lookup.adapter";
+import { TypeOrmActiveFilters } from "./clients/typeorm-active-filters";
 import { MakeEntity } from "./catalog/makes/entities/make.entity";
 import { CatalogModelEntity } from "./catalog/models/entities/catalog-model.entity";
 import { CatalogFuelTypeEntity } from "./catalog/fuel_types/entities/catalog-fuel-type.entity";
@@ -148,7 +147,6 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     GoogleReverseGeocodingService,
     PostgisLocationResolver,
     ReverseGeocodingService,
-    TypeOrmActiveFiltersLookupAdapter,
     RecommendVehiclePriceService,
     GenerateVehicleDescriptionService,
     VehicleMarketStatsService,
@@ -162,10 +160,8 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     TypeOrmVehicleAnalyticsRepository,
     TypeOrmOwnerDashboardRepository,
     TypeOrmOwnerStatisticsRepository,
-    {
-      provide: ActiveFiltersLookupPort,
-      useExisting: TypeOrmActiveFiltersLookupAdapter,
-    },
+    TypeOrmActiveFilters,
+ 
     {
       provide: PublishedVehicleSnapshotPort,
       useExisting: PublishedVehicleSnapshotService,
