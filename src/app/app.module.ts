@@ -41,6 +41,7 @@ import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests
 import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboard.module";
 import { NewsletterModule } from "../contexts/newsletter/newsletter.module";
 import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
+import { ProfileDevicesModule } from "../contexts/profile_devices/profile-devices.module";
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
     AdminDashboardModule,
     NewsletterModule,
     StrapiWebhookModule,
+    ProfileDevicesModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

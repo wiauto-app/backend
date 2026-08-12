@@ -106,6 +106,11 @@ const envsSchema = z.object({
   STRAPI_WEBHOOK_SECRET: z.string().default(""),
 
   ADMIN_PASSWORD: z.string(),
+
+  //firebase credentials
+  FIREBASE_PROJECT_ID: z.string(),
+  FIREBASE_CLIENT_EMAIL: z.string(),
+  FIREBASE_PRIVATE_KEY: z.string(),
 });
 
 const parsed_envs = envsSchema.parse(process.env);

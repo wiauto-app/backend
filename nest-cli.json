@@ -17,6 +17,10 @@
       {
         "include": "contexts/shared/mail/templates/**/*.html",
         "watchAssets": true
+      },
+      {
+        "include": "../firebaseServiceAccountKey.json",
+        "watchAssets": true
       }
     ]
   }

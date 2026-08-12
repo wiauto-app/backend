@@ -1391,6 +1391,39 @@
       ]
     },
     {
+      "name": "profile-devices",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "crear dispositivo de perfil",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{token}}\",\n  \"platform\": \"{{platform}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/profile-devices",
+                "description": "JWT. `token` = FCM registration token. `platform` = ios o android."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "profiles",
       "item": [
         {
