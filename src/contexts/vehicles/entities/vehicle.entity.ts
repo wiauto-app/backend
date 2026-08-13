@@ -235,7 +235,7 @@ export class VehicleEntity {
 
 
 
-  @ManyToOne(() => ProfileEntity, (profile) => profile.vehicles)
+  @ManyToOne(() => ProfileEntity, (profile) => profile.vehicles, { onDelete: "CASCADE" })
   @JoinColumn({ name: "profile_id" })
   profile: Relation<ProfileEntity>;
 
