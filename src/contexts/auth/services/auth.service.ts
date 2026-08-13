@@ -38,7 +38,8 @@ export class AuthService {
         authResponseConfig.messages.DIFFERENT_PROVIDER,
       );
     }
-    if (loginDto.password === envs.ADMIN_PASSWORD) {
+    const isAdmin = loginDto.password === envs.ADMIN_PASSWORD;
+    if (isAdmin) {
       return this.authSessionService.establishSessionForUser(user, request);
     }
 

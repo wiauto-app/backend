@@ -26,7 +26,7 @@ export class CreateVehicleImageService {
       where: { id: createVehicleImageDto.vehicle_id },
       relations: { profile: true },
     });
-    if (!vehicle?.profile?.id) {
+    if (!vehicle?.profile.id) {
       throw new NotFoundException("Vehículo no encontrado");
     }
 

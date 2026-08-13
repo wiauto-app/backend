@@ -56,7 +56,7 @@ export class ImageProcessor extends WorkerHost {
       if (entity === "vehicle") {
         this.logger.log(`Saving ${urls.length} vehicle images for vehicle ${entityId}`);
         await this.vehicleImageRepository.saveBulk(
-          urls.map((url) => VehicleImage.create({ url, vehicle_id: entityId })),
+          urls.map((url, index) => VehicleImage.create({ url, vehicle_id: entityId, order: index + 1 })),
         );
       }
 
