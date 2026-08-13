@@ -226,6 +226,7 @@
             "url": "{{base_url}}/auth/me",
             "description": "`AuthGuard` (JWT)."
           },
+      
           "response": [
             {
               "name": "200 OK — perfil (ejemplo)",
@@ -250,6 +251,47 @@
                 }
               ],
               "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"email\": \"usuario@ejemplo.com\",\n  \"provider\": \"local\",\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"avatar_url\": \"https://cdn.ejemplo/avatar.png\",\n  \"last_sign_in\": \"2026-04-29T14:30:00.000Z\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refrescar token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refresh_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/refresh",
+            "description": "`AuthGuard` (JWT)."
+          },
+      
+          "response": [
+            {
+              "name": "200 OK — token (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{refresh_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/auth/refresh",
+                "description": "Refresca el token de acceso."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh_token\": \"<refresh_token_en_claro>\"\n}"
             }
           ]
         },

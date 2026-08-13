@@ -163,9 +163,14 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
     value: { limit: 3 },
   },
   {
+    feature: ENTITLEMENT_FEATURE.VEHICLES,
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    value: { limit: 3 },
+  },
+  {
     feature: ENTITLEMENT_FEATURE.PHOTOS_PER_VEHICLE,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
-    value: { limit: 6 },
+    value: { limit: 10 },
   },
   {
     feature: ENTITLEMENT_FEATURE.VIDEOS_PER_VEHICLE,

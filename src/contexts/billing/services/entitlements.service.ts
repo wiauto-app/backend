@@ -13,7 +13,6 @@ import { SubscriptionUsageEntity } from "../entities/subscription-usage.entity";
 import { SUBSCRIPTION_STATUS } from "../types/billing.enums";
 import {
   ENTITLEMENT_FEATURE,
-  ENTITLEMENT_VALUE_TYPE,
   isMeteredFeature,
 } from "../types/entitlement-features";
 import {
@@ -114,7 +113,6 @@ export class EntitlementsService {
     const listings_used =
       await this.countListingsForProfile(profile_id, membership?.dealership_id);
     const features = buildFreeEntitlementsMap();
-
     return {
       features,
       source: "free",
@@ -430,7 +428,7 @@ export class EntitlementsService {
       features: clean,
       source,
       plan_id: subscription.plan_id,
-      plan_name: subscription.plan?.name ?? null,
+      plan_name: subscription.plan.name,
       plan_version_id: subscription.plan_version_id,
       subscription_id: subscription.id,
       dealership_id: membership_dealership_id,

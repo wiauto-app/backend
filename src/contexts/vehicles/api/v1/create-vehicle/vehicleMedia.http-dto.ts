@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsNumber, IsString, Max, Min, MinLength } from "class-validator";
 import { IsTempStoragePath } from "@/src/contexts/shared/file/validators/is-temp-storage-path.validator";
 
-export class ImageHttpDto {
+export class VehicleMediaHttpDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(1)
