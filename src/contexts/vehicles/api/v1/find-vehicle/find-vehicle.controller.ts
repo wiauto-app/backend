@@ -5,10 +5,10 @@ import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service
 
 @Controller(V1_VEHICLES)
 export class FindVehicleController {
-  constructor(private readonly vehicle_service: VehicleService) {}
+  constructor(private readonly vehicleService: VehicleService) {}
 
   @Get(":id")
   run(@Param() findVehicleHttpDto: FindVehicleHttpDto) {
-    return this.vehicle_service.findOne(findVehicleHttpDto);
+    return this.vehicleService.findOne(findVehicleHttpDto);
   }
 }

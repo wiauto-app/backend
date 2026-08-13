@@ -18,6 +18,9 @@ export class VehicleImagesEntity {
   @Column()
   url: string;
 
+  @Column({ type: "integer" })
+  order: number;
+
   @ManyToOne(() => VehicleEntity, (vehicle) => vehicle.images, { onDelete: "CASCADE" })
   @JoinColumn({ name: "vehicle_id" })
   vehicle: Relation<VehicleEntity>;

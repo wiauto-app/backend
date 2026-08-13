@@ -110,8 +110,8 @@ const map_vehicle_list_images = (
   images: VehicleImagesEntity[] | undefined,
 ): VehicleListItemImage[] =>
   [...(images ?? [])]
-    .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
-    .map((image) => ({ id: image.id, url: image.url }));
+    .sort((a, b) => a.order - b.order)
+    .map((image) => ({ id: image.id, url: image.url, order: image.order }));
 
 const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   make_name: entity.version.make.name,
@@ -371,10 +371,10 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     version: entity_to_vehicle_detail_version(entity.version),
     traction: entity.traction
       ? {
-          id: entity.traction.id,
-          name: entity.traction.name,
-          slug: entity.traction.slug,
-        }
+        id: entity.traction.id,
+        name: entity.traction.name,
+        slug: entity.traction.slug,
+      }
       : null,
     phone_code: public_contact.phone_code,
     phone: public_contact.phone,
@@ -426,10 +426,10 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     version_id: entity.version_id,
     traction: entity.traction
       ? {
-          id: entity.traction.id,
-          name: entity.traction.name,
-          slug: entity.traction.slug,
-        }
+        id: entity.traction.id,
+        name: entity.traction.name,
+        slug: entity.traction.slug,
+      }
       : null,
   };
 }
@@ -888,7 +888,7 @@ export class TypeOrmVehicleRepository {
     }
 
     let models_slugs: string[] = [];
-    if(filter.models_slugs && filter.models_slugs.length > 0) {
+    if (filter.models_slugs && filter.models_slugs.length > 0) {
       const models = await this.model_repository.find({
         where: {
           slug: In(filter.models_slugs),

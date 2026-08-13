@@ -3,6 +3,7 @@ import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 export interface PrimitiveVehicleImage {
   id: string;
   url: string;
+  order: number;
   vehicle_id: string;
   created_at: Date;
   updated_at: Date;
@@ -13,6 +14,7 @@ export class VehicleImage {
 
   static create(createImage: {
     url: string;
+    order: number;
     vehicle_id: string;
   }): VehicleImage {
     return new VehicleImage({
@@ -32,6 +34,7 @@ export class VehicleImage {
       ...this.primitiveImage,
       id: this.primitiveImage.id,
       url: this.primitiveImage.url,
+      order: this.primitiveImage.order,
       vehicle_id: this.primitiveImage.vehicle_id,
       created_at: this.primitiveImage.created_at,
       updated_at: this.primitiveImage.updated_at,
