@@ -23,6 +23,7 @@ export class ObjectStorageService {
     return envs.R2_BUCKET_NAME;
   }
 
+
   /**
    * Sube un buffer bajo `directory/relativeKey` y devuelve la URL pública CDN.
    */
@@ -135,7 +136,7 @@ export class ObjectStorageService {
     const destKey = toFullObjectKey(directory, destRelativeKey);
     const copySource = `${this.bucketName}/${sourceKey
       .split("/")
-      .map(encodeURIComponent)
+      .map((part) => encodeURIComponent(part))
       .join("/")}`;
     await s3.send(
       new CopyObjectCommand({

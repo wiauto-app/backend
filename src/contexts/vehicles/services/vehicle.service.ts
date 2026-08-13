@@ -166,21 +166,26 @@ export class VehicleService {
   ): Promise<{ vehicle: PrimitiveVehicle }> {
     const { battery_capacity, time_to_charge, autonomy } = create_vehicle_dto;
     const displacement = create_vehicle_dto.displacement;
-    const { suggestions } = await this.validate({
-      battery_capacity: battery_capacity ?? 0,
-      time_to_charge: time_to_charge ?? 0,
-      autonomy: autonomy ?? 0,
-      version_id: create_vehicle_dto.version_id,
-      displacement,
-      mileage: create_vehicle_dto.mileage,
-      condition: create_vehicle_dto.condition,
-    });
-    const resolved = await this.reverse_geocoding_port.resolve(
-      create_vehicle_dto.lat,
-      create_vehicle_dto.lng,
-    );
-
-    const publisher_type = await this.resolvePublisherType(publisher_profile_id);
+    const [
+      { suggestions },
+      resolved,
+      publisher_type
+    ] = await Promise.all([
+      this.validate({
+        battery_capacity: battery_capacity ?? 0,
+        time_to_charge: time_to_charge ?? 0,
+        autonomy: autonomy ?? 0,
+        version_id: create_vehicle_dto.version_id,
+        displacement,
+        mileage: create_vehicle_dto.mileage,
+        condition: create_vehicle_dto.condition,
+      }),
+      this.reverse_geocoding_port.resolve(
+        create_vehicle_dto.lat,
+        create_vehicle_dto.lng,
+      ),
+      this.resolvePublisherType(publisher_profile_id),
+    ]);
 
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
@@ -225,11 +230,11 @@ export class VehicleService {
     });
 
     if (create_vehicle_dto.images && create_vehicle_dto.images.length > 0) {
-      await this.entitlements_service.assertCanAddPhotos(
-        publisher_profile_id,
-        0,
-        create_vehicle_dto.images.length,
-      );
+      // await this.entitlements_service.assertCanAddPhotos(
+      //   publisher_profile_id,
+      //   0,
+      //   create_vehicle_dto.images.length,
+      // );
       await this.attach_vehicle_images_from_temp_service.execute({
         vehicle_id: vehicle.toPrimitives().id,
         images: create_vehicle_dto.images,
