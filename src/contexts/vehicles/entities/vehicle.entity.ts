@@ -13,12 +13,24 @@ import {
   Relation,
   UpdateDateColumn,
 } from "typeorm";
+
 import { VersionEntity } from "../catalog/versions/entities/version.entity";
 import type { VehicleImagesEntity } from "../vehicle-images/entities/vehicle-images.entity";
 import type { VehiclePriceEntity } from "../vehicle-prices/entities/vehicle-price.entity";
 import { get_vehicle_images_entity } from "./vehicle-images-entity.relation-type";
 import { get_vehicle_prices_entity } from "./vehicle-prices-entity.relation-type";
-import { CONDITION_VEHICLE, ConditionVehicle, PUBLISHER_TYPE, PublisherType, STATUS_VEHICLE, StatusVehicle, TRANSMISSION_TYPE, TransmissionType } from "../types/vehicle";
+
+import {
+  CONDITION_VEHICLE,
+  ConditionVehicle,
+  PUBLISHER_TYPE,
+  PublisherType,
+  STATUS_VEHICLE,
+  StatusVehicle,
+  TRANSMISSION_TYPE,
+  TransmissionType,
+} from "../types/vehicle";
+
 import { VideosEntity } from "./videos.entity";
 import { FeaturesEntity } from "./features.entity";
 import { VehicleTypeEntity } from "./vehicle-type.entity";
@@ -32,6 +44,7 @@ import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { ReviewEntity } from "./review.entity";
 import { CategoryEntity } from "./category.entity";
 import type { VehicleAddressDetails } from "../types/vehicle-address-details";
+import { DealershipEntity } from "../../dealership/entities/dealership.entity";
 
 @Entity({ name: "vehicles" })
 @Index("IDX_vehicles_version_id", ["version_id"])
@@ -39,51 +52,102 @@ export class VehicleEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: "int", unique: true, generated: "increment" })
+  @Column({
+    type: "int",
+    unique: true,
+    generated: "increment",
+  })
   ref: number;
 
-  // --- Anuncio ---
-  @Column({ type: "varchar", nullable: true })
+  // ===========================================================================
+  // ANUNCIO
+  // ===========================================================================
+
+  @Column({
+    type: "varchar",
+    nullable: true,
+  })
   description?: string | null;
 
   @Column()
   mileage: number;
 
-  @Column({ type: "enum", enum: CONDITION_VEHICLE, default: CONDITION_VEHICLE.NEW })
+  @Column({
+    type: "enum",
+    enum: CONDITION_VEHICLE,
+    default: CONDITION_VEHICLE.NEW,
+  })
   condition: ConditionVehicle;
 
-  // --- Estado y visibilidad ---
-  @Column({ type: "enum", enum: STATUS_VEHICLE, default: STATUS_VEHICLE.PENDING })
+  // ===========================================================================
+  // ESTADO Y VISIBILIDAD
+  // ===========================================================================
+
+  @Column({
+    type: "enum",
+    enum: STATUS_VEHICLE,
+    default: STATUS_VEHICLE.PENDING,
+  })
   status: StatusVehicle;
 
-  @Column({ type: "text", nullable: true })
+  @Column({
+    type: "text",
+    nullable: true,
+  })
   status_change_message?: string | null;
 
-  @Column({ type: "text", nullable: true })
+  @Column({
+    type: "text",
+    nullable: true,
+  })
   address?: string | null;
 
-  @Column({ type: "jsonb", nullable: true })
+  @Column({
+    type: "jsonb",
+    nullable: true,
+  })
   address_details?: VehicleAddressDetails | null;
 
-  @Column({ default: false })
+  @Column({
+    default: false,
+  })
   is_featured: boolean;
 
-  @Column({ name: "featured_expires_at", type: "timestamp", nullable: true })
+  @Column({
+    name: "featured_expires_at",
+    type: "timestamp",
+    nullable: true,
+  })
   featured_expires_at: Date | null;
 
-  @Column({ name: "featured_boost_weight", type: "int", nullable: true })
+  @Column({
+    name: "featured_boost_weight",
+    type: "int",
+    nullable: true,
+  })
   featured_boost_weight: number | null;
 
-  @Column({ default: 0 })
+  @Column({
+    default: 0,
+  })
   views: number;
 
-  @Column({ default: 0 })
+  @Column({
+    default: 0,
+  })
   favorites: number;
 
-  @Column({ default: 0 })
+  @Column({
+    default: 0,
+  })
   shares: number;
 
-  @Column({ type: "numeric", precision: 2, scale: 1, nullable: true })
+  @Column({
+    type: "numeric",
+    precision: 2,
+    scale: 1,
+    nullable: true,
+  })
   rating: number | null;
 
   @Column({
@@ -97,21 +161,36 @@ export class VehicleEntity {
   @Column()
   expires_at: Date;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({
+    type: "timestamp",
+    nullable: true,
+  })
   scheduled_publish_at: Date | null;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({
+    type: "timestamp",
+    nullable: true,
+  })
   renewed_at: Date | null;
 
-  // --- Ubicación ---
+  // ===========================================================================
+  // UBICACIÓN
+  // ===========================================================================
+
   @Column("numeric")
   lat: number;
 
   @Column("numeric")
   lng: number;
 
-  // --- Ficha técnica (motor / transmisión / identificación) ---
-  @Column({ type: "enum", enum: TRANSMISSION_TYPE })
+  // ===========================================================================
+  // FICHA TÉCNICA
+  // ===========================================================================
+
+  @Column({
+    type: "enum",
+    enum: TRANSMISSION_TYPE,
+  })
   transmission_type: TransmissionType;
 
   @Column({
@@ -126,10 +205,15 @@ export class VehicleEntity {
   @Column()
   license_plate: string;
 
-  @Column({ nullable: true })
+  @Column({
+    nullable: true,
+  })
   vin_code?: string;
 
-  // --- Eléctrico (opcional según modelo) ---
+  // ===========================================================================
+  // ELÉCTRICO
+  // ===========================================================================
+
   @Column()
   autonomy: number;
 
@@ -139,109 +223,310 @@ export class VehicleEntity {
   @Column()
   time_to_charge: number;
 
-  // --- Contacto ---
+  // ===========================================================================
+  // CONTACTO
+  // ===========================================================================
+
   @Column()
   phone_code: string;
 
   @Column()
   phone: string;
 
-  @Column({ name: "has_whatsapp", type: "boolean", default: false })
+  @Column({
+    name: "has_whatsapp",
+    type: "boolean",
+    default: false,
+  })
   has_whatsapp: boolean;
 
-  @Column({ name: "show_phone", type: "boolean", default: true })
+  @Column({
+    name: "show_phone",
+    type: "boolean",
+    default: true,
+  })
   show_phone: boolean;
 
   @Column()
   email: string;
 
-  // --- Auditoría ---
+  // ===========================================================================
+  // AUDITORÍA
+  // ===========================================================================
+
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: "uuid", nullable: true })
-  category_id?: string;
+  @DeleteDateColumn()
+  deleted_at?: Date;
 
-  @ManyToOne(() => CategoryEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "category_id" })
+  // ===========================================================================
+  // CATEGORY
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  category_id: string | null;
+
+  @ManyToOne(
+    () => CategoryEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "category_id",
+  })
   category: Relation<CategoryEntity | null>;
 
-  // --- Catálogo: versión ---
+  // ===========================================================================
+  // VERSION
+  // ===========================================================================
+
   @Column()
   version_id: number;
 
-  @ManyToOne(() => VersionEntity, (version) => version.vehicles)
-  @JoinColumn({ name: "version_id" })
+  @ManyToOne(
+    () => VersionEntity,
+    (version) => version.vehicles,
+  )
+  @JoinColumn({
+    name: "version_id",
+  })
   version: Relation<VersionEntity>;
 
-  // --- Catálogo: tracción y etiquetas ---
-  @ManyToOne(() => TractionEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "traction_id" })
+  // ===========================================================================
+  // TRACTION
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  traction_id: string | null;
+
+  @ManyToOne(
+    () => TractionEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "traction_id",
+  })
   traction: Relation<TractionEntity | null>;
 
-  @ManyToOne(() => VehicleTypeEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "vehicle_type_id" })
+  // ===========================================================================
+  // VEHICLE TYPE
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  vehicle_type_id: string | null;
+
+  @ManyToOne(
+    () => VehicleTypeEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "vehicle_type_id",
+  })
   vehicle_type: Relation<VehicleTypeEntity | null>;
 
-  @ManyToOne(() => ColorEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "color_id" })
+  // ===========================================================================
+  // COLOR
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  color_id: string | null;
+
+  @ManyToOne(
+    () => ColorEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "color_id",
+  })
   color: Relation<ColorEntity | null>;
 
-  @ManyToOne(() => DgtLabelEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "dgt_label_id" })
+  // ===========================================================================
+  // DGT LABEL
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  dgt_label_id: string | null;
+
+  @ManyToOne(
+    () => DgtLabelEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "dgt_label_id",
+  })
   dgt_label: Relation<DgtLabelEntity | null>;
 
-  @ManyToOne(() => WarrantyTypeEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "warranty_type_id" })
+  // ===========================================================================
+  // WARRANTY TYPE
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  warranty_type_id: string | null;
+
+  @ManyToOne(
+    () => WarrantyTypeEntity,
+    { nullable: true, onDelete: "SET NULL" },
+  )
+  @JoinColumn({
+    name: "warranty_type_id",
+  })
   warranty_type: Relation<WarrantyTypeEntity | null>;
+
+  // ===========================================================================
+  // CUOTAS
+  // ===========================================================================
 
   @ManyToMany(() => CuotaEntity)
   @JoinTable({
     name: "vehicle_cuotas",
-    joinColumn: { name: "vehicle_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "cuota_id", referencedColumnName: "id" },
+    joinColumn: {
+      name: "vehicle_id",
+      referencedColumnName: "id",
+    },
+    inverseJoinColumn: {
+      name: "cuota_id",
+      referencedColumnName: "id",
+    },
   })
   cuotas: Relation<CuotaEntity[]>;
 
-  // --- Contenido asociado ---
+  // ===========================================================================
+  // FEATURES
+  // ===========================================================================
+
+  @ManyToMany(
+    () => FeaturesEntity,
+    (feature) => feature.vehicles,
+  )
+  @JoinTable({
+    name: "vehicle_features",
+  })
+  features?: Relation<FeaturesEntity[]>;
+
+  // ===========================================================================
+  // SERVICES
+  // ===========================================================================
+
+  @ManyToMany(
+    () => ServiceEntity,
+    (service) => service.vehicles,
+  )
+  @JoinTable({
+    name: "vehicle_services",
+  })
+  services?: Relation<ServiceEntity[]>;
+
+  // ===========================================================================
+  // IMÁGENES
+  // ===========================================================================
+
   @OneToMany(
     () => get_vehicle_images_entity(),
-    (vehicle_image: VehicleImagesEntity) => vehicle_image.vehicle,
+    (vehicle_image: VehicleImagesEntity) =>
+      vehicle_image.vehicle,
   )
   images?: Relation<VehicleImagesEntity[]>;
 
+  // ===========================================================================
+  // PRECIOS
+  // ===========================================================================
+
   @OneToMany(
     () => get_vehicle_prices_entity(),
-    (vehicle_price: VehiclePriceEntity) => vehicle_price.vehicle,
+    (vehicle_price: VehiclePriceEntity) =>
+      vehicle_price.vehicle,
   )
   vehicle_prices?: Relation<VehiclePriceEntity[]>;
 
-  @OneToMany(() => VideosEntity, (video) => video.vehicle)
+  // ===========================================================================
+  // VIDEOS
+  // ===========================================================================
+
+  @OneToMany(
+    () => VideosEntity,
+    (video) => video.vehicle,
+  )
   videos?: Relation<VideosEntity[]>;
 
-  @ManyToMany(() => FeaturesEntity, (feature) => feature.vehicles)
-  @JoinTable({ name: "vehicle_features" })
-  features?: Relation<FeaturesEntity[]>;
+  // ===========================================================================
+  // SUGGESTIONS
+  // ===========================================================================
 
-  @ManyToMany(() => ServiceEntity, (service) => service.vehicles)
-  @JoinTable({ name: "vehicle_services" })
-  services?: Relation<ServiceEntity[]>;
-
-  @Column({ type: "jsonb", default: [] })
+  @Column({
+    type: "jsonb",
+    default: [],
+  })
   suggestions: string[];
 
+  // ===========================================================================
+  // DEALERSHIP
+  // ===========================================================================
 
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  dealership_id?: string | null;
 
-  @ManyToOne(() => ProfileEntity, (profile) => profile.vehicles, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "profile_id" })
+  @ManyToOne(
+    () => DealershipEntity,
+    (dealership) => dealership.vehicles,
+  )
+  @JoinColumn({
+    name: "dealership_id",
+  })
+  dealership: Relation<DealershipEntity>;
+
+  // ===========================================================================
+  // PROFILE
+  // ===========================================================================
+
+  @Column({
+    type: "uuid",
+    nullable: true,
+  })
+  profile_id: string | null;
+
+  @ManyToOne(
+    () => ProfileEntity,
+    (profile) => profile.vehicles,
+    {
+      onDelete: "CASCADE",
+    },
+  )
+  @JoinColumn({
+    name: "profile_id",
+  })
   profile: Relation<ProfileEntity>;
 
-  @OneToMany(() => ReviewEntity, (review) => review.vehicle)
-  reviews: Relation<ReviewEntity[]>;
+  // ===========================================================================
+  // REVIEWS
+  // ===========================================================================
 
-  @DeleteDateColumn()
-  deleted_at?: Date;
+  @OneToMany(
+    () => ReviewEntity,
+    (review) => review.vehicle,
+  )
+  reviews: Relation<ReviewEntity[]>;
 }

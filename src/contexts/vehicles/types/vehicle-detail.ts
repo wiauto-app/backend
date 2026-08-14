@@ -42,8 +42,8 @@ export interface VehicleDetail extends VehicleListItem {
   vin_code?: string;
   version_id: number;
   traction: VehicleListItemCatalogRef | null;
-  phone_code: string;
-  phone: string;
+  phone_code?: string | null;
+  phone?: string | null;
   has_whatsapp: boolean;
   show_phone: boolean;
   email: string;

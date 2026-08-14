@@ -1,6 +1,6 @@
 import { ExecutionContext, Injectable } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { Observable, isObservable } from "rxjs";
+import { isObservable } from "rxjs";
 import { firstValueFrom } from "rxjs";
 
 @Injectable()

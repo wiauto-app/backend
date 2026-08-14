@@ -4,7 +4,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 
 import { PrimitiveVehicle, Vehicle } from "../types/vehicle";
-import { toPublicVehicleContact } from "../helpers/public-vehicle-contact";
 import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../exceptions/invalid-vehicle-catalog-id.exception";
@@ -336,17 +335,12 @@ function map_dealership_schedules(
     });
 }
 
-function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[]): VehicleDetail {
+function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[],profile_id?: string): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find(
     (member) => member.profile_id === entity.profile.id,
   )?.dealership;
-  const public_contact = toPublicVehicleContact({
-    show_phone: entity.show_phone,
-    has_whatsapp: entity.has_whatsapp,
-    phone_code: entity.phone_code,
-    phone: entity.phone,
-  });
+
   return {
     ...base,
     description: entity.description ?? "",
@@ -376,10 +370,10 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
         slug: entity.traction.slug,
       }
       : null,
-    phone_code: public_contact.phone_code,
-    phone: public_contact.phone,
-    has_whatsapp: public_contact.has_whatsapp,
-    show_phone: public_contact.show_phone,
+    phone_code: entity.profile.id === profile_id ? entity.phone_code : null,
+    phone: entity.profile.id === profile_id ? entity.phone : null,
+    has_whatsapp: entity.has_whatsapp,
+    show_phone: entity.show_phone,
     email: entity.email,
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
@@ -767,7 +761,7 @@ export class TypeOrmVehicleRepository {
     await this.vehicle_repository.save(this.vehicle_repository.create(payload));
   }
 
-  async findOne(id: string): Promise<VehicleDetail | null> {
+  async findOne(id: string,profile_id?: string): Promise<VehicleDetail | null> {
     const vehicle = await this.vehicle_repository.findOne({
       where: { id },
       relations: {
@@ -795,7 +789,7 @@ export class TypeOrmVehicleRepository {
         },
       },
     });
-    return entity_to_vehicle_detail(vehicle, dealership_members);
+    return entity_to_vehicle_detail(vehicle, dealership_members,profile_id);
   }
 
   async findReportByIdAndProfileId(

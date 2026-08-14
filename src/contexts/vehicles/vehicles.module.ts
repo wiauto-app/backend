@@ -102,6 +102,9 @@ import { VehicleFiltersService } from "./services/vehicle-filters.service";
 import { OwnerDashboardService } from "./services/owner-dashboard.service";
 import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
 import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement.module";
+import { User } from "../users/entities/user.entity";
+import { VehicleImagesEntity } from "./vehicle-images/entities/vehicle-images.entity";
+import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-permissions.service";
 
 @Module({
   controllers: [
@@ -160,6 +163,7 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     TypeOrmOwnerDashboardRepository,
     TypeOrmOwnerStatisticsRepository,
     TypeOrmActiveFilters,
+    VehiclePermissionsService,
  
     {
       provide: PublishedVehicleSnapshotPort,
@@ -190,6 +194,9 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
       VersionEntity,
       DealershipMembersEntity,
       VehiclePriceEntity,
+      User,
+      VehicleEntity,
+      VehicleImagesEntity,
       get_vehicle_images_entity()]),
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
@@ -231,7 +238,8 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
     DgtLabelsModule,
     FeaturesModule,
     CategoriesModule,
-    CatalogModule
+    CatalogModule,
+    VehiclePermissionsService,
   ],
 })
 export class VehiclesModule { }

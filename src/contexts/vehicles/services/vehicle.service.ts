@@ -84,6 +84,9 @@ import { EntitlementsService } from "@/src/contexts/billing/services/entitlement
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
+import { DealershipMembersEntity } from "../../dealership/entities/dealership-members.entity";
+import { Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
 export interface ValidateVehicleInput {
   battery_capacity: number;
@@ -148,7 +151,9 @@ export class VehicleService {
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     private readonly dismissed_vehicles_service: DismissedVehiclesService,
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-  ) {}
+    @InjectRepository(DealershipMembersEntity)
+    private readonly dealershipMembersRepository: Repository<DealershipMembersEntity>,
+  ) { }
 
   private async resolvePublisherType(
     profile_id: string,
@@ -187,6 +192,19 @@ export class VehicleService {
       this.resolvePublisherType(publisher_profile_id),
     ]);
 
+
+    let dealership_id: string | undefined;
+
+    const dealershipMember = await this.dealershipMembersRepository.findOne({
+      where: {
+        profile_id: publisher_profile_id,
+      },
+    });
+
+    if (dealershipMember) {
+      dealership_id = dealershipMember.dealership_id;
+    }
+
     const vehicle = Vehicle.create({
       vin_code: create_vehicle_dto.vin_code ?? "",
       profile_id: publisher_profile_id,
@@ -221,6 +239,7 @@ export class VehicleService {
       suggestions,
       address: resolved ? formatAddressText(resolved.formatted_lines) : null,
       address_details: resolved,
+      dealership_id,
     });
     await this.vehicle_repository.save(vehicle);
 
@@ -261,8 +280,8 @@ export class VehicleService {
     return { vehicle: created_primitives };
   }
 
-  async findOne(get_vehicle_dto: GetVehicleDto): Promise<VehicleDetail> {
-    const vehicle = await this.vehicle_repository.findOne(get_vehicle_dto.id);
+  async findOne(get_vehicle_dto: GetVehicleDto,profile_id?: string): Promise<VehicleDetail> {
+    const vehicle = await this.vehicle_repository.findOne(get_vehicle_dto.id,profile_id);
     if (!vehicle) {
       throw new VehicleNotFoundException(get_vehicle_dto.id);
     }
@@ -377,22 +396,12 @@ export class VehicleService {
     }
 
     if (images && images.length > 0) {
-      const temp_images = images.filter((image) =>
-        is_temp_storage_path(image.path),
-      );
-      if (temp_images.length > 0) {
-        const current_photo_count =
-          await this.vehicle_image_repository.countByVehicleId(id);
-        await this.entitlements_service.assertCanAddPhotos(
-          existing.profile_id,
-          current_photo_count,
-          temp_images.length,
-        );
+     
+  
         await this.attach_vehicle_images_from_temp_service.execute({
           vehicle_id: id,
-          images: temp_images,
+          images: images,
         });
-      }
     }
 
     const has_non_price_updates =
@@ -695,10 +704,10 @@ export class VehicleService {
       const detail = await this.vehicle_repository.findOne(primitive.id);
       const vehicle_title = detail
         ? formatVehicleDisplayName({
-            make_name: detail.version.make.name,
-            model_name: detail.version.model.name,
-            version_name: detail.version.name,
-          })
+          make_name: detail.version.make.name,
+          model_name: detail.version.model.name,
+          version_name: detail.version.name,
+        })
         : "tu anuncio";
 
       if (primitive.profile_id) {

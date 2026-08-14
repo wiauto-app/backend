@@ -11,6 +11,7 @@ import { DealershipMembersEntity } from "./dealership-members.entity";
 import { DealershipInvitationsEntity } from "./dealership-invitations.entity";
 import { DealershipReviewEntity } from "./dealership-review.entity";
 import { DealershipSchedule } from "./dealership-schedule.entity";
+import { VehicleEntity } from "../../vehicles/entities/vehicle.entity";
 
 @Entity({ name: "dealerships" })
 export class DealershipEntity {
@@ -92,4 +93,7 @@ export class DealershipEntity {
 
   @OneToMany(() => DealershipSchedule, (schedule) => schedule.dealership)
   schedules: Relation<DealershipSchedule[]>;
+
+  @OneToMany(() => VehicleEntity, (vehicle) => vehicle.dealership)
+  vehicles: Relation<VehicleEntity[]>;
 }

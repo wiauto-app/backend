@@ -82,6 +82,7 @@ export interface PrimitiveVehicle {
   suggestions: string[];
   /** Dueño del anuncio (mismo UUID que `users.id` / `profiles.id`). */
   profile_id?: string;
+  dealership_id?: string | undefined;
 }
 
 export type VehicleUpdateFields = Partial<PrimitiveVehicle>;
@@ -127,6 +128,7 @@ export class Vehicle {
     suggestions: string[];
     address?: string | null;
     address_details?: VehicleAddressDetails | null;
+    dealership_id?: string | undefined;
   }): Vehicle {
     return new Vehicle({
       ...createVehicle,
@@ -152,6 +154,7 @@ export class Vehicle {
       is_featured: false,
       featured_expires_at: null,
       featured_boost_weight: null,
+      dealership_id: createVehicle.dealership_id ?? undefined,
     });
   }
 
