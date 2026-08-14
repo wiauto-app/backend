@@ -64,8 +64,8 @@ export interface PrimitiveVehicle {
   time_to_charge: number;
   license_plate: string;
   vin_code?: string;
-  phone_code: string;
-  phone: string;
+  phone_code?: string | null;
+  phone?: string | null;
   has_whatsapp?: boolean;
   show_phone?: boolean;
   email: string;
