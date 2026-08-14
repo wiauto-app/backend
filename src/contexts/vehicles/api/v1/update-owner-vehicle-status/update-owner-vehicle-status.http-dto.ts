@@ -1,8 +1,8 @@
-import { IsIn } from "class-validator";
+import { IsEnum } from "class-validator";
 
-import { STATUS_VEHICLE } from "@/src/contexts/vehicles/types/vehicle";
+import { STATUS_VEHICLE, StatusVehicle } from "@/src/contexts/vehicles/types/vehicle";
 
 export class UpdateOwnerVehicleStatusHttpDto {
-  @IsIn([STATUS_VEHICLE.ACTIVE, STATUS_VEHICLE.INACTIVE])
-  status: typeof STATUS_VEHICLE.ACTIVE | typeof STATUS_VEHICLE.INACTIVE;
+  @IsEnum(STATUS_VEHICLE)
+  status: StatusVehicle;
 }

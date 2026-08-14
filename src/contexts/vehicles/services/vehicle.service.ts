@@ -87,6 +87,7 @@ import { DismissedVehiclesService } from "../vehicle-engagement/services/dismiss
 import { DealershipMembersEntity } from "../../dealership/entities/dealership-members.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
+import { VehicleEntity } from "../entities/vehicle.entity";
 
 export interface ValidateVehicleInput {
   battery_capacity: number;
@@ -153,6 +154,8 @@ export class VehicleService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealershipMembersRepository: Repository<DealershipMembersEntity>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehicleRepository: Repository<VehicleEntity>,
   ) { }
 
   private async resolvePublisherType(
@@ -396,8 +399,6 @@ export class VehicleService {
     }
 
     if (images && images.length > 0) {
-     
-  
         await this.attach_vehicle_images_from_temp_service.execute({
           vehicle_id: id,
           images: images,
@@ -575,57 +576,8 @@ export class VehicleService {
       throw new VehicleNotFoundException(dto.vehicle_id);
     }
 
-    const primitive = existing.toPrimitives();
-    const current_status = primitive.status ?? STATUS_VEHICLE.PENDING;
-
-    if (current_status === dto.status) {
-      return { status: current_status };
-    }
-
-    if (dto.status === STATUS_VEHICLE.INACTIVE) {
-      if (current_status !== STATUS_VEHICLE.ACTIVE) {
-        throw new BadRequestException("Solo puedes pausar anuncios activos");
-      }
-
-      const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
-        status: STATUS_VEHICLE.INACTIVE,
-        status_change_message: null,
-      });
-      await this.vehicle_repository.update(updated);
-      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-        vehicle_id: dto.vehicle_id,
-        event_type: ALERT_EVENT_TYPE.SOLD_REMOVED,
-      });
-      await this.vehicle_search_indexer.syncVehicle(
-        dto.vehicle_id,
-        STATUS_VEHICLE.INACTIVE,
-      );
-      return { status: STATUS_VEHICLE.INACTIVE };
-    }
-
-    if (current_status !== STATUS_VEHICLE.INACTIVE) {
-      throw new BadRequestException(
-        "Solo puedes reactivar anuncios inactivos",
-      );
-    }
-
-    if (
-      !canOwnerReactivate({
-        status: current_status,
-        status_change_message: primitive.status_change_message ?? null,
-        scheduled_publish_at: primitive.scheduled_publish_at ?? null,
-      })
-    ) {
-      throw new BadRequestException(
-        "Este anuncio no se puede reactivar desde aquí",
-      );
-    }
-
-    const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
-      status: STATUS_VEHICLE.ACTIVE,
-      status_change_message: null,
-    });
-    await this.vehicle_repository.update(updated);
+    const vehicle = existing.toPrimitives();
+    await this.vehicleRepository.update(vehicle.id, { status: dto.status });
     await this.alert_processing_enqueue_service.enqueue_vehicle_event({
       vehicle_id: dto.vehicle_id,
       event_type: ALERT_EVENT_TYPE.NEW_LISTING,
