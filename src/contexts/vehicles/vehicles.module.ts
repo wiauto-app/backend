@@ -105,6 +105,8 @@ import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement
 import { User } from "../users/entities/user.entity";
 import { VehicleImagesEntity } from "./vehicle-images/entities/vehicle-images.entity";
 import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-permissions.service";
+import { VehicleSpecsController } from "./vehicle-specs/api/vehicle-specs.controller";
+import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.service";
 
 @Module({
   controllers: [
@@ -130,7 +132,8 @@ import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-
     AdminGetVehicleController,
     AdminUpdateVehicleStatusController,
     FindFiltersController,
-    FindActiveFiltersController],
+    FindActiveFiltersController,
+    VehicleSpecsController],
   providers: [
     VehicleCreationGuard,
     VehicleOwnerGuard,
@@ -164,7 +167,7 @@ import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-
     TypeOrmOwnerStatisticsRepository,
     TypeOrmActiveFilters,
     VehiclePermissionsService,
- 
+    VehicleSpecsService,
     {
       provide: PublishedVehicleSnapshotPort,
       useExisting: PublishedVehicleSnapshotService,

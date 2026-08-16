@@ -84,6 +84,26 @@ export class VehicleEntity {
   // ===========================================================================
 
   @Column({
+    type: "numeric",
+    precision: 2,
+    scale: 1,
+    nullable: true,
+  })
+  finance_price: number;
+
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  show_first_cuota: boolean;
+
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  by_brand_warranty: boolean;
+
+  @Column({
     type: "enum",
     enum: STATUS_VEHICLE,
     default: STATUS_VEHICLE.PENDING,
@@ -176,6 +196,12 @@ export class VehicleEntity {
   // ===========================================================================
   // UBICACIÓN
   // ===========================================================================
+
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  show_exact_location: boolean;
 
   @Column("numeric")
   lat: number;
@@ -305,7 +331,7 @@ export class VehicleEntity {
   @Column({
     type: "uuid",
     nullable: true,
-  })
+  }) 
   traction_id: string | null;
 
   @ManyToOne(

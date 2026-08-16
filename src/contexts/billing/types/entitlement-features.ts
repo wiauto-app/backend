@@ -160,7 +160,7 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
   {
     feature: ENTITLEMENT_FEATURE.VEHICLES,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
-    value: { limit: 3 },
+    value: { limit: 2 },
   },
   {
     feature: ENTITLEMENT_FEATURE.VEHICLES,
