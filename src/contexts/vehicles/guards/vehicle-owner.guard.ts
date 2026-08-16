@@ -29,8 +29,7 @@ export class VehicleOwnerGuard implements CanActivate {
       throw new NotFoundException("Vehículo no encontrado");
     }
 
-    const primitive = vehicle.toPrimitives();
-    if (primitive.profile_id !== user.id) {
+    if (vehicle.profile_id !== user.id) {
       throw new ForbiddenException("No tienes permiso para gestionar este anuncio");
     }
 

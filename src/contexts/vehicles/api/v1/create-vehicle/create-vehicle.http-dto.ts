@@ -24,10 +24,9 @@ import {
 } from "class-validator";
 import { VehicleMediaHttpDto } from "./vehicleMedia.http-dto";
 
-export class CreateVehicleHttpDto {
+export type VehicleMediaDto = VehicleMediaHttpDto;
 
-
-
+export class CreateVehicleDto {
   @IsOptional()
   @IsString()
   vin_code?: string;
@@ -106,11 +105,11 @@ export class CreateVehicleHttpDto {
 
   @IsOptional()
   @IsNumber()
-  power: number;
+  power?: number;
 
   @IsOptional()
   @IsNumber()
-  displacement: number;
+  displacement?: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
@@ -131,10 +130,18 @@ export class CreateVehicleHttpDto {
   time_to_charge?: number;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsString()
   @MinLength(5)
   license_plate?: string;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
+  @IsNumber()
+  finance_price?: number;
+
+  @IsBoolean()
+  show_exact_location?: boolean;
 
   @IsOptional()
   @IsArray()
@@ -165,6 +172,17 @@ export class CreateVehicleHttpDto {
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsUUID("4")
   warranty_type_id?: string | null;
+
+  @IsBoolean()
+  show_first_cuota?: boolean;
+
+  @IsBoolean()
+  by_brand_warranty?: boolean;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
+  @IsNumber()
+  first_cuota?: number;
 
   @IsOptional()
   @IsArray()

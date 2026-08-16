@@ -43,9 +43,7 @@ export class VehicleUpdateGuard implements CanActivate {
       throw new ForbiddenException("Identificador de vehículo no válido");
     }
 
-    const vehicle = await this.vehicle_repository
-      .findById(vehicle_id)
-      .then((vehicle) => vehicle?.toPrimitives());
+    const vehicle = await this.vehicle_repository.findById(vehicle_id);
 
     if (!vehicle) {
       throw new NotFoundException("Vehículo no encontrado");

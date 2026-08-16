@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Relation,
+  UpdateDateColumn,
+} from "typeorm";
 import { VehicleEntity } from "./vehicle.entity";
 
 
@@ -11,8 +20,11 @@ export class VideosEntity {
   @Column()
   url:string;
 
-  @Column()
-  status:string;
+  @Column({ default: "active" })
+  status: string;
+
+  @Column({ type: "integer", default: 0 })
+  order: number;
 
   @CreateDateColumn()
   created_at:Date;
@@ -23,7 +35,9 @@ export class VideosEntity {
   @Column()
   vehicle_id:string;
 
-  @ManyToOne(() => VehicleEntity, (vehicle) => vehicle.videos)
+  @ManyToOne(() => VehicleEntity, (vehicle) => vehicle.videos, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "vehicle_id" })
   vehicle: Relation<VehicleEntity>;
 }

@@ -3,7 +3,7 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 
-import { PrimitiveVehicle, Vehicle } from "../types/vehicle";
+import { PrimitiveVehicle } from "../types/vehicle";
 import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../exceptions/invalid-vehicle-catalog-id.exception";
@@ -384,6 +384,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     by_brand_warranty: entity.by_brand_warranty,
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
+    first_cuota: entity.first_cuota,
     dealership: {
       id: dealership?.id ?? "",
       name: dealership?.name ?? "",
@@ -453,6 +454,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     views: entity.views,
     favorites: entity.favorites,
     shares: entity.shares,
+    rating: entity.rating,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
     publisher_type: entity.publisher_type,
@@ -462,7 +464,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
     email: entity.email,
-    traction_id: entity.traction?.id ?? null,
+    traction_id: entity.traction?.id ?? entity.traction_id ?? null,
     power: entity.power,
     displacement: entity.displacement,
     autonomy: entity.autonomy,
@@ -472,17 +474,23 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     vin_code: entity.vin_code,
     features_ids: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => feature.id) : [],
     services_ids: entity.services && entity.services.length > 0 ? (entity.services).map((service) => service.id) : [],
-    vehicle_type_id: entity.vehicle_type?.id ?? null,
+    vehicle_type_id: entity.vehicle_type?.id ?? entity.vehicle_type_id ?? null,
     category_id: entity.category?.id ?? entity.category_id ?? null,
-    color_id: entity.color?.id ?? null,
-    dgt_label_id: entity.dgt_label?.id ?? null,
-    warranty_type_id: entity.warranty_type?.id ?? null,
+    color_id: entity.color?.id ?? entity.color_id ?? null,
+    dgt_label_id: entity.dgt_label?.id ?? entity.dgt_label_id ?? null,
+    warranty_type_id: entity.warranty_type?.id ?? entity.warranty_type_id ?? null,
     cuota_ids:
       entity.cuotas.length > 0
         ? entity.cuotas.map((c) => c.id)
         : [],
     suggestions: entity.suggestions,
-    profile_id: entity.profile.id,
+    profile_id: entity.profile_id ?? undefined,
+    dealership_id: entity.dealership_id ?? undefined,
+    finance_price: entity.finance_price,
+    first_cuota: entity.first_cuota,
+    show_exact_location: entity.show_exact_location,
+    by_brand_warranty: entity.by_brand_warranty,
+    show_first_cuota: entity.show_first_cuota,
     address: entity.address ?? null,
     address_details: entity.address_details ?? null,
   };
@@ -671,6 +679,7 @@ export class TypeOrmVehicleRepository {
       battery_capacity: p.battery_capacity,
       time_to_charge: p.time_to_charge,
       license_plate: p.license_plate,
+      vin_code: p.vin_code,
       phone_code: p.phone_code ?? "",
       phone: p.phone ?? "",
       has_whatsapp: p.has_whatsapp ?? false,
@@ -699,6 +708,12 @@ export class TypeOrmVehicleRepository {
         : undefined,
       address: p.address ?? null,
       address_details: p.address_details ?? null,
+      dealership_id: p.dealership_id ?? null,
+      finance_price: p.finance_price ?? null,
+      first_cuota: p.first_cuota ?? null,
+      show_exact_location: p.show_exact_location ?? false,
+      by_brand_warranty: p.by_brand_warranty ?? false,
+      show_first_cuota: p.show_first_cuota ?? false,
     };
     if (p.status !== undefined) {
       payload.status = p.status;
@@ -756,13 +771,6 @@ export class TypeOrmVehicleRepository {
         status: STATUS_VEHICLE.ACTIVE,
       },
     });
-  }
-
-  async save(vehicle: Vehicle): Promise<void> {
-    const p = vehicle.toPrimitives();
-    await this.assert_vehicle_catalog_refs(p);
-    const payload = this.map_primitive_to_entity_payload(p);
-    await this.vehicle_repository.save(this.vehicle_repository.create(payload));
   }
 
   async findOne(id: string,profile_id?: string): Promise<VehicleDetail | null> {
@@ -918,13 +926,12 @@ export class TypeOrmVehicleRepository {
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
   }
 
-  async update(vehicle: Vehicle): Promise<void> {
-    const p = vehicle.toPrimitives();
-    await this.assert_vehicle_catalog_refs(p);
-    const payload = this.map_primitive_to_entity_payload(p);
+  async update(vehicle: PrimitiveVehicle): Promise<void> {
+    await this.assert_vehicle_catalog_refs(vehicle);
+    const payload = this.map_primitive_to_entity_payload(vehicle);
     const preloaded = await this.vehicle_repository.preload(payload);
     if (!preloaded) {
-      throw new VehicleNotFoundException(p.id);
+      throw new VehicleNotFoundException(vehicle.id);
     }
     await this.vehicle_repository.save(preloaded);
   }
@@ -1005,7 +1012,7 @@ export class TypeOrmVehicleRepository {
     return entity_to_admin_vehicle_detail(row);
   }
 
-  async findById(id: string): Promise<Vehicle | null> {
+  async findById(id: string): Promise<PrimitiveVehicle | null> {
     const row = await this.vehicle_repository.findOne({
       where: { id },
       relations: {
@@ -1019,7 +1026,7 @@ export class TypeOrmVehicleRepository {
     if (!row) {
       return null;
     }
-    return Vehicle.fromPrimitives(entity_to_primitives(row));
+    return entity_to_primitives(row);
   }
 
   async findActiveIdByRef(ref: number): Promise<string | null> {
@@ -1292,7 +1299,7 @@ export class TypeOrmVehicleRepository {
     return count > 0;
   }
 
-  async findScheduledForPublish(now: Date): Promise<Vehicle[]> {
+  async findScheduledForPublish(now: Date): Promise<PrimitiveVehicle[]> {
     const rows = await this.vehicle_repository.find({
       where: {
         status: STATUS_VEHICLE.INACTIVE,
@@ -1312,18 +1319,23 @@ export class TypeOrmVehicleRepository {
           row.scheduled_publish_at !== null &&
           row.scheduled_publish_at.getTime() <= now.getTime(),
       )
-      .map((row) => Vehicle.fromPrimitives(entity_to_primitives(row)));
+      .map((row) => entity_to_primitives(row));
   }
 
-  async findExpiredFeatured(now: Date): Promise<Vehicle[]> {
+  async findExpiredFeatured(now: Date): Promise<PrimitiveVehicle[]> {
     const rows = await this.vehicle_repository
       .createQueryBuilder("vehicle")
       .where("vehicle.is_featured = :is_featured", { is_featured: true })
       .andWhere("vehicle.featured_expires_at IS NOT NULL")
       .andWhere("vehicle.featured_expires_at <= :now", { now })
+      .leftJoinAndSelect("vehicle.features", "features")
+      .leftJoinAndSelect("vehicle.services", "services")
+      .leftJoinAndSelect("vehicle.cuotas", "cuotas")
+      .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("vehicle.traction", "traction")
       .getMany();
 
-    return rows.map((row) => Vehicle.fromPrimitives(entity_to_primitives(row)));
+    return rows.map((row) => entity_to_primitives(row));
   }
 
   async duplicate(source_vehicle_id: string): Promise<string> {

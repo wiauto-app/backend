@@ -1,4 +1,3 @@
-import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import { CreateVehicleAuth } from "@/src/contexts/vehicles/decorators/create-vehicle-auth.decorator";
 import {
   Body,
@@ -10,28 +9,23 @@ import {
 import { Request } from "express";
 
 import { V1_VEHICLES } from "../../route.constants";
-import { CreateVehicleHttpDto } from "./create-vehicle.http-dto";
+import { CreateVehicleDto } from "./create-vehicle.http-dto";
+import { CreateVehicleService } from "./create-vehicle.service";
 
 @Controller(V1_VEHICLES)
 export class CreateVehicleController {
-  constructor(private readonly vehicle_service: VehicleService) {}
+  constructor(private readonly create_vehicle_service: CreateVehicleService) {}
 
   @Post()
   @CreateVehicleAuth()
   run(
-    @Body() createVehicleHttpDto: CreateVehicleHttpDto,
+    @Body() dto: CreateVehicleDto,
     @Req() req: Request,
   ) {
     const user = req.user;
     if (!user) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
-    return this.vehicle_service.create(
-      {
-        ...createVehicleHttpDto,
-        description: createVehicleHttpDto.description ?? "",
-      },
-      user.id,
-    );
+    return this.create_vehicle_service.create(dto, user.id);
   }
 }

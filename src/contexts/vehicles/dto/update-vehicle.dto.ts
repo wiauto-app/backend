@@ -1,5 +1,5 @@
 import { PartialType } from "@nestjs/mapped-types";
-import { CreateVehicleDto } from "./create-vehicle.dto";
+import { CreateVehicleDto } from "../api/v1/create-vehicle/create-vehicle.http-dto";
 import { IsNotEmpty, IsOptional, IsUUID } from "class-validator";
 
 export class UpdateVehicleDto extends PartialType(CreateVehicleDto) {

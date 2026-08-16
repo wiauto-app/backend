@@ -6,28 +6,22 @@ import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/aler
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 
-import { CatalogFuelTypeNotFoundException } from "../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
-import { FuelIncompatibilitiesException } from "../catalog/fuel_types/exceptions/fuel_incompatibilities.exception";
 import { CatalogFuelTypesService } from "../catalog/fuel_types/services/catalog-fuel-types.service";
 import { CatalogModelsService } from "../catalog/models/services/catalog-models.service";
 import { MakesService } from "../catalog/makes/services/makes.service";
 import { CatalogVersionsService } from "../catalog/versions/services/catalog-versions.service";
 import { CatalogYearsService } from "../catalog/years/services/catalog-years.service";
 import {
-  CONDITION_VEHICLE,
   ConditionVehicle,
+  applyVehicleUpdates,
   PUBLISHER_TYPE,
-  PrimitiveVehicle,
   STATUS_VEHICLE,
   StatusVehicle,
   TransmissionType,
-  Vehicle,
   VehicleUpdateFields,
   type PublisherType,
 } from "../types/vehicle";
-import { ElectricDisplacementException } from "../exceptions/electric-displacement.exception";
 import { InvalidateVehicleVersionIdException } from "../exceptions/InvalidateVehicleVersionId.exception";
-import { NewVehicleMileageException } from "../exceptions/newVehicleMilleage.exception";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
 import { AdminVehicleFilter } from "../types/admin-vehicle.filter";
 import { OwnerVehicleFilter } from "../types/owner-vehicle.filter";
@@ -56,7 +50,6 @@ import { VehicleListingExpiryScheduler } from "../queues/vehicle-listing-expiry.
 import { AdminFindAllVehiclesDto } from "../dto/admin-find-all-vehicles.dto";
 import { AdminGetVehicleDto } from "../dto/admin-get-vehicle.dto";
 import { AdminUpdateVehicleStatusDto } from "../dto/admin-update-vehicle-status.dto";
-import { CreateVehicleDto } from "../dto/create-vehicle.dto";
 import { DuplicateVehicleDto } from "../dto/duplicate-vehicle.dto";
 import { FindAllVehiclesUseCaseDto } from "../dto/find-all-vehicles.dto";
 import { FindOwnerVehiclesDto } from "../dto/find-owner-vehicles.dto";
@@ -78,24 +71,12 @@ import { AttachVehicleImagesFromTempService } from "../vehicle-images/services/a
 import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-images/repositories/typeorm.vehicle-images.repository";
 import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-price.service";
 import { TypeOrmVehiclePriceRepository } from "@/src/contexts/vehicles/vehicle-prices/repositories/typeorm.vehicle-price.repository";
-import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
-import { DealershipMembersEntity } from "../../dealership/entities/dealership-members.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { VehicleEntity } from "../entities/vehicle.entity";
-
-export interface ValidateVehicleInput {
-  battery_capacity: number;
-  time_to_charge: number;
-  autonomy: number;
-  version_id: number;
-  displacement: number;
-  mileage: number;
-  condition: ConditionVehicle;
-}
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -127,8 +108,6 @@ interface ResolvedVehicleCatalog {
 
 @Injectable()
 export class VehicleService {
-  private readonly MAX_MILEAGE_FOR_NEW_VEHICLE = 1000;
-
   constructor(
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly attach_vehicle_images_from_temp_service: AttachVehicleImagesFromTempService,
@@ -146,12 +125,9 @@ export class VehicleService {
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
     private readonly vehicle_listing_expiry_scheduler: VehicleListingExpiryScheduler,
-    private readonly entitlements_service: EntitlementsService,
     private readonly billing_notification_mail_service: BillingNotificationMailService,
     private readonly dismissed_vehicles_service: DismissedVehiclesService,
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-    @InjectRepository(DealershipMembersEntity)
-    private readonly dealershipMembersRepository: Repository<DealershipMembersEntity>,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
   ) { }
@@ -164,121 +140,6 @@ export class VehicleService {
     return membership
       ? PUBLISHER_TYPE.DEALERSHIP
       : PUBLISHER_TYPE.PARTICULAR;
-  }
-
-  async create(
-    create_vehicle_dto: CreateVehicleDto,
-    publisher_profile_id: string,
-  ): Promise<{ vehicle: PrimitiveVehicle }> {
-    const { battery_capacity, time_to_charge, autonomy } = create_vehicle_dto;
-    const displacement = create_vehicle_dto.displacement;
-    const [
-      { suggestions },
-      resolved,
-      publisher_type
-    ] = await Promise.all([
-      this.validate({
-        battery_capacity: battery_capacity ?? 0,
-        time_to_charge: time_to_charge ?? 0,
-        autonomy: autonomy ?? 0,
-        version_id: create_vehicle_dto.version_id,
-        displacement,
-        mileage: create_vehicle_dto.mileage,
-        condition: create_vehicle_dto.condition,
-      }),
-      this.reverse_geocoding_port.resolve(
-        create_vehicle_dto.lat,
-        create_vehicle_dto.lng,
-      ),
-      this.resolvePublisherType(publisher_profile_id),
-    ]);
-
-
-    let dealership_id: string | undefined;
-
-    const dealershipMember = await this.dealershipMembersRepository.findOne({
-      where: {
-        profile_id: publisher_profile_id,
-      },
-    });
-
-    if (dealershipMember) {
-      dealership_id = dealershipMember.dealership_id;
-    }
-
-    const vehicle = Vehicle.create({
-      vin_code: create_vehicle_dto.vin_code ?? "",
-      profile_id: publisher_profile_id,
-      mileage: create_vehicle_dto.mileage,
-      lat: create_vehicle_dto.lat,
-      lng: create_vehicle_dto.lng,
-      condition: create_vehicle_dto.condition,
-      description: create_vehicle_dto.description.trim(),
-      version_id: create_vehicle_dto.version_id,
-      publisher_type,
-      transmission_type: create_vehicle_dto.transmission_type,
-      traction_id: create_vehicle_dto.traction_id,
-      power: create_vehicle_dto.power,
-      displacement,
-      autonomy: create_vehicle_dto.autonomy ?? 0,
-      battery_capacity: create_vehicle_dto.battery_capacity ?? 0,
-      time_to_charge: create_vehicle_dto.time_to_charge ?? 0,
-      license_plate: create_vehicle_dto.license_plate ?? "",
-      phone_code: create_vehicle_dto.phone_code,
-      phone: create_vehicle_dto.phone,
-      has_whatsapp: create_vehicle_dto.has_whatsapp ?? false,
-      show_phone: create_vehicle_dto.show_phone ?? true,
-      email: create_vehicle_dto.email,
-      features_ids: create_vehicle_dto.features_ids ?? [],
-      services_ids: create_vehicle_dto.services_ids ?? [],
-      vehicle_type_id: create_vehicle_dto.vehicle_type_id ?? null,
-      category_id: create_vehicle_dto.category_id ?? null,
-      color_id: create_vehicle_dto.color_id ?? null,
-      dgt_label_id: create_vehicle_dto.dgt_label_id ?? null,
-      warranty_type_id: create_vehicle_dto.warranty_type_id ?? null,
-      cuota_ids: create_vehicle_dto.cuota_ids ?? [],
-      suggestions,
-      address: resolved ? formatAddressText(resolved.formatted_lines) : null,
-      address_details: resolved,
-      dealership_id,
-    });
-    await this.vehicle_repository.save(vehicle);
-
-    await this.set_vehicle_price_service.execute({
-      vehicle_id: vehicle.toPrimitives().id,
-      price: create_vehicle_dto.price,
-    });
-
-    if (create_vehicle_dto.images && create_vehicle_dto.images.length > 0) {
-      // await this.entitlements_service.assertCanAddPhotos(
-      //   publisher_profile_id,
-      //   0,
-      //   create_vehicle_dto.images.length,
-      // );
-      await this.attach_vehicle_images_from_temp_service.execute({
-        vehicle_id: vehicle.toPrimitives().id,
-        images: create_vehicle_dto.images,
-      });
-    }
-
-    await this.vehicle_search_indexer.syncVehicle(
-      vehicle.toPrimitives().id,
-      STATUS_VEHICLE.PENDING,
-    );
-
-    const created_id = vehicle.toPrimitives().id;
-    const created_primitives = vehicle.toPrimitives();
-
-    if (created_primitives.expires_at) {
-      await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
-        created_id,
-        created_primitives.expires_at,
-      );
-    }
-
-    await this.enqueuePublishedMail(created_id, publisher_profile_id);
-
-    return { vehicle: created_primitives };
   }
 
   async findOne(get_vehicle_dto: GetVehicleDto,profile_id?: string): Promise<VehicleDetail> {
@@ -341,7 +202,7 @@ export class VehicleService {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
     }
 
-    const { id, images, price, vehicle_price_id, publisher_type: _ignored, ...dto_fields } =
+    const { id, images, price, vehicle_price_id, ...dto_fields } =
       update_vehicle_dto;
 
     const patch = Object.fromEntries(
@@ -364,9 +225,10 @@ export class VehicleService {
       patch.address_details = resolved;
     }
 
-    const updated = Vehicle.fromPrimitives(
+    const updated = applyVehicleUpdates(
       vehicleDetailToPrimitives(existing),
-    ).applyUpdates(patch);
+      patch,
+    );
     await this.vehicle_repository.update(updated);
 
     if (price !== undefined || vehicle_price_id !== undefined) {
@@ -422,7 +284,7 @@ export class VehicleService {
 
     await this.vehicle_search_indexer.indexVehicle(id);
 
-    return { vehicle: updated.toPrimitives() };
+    return { vehicle: updated };
   }
 
   async remove(remove_vehicle_dto: RemoveVehicleDto): Promise<void> {
@@ -483,7 +345,7 @@ export class VehicleService {
       throw new VehicleNotFoundException(dto.vehicle_id);
     }
 
-    const primitive = existing.toPrimitives();
+    const primitive = existing;
     const now = new Date();
 
     if (
@@ -498,14 +360,14 @@ export class VehicleService {
       );
     }
 
-    const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
+    const updated = applyVehicleUpdates(primitive, {
       renewed_at: now,
       expires_at: computeRenewedExpiresAt(primitive.expires_at ?? now, now),
     });
 
     await this.vehicle_repository.update(updated);
 
-    const renewed = updated.toPrimitives();
+    const renewed = updated;
     if (renewed.expires_at) {
       await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
         dto.vehicle_id,
@@ -532,7 +394,7 @@ export class VehicleService {
       throw new VehicleNotFoundException(dto.vehicle_id);
     }
 
-    const primitive = existing.toPrimitives();
+    const primitive = existing;
     const now = new Date();
     const scheduled_at = dto.scheduled_publish_at;
 
@@ -552,7 +414,7 @@ export class VehicleService {
       );
     }
 
-    const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
+    const updated = applyVehicleUpdates(primitive, {
       scheduled_publish_at: scheduled_at,
       status: STATUS_VEHICLE.INACTIVE,
     });
@@ -575,7 +437,7 @@ export class VehicleService {
       throw new VehicleNotFoundException(dto.vehicle_id);
     }
 
-    const vehicle = existing.toPrimitives();
+    const vehicle = existing;
     await this.vehicleRepository.update(vehicle.id, { status: dto.status });
     await this.alert_processing_enqueue_service.enqueue_vehicle_event({
       vehicle_id: dto.vehicle_id,
@@ -595,7 +457,7 @@ export class VehicleService {
     let processed = 0;
 
     for (const vehicle of vehicles) {
-      const primitive = vehicle.toPrimitives();
+      const primitive = vehicle;
       const profile_id = primitive.profile_id;
       if (!profile_id) {
         continue;
@@ -611,7 +473,7 @@ export class VehicleService {
         ? STATUS_VEHICLE.ACTIVE
         : STATUS_VEHICLE.PENDING;
 
-      const updated = vehicle.applyUpdates({
+      const updated = applyVehicleUpdates(vehicle, {
         status: next_status,
         scheduled_publish_at: null,
         status_change_message: null,
@@ -639,8 +501,8 @@ export class VehicleService {
     let processed = 0;
 
     for (const vehicle of vehicles) {
-      const primitive = vehicle.toPrimitives();
-      const updated = Vehicle.fromPrimitives(primitive).applyUpdates({
+      const primitive = vehicle;
+      const updated = applyVehicleUpdates(primitive, {
         is_featured: false,
         featured_expires_at: null,
         featured_boost_weight: null,
@@ -757,12 +619,13 @@ export class VehicleService {
         ? null
         : dto.message?.trim() ?? null;
 
-    const updated = Vehicle.fromPrimitives(
+    const updated = applyVehicleUpdates(
       vehicleDetailToPrimitives(existing),
-    ).applyUpdates({
+      {
       status: new_status,
       status_change_message,
-    });
+      },
+    );
 
     await this.vehicle_repository.update(updated);
 
@@ -785,7 +648,7 @@ export class VehicleService {
         event_type: ALERT_EVENT_TYPE.NEW_LISTING,
       });
 
-      const updated_primitive = updated.toPrimitives();
+      const updated_primitive = updated;
       if (updated_primitive.is_featured) {
         await this.alert_processing_enqueue_service.enqueue_vehicle_event({
           vehicle_id: dto.vehicle_id,
@@ -807,68 +670,7 @@ export class VehicleService {
 
     await this.vehicle_search_indexer.syncVehicle(dto.vehicle_id, new_status);
 
-    return { vehicle: updated.toPrimitives() };
-  }
-
-  async validate(
-    input: ValidateVehicleInput,
-  ): Promise<{ suggestions: string[] }> {
-    const suggestions: string[] = [];
-    const {
-      battery_capacity,
-      time_to_charge,
-      autonomy,
-      version_id,
-      displacement,
-      mileage,
-      condition,
-    } = input;
-
-    if (!Number.isInteger(version_id) || version_id < 1) {
-      throw new InvalidateVehicleVersionIdException();
-    }
-
-    const version = await this.catalog_versions_service.findById(version_id);
-    if (!version) {
-      throw new InvalidateVehicleVersionIdException();
-    }
-
-    const fuel_type_id = version.fuel_type_id;
-    const fuel_type =
-      await this.catalog_fuel_types_service.findById(fuel_type_id);
-    if (!fuel_type) {
-      throw new CatalogFuelTypeNotFoundException(fuel_type_id);
-    }
-
-    const can_charge = fuel_type.can_charge;
-
-    if (
-      !can_charge &&
-      (battery_capacity > 0 || autonomy > 0 || time_to_charge > 0)
-    ) {
-      throw new FuelIncompatibilitiesException();
-    }
-
-    if (
-      mileage > this.MAX_MILEAGE_FOR_NEW_VEHICLE &&
-      condition === CONDITION_VEHICLE.NEW
-    ) {
-      throw new NewVehicleMileageException();
-    }
-    if (
-      mileage < this.MAX_MILEAGE_FOR_NEW_VEHICLE &&
-      condition === CONDITION_VEHICLE.USED
-    ) {
-      suggestions.push(
-        "Tu vehículo tiene menos de 1000 km, podrías considerarlo como nuevo para obtener una mejor visibilidad en la plataforma.",
-      );
-    }
-
-    if (can_charge && displacement > 0) {
-      throw new ElectricDisplacementException();
-    }
-
-    return { suggestions };
+    return { vehicle: updated };
   }
 
   private async resolveSimilarCatalog(
@@ -948,27 +750,6 @@ export class VehicleService {
       ...base,
       since_year: catalog.year - year_delta,
       until_year: catalog.year + year_delta,
-    });
-  }
-
-  private async enqueuePublishedMail(
-    vehicle_id: string,
-    publisher_profile_id: string,
-  ): Promise<void> {
-    const publisher_email =
-      await this.profile_user_repository.findEmailById(publisher_profile_id);
-    if (!publisher_email) {
-      return;
-    }
-
-    const detail = await this.vehicle_repository.findOne(vehicle_id);
-    if (!detail) {
-      return;
-    }
-
-    await this.outbound_mail_enqueue_service.enqueue_vehicle_published({
-      to: publisher_email,
-      vehicle: this.buildMailCardFromDetail(detail),
     });
   }
 

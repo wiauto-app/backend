@@ -31,9 +31,7 @@ export class VehiclePermissionsService {
     }
 
 
-    const vehicle = await this.vehicle_repository
-      .findById(vehicleId)
-      .then((vehicle) => vehicle?.toPrimitives());
+    const vehicle = await this.vehicle_repository.findById(vehicleId);
 
     if (!vehicle) {
       throw new NotFoundException("Vehículo no encontrado");

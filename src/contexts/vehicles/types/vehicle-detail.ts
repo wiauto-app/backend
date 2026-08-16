@@ -25,7 +25,8 @@ export interface VehicleDetail extends VehicleListItem {
   show_first_cuota: boolean;
   by_brand_warranty: boolean;
   show_exact_location: boolean;
-  finance_price: number;
+  finance_price: number | null;
+  first_cuota: number | null;
   description: string;
   publisher_type: PublisherType;
   status: StatusVehicle;
@@ -174,4 +175,10 @@ export const vehicleDetailToPrimitives = (
   updated_at: detail.updated_at,
   address: detail.address ?? null,
   address_details: detail.address_details ?? null,
+  dealership_id: detail.dealership?.id,
+  finance_price: detail.finance_price,
+  first_cuota: detail.first_cuota,
+  show_exact_location: detail.show_exact_location,
+  by_brand_warranty: detail.by_brand_warranty,
+  show_first_cuota: detail.show_first_cuota,
 });

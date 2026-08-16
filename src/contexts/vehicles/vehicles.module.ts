@@ -6,6 +6,7 @@ import { VehicleOwnerGuard } from "./guards/vehicle-owner.guard";
 import { Module, forwardRef } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { CreateVehicleController } from "./api/v1/create-vehicle/create-vehicle.controller";
+import { CreateVehicleService } from "./api/v1/create-vehicle/create-vehicle.service";
 import { VehicleEntity } from "./entities/vehicle.entity";
 import { VehicleTypeEntity } from "./entities/vehicle-type.entity";
 import { ColorEntity } from "./entities/color.entity";
@@ -56,7 +57,6 @@ import { VEHICLE_LISTING_EXPIRY_QUEUE } from "./queues/vehicle-listing-expiry.qu
 import { VehicleListingExpiryProcessor } from "./queues/vehicle-listing-expiry.processor";
 import { VehicleListingExpiryScheduler } from "./queues/vehicle-listing-expiry.scheduler";
 import { VehiclePriceEntity } from "./vehicle-prices/entities/vehicle-price.entity";
-import { get_vehicle_images_entity } from "./entities/vehicle-images-entity.relation-type";
 import { AdminFindAllVehiclesController } from "./api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
 import { AdminGetVehicleController } from "./api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
 import { AdminUpdateVehicleStatusController } from "./api/admin-v1/admin-update-vehicle-status/admin-update-vehicle-status.controller";
@@ -104,6 +104,7 @@ import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
 import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement.module";
 import { User } from "../users/entities/user.entity";
 import { VehicleImagesEntity } from "./vehicle-images/entities/vehicle-images.entity";
+import { VideosEntity } from "./entities/videos.entity";
 import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-permissions.service";
 import { VehicleSpecsController } from "./vehicle-specs/api/vehicle-specs.controller";
 import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.service";
@@ -138,6 +139,7 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     VehicleCreationGuard,
     VehicleOwnerGuard,
     ImageValidationPipe,
+    CreateVehicleService,
     VehicleService,
     VehicleFiltersService,
     OwnerDashboardService,
@@ -198,9 +200,9 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
       DealershipMembersEntity,
       VehiclePriceEntity,
       User,
-      VehicleEntity,
       VehicleImagesEntity,
-      get_vehicle_images_entity()]),
+      VideosEntity,
+    ]),
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: VEHICLE_LISTING_EXPIRY_QUEUE }),
@@ -229,7 +231,6 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     VehicleSearchModule],
   exports: [
     VehicleService,
-    TypeOrmVehicleRepository,
     TypeOrmVehicleRepository,
     PublishedVehicleSnapshotPort,
     VehicleTypesModule,

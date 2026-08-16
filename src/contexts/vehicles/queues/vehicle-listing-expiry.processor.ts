@@ -6,7 +6,7 @@ import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-
 import { buildMailVehicleCard } from "@/src/contexts/shared/mail/mail-vehicle-card";
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 
-import { STATUS_VEHICLE, Vehicle } from "../types/vehicle";
+import { applyVehicleUpdates, STATUS_VEHICLE } from "../types/vehicle";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import { TypeOrmVehicleRepository } from "../repositories/typeorm.vehicle-repository";
 import { VehicleSearchIndexer } from "../search/indexing/vehicle-search-indexer.service";
@@ -99,9 +99,7 @@ export class VehicleListingExpiryProcessor extends WorkerHost {
     }
 
     // inactive sin status_change_message = desactivado por caducidad (no rechazo)
-    const updated = Vehicle.fromPrimitives(
-      vehicleDetailToPrimitives(detail),
-    ).applyUpdates({
+    const updated = applyVehicleUpdates(vehicleDetailToPrimitives(detail), {
       status: STATUS_VEHICLE.INACTIVE,
       status_change_message: null,
     });

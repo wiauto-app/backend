@@ -85,11 +85,19 @@ export class VehicleEntity {
 
   @Column({
     type: "numeric",
-    precision: 2,
-    scale: 1,
+    precision: 12,
+    scale: 2,
     nullable: true,
   })
-  finance_price: number;
+  finance_price: number | null;
+
+  @Column({
+    type: "numeric",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  first_cuota: number | null;
 
   @Column({
     type: "boolean",
