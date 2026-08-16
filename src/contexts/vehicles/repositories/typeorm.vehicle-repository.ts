@@ -380,6 +380,10 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     prices: map_vehicle_prices_history(entity.vehicle_prices),
     address: entity.address ?? null,
     address_details: entity.address_details ?? null,
+    show_first_cuota: entity.show_first_cuota,
+    by_brand_warranty: entity.by_brand_warranty,
+    show_exact_location: entity.show_exact_location,
+    finance_price: entity.finance_price,
     dealership: {
       id: dealership?.id ?? "",
       name: dealership?.name ?? "",

@@ -22,6 +22,10 @@ export interface VehicleDetailPrice {
 
 /** Detalle público de un anuncio con relaciones cargadas. */
 export interface VehicleDetail extends VehicleListItem {
+  show_first_cuota: boolean;
+  by_brand_warranty: boolean;
+  show_exact_location: boolean;
+  finance_price: number;
   description: string;
   publisher_type: PublisherType;
   status: StatusVehicle;

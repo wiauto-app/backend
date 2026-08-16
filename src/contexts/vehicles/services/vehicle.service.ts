@@ -1,7 +1,6 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
-import { is_temp_storage_path } from "@/src/contexts/shared/file/types/temp-storage-path";
 import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/alert-processing-enqueue.service";
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
@@ -46,7 +45,6 @@ import {
 } from "../types/vehicle-list-item";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import {
-  canOwnerReactivate,
   canRenewVehicle,
   canScheduleVehicle,
   computeRenewedExpiresAt,
@@ -338,6 +336,7 @@ export class VehicleService {
 
   async update(update_vehicle_dto: UpdateVehicleDto) {
     const existing = await this.vehicle_repository.findOne(update_vehicle_dto.id);
+    
     if (!existing) {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
     }
