@@ -78,7 +78,6 @@ export class VehicleSpecsService {
       }),
 
       tools: {
-        //@ts-expect-error AI SDK incompatible version
         web_search: openai.tools.webSearch({
           searchContextSize: "medium",
         }),
