@@ -30,6 +30,41 @@ export class R2ImageStorageFinalizationAdapter
     return this.finalize_compound_path(compound_path);
   }
 
+  async restore_temp_compound_path(
+    temp_compound_path: string,
+  ): Promise<string> {
+    if (!is_temp_storage_path(temp_compound_path)) {
+      throw new TempStoragePathInvalidException(temp_compound_path);
+    }
+
+    const normalized_temp_path = temp_compound_path.trim().replace(/^\/+/, "");
+    const promoted_path = promote_temp_storage_path(normalized_temp_path);
+    const {
+      directory,
+      object_key: temp_object_key,
+    } = split_storage_compound_path(normalized_temp_path);
+    const {
+      directory: promoted_directory,
+      object_key: promoted_object_key,
+    } = split_storage_compound_path(promoted_path);
+
+    if (directory !== promoted_directory) {
+      throw new TempStoragePathInvalidException(temp_compound_path);
+    }
+
+    await this.objectStorageService.copyObjectInBucket(
+      directory,
+      promoted_object_key,
+      temp_object_key,
+    );
+    await this.objectStorageService.deleteObjectFromBucket(
+      directory,
+      promoted_object_key,
+    );
+
+    return to_storage_pathname(normalized_temp_path);
+  }
+
   async finalize_compound_path(compound_path: string): Promise<string> {
     const normalized = compound_path.trim().replace(/^\/+/, "");
 

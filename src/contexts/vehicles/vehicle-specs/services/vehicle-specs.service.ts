@@ -1,17 +1,13 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { VersionEntity } from "../../catalog/versions/entities/version.entity";
 import { Repository } from "typeorm";
-import { generateText, Output } from "ai";
+import { generateText, Output, stepCountIs } from "ai";
+import { openai } from "@ai-sdk/openai";
 import z from "zod";
-import { TRANSMISSION_TYPE } from "../../types/vehicle";
+
+import { VersionEntity } from "../../catalog/versions/entities/version.entity";
 import { TractionEntity } from "../../entities/traction.entity";
-import {
-  openai,
-  type OpenAILanguageModelResponsesOptions,
-} from '@ai-sdk/openai';
-import { envs } from "@/src/common/envs";
-import { deepseek } from "@ai-sdk/deepseek";
+import { TRANSMISSION_TYPE } from "../../types/vehicle";
 
 @Injectable()
 export class VehicleSpecsService {
@@ -24,7 +20,6 @@ export class VehicleSpecsService {
   ) { }
 
   async getVehicleSpecs(versionId: number): Promise<VehicleSpecs> {
-
     const version = await this.versionRepository.findOne({
       where: {
         id: versionId,
@@ -43,6 +38,7 @@ export class VehicleSpecsService {
     }
 
     const tractions = await this.tractionRepository.find();
+
     if (tractions.length === 0) {
       throw new NotFoundException("No tractions configured");
     }
@@ -52,40 +48,176 @@ export class VehicleSpecsService {
       name: traction.name,
     }));
 
+    /**
+     * En nuestro catálogo can_charge indica que el vehículo
+     * utiliza un sistema eléctrico recargable.
+     */
+    const isElectric = version.fuel_type.can_charge;
+
+    const vehicleContext = {
+      make: version.make.name,
+      model: version.model.name,
+      version: version.name,
+      year: version.year.year,
+      body_type: version.body_type.name,
+
+      fuel_type: {
+        name: version.fuel_type.name,
+        slug: version.fuel_type.slug,
+        can_charge: version.fuel_type.can_charge,
+      },
+
+      is_electric: isElectric,
+    };
+
     const { output } = await generateText({
       model: openai("gpt-4o-mini"),
-      // model: deepseek(envs.DEEPSEEK_MODEL),
+
       output: Output.object({
         schema: vehicleSpecsSchema,
       }),
-      providerOptions: {
-        openai: {
-          reasoningEffort: 'low', // 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
-        } satisfies OpenAILanguageModelResponsesOptions,
+
+      tools: {
+        //@ts-expect-error AI SDK incompatible version
+        web_search: openai.tools.webSearch({
+          searchContextSize: "medium",
+        }),
       },
+
+      stopWhen: stepCountIs(5),
+
       prompt: `
-Obtén las especificaciones técnicas del siguiente vehículo:
+Obtén las especificaciones técnicas REALES del siguiente vehículo.
 
 VEHÍCULO:
-${JSON.stringify(version)}
+
+${JSON.stringify(vehicleContext, null, 2)}
 
 TRACCIONES DISPONIBLES:
-${JSON.stringify(availableTractions)}
 
-Reglas obligatorias:
+${JSON.stringify(availableTractions, null, 2)}
 
-- traction_id debe ser EXCLUSIVAMENTE uno de los IDs existentes en TRACCIONES DISPONIBLES.
-- No inventes un traction_id.
-- Selecciona la tracción que corresponda al vehículo.
-- transmission debe utilizar únicamente uno de los valores permitidos por el schema.
-- power debe expresarse en CV.
-- displacement debe expresarse en cc.
-- Si el vehículo es eléctrico y no tiene cilindrada, displacement debe ser 0.
-- Si autonomía, batería o tiempo de carga no aplican al vehículo, devuelve null.
-- No inventes información cuando no sea posible determinarla.
-- Devuelve únicamente el objeto solicitado.
+CLASIFICACIÓN DEL VEHÍCULO:
+
+is_electric = ${isElectric}
+
+IMPORTANTE:
+
+El valor "is_electric" ya ha sido determinado por el sistema.
+
+NO debes intentar reinterpretarlo.
+
+${isElectric
+          ? `
+ESTE VEHÍCULO ES ELÉCTRICO O RECARGABLE.
+
+Debes intentar obtener especialmente:
+
+- potencia en CV
+- autonomía en km
+- capacidad útil o nominal de batería en kWh
+- tiempo aproximado de carga
+- tipo de tracción
+- transmisión
+
+Usa búsqueda web si necesitas confirmar estos datos.
+
+Para autonomy:
+- utiliza autonomía oficial WLTP cuando esté disponible.
+- si existen varias cifras dependiendo de configuración, utiliza la correspondiente
+  exactamente a esta versión.
+- no utilices autonomía EPA si existe una cifra WLTP aplicable al vehículo europeo.
+
+Para battery_capacity:
+- expresarla en kWh.
+- preferir capacidad útil cuando pueda identificarse claramente.
+- si solamente está disponible la capacidad nominal, puede utilizarse esa.
+
+Para time_to_charge:
+- expresarlo en horas.
+- preferir una carga AC doméstica/wallbox representativa.
+- NO utilizar como tiempo de carga principal el tiempo 10%-80% DC rápido,
+  porque normalmente se expresa en minutos.
+`
+          : `
+ESTE VEHÍCULO NO ESTÁ CLASIFICADO COMO ELÉCTRICO RECARGABLE.
+
+Normalmente:
+
+autonomy = null
+battery_capacity = null
+time_to_charge = null
+
+salvo que exista una razón técnica clara para que alguno aplique.
+`
+        }
+
+REGLAS OBLIGATORIAS:
+
+1. traction_id debe ser EXCLUSIVAMENTE uno de estos IDs:
+
+${availableTractions
+          .map((traction) => `- ${traction.id}: ${traction.name}`)
+          .join("\n")}
+
+2. No inventes un traction_id.
+
+3. Selecciona el traction_id cuya descripción corresponda realmente
+   al vehículo.
+
+4. transmission debe utilizar exclusivamente uno de los valores
+   permitidos por el schema.
+
+5. power debe expresarse exclusivamente en CV.
+
+6. displacement debe expresarse en cc.
+
+7. Si is_electric = true:
+   displacement DEBE ser exactamente 0.
+
+8. Si is_electric = true, debes intentar activamente determinar:
+
+   - autonomy
+   - battery_capacity
+   - time_to_charge
+
+   NO devuelvas null automáticamente simplemente porque esos valores
+   no aparecen en el objeto VEHÍCULO.
+
+   Primero intenta obtenerlos mediante búsqueda.
+
+9. Devuelve null únicamente cuando, después de intentar determinar el
+   dato, no exista información razonablemente fiable.
+
+10. No confundas diferentes versiones del mismo modelo.
+
+Ejemplo:
+
+ALPINE A290 GT Performance
+
+NO debe recibir automáticamente las especificaciones de:
+
+ALPINE A290 GT
+ALPINE A290 GT Premium
+ALPINE A290 GTS
+
+si sus especificaciones son diferentes.
+
+11. El año del vehículo también debe tenerse en cuenta.
+
+12. Devuelve exclusivamente el objeto definido por el schema.
       `,
     });
+
+    /**
+     * Guardrail adicional.
+     *
+     * No dependemos de que el LLM recuerde que un eléctrico
+     * no tiene cilindrada.
+     */
+    if (isElectric) {
+      output.displacement = 0;
+    }
 
     return output;
   }
@@ -95,45 +227,47 @@ const vehicleSpecsSchema = z.object({
   traction_id: z
     .uuid()
     .describe(
-      "ID de la tracción. Debe corresponder exactamente a uno de los IDs disponibles proporcionados.",
+      "ID exacto de una de las tracciones proporcionadas por el sistema.",
     ),
 
-  transmission: z.enum(TRANSMISSION_TYPE).describe(
-    "Tipo de transmisión del vehículo.",
-  ),
+  transmission: z
+    .enum(TRANSMISSION_TYPE)
+    .describe("Tipo de transmisión del vehículo."),
 
   power: z
     .number()
     .nonnegative()
-    .describe("Potencia del vehículo en CV."),
+    .describe("Potencia máxima del vehículo expresada en CV."),
 
   displacement: z
     .number()
     .nonnegative()
-    .describe("Cilindrada del vehículo en cc. Para vehículos eléctricos debe ser 0."),
+    .describe(
+      "Cilindrada expresada en cc. Para vehículos eléctricos debe ser exactamente 0.",
+    ),
 
   autonomy: z
     .number()
-    .nonnegative()
+    .positive()
     .nullable()
     .describe(
-      "Autonomía en km. Solo para vehículos eléctricos o cuando aplique.",
+      "Autonomía oficial del vehículo en km, preferiblemente WLTP. Null solamente cuando no aplique o no pueda determinarse.",
     ),
 
   battery_capacity: z
     .number()
-    .nonnegative()
+    .positive()
     .nullable()
     .describe(
-      "Capacidad de batería en kWh. Solo para vehículos eléctricos o híbridos cuando aplique.",
+      "Capacidad de la batería en kWh. Preferiblemente capacidad útil si está disponible.",
     ),
 
   time_to_charge: z
     .number()
-    .nonnegative()
+    .positive()
     .nullable()
     .describe(
-      "Tiempo de carga en horas. Solo para vehículos eléctricos o híbridos cuando aplique.",
+      "Tiempo aproximado de carga en horas. Preferiblemente carga AC completa cuando esté disponible.",
     ),
 });
 

@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^3.0.0",
-    "@ai-sdk/openai": "^4.0.42",
+    "@ai-sdk/openai": "^4.0.44",
     "@aws-sdk/client-s3": "^3.1032.0",
     "@aws-sdk/s3-request-presigner": "^3.1035.0",
     "@fastify/cookie": "^9.4.0",
@@ -74,7 +74,7 @@
     "@opensearch-project/opensearch": "^3.6.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "ai": "^7.0.1",
+    "ai": "^7.0.70",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
     "bullmq": "^5.74.1",

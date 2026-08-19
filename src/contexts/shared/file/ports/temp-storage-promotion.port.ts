@@ -9,4 +9,12 @@ export abstract class TempStoragePromotionPort {
    * @returns Pathname definitivo (`/bucket/clave`) listo para persistir.
    */
   abstract promote_compound_path(compound_path: string): Promise<string>;
+
+  /**
+   * Devuelve un objeto promovido a su ruta temporal original.
+   * La operación copia primero y elimina el definitivo solo al confirmar la copia.
+   */
+  abstract restore_temp_compound_path(
+    temp_compound_path: string,
+  ): Promise<string>;
 }

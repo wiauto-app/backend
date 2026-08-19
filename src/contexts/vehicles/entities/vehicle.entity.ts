@@ -239,13 +239,13 @@ export class VehicleEntity {
   // ELÉCTRICO
   // ===========================================================================
 
-  @Column()
+  @Column({ type: "float", nullable: true })
   autonomy: number;
 
-  @Column()
+  @Column({ type: "float", nullable: true })
   battery_capacity: number;
 
-  @Column()
+  @Column({ type: "float", nullable: true })
   time_to_charge: number;
 
   // ===========================================================================
@@ -330,7 +330,7 @@ export class VehicleEntity {
   @Column({
     type: "uuid",
     nullable: true,
-  }) 
+  })
   traction_id: string | null;
 
   @ManyToOne(

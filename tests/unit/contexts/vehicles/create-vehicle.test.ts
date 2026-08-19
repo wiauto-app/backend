@@ -55,7 +55,7 @@ describe("CreateVehicleDto", () => {
     dto.price = -1;
 
     const errors = await validate(dto);
-    expect(errors.some((error) => error.property === "price")).toBe(true);
+    expect(errors.some(error => error.property === "price")).toBe(true);
   });
 });
 
@@ -115,7 +115,9 @@ describe("CreateVehicleController", () => {
   });
 
   it("rejects a missing authenticated user", () => {
-    const controller = new CreateVehicleController({ create: vi.fn() } as never);
+    const controller = new CreateVehicleController({
+      create: vi.fn(),
+    } as never);
 
     expect(() => controller.run(validDto(), {} as never)).toThrow(
       UnauthorizedException,
@@ -148,7 +150,7 @@ describe("CreateVehicleService", () => {
       getRepository: vi.fn(() => ({
         findOne: vi.fn().mockResolvedValue(null),
       })),
-      transaction: vi.fn(async (callback) => callback(manager)),
+      transaction: vi.fn(async callback => callback(manager)),
     };
     const service = new CreateVehicleService(
       data_source as never,
@@ -170,5 +172,129 @@ describe("CreateVehicleService", () => {
     expect(saved_targets).toContain(VehiclePriceEntity);
     expect(result.vehicle.id).toBe("vehicle-id");
     expect(result.vehicle.profile_id).toBe("profile-id");
+  });
+
+  it("restores promoted media when the database transaction fails", async () => {
+    const transaction_error = new Error("database failure");
+    const promote_media = {
+      execute: vi.fn().mockResolvedValue({
+        pathnames: ["/vehicles-images/vehicle-gallery/a.webp"],
+      }),
+      rollback: vi.fn().mockResolvedValue(),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn().mockRejectedValue(transaction_error),
+    };
+    const service = new CreateVehicleService(
+      data_source as never,
+      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+      { resolve: vi.fn().mockResolvedValue(null) } as never,
+      promote_media as never,
+      {
+        syncVehicle: vi.fn(),
+        deleteVehicle: vi.fn(),
+      } as never,
+      {
+        scheduleForVehicle: vi.fn(),
+        cancelForVehicle: vi.fn(),
+      } as never,
+      { findEmailById: vi.fn() } as never,
+      { findOne: vi.fn() } as never,
+      { enqueue_vehicle_published: vi.fn() } as never,
+    );
+    const dto = validDto();
+    dto.images = [
+      {
+        path: "vehicles-images/temp/vehicle-gallery/a.webp",
+        order: 0,
+      },
+    ];
+
+    await expect(service.create(dto, "profile-id")).rejects.toBe(
+      transaction_error,
+    );
+    expect(promote_media.rollback).toHaveBeenCalledWith({
+      paths: ["vehicles-images/temp/vehicle-gallery/a.webp"],
+    });
+  });
+
+  it("removes committed data and restores media when a later effect fails", async () => {
+    const scheduling_error = new Error("queue failure");
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => payload),
+      save: vi.fn(async (target, payload) =>
+        target === VehicleEntity
+          ? {
+              ...payload,
+              id: "vehicle-id",
+              ref: 42,
+              created_at: new Date("2026-08-16T00:00:00Z"),
+              updated_at: new Date("2026-08-16T00:00:00Z"),
+            }
+          : payload,
+      ),
+      delete: vi.fn().mockResolvedValue({ affected: 1 }),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async callback => callback(manager)),
+    };
+    const promote_media = {
+      execute: vi.fn().mockResolvedValue({
+        pathnames: ["/vehicles-images/vehicle-gallery/a.webp"],
+      }),
+      rollback: vi.fn().mockResolvedValue(),
+    };
+    const search_indexer = {
+      syncVehicle: vi.fn().mockResolvedValue(),
+      deleteVehicle: vi.fn().mockResolvedValue(),
+    };
+    const expiry_scheduler = {
+      scheduleForVehicle: vi.fn().mockRejectedValue(scheduling_error),
+      cancelForVehicle: vi.fn().mockResolvedValue(),
+    };
+    const mail_enqueue = { enqueue_vehicle_published: vi.fn() };
+    const service = new CreateVehicleService(
+      data_source as never,
+      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+      { resolve: vi.fn().mockResolvedValue(null) } as never,
+      promote_media as never,
+      search_indexer as never,
+      expiry_scheduler as never,
+      { findEmailById: vi.fn() } as never,
+      { findOne: vi.fn() } as never,
+      mail_enqueue as never,
+    );
+    const dto = validDto();
+    dto.images = [
+      {
+        path: "vehicles-images/temp/vehicle-gallery/a.webp",
+        order: 0,
+      },
+    ];
+
+    await expect(service.create(dto, "profile-id")).rejects.toBe(
+      scheduling_error,
+    );
+    expect(manager.delete).toHaveBeenCalledWith(VehicleEntity, {
+      id: "vehicle-id",
+    });
+    expect(promote_media.rollback).toHaveBeenCalledWith({
+      paths: ["vehicles-images/temp/vehicle-gallery/a.webp"],
+    });
+    expect(expiry_scheduler.cancelForVehicle).toHaveBeenCalledWith(
+      "vehicle-id",
+    );
+    expect(search_indexer.deleteVehicle).toHaveBeenCalledWith("vehicle-id");
+    expect(mail_enqueue.enqueue_vehicle_published).not.toHaveBeenCalled();
   });
 });

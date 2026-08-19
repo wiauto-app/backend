@@ -2,7 +2,7 @@ import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { PromoteTempStoragePathsService } from "@/src/contexts/shared/file/services/promote-temp-storage-paths.service";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, EntityTarget, In } from "typeorm";
 
@@ -98,10 +98,13 @@ interface PromotedVehicleMedia {
   videos: VehicleMediaDto[];
 }
 
+interface CreateVehicleRollbackContext {
+  vehicle_id: string | null;
+  temp_media_paths: string[];
+}
+
 @Injectable()
 export class CreateVehicleService {
-  private readonly logger = new Logger(CreateVehicleService.name);
-
   constructor(
     @InjectDataSource()
     private readonly data_source: DataSource,
@@ -117,6 +120,7 @@ export class CreateVehicleService {
   ) {}
 
   async create(dto: CreateVehicleDto, publisher_profile_id: string) {
+    console.log(dto);
     const version_id = dto.version_id;
     if (!Number.isInteger(version_id) || version_id < 1) {
       throw new InvalidateVehicleVersionIdException();
@@ -144,12 +148,11 @@ export class CreateVehicleService {
       can_charge: fuel_type.can_charge,
     });
 
-    const [resolved_address, membership, media] = await Promise.all([
+    const [resolved_address, membership] = await Promise.all([
       this.reverse_geocoding_service.resolve(dto.lat, dto.lng),
       this.data_source.getRepository(DealershipMembersEntity).findOne({
         where: { profile_id: publisher_profile_id },
       }),
-      this.promoteMedia(dto.images ?? [], dto.videos ?? []),
     ]);
 
     const now = new Date();
@@ -158,121 +161,139 @@ export class CreateVehicleService {
       ? PUBLISHER_TYPE.DEALERSHIP
       : PUBLISHER_TYPE.PARTICULAR;
 
-    const vehicle = await this.data_source.transaction(async (manager) => {
-      const relations = await this.loadAndValidateRelations(manager, dto);
-      const entity = manager.create(VehicleEntity, {
-        vin_code: dto.vin_code?.trim() ?? "",
-        profile_id: publisher_profile_id,
-        dealership_id: membership?.dealership_id ?? null,
-        mileage: dto.mileage,
-        lat: dto.lat,
-        lng: dto.lng,
-        condition: dto.condition,
-        description: dto.description?.trim() ?? "",
-        version_id,
-        publisher_type,
-        status: STATUS_VEHICLE.PENDING,
-        status_change_message: null,
-        transmission_type: dto.transmission_type,
-        traction_id: dto.traction_id,
-        power: dto.power ?? 0,
-        displacement: dto.displacement ?? 0,
-        autonomy: dto.autonomy ?? 0,
-        battery_capacity: dto.battery_capacity ?? 0,
-        time_to_charge: dto.time_to_charge ?? 0,
-        license_plate: dto.license_plate?.trim() ?? "",
-        phone_code: dto.phone_code,
-        phone: dto.phone,
-        has_whatsapp: dto.has_whatsapp ?? false,
-        show_phone: dto.show_phone ?? true,
-        email: dto.email,
-        vehicle_type_id: dto.vehicle_type_id ?? null,
-        category_id: dto.category_id ?? null,
-        color_id: dto.color_id ?? null,
-        dgt_label_id: dto.dgt_label_id ?? null,
-        warranty_type_id: dto.warranty_type_id ?? null,
-        features: relations.features,
-        services: relations.services,
-        cuotas: relations.cuotas,
-        suggestions,
-        address: resolved_address
-          ? formatAddressText(resolved_address.formatted_lines)
-          : null,
-        address_details: resolved_address,
-        expires_at,
-        scheduled_publish_at: null,
-        renewed_at: null,
-        is_featured: false,
-        featured_expires_at: null,
-        featured_boost_weight: null,
-        views: 0,
-        favorites: 0,
-        shares: 0,
-        finance_price: dto.finance_price ?? null,
-        first_cuota: dto.first_cuota ?? null,
-        show_exact_location: dto.show_exact_location ?? false,
-        by_brand_warranty: dto.by_brand_warranty ?? false,
-        show_first_cuota: dto.show_first_cuota ?? false,
+    const temp_media_paths = [
+      ...(dto.images ?? []).toSorted((a, b) => a.order - b.order),
+      ...(dto.videos ?? []).toSorted((a, b) => a.order - b.order),
+    ].map(item => item.path);
+    let media_promoted = false;
+    let vehicle: VehicleEntity | null = null;
+
+    try {
+      const media = await this.promoteMedia(dto.images ?? [], dto.videos ?? []);
+      media_promoted = temp_media_paths.length > 0;
+
+      vehicle = await this.data_source.transaction(async manager => {
+        const relations = await this.loadAndValidateRelations(manager, dto);
+        const entity = manager.create(VehicleEntity, {
+          vin_code: dto.vin_code?.trim() ?? "",
+          profile_id: publisher_profile_id,
+          dealership_id: membership?.dealership_id ?? null,
+          mileage: dto.mileage,
+          lat: dto.lat,
+          lng: dto.lng,
+          condition: dto.condition,
+          description: dto.description?.trim() ?? "",
+          version_id,
+          publisher_type,
+          status: STATUS_VEHICLE.PENDING,
+          status_change_message: null,
+          transmission_type: dto.transmission_type,
+          traction_id: dto.traction_id,
+          power: dto.power ?? 0,
+          displacement: dto.displacement ?? 0,
+          autonomy: dto.autonomy ?? 0,
+          battery_capacity: dto.battery_capacity ?? 0,
+          time_to_charge: dto.time_to_charge ?? 0,
+          license_plate: dto.license_plate?.trim() ?? "",
+          phone_code: dto.phone_code,
+          phone: dto.phone,
+          has_whatsapp: dto.has_whatsapp ?? false,
+          show_phone: dto.show_phone ?? true,
+          email: dto.email,
+          vehicle_type_id: dto.vehicle_type_id ?? null,
+          category_id: dto.category_id ?? null,
+          color_id: dto.color_id ?? null,
+          dgt_label_id: dto.dgt_label_id ?? null,
+          warranty_type_id: dto.warranty_type_id ?? null,
+          features: relations.features,
+          services: relations.services,
+          cuotas: relations.cuotas,
+          suggestions,
+          address: resolved_address
+            ? formatAddressText(resolved_address.formatted_lines)
+            : null,
+          address_details: resolved_address,
+          expires_at,
+          scheduled_publish_at: null,
+          renewed_at: null,
+          is_featured: false,
+          featured_expires_at: null,
+          featured_boost_weight: null,
+          views: 0,
+          favorites: 0,
+          shares: 0,
+          finance_price: dto.finance_price ?? null,
+          first_cuota: dto.first_cuota ?? null,
+          show_exact_location: dto.show_exact_location ?? false,
+          by_brand_warranty: dto.by_brand_warranty ?? false,
+          show_first_cuota: dto.show_first_cuota ?? false,
+        });
+
+        const saved = await manager.save(VehicleEntity, entity);
+        await manager.save(
+          VehiclePriceEntity,
+          manager.create(VehiclePriceEntity, {
+            vehicle_id: saved.id,
+            price: dto.price,
+            status: VEHICLE_PRICE_STATUS.ACTIVE,
+          }),
+        );
+
+        if (media.images.length > 0) {
+          await manager.save(
+            VehicleImagesEntity,
+            media.images.map(image =>
+              manager.create(VehicleImagesEntity, {
+                vehicle_id: saved.id,
+                url: image.path,
+                order: image.order,
+              }),
+            ),
+          );
+        }
+
+        if (media.videos.length > 0) {
+          await manager.save(
+            VideosEntity,
+            media.videos.map(video =>
+              manager.create(VideosEntity, {
+                vehicle_id: saved.id,
+                url: video.path,
+                order: video.order,
+                status: "active",
+              }),
+            ),
+          );
+        }
+
+        return saved;
       });
 
-      const saved = await manager.save(VehicleEntity, entity);
-      await manager.save(
-        VehiclePriceEntity,
-        manager.create(VehiclePriceEntity, {
-          vehicle_id: saved.id,
-          price: dto.price,
-          status: VEHICLE_PRICE_STATUS.ACTIVE,
-        }),
+      await this.vehicle_search_indexer.syncVehicle(
+        vehicle.id,
+        STATUS_VEHICLE.PENDING,
       );
-
-      if (media.images.length > 0) {
-        await manager.save(
-          VehicleImagesEntity,
-          media.images.map((image) =>
-            manager.create(VehicleImagesEntity, {
-              vehicle_id: saved.id,
-              url: image.path,
-              order: image.order,
-            }),
-          ),
+      await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
+        vehicle.id,
+        expires_at,
+        now,
+      );
+      await this.enqueuePublishedMail(vehicle.id, publisher_profile_id);
+    } catch (error) {
+      try {
+        await this.rollback({
+          vehicle_id: vehicle?.id ?? null,
+          temp_media_paths: media_promoted ? temp_media_paths : [],
+        });
+      } catch (rollback_error) {
+        throw new AggregateError(
+          [error, rollback_error],
+          "Falló la creación del vehículo y también su rollback",
         );
       }
 
-      if (media.videos.length > 0) {
-        await manager.save(
-          VideosEntity,
-          media.videos.map((video) =>
-            manager.create(VideosEntity, {
-              vehicle_id: saved.id,
-              url: video.path,
-              order: video.order,
-              status: "active",
-            }),
-          ),
-        );
-      }
-
-      return saved;
-    });
-
-    await Promise.all([
-      this.runPostCommitEffect("search sync", vehicle.id, () =>
-        this.vehicle_search_indexer.syncVehicle(
-          vehicle.id,
-          STATUS_VEHICLE.PENDING,
-        ),
-      ),
-      this.runPostCommitEffect("expiry scheduling", vehicle.id, () =>
-        this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
-          vehicle.id,
-          expires_at,
-          now,
-        ),
-      ),
-      this.runPostCommitEffect("published mail", vehicle.id, () =>
-        this.enqueuePublishedMail(vehicle.id, publisher_profile_id),
-      ),
-    ]);
+      throw error;
+    }
 
     return {
       vehicle: {
@@ -345,12 +366,27 @@ export class CreateVehicleService {
       return { images: [], videos: [] };
     }
 
-    const { pathnames } =
-      await this.promote_temp_storage_paths_service.execute({
-        paths: all_media.map((item) => item.path),
-      });
+    const { pathnames } = await this.promote_temp_storage_paths_service.execute(
+      {
+        paths: all_media.map(item => item.path),
+      },
+    );
     if (pathnames.length !== all_media.length) {
-      throw new Error("No se pudieron promover todos los medios del vehículo");
+      const promotion_error = new Error(
+        "No se pudieron promover todos los medios del vehículo",
+      );
+      try {
+        await this.promote_temp_storage_paths_service.rollback({
+          paths: all_media.map(item => item.path),
+        });
+      } catch (rollback_error) {
+        throw new AggregateError(
+          [promotion_error, rollback_error],
+          "La promoción de medios quedó incompleta y su rollback falló",
+        );
+      }
+
+      throw promotion_error;
     }
 
     return {
@@ -363,6 +399,43 @@ export class CreateVehicleService {
         path: pathnames[ordered_images.length + index],
       })),
     };
+  }
+
+  private async rollback({
+    vehicle_id,
+    temp_media_paths,
+  }: CreateVehicleRollbackContext): Promise<void> {
+    const operations: Promise<unknown>[] = [];
+
+    if (vehicle_id) {
+      operations.push(
+        this.data_source.transaction(async manager => {
+          await manager.delete(VehicleEntity, { id: vehicle_id });
+        }),
+        this.vehicle_listing_expiry_scheduler.cancelForVehicle(vehicle_id),
+        this.vehicle_search_indexer.deleteVehicle(vehicle_id),
+      );
+    }
+
+    if (temp_media_paths.length > 0) {
+      operations.push(
+        this.promote_temp_storage_paths_service.rollback({
+          paths: temp_media_paths,
+        }),
+      );
+    }
+
+    const results = await Promise.allSettled(operations);
+    const failures = results
+      .filter(result => result.status === "rejected")
+      .map(result => result.reason as unknown);
+
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures,
+        "No se pudo completar el rollback de la creación del vehículo",
+      );
+    }
   }
 
   private async loadAndValidateRelations(
@@ -385,20 +458,20 @@ export class CreateVehicleService {
     ]);
 
     if (features.length !== feature_ids.length) {
-      const found = new Set(features.map((feature) => feature.id));
+      const found = new Set(features.map(feature => feature.id));
       throw new InvalidVehicleFeatureIdsException(
-        feature_ids.filter((id) => !found.has(id)),
+        feature_ids.filter(id => !found.has(id)),
       );
     }
     if (services.length !== service_ids.length) {
-      const found = new Set(services.map((service) => service.id));
+      const found = new Set(services.map(service => service.id));
       throw new InvalidVehicleServiceIdsException(
-        service_ids.filter((id) => !found.has(id)),
+        service_ids.filter(id => !found.has(id)),
       );
     }
     if (cuotas.length !== cuota_ids.length) {
-      const found = new Set(cuotas.map((cuota) => cuota.id));
-      const missing = cuota_ids.find((id) => !found.has(id));
+      const found = new Set(cuotas.map(cuota => cuota.id));
+      const missing = cuota_ids.find(id => !found.has(id));
       throw new InvalidVehicleCatalogIdException("cuota_ids", missing ?? "");
     }
 
@@ -492,27 +565,11 @@ export class CreateVehicleService {
       }),
     });
   }
-
-  private async runPostCommitEffect(
-    effect: string,
-    vehicle_id: string,
-    callback: () => Promise<void>,
-  ): Promise<void> {
-    try {
-      await callback();
-    } catch (error) {
-      this.logger.error(
-        `Post-commit ${effect} failed for vehicle ${vehicle_id}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-    }
-  }
 }
 
 const uniqueIds = (ids: string[] | undefined): string[] => [
   ...new Set(ids ?? []),
 ];
 
-const relationsIds = (
-  relations: { id: string }[] | undefined,
-): string[] => relations?.map((relation) => relation.id) ?? [];
+const relationsIds = (relations: { id: string }[] | undefined): string[] =>
+  relations?.map(relation => relation.id) ?? [];
