@@ -888,42 +888,6 @@ function resolveResponses(method, pathKey, req) {
     "DELETE|v1/tractions/:traction_id": () =>
       makeExample("200 OK — sin cuerpo (ejemplo)", req, { emptyBody: true }),
 
-    "POST|v1/reviews": () =>
-      makeExample("201 Created — reseña (ejemplo)", req, {
-        code: 201,
-        status: "Created",
-        body: {
-          review: {
-            id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-            rating: 5,
-            comment: "Trato excelente y vehículo como en el anuncio.",
-            profile_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            vehicle_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            created_at: iso,
-            updated_at: iso,
-          },
-        },
-      }),
-
-    "GET|v1/reviews": () =>
-      makeExample("200 OK — reseñas paginadas (ejemplo)", req, {
-        body: {
-          data: [
-            {
-              id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              rating: 5,
-              comment: "Trato excelente y vehículo como en el anuncio.",
-              profile_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              vehicle_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              created_at: iso,
-              updated_at: iso,
-            },
-          ],
-          total: 1,
-          page: 1,
-          limit: 10,
-        },
-      }),
   };
 
   function toPattern(p) {

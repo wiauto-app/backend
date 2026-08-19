@@ -41,7 +41,6 @@ import { WarrantyTypeEntity } from "./warranty-type.entity";
 import { TractionEntity } from "./traction.entity";
 import { CuotaEntity } from "./cuota.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
-import { ReviewEntity } from "./review.entity";
 import { CategoryEntity } from "./category.entity";
 import type { VehicleAddressDetails } from "../types/vehicle-address-details";
 import { DealershipEntity } from "../../dealership/entities/dealership.entity";
@@ -169,14 +168,6 @@ export class VehicleEntity {
     default: 0,
   })
   shares: number;
-
-  @Column({
-    type: "numeric",
-    precision: 2,
-    scale: 1,
-    nullable: true,
-  })
-  rating: number | null;
 
   @Column({
     type: "enum",
@@ -554,13 +545,4 @@ export class VehicleEntity {
   })
   profile: Relation<ProfileEntity>;
 
-  // ===========================================================================
-  // REVIEWS
-  // ===========================================================================
-
-  @OneToMany(
-    () => ReviewEntity,
-    (review) => review.vehicle,
-  )
-  reviews: Relation<ReviewEntity[]>;
 }

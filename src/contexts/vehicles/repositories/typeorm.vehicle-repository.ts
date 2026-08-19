@@ -454,7 +454,6 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     views: entity.views,
     favorites: entity.favorites,
     shares: entity.shares,
-    rating: entity.rating,
     created_at: entity.created_at,
     updated_at: entity.updated_at,
     publisher_type: entity.publisher_type,
@@ -932,17 +931,6 @@ export class TypeOrmVehicleRepository {
     const preloaded = await this.vehicle_repository.preload(payload);
     if (!preloaded) {
       throw new VehicleNotFoundException(vehicle.id);
-    }
-    await this.vehicle_repository.save(preloaded);
-  }
-
-  async updateRating(vehicle_id: string, rating: number | null): Promise<void> {
-    const preloaded = await this.vehicle_repository.preload({
-      id: vehicle_id,
-      rating,
-    });
-    if (!preloaded) {
-      throw new VehicleNotFoundException(vehicle_id);
     }
     await this.vehicle_repository.save(preloaded);
   }

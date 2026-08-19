@@ -11,7 +11,6 @@ import { typeOrmConfig } from "../database/data-source";
 import { AuthModule } from "../contexts/auth/auth.module";
 import { ProfileModule } from "../contexts/profiles/profile.module";
 import { VehiclesModule } from "../contexts/vehicles/vehicles.module";
-import { ReviewsModule } from "../contexts/vehicles/modules/reviews.module";
 import { LeadsModule } from "../contexts/vehicles/modules/leads.module";
 import { SharesModule } from "../contexts/vehicles/modules/shares.module";
 import { ContactClicksModule } from "../contexts/vehicles/modules/contact-clicks.module";
@@ -53,7 +52,6 @@ import { ProfileDevicesModule } from "../contexts/profile_devices/profile-device
     AuthModule,
     ProfileModule,
     VehiclesModule,
-    ReviewsModule,
     LeadsModule,
     SharesModule,
     ContactClicksModule,

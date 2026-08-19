@@ -6,15 +6,13 @@ export type PublicListingOrderBy =
   | "created_at"
   | "price"
   | "mileage"
-  | "views"
-  | "rating";
+  | "views";
 
 const PUBLIC_LISTING_ORDER_FIELDS = new Set<PublicListingOrderBy>([
   "created_at",
   "price",
   "mileage",
   "views",
-  "rating",
 ]);
 
 export const resolve_public_listing_order_by = (
@@ -59,21 +57,21 @@ export const apply_public_listing_order = (
   const direction = order_direction ?? "DESC";
 
   switch (field) {
-    case "price":
+    case "price": {
       qb.orderBy("vehicle_prices.price", direction);
       break;
-    case "mileage":
+    }
+    case "mileage": {
       qb.orderBy("vehicle.mileage", direction);
       break;
-    case "views":
+    }
+    case "views": {
       qb.orderBy("vehicle.views", direction);
       break;
-    case "rating":
-      qb.orderBy("vehicle.rating", direction, "NULLS LAST");
-      break;
-    case "created_at":
-    default:
+    }
+    default: {
       apply_vehicle_created_at_listing_order(qb, direction, featured_sort_now);
       break;
+    }
   }
 };

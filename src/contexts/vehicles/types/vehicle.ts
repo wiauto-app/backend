@@ -51,7 +51,6 @@ export interface PrimitiveVehicle {
   views?: number;
   favorites?: number;
   shares?: number;
-  rating?: number | null;
   address?: string | null;
   address_details?: VehicleAddressDetails | null;
   transmission_type: TransmissionType;

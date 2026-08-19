@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "wiauto-api-collection",
     "name": "wiauto",
-    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/reviews`, `v1/dealership-reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/ticket-categories`, `v1/tickets`, `v1/report-categories`, `v1/reports`, `v1/admin/report-categories`, `v1/admin/reports`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
+    "description": "Estructura de carpetas: `auth`, `dealership`, `vehicle`, `sistema` (p. ej. `GET /health`).\n\nVariables: `base_url`, `access_token` (JWT tras login; el script de login puede rellenarlo), `auth_token` (mismo uso JWT en requests de **users** protegidas, **roles** y **permissions**; puedes copiar el token del login o igualar a `access_token`), IDs de recurso, y para 2FA con `TwoFactorGuard` el body lleva `code` (6 dígitos) además del Bearer.\n\nRutas alineadas con Nest (`auth`, `auth/me`, `2fa`, `v1/users`, `v1/profiles`, `v1/roles`, `v1/permissions`, `v1/dealership-reviews`, `v1/dealerships`, `v1/dealership-invitations`, `v1/ticket-categories`, `v1/tickets`, `v1/report-categories`, `v1/reports`, `v1/admin/report-categories`, `v1/admin/reports`, `v1/*` vehículos y catálogo).\n\n**Ejemplos de respuesta**: cada request tiene al menos un ejemplo bajo la pestaña **Examples** en Postman (código y cuerpo orientativos según el backend). El login incluye dos ejemplos: sesión directa y flujo con `2fa_required`. Los éxitos reales pueden variar según datos y validaciones.\n\n**Catálogo** (carpeta `catalog`): CRUD en `v1/catalog/makes|models|body-types|fuel-types|years|versions`. Variables `catalog_*_id`. Modelos: `make_id`. Carrocerías: `model_id` (filtra vía `version`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -4783,59 +4783,6 @@
                 },
                 "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/leads",
                 "description": "JWT opcional. Con sesión: `profile_id` desde token; teléfono opcional; crea o reutiliza chat y devuelve `{ lead, chat_id }`. `name`/`email` deben coincidir con el perfil."
-              },
-              "response": []
-            }
-          ]
-        },
-        {
-          "name": "reviews",
-          "item": [
-            {
-              "name": "crear reseña",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{access_token}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"vehicle_id\": \"{{vehicle_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Trato excelente y vehículo como en el anuncio.\"\n}"
-                },
-                "url": "{{base_url}}/v1/reviews",
-                "description": "JWT (`JwtGuard`). El autor es el usuario autenticado (`profile_id` implícito). Comprueba que el `vehicle_id` exista. Tras crear se recalcula `vehicles.rating` (AVG 1 decimal)."
-              },
-              "response": []
-            },
-            {
-              "name": "listar reseñas por vehículo",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": "{{base_url}}/v1/reviews?vehicle_id={{vehicle_id}}&page=1&limit=10",
-                "description": "Público. Query obligatorio: `vehicle_id`. Opcional: `profile_id`, `created_since`, `created_until`, `page`, `limit`, `query`, `order_by`, `order_direction`."
-              },
-              "response": []
-            },
-            {
-              "name": "eliminar reseña",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{access_token}}"
-                  }
-                ],
-                "url": "{{base_url}}/v1/reviews/{{review_id}}",
-                "description": "JWT (`JwtGuard`). Solo el autor puede eliminar. Tras borrar se recalcula `vehicles.rating` (AVG 1 decimal o null)."
               },
               "response": []
             }

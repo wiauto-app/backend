@@ -1,5 +1,4 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 
 import {
   DealershipReview,
@@ -10,6 +9,7 @@ import { DealershipReviewFilter } from "../types/dealership-review.filter";
 import { TypeOrmDealershipRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-repository";
 import { TypeOrmDealershipReviewsRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-reviews-repository";
 import { RecalculateDealershipRatingService } from "./recalculate-dealership-rating.service";
+import type { DealershipReviewListItem } from "../types/dealership-review-list-item";
 
 export interface CreateDealershipReviewInput {
   rating: number;
@@ -28,6 +28,14 @@ export interface FindAllDealershipReviewsInput {
   query?: string;
   order_by?: string;
   order_direction?: "ASC" | "DESC";
+}
+
+export interface DealershipReviewsPage {
+  data: DealershipReviewListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  average_rating: number | null;
 }
 
 @Injectable()
@@ -58,7 +66,7 @@ export class DealershipReviewsService {
 
   async findAll(
     input: FindAllDealershipReviewsInput,
-  ): Promise<PaginatedResult<PrimitiveDealershipReview>> {
+  ): Promise<DealershipReviewsPage> {
     const filter = new DealershipReviewFilter(input.dealership_id, {
       profile_id: input.profile_id,
       created_since: input.created_since,
@@ -69,7 +77,17 @@ export class DealershipReviewsService {
       order_by: input.order_by,
       order_direction: input.order_direction,
     });
-    const page = await this.dealership_reviews_repository.find_all(filter);
-    return page.map((review) => review.toPrimitives());
+    const [page, average_rating] = await Promise.all([
+      this.dealership_reviews_repository.find_all(filter),
+      this.dealership_reviews_repository.getAverageRating(input.dealership_id),
+    ]);
+
+    return {
+      data: page.data,
+      total: page.total,
+      page: page.page,
+      limit: page.limit,
+      average_rating,
+    };
   }
 }

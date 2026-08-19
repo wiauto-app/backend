@@ -7,6 +7,8 @@ import { Repository } from "typeorm";
 import { DealershipReview } from "../types/dealership-review";
 import { DealershipReviewFilter } from "../types/dealership-review.filter";
 import { DealershipReviewEntity } from "../entities/dealership-review.entity";
+import type { DealershipReviewListItem } from "../types/dealership-review-list-item";
+import { getSkip } from "@/src/contexts/shared/getSkip";
 
 const list_order_columns = new Set(["id", "rating", "created_at", "updated_at"]);
 
@@ -46,7 +48,7 @@ export class TypeOrmDealershipReviewsRepository {
 
   async find_all(
     filter: DealershipReviewFilter,
-  ): Promise<PaginatedResult<DealershipReview>> {
+  ): Promise<PaginatedResult<DealershipReviewListItem>> {
     const qb = this.dealership_review_repository
       .createQueryBuilder("r")
       .where("r.dealership_id = :dealership_id", {
@@ -76,9 +78,23 @@ export class TypeOrmDealershipReviewsRepository {
         : "created_at";
     const direction = filter.order_direction;
     qb.orderBy(`r.${order_column}`, direction);
+    qb.skip(getSkip(filter.page, filter.limit));
+    qb.take(filter.limit);
 
     const [rows, total] = await qb.getManyAndCount();
-    const data = rows.map((row) => DealershipReview.fromPrimitives(row));
+    const data = rows.map(
+      (row): DealershipReviewListItem => ({
+        id: row.id,
+        rating: row.rating,
+        comment: row.comment,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        profile_id: row.profile_id,
+        dealership_id: row.dealership_id,
+        author: "Cliente de WiAuto",
+        avatar_url: null,
+      }),
+    );
     return new PaginatedResult(data, total, filter.page, filter.limit);
   }
 

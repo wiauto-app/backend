@@ -10,7 +10,6 @@ import {
 
 import { DealershipInvitationsEntity } from "@/src/contexts/dealership/entities/dealership-invitations.entity";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import { ReviewEntity } from "@/src/contexts/vehicles/entities/review.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
@@ -77,9 +76,6 @@ export class ProfileEntity {
 
   @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
   vehicles: Relation<VehicleEntity[]>;
-
-  @OneToMany(() => ReviewEntity, (review) => review.profile)
-  reviews: Relation<ReviewEntity[]>;
 
   @OneToMany(() => DealershipMembersEntity, (dealership_members) => dealership_members.profile)
   dealership_members: Relation<DealershipMembersEntity[]>;
