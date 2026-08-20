@@ -21,6 +21,7 @@ import {
   VehicleUpdateFields,
   type PublisherType,
 } from "../types/vehicle";
+import { CatalogFuelTypeNotFoundException } from "../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
 import { InvalidateVehicleVersionIdException } from "../exceptions/InvalidateVehicleVersionId.exception";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
 import { AdminVehicleFilter } from "../types/admin-vehicle.filter";
@@ -70,13 +71,15 @@ import { VehicleSearchIndexer } from "../search/indexing/vehicle-search-indexer.
 import { AttachVehicleImagesFromTempService } from "../vehicle-images/services/attach-vehicle-images-from-temp.service";
 import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-images/repositories/typeorm.vehicle-images.repository";
 import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-price.service";
-import { TypeOrmVehiclePriceRepository } from "@/src/contexts/vehicles/vehicle-prices/repositories/typeorm.vehicle-price.repository";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { VehicleEntity } from "../entities/vehicle.entity";
+import { validateVehicleCreationRules } from "./validate-vehicle-creation-rules";
+import { PromoteTempStoragePathsService } from "../../shared/file/services/promote-temp-storage-paths.service";
+import { VideosEntity } from "../entities/videos.entity";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -112,7 +115,6 @@ export class VehicleService {
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly attach_vehicle_images_from_temp_service: AttachVehicleImagesFromTempService,
     private readonly set_vehicle_price_service: SetVehiclePriceService,
-    private readonly vehicle_price_repository: TypeOrmVehiclePriceRepository,
     private readonly vehicle_image_repository: TypeOrmVehicleImagesRepository,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
     private readonly reverse_geocoding_port: ReverseGeocodingPort,
@@ -130,16 +132,30 @@ export class VehicleService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
+    @InjectRepository(VideosEntity)
+    private readonly videos_repository: Repository<VideosEntity>,
+    private readonly promote_temp_storage_paths_service: PromoteTempStoragePathsService,
   ) { }
 
-  private async resolvePublisherType(
+  private async resolvePublisherContext(
     profile_id: string,
-  ): Promise<PublisherType> {
+  ): Promise<{
+    publisher_type: PublisherType;
+    dealership_id: string | null;
+  }> {
     const membership =
       await this.dealership_member_repository.findOneByProfileId(profile_id);
-    return membership
-      ? PUBLISHER_TYPE.DEALERSHIP
-      : PUBLISHER_TYPE.PARTICULAR;
+    if (!membership) {
+      return {
+        publisher_type: PUBLISHER_TYPE.PARTICULAR,
+        dealership_id: null,
+      };
+    }
+
+    return {
+      publisher_type: PUBLISHER_TYPE.DEALERSHIP,
+      dealership_id: membership.toPrimitives().dealership_id,
+    };
   }
 
   async findOne(get_vehicle_dto: GetVehicleDto,profile_id?: string): Promise<VehicleDetail> {
@@ -197,19 +213,29 @@ export class VehicleService {
 
   async update(update_vehicle_dto: UpdateVehicleDto) {
     const existing = await this.vehicle_repository.findOne(update_vehicle_dto.id);
-    
     if (!existing) {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
     }
 
-    const { id, images, price, vehicle_price_id, ...dto_fields } =
+    const { id, images, videos, price, vehicle_price_id, ...dto_fields } =
       update_vehicle_dto;
+    const existing_primitive = vehicleDetailToPrimitives(existing);
 
     const patch = Object.fromEntries(
-      Object.entries(dto_fields as Record<string, unknown>),
+      Object.entries(dto_fields as Record<string, unknown>).filter(
+        ([, value]) => value !== undefined,
+      ),
     ) as VehicleUpdateFields;
 
-    patch.publisher_type = await this.resolvePublisherType(existing.profile_id);
+    const publisher_context = await this.resolvePublisherContext(
+      existing.profile_id,
+    );
+    if (publisher_context.publisher_type !== existing.publisher_type) {
+      patch.publisher_type = publisher_context.publisher_type;
+    }
+    if (publisher_context.dealership_id !== existing_primitive.dealership_id) {
+      patch.dealership_id = publisher_context.dealership_id;
+    }
 
     const coordinates_changed =
       (patch.lat !== undefined && patch.lat !== existing.lat) ||
@@ -225,50 +251,61 @@ export class VehicleService {
       patch.address_details = resolved;
     }
 
-    const updated = applyVehicleUpdates(
-      vehicleDetailToPrimitives(existing),
-      patch,
-    );
-    await this.vehicle_repository.update(updated);
+    const has_vehicle_updates = Object.keys(patch).length > 0;
+    let updated = existing_primitive;
+
+    if (has_vehicle_updates) {
+      updated = applyVehicleUpdates(existing_primitive, patch);
+      const version = await this.catalog_versions_service.findById(
+        updated.version_id,
+      );
+      if (!version) {
+        throw new InvalidateVehicleVersionIdException();
+      }
+
+      const fuel_type = await this.catalog_fuel_types_service.findById(
+        version.fuel_type_id,
+      );
+      if (!fuel_type) {
+        throw new CatalogFuelTypeNotFoundException(version.fuel_type_id);
+      }
+
+      updated.suggestions = validateVehicleCreationRules({
+        battery_capacity: updated.battery_capacity,
+        time_to_charge: updated.time_to_charge,
+        autonomy: updated.autonomy,
+        displacement: updated.displacement,
+        mileage: updated.mileage,
+        condition: updated.condition,
+        can_charge: fuel_type.can_charge,
+      });
+
+      await this.vehicle_repository.update(updated);
+    }
 
     if (price !== undefined || vehicle_price_id !== undefined) {
-      const previous_active =
-        await this.vehicle_price_repository.findActiveByVehicleId(id);
-      const previous_price = previous_active?.toPrimitives().price;
-
       await this.set_vehicle_price_service.execute({
         vehicle_id: id,
         price,
         vehicle_price_id,
       });
-
-      if (
-        price !== undefined &&
-        previous_price !== undefined &&
-        price < previous_price &&
-        existing.status === STATUS_VEHICLE.ACTIVE
-      ) {
-        await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-          vehicle_id: id,
-          event_type: ALERT_EVENT_TYPE.PRICE_DROP,
-          metadata: {
-            previous_price,
-            vehicle_price: price,
-          },
-        });
-      }
     }
 
     if (images && images.length > 0) {
-        await this.attach_vehicle_images_from_temp_service.execute({
-          vehicle_id: id,
-          images: images,
-        });
+      await this.attach_vehicle_images_from_temp_service.execute({
+        vehicle_id: id,
+        images: images,
+      });
+    }
+
+    if (videos && videos.length > 0) {
+      await this.replaceVehicleVideosFromTemp(id, videos);
     }
 
     const has_non_price_updates =
-      Object.keys(patch).length > 0 ||
-      (images !== undefined && images.length > 0);
+      has_vehicle_updates ||
+      (images !== undefined && images.length > 0) ||
+      (videos !== undefined && videos.length > 0);
 
     if (
       has_non_price_updates &&
@@ -282,9 +319,73 @@ export class VehicleService {
       });
     }
 
-    await this.vehicle_search_indexer.indexVehicle(id);
+    const has_any_updates =
+      has_non_price_updates ||
+      price !== undefined ||
+      vehicle_price_id !== undefined;
+    if (has_any_updates) {
+      await this.vehicle_search_indexer.indexVehicle(id);
+    }
 
     return { vehicle: updated };
+  }
+
+  private async replaceVehicleVideosFromTemp(
+    vehicle_id: string,
+    videos: NonNullable<UpdateVehicleDto["videos"]>,
+  ): Promise<void> {
+    const ordered_videos = [...videos].sort((a, b) => a.order - b.order);
+    const temp_paths = ordered_videos.map((video) => video.path);
+    const { pathnames } =
+      await this.promote_temp_storage_paths_service.execute({
+        paths: temp_paths,
+      });
+
+    if (pathnames.length !== ordered_videos.length) {
+      const promotion_error = new Error(
+        "No se pudieron promover todos los videos del vehículo",
+      );
+      try {
+        await this.promote_temp_storage_paths_service.rollback({
+          paths: temp_paths,
+        });
+      } catch (rollback_error) {
+        throw new AggregateError(
+          [promotion_error, rollback_error],
+          "La promoción de videos quedó incompleta y su rollback falló",
+        );
+      }
+      throw promotion_error;
+    }
+
+    try {
+      await this.videos_repository.manager.transaction(async (manager) => {
+        await manager.delete(VideosEntity, { vehicle_id });
+        await manager.save(
+          VideosEntity,
+          ordered_videos.map((video, index) =>
+            manager.create(VideosEntity, {
+              vehicle_id,
+              url: pathnames[index],
+              order: video.order,
+              status: "active",
+            }),
+          ),
+        );
+      });
+    } catch (error) {
+      try {
+        await this.promote_temp_storage_paths_service.rollback({
+          paths: temp_paths,
+        });
+      } catch (rollback_error) {
+        throw new AggregateError(
+          [error, rollback_error],
+          "Falló la actualización de videos y también su rollback",
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(remove_vehicle_dto: RemoveVehicleDto): Promise<void> {

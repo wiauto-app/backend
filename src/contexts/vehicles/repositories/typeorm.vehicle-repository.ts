@@ -3,7 +3,7 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 
-import { PrimitiveVehicle } from "../types/vehicle";
+import { normalizeNullableUuid, PrimitiveVehicle } from "../types/vehicle";
 import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../exceptions/invalid-vehicle-catalog-id.exception";
@@ -385,18 +385,20 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
     first_cuota: entity.first_cuota,
-    dealership: {
-      id: dealership?.id ?? "",
-      name: dealership?.name ?? "",
-      slug: dealership?.slug ?? "",
-      avatar_url: dealership?.avatar_url ?? "",
-      banner_url: dealership?.banner_url ?? "",
-      description: dealership?.description ?? "",
-      website_url: dealership?.website_url ?? "",
-      email: dealership?.email ?? "",
-      phone_code: dealership?.phone_code ?? "",
-      schedules: map_dealership_schedules(dealership?.schedules),
-    },
+    dealership: dealership
+      ? {
+          id: dealership.id,
+          name: dealership.name,
+          slug: dealership.slug,
+          avatar_url: dealership.avatar_url ?? "",
+          banner_url: dealership.banner_url ?? "",
+          description: dealership.description,
+          website_url: dealership.website_url ?? "",
+          email: dealership.email,
+          phone_code: dealership.phone_code,
+          schedules: map_dealership_schedules(dealership.schedules),
+        }
+      : undefined,
   };
 }
 
@@ -707,7 +709,7 @@ export class TypeOrmVehicleRepository {
         : undefined,
       address: p.address ?? null,
       address_details: p.address_details ?? null,
-      dealership_id: p.dealership_id ?? null,
+      dealership_id: normalizeNullableUuid(p.dealership_id),
       finance_price: p.finance_price ?? null,
       first_cuota: p.first_cuota ?? null,
       show_exact_location: p.show_exact_location ?? false,

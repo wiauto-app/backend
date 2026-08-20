@@ -80,7 +80,7 @@ export interface PrimitiveVehicle {
   suggestions: string[];
   /** Dueño del anuncio (mismo UUID que `users.id` / `profiles.id`). */
   profile_id?: string;
-  dealership_id?: string | undefined;
+  dealership_id?: string | null;
   finance_price?: number | null;
   show_exact_location?: boolean;
   first_cuota?: number | null;
@@ -89,6 +89,16 @@ export interface PrimitiveVehicle {
 }
 
 export type VehicleUpdateFields = Partial<PrimitiveVehicle>;
+
+export const normalizeNullableUuid = (
+  value: string | null | undefined,
+): string | null => {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return null;
+  }
+  return normalized;
+};
 
 export const applyVehicleUpdates = (
   vehicle: PrimitiveVehicle,

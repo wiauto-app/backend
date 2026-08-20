@@ -7,15 +7,12 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, EntityTarget, In } from "typeorm";
 
 import { CatalogFuelTypeNotFoundException } from "../../../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
-import { FuelIncompatibilitiesException } from "../../../catalog/fuel_types/exceptions/fuel_incompatibilities.exception";
 import { CatalogFuelTypesService } from "../../../catalog/fuel_types/services/catalog-fuel-types.service";
 import { CatalogVersionsService } from "../../../catalog/versions/services/catalog-versions.service";
-import { ElectricDisplacementException } from "../../../exceptions/electric-displacement.exception";
 import { InvalidateVehicleVersionIdException } from "../../../exceptions/InvalidateVehicleVersionId.exception";
 import { InvalidVehicleCatalogIdException } from "../../../exceptions/invalid-vehicle-catalog-id.exception";
 import { InvalidVehicleFeatureIdsException } from "../../../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../../../exceptions/invalid-vehicle-service-ids.exception";
-import { NewVehicleMileageException } from "../../../exceptions/newVehicleMilleage.exception";
 import { CategoryEntity } from "../../../entities/category.entity";
 import { ColorEntity } from "../../../entities/color.entity";
 import { CuotaEntity } from "../../../entities/cuota.entity";
@@ -32,66 +29,18 @@ import { TypeOrmVehicleRepository } from "../../../repositories/typeorm.vehicle-
 import { VehicleSearchIndexer } from "../../../search/indexing/vehicle-search-indexer.service";
 import { formatAddressText } from "../../../services/format-vehicle-address";
 import { ReverseGeocodingService } from "../../../services/reverse-geocoding.service";
-import {
-  CONDITION_VEHICLE,
-  PUBLISHER_TYPE,
-  STATUS_VEHICLE,
-} from "../../../types/vehicle";
+import { PUBLISHER_TYPE, STATUS_VEHICLE } from "../../../types/vehicle";
 import { formatVehicleDisplayName } from "../../../utils/format-vehicle-display-name";
 import { VehicleImagesEntity } from "../../../vehicle-images/entities/vehicle-images.entity";
 import { VehiclePriceEntity } from "../../../vehicle-prices/entities/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../../../vehicle-prices/types/vehicle-price";
 import { buildMailVehicleCard } from "@/src/contexts/shared/mail/mail-vehicle-card";
 import { CreateVehicleDto, VehicleMediaDto } from "./create-vehicle.http-dto";
+import { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
 
-const MAX_MILEAGE_FOR_NEW_VEHICLE = 1000;
+export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
+
 const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
-
-interface ValidateVehicleCreationRulesInput {
-  battery_capacity: number;
-  time_to_charge: number;
-  autonomy: number;
-  displacement: number;
-  mileage: number;
-  condition: CreateVehicleDto["condition"];
-  can_charge: boolean;
-}
-
-export function validateVehicleCreationRules(
-  input: ValidateVehicleCreationRulesInput,
-): string[] {
-  if (
-    !input.can_charge &&
-    (input.battery_capacity > 0 ||
-      input.autonomy > 0 ||
-      input.time_to_charge > 0)
-  ) {
-    throw new FuelIncompatibilitiesException();
-  }
-
-  if (
-    input.mileage > MAX_MILEAGE_FOR_NEW_VEHICLE &&
-    input.condition === CONDITION_VEHICLE.NEW
-  ) {
-    throw new NewVehicleMileageException();
-  }
-
-  const suggestions: string[] = [];
-  if (
-    input.mileage < MAX_MILEAGE_FOR_NEW_VEHICLE &&
-    input.condition === CONDITION_VEHICLE.USED
-  ) {
-    suggestions.push(
-      "Tu vehículo tiene menos de 1000 km, podrías considerarlo como nuevo para obtener una mejor visibilidad en la plataforma.",
-    );
-  }
-
-  if (input.can_charge && input.displacement > 0) {
-    throw new ElectricDisplacementException();
-  }
-
-  return suggestions;
-}
 
 interface PromotedVehicleMedia {
   images: VehicleMediaDto[];
@@ -120,7 +69,6 @@ export class CreateVehicleService {
   ) {}
 
   async create(dto: CreateVehicleDto, publisher_profile_id: string) {
-    console.log(dto);
     const version_id = dto.version_id;
     if (!Number.isInteger(version_id) || version_id < 1) {
       throw new InvalidateVehicleVersionIdException();

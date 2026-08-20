@@ -1,5 +1,6 @@
 import {
   ConditionVehicle,
+  normalizeNullableUuid,
   PrimitiveVehicle,
   PublisherType,
   StatusVehicle,
@@ -175,7 +176,7 @@ export const vehicleDetailToPrimitives = (
   updated_at: detail.updated_at,
   address: detail.address ?? null,
   address_details: detail.address_details ?? null,
-  dealership_id: detail.dealership?.id,
+  dealership_id: normalizeNullableUuid(detail.dealership?.id),
   finance_price: detail.finance_price,
   first_cuota: detail.first_cuota,
   show_exact_location: detail.show_exact_location,
