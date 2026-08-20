@@ -4,6 +4,7 @@ import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { CatalogModule } from "@/src/contexts/vehicles/catalog/catalog.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
+import { DealershipModule } from "@/src/contexts/dealership/dealership.module";
 import { AiSearchFiltersController } from "./api/ai-search-filters.controller";
 import { AssistantChatController } from "./api/assistant-chat.controller";
 import { AssistantConversationsController } from "./api/assistant-conversations.controller";
@@ -23,11 +24,18 @@ import { AssistantSearchFromMessageService } from "./services/assistant-search-f
 import { AssistantSystemPromptService } from "./services/assistant-system-prompt.service";
 import { AssistantBuySystemPromptService } from "./services/assistant-buy-system-prompt.service";
 import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
+import { AssistantSuggestionsController } from "./api/assistant-suggestions.controller";
+import { AssistantSuggestionsGeneratorService } from "./services/assistant-suggestions-generator.service";
+import { AssistantSuggestionsService } from "./services/assistant-suggestions.service";
+import { AssistantNewsService } from "./services/assistant-news.service";
+import { AssistantContextToolsService } from "./tools/assistant-context-tools.service";
+import { AssistantContextSystemPromptService } from "./services/assistant-context-system-prompt.service";
 
 @Module({
   imports: [
     forwardRef(() => VehiclesModule),
     forwardRef(() => BillingModule),
+    forwardRef(() => DealershipModule),
     CatalogModule,
     TypeOrmModule.forFeature([AssistantConversationEntity, ProfileEntity]),
   ],
@@ -36,6 +44,7 @@ import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
     AssistantChatController,
     AssistantConversationsController,
     AssistantQuotaController,
+    AssistantSuggestionsController,
   ],
   providers: [
     AssistantChatService,
@@ -52,6 +61,11 @@ import { AssistantBuyToolsService } from "./tools/assistant-buy-tools.service";
     AssistantSearchFromMessageService,
     AssistantSearchExecutorService,
     AssistantQuotaService,
+    AssistantSuggestionsGeneratorService,
+    AssistantSuggestionsService,
+    AssistantNewsService,
+    AssistantContextToolsService,
+    AssistantContextSystemPromptService,
   ],
   exports: [AssistantQuotaService, AssistantSearchFromMessageService],
 })

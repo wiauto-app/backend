@@ -9,6 +9,10 @@ import {
 import { Type } from "class-transformer";
 import { AssistantInitialFiltersHttpDto } from "./assistant-initial-filters.http-dto";
 import { ASSISTANT_CHAT_MODES } from "../types/assistant-chat-mode";
+import {
+  ASSISTANT_PAGE_CONTEXTS,
+  type AssistantPageContext,
+} from "../types/assistant-page-context";
 
 class AssistantChatMessagePartDto {
   @Allow()
@@ -67,4 +71,8 @@ export class AssistantChatDto {
   @ValidateNested()
   @Type(() => AssistantInitialFiltersHttpDto)
   initial_filters?: AssistantInitialFiltersHttpDto;
+
+  @IsOptional()
+  @IsIn(ASSISTANT_PAGE_CONTEXTS)
+  page_context?: AssistantPageContext;
 }

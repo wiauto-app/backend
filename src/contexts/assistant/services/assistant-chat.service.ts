@@ -22,6 +22,9 @@ import { AssistantConversationService } from "./assistant-conversation.service";
 import { AssistantQuotaService } from "./assistant-quota.service";
 import { AssistantBuyToolsService } from "../tools/assistant-buy-tools.service";
 import { AssistantFilterCatalogService } from "./assistant-filter-catalog.service";
+import type { AssistantPageContext } from "../types/assistant-page-context";
+import { AssistantContextToolsService } from "../tools/assistant-context-tools.service";
+import { AssistantContextSystemPromptService } from "./assistant-context-system-prompt.service";
 
 interface StreamChatOptions {
   messages: UIMessage[];
@@ -30,6 +33,7 @@ interface StreamChatOptions {
   response: Response;
   mode?: AssistantChatMode;
   initialFilters?: SearchVehiclesInput;
+  pageContext?: AssistantPageContext;
 }
 
 @Injectable()
@@ -43,6 +47,8 @@ export class AssistantChatService {
     private readonly quotaService: AssistantQuotaService,
     private readonly buyToolsService: AssistantBuyToolsService,
     private readonly filterCatalogService: AssistantFilterCatalogService,
+    private readonly contextToolsService: AssistantContextToolsService,
+    private readonly contextSystemPromptService: AssistantContextSystemPromptService,
   ) { }
 
   async streamChat({
@@ -52,6 +58,7 @@ export class AssistantChatService {
     response,
     mode = "search",
     initialFilters,
+    pageContext = "vehicles",
   }: StreamChatOptions): Promise<void> {
     await this.quotaService.assertCanConsume(userId);
 
@@ -74,11 +81,66 @@ export class AssistantChatService {
       return;
     }
 
+    if (pageContext !== "vehicles") {
+      await this.streamContextualChat({
+        messages,
+        resolvedConversationId,
+        userId,
+        response,
+        pageContext,
+      });
+      return;
+    }
+
     await this.streamSearchChat({
       messages,
       resolvedConversationId,
       userId,
       response,
+    });
+  }
+
+  private async streamContextualChat({
+    messages,
+    resolvedConversationId,
+    userId,
+    response,
+    pageContext,
+  }: {
+    messages: UIMessage[];
+    resolvedConversationId: string;
+    userId: string;
+    response: Response;
+    pageContext: Exclude<AssistantPageContext, "vehicles">;
+  }): Promise<void> {
+    const deepseek = createDeepSeek({ apiKey: envs.DEEPSEEK_API_KEY });
+    const tools = this.contextToolsService.createTools(pageContext);
+    const stream = createUIMessageStream({
+      originalMessages: messages,
+      onEnd: async ({ messages: updatedMessages }) => {
+        await this.conversationService.saveMessages(
+          userId,
+          resolvedConversationId,
+          updatedMessages,
+        );
+      },
+      execute: async ({ writer }) => {
+        const result = streamText({
+          model: deepseek(envs.DEEPSEEK_MODEL),
+          system: this.contextSystemPromptService.build(pageContext),
+          messages: await convertToModelMessages(messages, { tools }),
+          tools,
+          stopWhen: stepCountIs(4),
+        });
+
+        writer.merge(result.toUIMessageStream({ originalMessages: messages }));
+      },
+    });
+
+    pipeUIMessageStreamToResponse({
+      response,
+      headers: { "X-Conversation-Id": resolvedConversationId },
+      stream,
     });
   }
 

@@ -27,6 +27,7 @@ export class AssistantChatController {
       response,
       mode: body.mode ?? "search",
       initialFilters: body.initial_filters as SearchVehiclesInput | undefined,
+      pageContext: body.page_context ?? "vehicles",
     });
   }
 }
