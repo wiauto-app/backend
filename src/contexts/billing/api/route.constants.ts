@@ -22,3 +22,4 @@ export const V1_PUBLIC_BILLING_PLAN_LEAD_REQUESTS = `${V1_PUBLIC_BILLING}/plan-l
 export const V1_PUBLIC_BILLING_CHECKOUT_SUBSCRIPTION = `${V1_PUBLIC_BILLING}/checkout/subscription`;
 
 export const V1_ADMIN_PLAN_LEAD_REQUESTS = "v1/admin/plan-lead-requests";
+export const V1_ADMIN_PLAN_ACCESS_GRANTS = "v1/admin/plan-access-grants";

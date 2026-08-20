@@ -36,11 +36,17 @@ export interface EntitlementFeatureSummary {
 
 export interface ResolvedEntitlements {
   features: Record<string, EffectiveEntitlement>;
-  source: "subscription" | "dealership_owner" | "free" | "admin";
+  source:
+    | "subscription"
+    | "admin_grant"
+    | "dealership_owner"
+    | "free"
+    | "admin";
   plan_id: string | null;
   plan_name: string | null;
   plan_version_id: string | null;
   subscription_id: string | null;
+  access_grant_id: string | null;
   dealership_id: string | null;
   listings_used: number;
   listings_scope: "dealership" | "profile";
@@ -68,6 +74,13 @@ export interface BillingMeSummary {
     current_period_end: Date | null;
     cancel_at_period_end: boolean;
   } | null;
+  access_grant: {
+    id: string;
+    plan_id: string;
+    plan_name: string;
+    plan_version_id: string;
+    expires_at: Date | null;
+  } | null;
   entitlements: Record<string, BillingMeEntitlementEntry>;
   /** @deprecated Preferir entitlements.vehicles */
   vehicle_listings_used: number;
@@ -82,6 +95,7 @@ export interface BillingMeSummary {
   };
   source: ResolvedEntitlements["source"];
   plan_id: string | null;
+  plan_name: string | null;
   stripe_customer_id: string | null;
 }
 

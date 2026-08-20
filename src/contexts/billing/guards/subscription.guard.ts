@@ -13,7 +13,8 @@ import { REQUIRE_SUBSCRIPTION_KEY } from "../decorators/require-subscription.dec
 import { EntitlementsService } from "../services/entitlements.service";
 
 /**
- * Exige suscripción activa (propia o del owner del dealership) o `users.is_admin`.
+ * Exige acceso activo por suscripción, concesión administrativa o plan del
+ * owner del dealership; `users.is_admin` siempre tiene acceso.
  * Solo actúa si la ruta tiene `@RequireSubscription()`.
  */
 @Injectable()
@@ -45,6 +46,7 @@ export class SubscriptionGuard implements CanActivate {
     const resolved = await this.entitlements_service.resolve(profile_id);
     if (
       resolved.source === "subscription" ||
+      resolved.source === "admin_grant" ||
       resolved.source === "dealership_owner"
     ) {
       return true;

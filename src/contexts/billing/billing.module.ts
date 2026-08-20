@@ -72,6 +72,10 @@ import { AssistantCreditPacksAdminController } from "./api/admin/assistant-credi
 import { FeaturedListingOffersAdminController } from "./api/admin/featured-listing-offers/featured-listing-offers-admin.controller";
 import { FindAssistantCreditPacksCatalogController } from "./api/user/find-assistant-credit-packs-catalog/find-assistant-credit-packs-catalog.controller";
 import { FindFeaturedListingOffersCatalogController } from "./api/user/find-featured-listing-offers-catalog/find-featured-listing-offers-catalog.controller";
+import { PlanAccessGrantEntity } from "./entities/plan-access-grant.entity";
+import { PlanAccessGrantUsageEntity } from "./entities/plan-access-grant-usage.entity";
+import { PlanAccessGrantsService } from "./services/plan-access-grants.service";
+import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/plan-access-grants-admin.controller";
 
 @Module({
   imports: [
@@ -98,6 +102,8 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
       DealershipEntity,
       DealershipMembersEntity,
       PlanLeadRequestEntity,
+      PlanAccessGrantEntity,
+      PlanAccessGrantUsageEntity,
     ]),
     forwardRef(() => VehiclesModule),
     VehicleSearchModule,
@@ -118,6 +124,7 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
     DiscountCouponsAdminController,
     BillingSubscriptionsAdminController,
     PlanLeadRequestsAdminController,
+    PlanAccessGrantsAdminController,
     GetBillingMeController,
     CreateSubscriptionCheckoutController,
     CreateOneTimeCheckoutController,
@@ -136,6 +143,7 @@ import { FindFeaturedListingOffersCatalogController } from "./api/user/find-feat
     AssistantCreditPacksService,
     FeaturedListingOffersService,
     PlanLeadRequestsService,
+    PlanAccessGrantsService,
     PlanLeadRequestNotificationMailService,
     BillingNotificationMailService,
     StripeWebhookService,

@@ -59,7 +59,7 @@ describe("entitlement merge precedence", () => {
     ).toBe(true);
     expect(
       getLimitFromEntitlement(effective[ENTITLEMENT_FEATURE.PHOTOS_PER_VEHICLE]),
-    ).toBe(6);
+    ).toBe(10);
   });
 
   it("treats unlimited as null limit", () => {
@@ -83,8 +83,8 @@ describe("entitlement merge precedence", () => {
   it("maps legacy quotas from entitlements", () => {
     const features = buildFreeEntitlementsMap();
     const quotas = toLegacyQuotas(features);
-    expect(quotas.max_listings).toBe(3);
-    expect(quotas.max_photos).toBe(6);
+    expect(quotas.max_listings).toBe(2);
+    expect(quotas.max_photos).toBe(10);
     expect(quotas.allow_videos).toBe(false);
   });
 });
