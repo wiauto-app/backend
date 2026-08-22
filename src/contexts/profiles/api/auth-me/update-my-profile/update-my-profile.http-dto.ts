@@ -17,7 +17,6 @@ export class UpdateMyProfileHttpDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(6, { message: "El teléfono debe tener al menos 6 dígitos" })
   phone?: string;
 
   @IsOptional()
