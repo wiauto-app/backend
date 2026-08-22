@@ -184,6 +184,11 @@ export class EntitlementsService {
     let used = 0;
     if (feature === ENTITLEMENT_FEATURE.VEHICLES) {
       used = resolved.listings_used;
+    } else if (feature === ENTITLEMENT_FEATURE.FEATURED_LISTINGS) {
+      used = await this.countFeaturedForProfile(
+        profile_id,
+        resolved.dealership_id,
+      );
     } else if (isMeteredFeature(feature)) {
       used = await this.getResolvedMeteredUsed(resolved, feature);
     }
@@ -210,6 +215,28 @@ export class EntitlementsService {
     if (limit !== null && resolved.listings_used >= limit) {
       throw new ForbiddenException(
         `Has alcanzado el límite de anuncios activos (${limit}).`,
+      );
+    }
+
+    return resolved;
+  }
+
+  async assertCanFeatureListing(profile_id: string): Promise<ResolvedEntitlements> {
+    const resolved = await this.resolve(profile_id);
+    if (resolved.is_unlimited) {
+      return resolved;
+    }
+
+    const limit = getLimitFromEntitlement(
+      resolved.features[ENTITLEMENT_FEATURE.FEATURED_LISTINGS],
+    );
+    const used = await this.countFeaturedForProfile(
+      profile_id,
+      resolved.dealership_id,
+    );
+    if (limit !== null && used >= limit) {
+      throw new ForbiddenException(
+        `Has alcanzado el límite de vehículos destacados (${limit}).`,
       );
     }
 
@@ -364,6 +391,11 @@ export class EntitlementsService {
       let used: number | undefined;
       if (feature === ENTITLEMENT_FEATURE.VEHICLES) {
         used = entitlements.listings_used;
+      } else if (feature === ENTITLEMENT_FEATURE.FEATURED_LISTINGS) {
+        used = await this.countFeaturedForProfile(
+          profile_id,
+          entitlements.dealership_id,
+        );
       } else if (isMeteredFeature(feature)) {
         used = await this.getResolvedMeteredUsed(entitlements, feature);
       }
@@ -571,6 +603,25 @@ export class EntitlementsService {
     }
 
     return this.vehicle_repository.count_active_by_profile_id(profile_id);
+  }
+
+  private async countFeaturedForProfile(
+    profile_id: string,
+    dealership_id?: string | null,
+  ): Promise<number> {
+    if (dealership_id) {
+      const members = await this.dealership_members_repository.find({
+        where: { dealership_id },
+        select: { profile_id: true },
+      });
+      return this.vehicle_repository.count_featured_active_by_profile_ids(
+        members.map((member) => member.profile_id),
+      );
+    }
+
+    return this.vehicle_repository.count_featured_active_by_profile_id(
+      profile_id,
+    );
   }
 
   private async getMeteredUsed(

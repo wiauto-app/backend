@@ -3730,6 +3730,21 @@
               "response": []
             },
             {
+              "name": "mis anuncios — destacar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/feature",
+                "description": "JWT + `VehicleOwnerGuard`. Destaca un anuncio activo con un hueco incluido del plan (`featured_listings`). No abre checkout Stripe. Requiere hueco libre (o admin). `featured_expires_at` queda null. Respuesta: `{ is_featured, featured_expires_at, can_feature }`."
+              },
+              "response": []
+            },
+            {
               "name": "mis anuncios — programar",
               "request": {
                 "method": "PATCH",

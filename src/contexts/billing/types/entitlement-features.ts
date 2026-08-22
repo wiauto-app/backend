@@ -30,13 +30,13 @@ export const LIMIT_FEATURES = [
   ENTITLEMENT_FEATURE.VIDEOS_PER_VEHICLE,
   ENTITLEMENT_FEATURE.AI_REQUESTS,
   ENTITLEMENT_FEATURE.USERS,
+  ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
 ] as const;
 
 export const BOOLEAN_FEATURES = [
   ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
   ENTITLEMENT_FEATURE.AI_GENERATION,
   ENTITLEMENT_FEATURE.STATISTICS,
-  ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
   ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
   ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
 ] as const;
@@ -135,9 +135,9 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
   },
   {
     feature: ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    label: "Anuncios destacados",
-    description: "Permite destacar anuncios",
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    label: "Vehículos destacados",
+    description: "Número máximo de anuncios destacados a la vez",
     metered: false,
   },
   {
@@ -204,8 +204,8 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
   },
   {
     feature: ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    value: { bool: false },
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    value: { limit: 0 },
   },
   {
     feature: ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,

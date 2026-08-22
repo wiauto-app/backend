@@ -40,9 +40,11 @@ import {
 } from "../types/vehicle-list-item";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import {
+  canFeatureVehicle,
   canRenewVehicle,
   canScheduleVehicle,
   computeRenewedExpiresAt,
+  isFeaturedActive,
   SCHEDULE_MAX_FUTURE_MS,
 } from "../utils/owner-vehicle-rules";
 import { buildMailVehicleCard } from "@/src/contexts/shared/mail/mail-vehicle-card";
@@ -59,6 +61,7 @@ import { GetVehicleDto } from "../dto/get-vehicle.dto";
 import { GetVehicleReportDto } from "../dto/get-vehicle-report.dto";
 import { VehicleReport } from "../types/vehicle-report";
 import { RemoveVehicleDto } from "../dto/remove-vehicle.dto";
+import { FeatureVehicleDto } from "../dto/feature-vehicle.dto";
 import { RenewVehicleDto } from "../dto/renew-vehicle.dto";
 import { ScheduleVehicleDto } from "../dto/schedule-vehicle.dto";
 import { UpdateOwnerVehicleStatusDto } from "../dto/update-owner-vehicle-status.dto";
@@ -72,6 +75,7 @@ import { AttachVehicleImagesFromTempService } from "../vehicle-images/services/a
 import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-images/repositories/typeorm.vehicle-images.repository";
 import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-price.service";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
+import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
 import { Repository } from "typeorm";
@@ -135,6 +139,7 @@ export class VehicleService {
     @InjectRepository(VideosEntity)
     private readonly videos_repository: Repository<VideosEntity>,
     private readonly promote_temp_storage_paths_service: PromoteTempStoragePathsService,
+    private readonly entitlements_service: EntitlementsService,
   ) { }
 
   private async resolvePublisherContext(
@@ -486,6 +491,58 @@ export class VehicleService {
       renewed_at: now,
       expires_at: renewed.expires_at,
       can_renew: false,
+    };
+  }
+
+  async feature(dto: FeatureVehicleDto) {
+    const existing = await this.vehicle_repository.findById(dto.vehicle_id);
+    if (!existing) {
+      throw new VehicleNotFoundException(dto.vehicle_id);
+    }
+
+    const is_featured_active = isFeaturedActive({
+      is_featured: existing.is_featured ?? false,
+      featured_expires_at: existing.featured_expires_at ?? null,
+    });
+
+    if (
+      !canFeatureVehicle({
+        status: existing.status ?? STATUS_VEHICLE.PENDING,
+        is_featured_active,
+      })
+    ) {
+      throw new BadRequestException(
+        "Este anuncio no se puede destacar. Debe estar activo y no estar destacado.",
+      );
+    }
+
+    if (!existing.profile_id) {
+      throw new BadRequestException(
+        "Este anuncio no tiene un propietario asociado.",
+      );
+    }
+
+    await this.entitlements_service.assertCanFeatureListing(existing.profile_id);
+
+    const preloaded = await this.vehicleRepository.preload({
+      id: dto.vehicle_id,
+      is_featured: true,
+      featured_expires_at: null,
+    });
+    if (!preloaded) {
+      throw new VehicleNotFoundException(dto.vehicle_id);
+    }
+
+    await this.vehicleRepository.save(preloaded);
+    await this.vehicle_search_indexer.syncVehicle(
+      dto.vehicle_id,
+      preloaded.status,
+    );
+
+    return {
+      is_featured: true,
+      featured_expires_at: null,
+      can_feature: false,
     };
   }
 

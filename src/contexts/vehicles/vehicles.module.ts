@@ -43,6 +43,7 @@ import { RemoveVehicleController } from "./api/v1/remove-vehicle/remove-vehicle.
 import { FindOwnerVehiclesController } from "./api/v1/find-owner-vehicles/find-owner-vehicles.controller";
 import { GetVehicleReportController } from "./api/v1/get-vehicle-report/get-vehicle-report.controller";
 import { DuplicateVehicleController } from "./api/v1/duplicate-vehicle/duplicate-vehicle.controller";
+import { FeatureVehicleController } from "./api/v1/feature-vehicle/feature-vehicle.controller";
 import { RenewVehicleController } from "./api/v1/renew-vehicle/renew-vehicle.controller";
 import { ScheduleVehicleController } from "./api/v1/schedule-vehicle/schedule-vehicle.controller";
 import { UpdateOwnerVehicleStatusController } from "./api/v1/update-owner-vehicle-status/update-owner-vehicle-status.controller";
@@ -122,6 +123,7 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     UpdateVehicleController,
     RemoveVehicleController,
     DuplicateVehicleController,
+    FeatureVehicleController,
     RenewVehicleController,
     ScheduleVehicleController,
     UpdateOwnerVehicleStatusController,

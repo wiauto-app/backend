@@ -774,6 +774,36 @@ export class TypeOrmVehicleRepository {
     });
   }
 
+  async count_featured_active_by_profile_id(profile_id: string): Promise<number> {
+    return this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .where("vehicle.profile_id = :profile_id", { profile_id })
+      .andWhere("vehicle.status = :status", { status: STATUS_VEHICLE.ACTIVE })
+      .andWhere("vehicle.is_featured = :is_featured", { is_featured: true })
+      .andWhere(
+        "(vehicle.featured_expires_at IS NULL OR vehicle.featured_expires_at > NOW())",
+      )
+      .getCount();
+  }
+
+  async count_featured_active_by_profile_ids(
+    profile_ids: string[],
+  ): Promise<number> {
+    if (profile_ids.length === 0) {
+      return 0;
+    }
+
+    return this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .where("vehicle.profile_id IN (:...profile_ids)", { profile_ids })
+      .andWhere("vehicle.status = :status", { status: STATUS_VEHICLE.ACTIVE })
+      .andWhere("vehicle.is_featured = :is_featured", { is_featured: true })
+      .andWhere(
+        "(vehicle.featured_expires_at IS NULL OR vehicle.featured_expires_at > NOW())",
+      )
+      .getCount();
+  }
+
   async findOne(id: string,profile_id?: string): Promise<VehicleDetail | null> {
     const vehicle = await this.vehicle_repository.findOne({
       where: { id },

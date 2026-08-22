@@ -8,6 +8,7 @@ import {
 } from "@/src/contexts/billing/types/entitlement-features";
 import {
   buildFreeEntitlementsMap,
+  buildUnlimitedEntitlementsMap,
   getBooleanFromEntitlement,
   getLimitFromEntitlement,
   mergeEntitlements,
@@ -86,6 +87,22 @@ describe("entitlement merge precedence", () => {
     expect(quotas.max_listings).toBe(2);
     expect(quotas.max_photos).toBe(10);
     expect(quotas.allow_videos).toBe(false);
+  });
+
+  it("treats featured_listings as a free limit of 0", () => {
+    const features = buildFreeEntitlementsMap();
+    const featured = features[ENTITLEMENT_FEATURE.FEATURED_LISTINGS];
+    expect(featured?.value_type).toBe(ENTITLEMENT_VALUE_TYPE.LIMIT);
+    expect(getLimitFromEntitlement(featured)).toBe(0);
+    expect(getBooleanFromEntitlement(featured)).toBe(false);
+  });
+
+  it("treats featured_listings as unlimited for admins", () => {
+    const features = buildUnlimitedEntitlementsMap();
+    const featured = features[ENTITLEMENT_FEATURE.FEATURED_LISTINGS];
+    expect(featured?.value_type).toBe(ENTITLEMENT_VALUE_TYPE.UNLIMITED);
+    expect(getLimitFromEntitlement(featured)).toBe(null);
+    expect(getBooleanFromEntitlement(featured)).toBe(true);
   });
 });
 
