@@ -15,7 +15,6 @@ export interface SaveProfileInput {
   image_url?: string | null;
   phone_code?: string | null;
   phone?: string | null;
-  dni?: string | null;
 }
 
 export interface UpdateProfileInput {
@@ -25,7 +24,6 @@ export interface UpdateProfileInput {
   image_url?: string | null;
   phone_code?: string | null;
   phone?: string | null;
-  dni?: string | null;
 }
 
 @Injectable()
@@ -33,7 +31,7 @@ export class TypeOrmProfileRepository {
   constructor(
     @InjectRepository(ProfileEntity)
     private readonly profileRepository: Repository<ProfileEntity>,
-  ) {}
+  ) { }
 
   async save(input: SaveProfileInput): Promise<ProfileEntity> {
     const entity = this.profileRepository.create({
@@ -44,7 +42,6 @@ export class TypeOrmProfileRepository {
       image_url: input.image_url ?? "",
       phone_code: input.phone_code ?? null,
       phone: input.phone ?? null,
-      dni: input.dni ?? null,
     });
 
     return this.profileRepository.save(entity);
@@ -138,7 +135,6 @@ export class TypeOrmProfileRepository {
         ? { phone_code: input.phone_code }
         : {}),
       ...(input.phone !== undefined ? { phone: input.phone } : {}),
-      ...(input.dni !== undefined ? { dni: input.dni } : {}),
     });
 
     if (!preloaded) {

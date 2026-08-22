@@ -29,7 +29,6 @@ export class MeResponseDto {
   image_url?: string;
   phone_code?: string;
   phone?: string;
-  dni?: string | null;
   last_sign_in: Date | null;
   vehicle_lists: VehicleListEntity[];
   isAdmin: boolean;
@@ -55,7 +54,6 @@ export class MeResponseDto {
     dto.image_url = profile.image_url;
     dto.phone_code = profile.phone_code ?? undefined;
     dto.phone = profile.phone ?? undefined;
-    dto.dni = profile.dni ?? undefined;
     dto.isAdmin = user.is_admin;
     dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.billing_summary = options.billing_summary;

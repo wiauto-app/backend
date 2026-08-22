@@ -2,10 +2,12 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryColumn,
   Relation,
+  Unique,
 } from "typeorm";
 
 import { DealershipInvitationsEntity } from "@/src/contexts/dealership/entities/dealership-invitations.entity";
@@ -13,6 +15,7 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
+import { Provinces } from "../../locations/provinces/entities/province.entity";
 
 /** Legacy account-type column; no longer written or read by product flows. */
 export const PROFILE_TYPE = {
@@ -23,6 +26,7 @@ export const PROFILE_TYPE = {
 export type ProfileType = (typeof PROFILE_TYPE)[keyof typeof PROFILE_TYPE];
 
 @Entity({ name: "profile" })
+@Unique(["phone"])
 export class ProfileEntity {
   @PrimaryColumn("uuid")
   id!: string;
@@ -35,9 +39,6 @@ export class ProfileEntity {
 
   @Column()
   name: string;
-
-  @Column({ type: "varchar", nullable: true })
-  dni: string | null;
 
   @Column({ name: "stripe_customer_id", type: "varchar", nullable: true })
   stripe_customer_id: string | null;
@@ -57,6 +58,9 @@ export class ProfileEntity {
   @Column({ type: "varchar", nullable: true })
   phone_code: string | null;
 
+  @Column({ type: "varchar", nullable: true })
+  phone: string | null;
+
   @Column({
     type: "enum",
     enum: PROFILE_TYPE,
@@ -65,14 +69,19 @@ export class ProfileEntity {
   })
   type: ProfileType;
 
-  @Column({ type: "varchar", nullable: true })
-  phone: string | null;
-
   @Column({ nullable: true })
   avatar_url?: string;
 
   @Column({ nullable: true })
   image_url?: string;
+
+  @Column({ type: "uuid", nullable: true })
+  province_id:string;
+
+  @ManyToOne(() => Provinces, (province) => province.id)
+  @JoinColumn({ name: "province_id" })
+  province: Relation<Provinces>;
+  
 
   @OneToMany(() => VehicleEntity, (vehicle) => vehicle.profile)
   vehicles: Relation<VehicleEntity[]>;

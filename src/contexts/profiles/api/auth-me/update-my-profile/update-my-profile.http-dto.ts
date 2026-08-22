@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength, Matches } from "class-validator";
+import { IsOptional, IsString, MinLength } from "class-validator";
 
 export class UpdateMyProfileHttpDto {
   @IsOptional()
@@ -19,13 +19,6 @@ export class UpdateMyProfileHttpDto {
   @IsString()
   @MinLength(6, { message: "El teléfono debe tener al menos 6 dígitos" })
   phone?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^[0-9]{8}[A-Za-z]?$/, {
-    message: "El DNI debe tener 8 dígitos y, opcionalmente, una letra",
-  })
-  dni?: string;
 
   @IsOptional()
   @IsString()

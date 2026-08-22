@@ -181,7 +181,7 @@ export class ApiVehiculoClient {
         Accept: "application/json",
       },
     });
-
+console
     if (response.status === 400) {
       throw new BadRequestException(
         "La consulta de identificación no es válida",

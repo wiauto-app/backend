@@ -63,7 +63,6 @@ export interface UpdateMyProfileInput {
   last_name?: string;
   phone_code?: string;
   phone?: string;
-  dni?: string;
   avatar_url?: string;
   image_url?: string;
 }
@@ -228,7 +227,6 @@ export class ProfileService {
     image_url?: string;
     phone_code?: string;
     phone?: string;
-    dni?: string;
   }): Promise<ProfileResponse> {
     const { id, ...patch_fields } = input;
     const profile = await this.profile_repository.findOne(id);
