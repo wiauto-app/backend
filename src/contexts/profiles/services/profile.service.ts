@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -24,6 +25,8 @@ import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/t
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { CreateProfileDto } from "../dto/create-profile";
 import { UpdateProfileDto } from "../dto/update-profile.dto";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "@nestjs/cache-manager";
 
 const dealership_member_roles = new Set<PrimitiveDealershipMember["role"]>([
   "owner",
@@ -77,6 +80,8 @@ export class ProfileService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly alert_repository: TypeOrmAlertRepository,
     private readonly newsletter_service: NewsletterService,
+    @Inject(CACHE_MANAGER)
+    private readonly cache_manager: Cache,
   ) {}
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
@@ -227,6 +232,7 @@ export class ProfileService {
     image_url?: string;
     phone_code?: string;
     phone?: string;
+    province_id?: number;
   }): Promise<ProfileResponse> {
     const { id, ...patch_fields } = input;
     const profile = await this.profile_repository.findOne(id);
@@ -243,6 +249,7 @@ export class ProfileService {
     if (!reloaded) {
       throw new ProfileNotFoundException(id);
     }
+    await this.cache_manager.del(`me:${id}`);
     return mapProfileToResponse(reloaded);
   }
 

@@ -75,8 +75,8 @@ export class ProfileEntity {
   @Column({ nullable: true })
   image_url?: string;
 
-  @Column({ type: "uuid", nullable: true })
-  province_id:string;
+  @Column({ type: "int", nullable: true })
+  province_id:number | null;
 
   @ManyToOne(() => Provinces, (province) => province.id)
   @JoinColumn({ name: "province_id" })

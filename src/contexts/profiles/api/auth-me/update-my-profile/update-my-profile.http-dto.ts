@@ -1,4 +1,5 @@
-import { IsOptional, IsString, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import { IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
 export class UpdateMyProfileHttpDto {
   @IsOptional()
@@ -26,4 +27,9 @@ export class UpdateMyProfileHttpDto {
   @IsOptional()
   @IsString()
   image_url?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  province_id?: number;
 }

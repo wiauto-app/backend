@@ -24,6 +24,7 @@ export interface UpdateProfileInput {
   image_url?: string | null;
   phone_code?: string | null;
   phone?: string | null;
+  province_id?: number | null;
 }
 
 @Injectable()
@@ -121,22 +122,14 @@ export class TypeOrmProfileRepository {
   async update(id: string, input: UpdateProfileInput): Promise<ProfileEntity | null> {
     const preloaded = await this.profileRepository.preload({
       id,
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.last_name !== undefined
-        ? { last_name: input.last_name ?? undefined }
-        : {}),
-      ...(input.avatar_url !== undefined
-        ? { avatar_url: input.avatar_url ?? "" }
-        : {}),
-      ...(input.image_url !== undefined
-        ? { image_url: input.image_url ?? "" }
-        : {}),
-      ...(input.phone_code !== undefined
-        ? { phone_code: input.phone_code }
-        : {}),
-      ...(input.phone !== undefined ? { phone: input.phone } : {}),
+      name: input.name ?? undefined,
+      last_name: input.last_name ?? undefined,
+      avatar_url: input.avatar_url ?? undefined,
+      image_url: input.image_url ?? undefined,
+      phone_code: input.phone_code ?? undefined,
+      phone: input.phone ?? undefined,
+      province_id: input.province_id ?? null,
     });
-
     if (!preloaded) {
       return null;
     }

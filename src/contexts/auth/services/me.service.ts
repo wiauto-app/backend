@@ -42,7 +42,7 @@ export class MeService {
     });
 
     //5 minute
-    await this.cacheManager.set(`me:${user.id}`, me, 60);
+    await this.cacheManager.set(`me:${user.id}`, me, 300);
     return me;
   }
 

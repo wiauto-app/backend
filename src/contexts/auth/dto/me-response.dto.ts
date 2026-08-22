@@ -16,6 +16,7 @@ interface MeResponseFromUserOptions {
   has_password: boolean;
   scope?: "session" | "2fa_challenge";
   dealership_membership?: DealershipMembershipDetail | null;
+  province_id?: number;
 }
 
 export class MeResponseDto {
@@ -36,6 +37,7 @@ export class MeResponseDto {
   type: "session" | "2fa_challenge";
   dealership_membership?: MeDealershipMembershipDto | null;
   billing_summary?: BillingMeSummary | null;
+  province_id?: number;
   static fromUser(
     user: User,
     options: MeResponseFromUserOptions,
@@ -58,6 +60,7 @@ export class MeResponseDto {
     dto.type = options.scope === "2fa_challenge" ? "2fa_challenge" : "session";
     dto.billing_summary = options.billing_summary;
     dto.vehicle_lists = profile.vehicle_lists;
+    dto.province_id = profile.province_id ?? undefined;
     dto.dealership_membership = options.dealership_membership
       ? {
         dealership_id: options.dealership_membership.dealership_id,
