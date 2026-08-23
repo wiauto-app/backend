@@ -224,6 +224,13 @@ export class StripeClient {
     await this.stripe.subscriptions.update(subscription_id, { metadata });
   }
 
+  /** Cancela de inmediato en Stripe. No genera reembolso automático. */
+  async cancelSubscriptionImmediately(subscription_id: string): Promise<void> {
+    await this.stripe.subscriptions.cancel(subscription_id, {
+      prorate: false,
+    });
+  }
+
   async createOrUpdateOneTimeProduct(params: {
     stripe_product_id?: string | null;
     title: string;

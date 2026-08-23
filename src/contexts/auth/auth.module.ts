@@ -47,6 +47,8 @@ import { AuthSecurityMailService } from "./services/auth-security-mail.service";
 import { ProfileEntity } from "../profiles/entities/profile.entity";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 import { BillingModule } from "../billing/billing.module";
+import { VehicleSearchModule } from "../vehicles/search/vehicle-search.module";
+import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 
 @Module({
   controllers: [
@@ -97,10 +99,16 @@ import { BillingModule } from "../billing/billing.module";
     forwardRef(() => TwoFactorAuthModule),
     DealershipInvitationModule,
 
-    TypeOrmModule.forFeature([User, SessionEntity, RefreshTokenEntity, ProfileEntity]),
+    TypeOrmModule.forFeature([
+      User,
+      SessionEntity,
+      RefreshTokenEntity,
+      ProfileEntity,
+      VehicleEntity,
+    ]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
-    BillingModule
-
+    BillingModule,
+    VehicleSearchModule,
   ],
   exports: [
     JwtGuard,

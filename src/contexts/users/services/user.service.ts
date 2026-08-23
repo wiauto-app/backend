@@ -201,7 +201,7 @@ export class UserService {
     }
 
     const vehicle_count = await this.vehicleRepository.count({
-      where: { profile: { id } },
+      where: { profile_id: id },
     });
     if (vehicle_count > 0) {
       throw new ConflictException(

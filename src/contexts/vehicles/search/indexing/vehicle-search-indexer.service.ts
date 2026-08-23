@@ -35,6 +35,16 @@ export class VehicleSearchIndexer {
     }
   }
 
+  async deleteVehicles(vehicle_ids: string[]): Promise<void> {
+    if (vehicle_ids.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      vehicle_ids.map((vehicle_id) => this.deleteVehicle(vehicle_id)),
+    );
+  }
+
   async syncVehicle(vehicle_id: string, status?: string): Promise<void> {
     if (status && status !== STATUS_VEHICLE.ACTIVE) {
       await this.deleteVehicle(vehicle_id);

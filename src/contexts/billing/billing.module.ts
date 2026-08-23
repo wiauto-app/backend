@@ -163,6 +163,8 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     SubscriptionGuard,
     EntitlementGuard,
     TypeOrmSubscriptionPlanRepository,
+    TypeOrmSubscriptionRepository,
+    StripeClient,
     BillingNotificationMailService,
   ],
 })

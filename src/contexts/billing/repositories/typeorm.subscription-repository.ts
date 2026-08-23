@@ -96,6 +96,32 @@ export class TypeOrmSubscriptionRepository {
     };
   }
 
+  async findCancellableByProfileId(profile_id: string) {
+    return this.subscription_repository.find({
+      where: [
+        { profile_id, status: SUBSCRIPTION_STATUS.ACTIVE },
+        { profile_id, status: SUBSCRIPTION_STATUS.TRIALING },
+        { profile_id, status: SUBSCRIPTION_STATUS.PAST_DUE },
+        { profile_id, status: SUBSCRIPTION_STATUS.UNPAID },
+      ],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  async markCanceled(subscription_id: string): Promise<void> {
+    const preloaded = await this.subscription_repository.preload({
+      id: subscription_id,
+      status: SUBSCRIPTION_STATUS.CANCELED,
+      cancel_at_period_end: false,
+    });
+
+    if (!preloaded) {
+      return;
+    }
+
+    await this.subscription_repository.save(preloaded);
+  }
+
   async findByStripeSubscriptionId(stripe_subscription_id: string) {
     const row = await this.subscription_repository.findOne({
       where: { stripe_subscription_id },
