@@ -34,7 +34,17 @@ export class RemoveVehicleImageService {
     if (!canModifyVehicle) {
       throw new ForbiddenException("You are not allowed to remove this vehicle image");
     }
-    await this.objectStorageService.deleteByPath(vehicleImage.url);
+    
+    // Eliminar URL final si existe
+    if (vehicleImage.url) {
+      await this.objectStorageService.deleteByPath(vehicleImage.url);
+    }
+    
+    // Eliminar source_path (TEMP) si existe y es diferente
+    if (vehicleImage.source_path && vehicleImage.source_path !== vehicleImage.url) {
+      await this.objectStorageService.deleteByPath(vehicleImage.source_path);
+    }
+    
     await this.vehicleImageRepository.delete(removeVehicleImageDto.id);
   }
 }

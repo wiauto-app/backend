@@ -59,7 +59,15 @@ export class TypeOrmVehicleImagesRepository {
       where: { vehicle: { id: vehicle_id } },
     });
     for (const row of rows) {
-      await lastValueFrom(this.objectStorageService.deleteFileByUrl(row.url));
+      if (row.url) {
+        await lastValueFrom(this.objectStorageService.deleteFileByUrl(row.url));
+      }
+      // También eliminar source_path si existe (TEMP)
+      if (row.source_path && row.source_path !== row.url) {
+        await lastValueFrom(
+          this.objectStorageService.deleteFileByUrl(row.source_path),
+        );
+      }
     }
   }
 }

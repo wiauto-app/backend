@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { FileQueuePort } from "./ports/file-queue.port";
 import { FileStoragePort } from "./ports/file-storage.port";
@@ -12,11 +13,13 @@ import { R2ImageStorageFinalizationAdapter } from "./clients/r2-image-storage-fi
 import { FinalizeImageStoragePathService } from "./services/finalize-image-storage-path.service";
 import { ImageStorageFinalizationPort } from "./ports/image-storage-finalization.port";
 import { PromoteTempStoragePathsService } from "./services/promote-temp-storage-paths.service";
-import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE } from "./media.constants";
+import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE, PROCESS_VEHICLE_IMAGE_QUEUE } from "./media.constants";
 import { ImageProcessor } from "./processors/image.processor";
 import { VideoProcessor } from "./processors/video.processor";
+import { ProcessVehicleImageProcessor } from "./processors/process-vehicle-image.processor";
 import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/vehicle-images-persistence.module";
+import { VehicleImagesEntity } from "../../vehicles/vehicle-images/entities/vehicle-images.entity";
 import { OptimizeImageService } from "./services/optimize-image.service";
 import { UploadImageService } from "./services/upload-image.service";
 import { UploadVideoService } from "./services/upload-video.service";
@@ -33,6 +36,11 @@ import { RemoveFileController } from "./api/remove-file/remove-file.controller";
 import { UploadTempVehicleImageController } from "./api/upload-temp-vehicle-image/upload-temp-vehicle-image.controller";
 import { UploadTempVehicleImageService } from "./services/upload-temp-vehicle-image.service";
 import { ImageValidationPipe } from "./pipes/image-validation.pipe";
+import { CleanupAbandonedTempUploadsService } from "./services/cleanup-abandoned-temp-uploads.service";
+import { TempUploadCleanupProcessor } from "./queues/temp-upload-cleanup.processor";
+import { TempUploadCleanupBootstrapService } from "./queues/temp-upload-cleanup-bootstrap.service";
+import { TEMP_UPLOAD_CLEANUP_QUEUE } from "./queues/temp-upload-cleanup.queue.constants";
+import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
 
 @Module({
   controllers: [
@@ -75,6 +83,7 @@ import { ImageValidationPipe } from "./pipes/image-validation.pipe";
 
     FileQueueAdapter,
     ImageProcessor,
+    ProcessVehicleImageProcessor,
     FfmpegAdapter,
     {
       provide: VideoProcessorPort,
@@ -85,11 +94,18 @@ import { ImageValidationPipe } from "./pipes/image-validation.pipe";
       provide: FileQueuePort,
       useExisting: FileQueueAdapter,
     },
+
+    CleanupAbandonedTempUploadsService,
+    TempUploadCleanupProcessor,
+    TempUploadCleanupBootstrapService,
   ],
   imports: [
     BullModule.registerQueue({ name: UPLOAD_IMAGE_QUEUE }),
     BullModule.registerQueue({ name: UPLOAD_VIDEO_QUEUE }),
+    BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
+    BullModule.registerQueue({ name: TEMP_UPLOAD_CLEANUP_QUEUE }),
     VehicleImagesPersistenceModule,
+    TypeOrmModule.forFeature([VehicleImagesEntity, TemporaryUploadEntity]),
   ],
   exports: [
     FileStoragePort,

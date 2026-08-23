@@ -1,7 +1,9 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { BullModule } from "@nestjs/bullmq";
 
 import { BillingModule } from "@/src/contexts/billing/billing.module";
+import { PROCESS_VEHICLE_IMAGE_QUEUE } from "@/src/contexts/shared/file/media.constants";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { VehiclesModule } from "../vehicles.module";
 
@@ -15,11 +17,15 @@ import { VehicleImagesPersistenceModule } from "./vehicle-images-persistence.mod
 import { VehicleImagesEntity } from "./entities/vehicle-images.entity";
 import { RemoveVehicleImageController } from "./api/v1/remove-vehicle-image/remove-vehicle-image.controller";
 import { RemoveVehicleImageService } from "./services/remove-vehicle-image.service";
+import { TempUploadController } from "./api/v1/temp-upload/temp-upload.controller";
+import { TempUploadService } from "./services/temp-upload.service";
+import { TemporaryUploadEntity } from "../../shared/file/entities/temporary-upload.entity";
 
 @Module({
   controllers: [
     BulkVehicleImagesController,
     RemoveVehicleImageController,
+    TempUploadController,
   ],
 
   providers: [
@@ -28,6 +34,7 @@ import { RemoveVehicleImageService } from "./services/remove-vehicle-image.servi
     BulkVehicleImagesService,
     AttachVehicleImagesFromTempService,
     UploadFileInterceptor,
+    TempUploadService,
   ],
 
   exports: [
@@ -35,15 +42,18 @@ import { RemoveVehicleImageService } from "./services/remove-vehicle-image.servi
     VehicleImagesPersistenceModule,
     BulkVehicleImagesService,
     AttachVehicleImagesFromTempService,
+    TempUploadService,
   ],
 
   imports: [
     VehicleImagesPersistenceModule,
     FileModule,
+    BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
 
     TypeOrmModule.forFeature([
       VehicleEntity,
       VehicleImagesEntity,
+      TemporaryUploadEntity,
     ]),
 
     forwardRef(() => VehiclesModule),

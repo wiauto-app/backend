@@ -57,6 +57,7 @@ import { FeaturedVehicleExpiryBootstrapService } from "./queues/featured-vehicle
 import { VEHICLE_LISTING_EXPIRY_QUEUE } from "./queues/vehicle-listing-expiry.queue.constants";
 import { VehicleListingExpiryProcessor } from "./queues/vehicle-listing-expiry.processor";
 import { VehicleListingExpiryScheduler } from "./queues/vehicle-listing-expiry.scheduler";
+import { PROCESS_VEHICLE_IMAGE_QUEUE } from "../shared/file/media.constants";
 import { VehiclePriceEntity } from "./vehicle-prices/entities/vehicle-price.entity";
 import { AdminFindAllVehiclesController } from "./api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
 import { AdminGetVehicleController } from "./api/admin-v1/admin-get-vehicle/admin-get-vehicle.controller";
@@ -208,6 +209,7 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: VEHICLE_LISTING_EXPIRY_QUEUE }),
+    BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
     LocationsModule,
     VehicleImagesModule,
     VehiclePricesModule,

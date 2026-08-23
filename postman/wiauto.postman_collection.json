@@ -24,6 +24,11 @@
       "value": ""
     },
     {
+      "key": "upload_id",
+      "value": "",
+      "description": "UUID del upload temporal de imagen de vehículo"
+    },
+    {
       "key": "vehicle_ref",
       "value": "1",
       "description": "Referencia pública numérica del vehículo (GET /v1/vehicles/by-ref/:ref)."
@@ -3918,6 +3923,100 @@
                     }
                   ],
                   "body": "{\n  \"message\": \"Las imágenes se están subiendo en segundo plano\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "crear upload temporal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mime_type\": \"image/jpeg\",\n  \"size_bytes\": 2048000,\n  \"original_filename\": \"foto-coche.jpg\"\n}"
+                },
+                "url": "{{base_url}}/v1/vehicle-images/temp-upload",
+                "description": "Genera una URL firmada para subir una imagen directamente a R2. Tipos permitidos: image/jpeg, image/png, image/webp, image/avif. Máximo 10MB."
+              },
+              "response": [
+                {
+                  "name": "201 Created — upload temporal (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/vehicle-images/temp-upload",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"mime_type\": \"image/jpeg\",\n  \"size_bytes\": 2048000,\n  \"original_filename\": \"foto-coche.jpg\"\n}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"upload_id\": \"11111111-2222-3333-4444-555555555555\",\n  \"signed_url\": \"https://r2.cloudflare.com/bucket/vehicles-images/temp/profile-id/upload-id.jpg?...\",\n  \"storage_path\": \"vehicles-images/temp/profile-id/upload-id.jpg\",\n  \"expires_at\": \"2026-08-23T12:00:00.000Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "confirmar upload temporal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-images/temp-upload/{{upload_id}}/confirm",
+                "description": "Confirma que el archivo fue subido exitosamente a R2 y marca el upload temporal como 'uploaded'."
+              },
+              "response": [
+                {
+                  "name": "200 OK — confirmación exitosa (ejemplo)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                      }
+                    ],
+                    "url": "{{base_url}}/v1/vehicle-images/temp-upload/11111111-2222-3333-4444-555555555555/confirm"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"upload_id\": \"11111111-2222-3333-4444-555555555555\"\n}"
                 }
               ]
             }

@@ -5,6 +5,11 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, EntityTarget, In } from "typeorm";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { PROCESS_VEHICLE_IMAGE_QUEUE } from "@/src/contexts/shared/file/media.constants";
+import { TempUploadService } from "@/src/contexts/vehicles/vehicle-images/services/temp-upload.service";
+import type { ProcessVehicleImageJob } from "@/src/contexts/shared/file/processors/process-vehicle-image.processor";
 
 import { CatalogFuelTypeNotFoundException } from "../../../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
 import { CatalogFuelTypesService } from "../../../catalog/fuel_types/services/catalog-fuel-types.service";
@@ -35,7 +40,11 @@ import { VehicleImagesEntity } from "../../../vehicle-images/entities/vehicle-im
 import { VehiclePriceEntity } from "../../../vehicle-prices/entities/vehicle-price.entity";
 import { VEHICLE_PRICE_STATUS } from "../../../vehicle-prices/types/vehicle-price";
 import { buildMailVehicleCard } from "@/src/contexts/shared/mail/mail-vehicle-card";
-import { CreateVehicleDto, VehicleMediaDto } from "./create-vehicle.http-dto";
+import {
+  CreateVehicleDto,
+  VehicleImageDto,
+  VehicleMediaDto,
+} from "./create-vehicle.http-dto";
 import { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
 
 export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
@@ -43,9 +52,36 @@ export { validateVehicleCreationRules } from "../../../services/validate-vehicle
 const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 
 interface PromotedVehicleMedia {
-  images: VehicleMediaDto[];
+  images: Array<{ path: string; order: number }>;
   videos: VehicleMediaDto[];
 }
+
+interface AsyncVehicleImageInput {
+  upload_id: string;
+  order: number;
+}
+
+const partitionVehicleImages = (
+  images: VehicleImageDto[] | undefined,
+): {
+  async_images: AsyncVehicleImageInput[];
+  legacy_images: Array<{ path: string; order: number }>;
+} => {
+  const async_images: AsyncVehicleImageInput[] = [];
+  const legacy_images: Array<{ path: string; order: number }> = [];
+
+  for (const image of images ?? []) {
+    if (image.upload_id) {
+      async_images.push({ upload_id: image.upload_id, order: image.order });
+      continue;
+    }
+    if (image.path) {
+      legacy_images.push({ path: image.path, order: image.order });
+    }
+  }
+
+  return { async_images, legacy_images };
+};
 
 interface CreateVehicleRollbackContext {
   vehicle_id: string | null;
@@ -66,6 +102,9 @@ export class CreateVehicleService {
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
+    @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
+    private readonly imageQueue: Queue<ProcessVehicleImageJob>,
+    private readonly tempUploadService: TempUploadService,
   ) {}
 
   async create(dto: CreateVehicleDto, publisher_profile_id: string) {
@@ -109,15 +148,33 @@ export class CreateVehicleService {
       ? PUBLISHER_TYPE.DEALERSHIP
       : PUBLISHER_TYPE.PARTICULAR;
 
+    const { async_images, legacy_images } = partitionVehicleImages(dto.images);
+    const useAsyncFlow = async_images.length > 0;
     const temp_media_paths = [
-      ...(dto.images ?? []).toSorted((a, b) => a.order - b.order),
+      ...legacy_images.toSorted((a, b) => a.order - b.order),
       ...(dto.videos ?? []).toSorted((a, b) => a.order - b.order),
     ].map(item => item.path);
+
     let media_promoted = false;
     let vehicle: VehicleEntity | null = null;
+    const enqueuedImageIds: string[] = [];
+    let validatedTempUploads: Awaited<
+      ReturnType<typeof this.tempUploadService.validateAndGetTempUpload>
+    >[] = [];
 
     try {
-      const media = await this.promoteMedia(dto.images ?? [], dto.videos ?? []);
+      if (useAsyncFlow) {
+        validatedTempUploads = await Promise.all(
+          async_images.map(img =>
+            this.tempUploadService.validateAndGetTempUpload(
+              img.upload_id,
+              publisher_profile_id,
+            ),
+          ),
+        );
+      }
+
+      const media = await this.promoteMedia(legacy_images, dto.videos ?? []);
       media_promoted = temp_media_paths.length > 0;
 
       vehicle = await this.data_source.transaction(async manager => {
@@ -187,6 +244,31 @@ export class CreateVehicleService {
           }),
         );
 
+        // Flujo async: crear VehicleImages con status=uploaded
+        if (useAsyncFlow) {
+          const imageEntities = async_images.map((img, index) => {
+            const tempUpload = validatedTempUploads[index];
+            return manager.create(VehicleImagesEntity, {
+              vehicle_id: saved.id,
+              order: img.order,
+              status: "uploaded",
+              source_path: tempUpload.storage_path,
+              url: tempUpload.storage_path,
+            });
+          });
+
+          const savedImages = await manager.save(
+            VehicleImagesEntity,
+            imageEntities,
+          );
+          enqueuedImageIds.push(...savedImages.map(img => img.id));
+
+          await this.tempUploadService.markAsConsumed(
+            async_images.map(img => img.upload_id),
+          );
+        }
+
+        // Flujo legacy: crear con media ya promovida
         if (media.images.length > 0) {
           await manager.save(
             VehicleImagesEntity,
@@ -195,6 +277,7 @@ export class CreateVehicleService {
                 vehicle_id: saved.id,
                 url: image.path,
                 order: image.order,
+                status: "ready",
               }),
             ),
           );
@@ -216,6 +299,31 @@ export class CreateVehicleService {
 
         return saved;
       });
+
+      // Encolar procesamiento de imágenes FUERA de la transacción
+      if (enqueuedImageIds.length > 0 && vehicle) {
+        const vehicleId = vehicle.id;
+        const jobs = async_images.map((img, index) => {
+          const imageId = enqueuedImageIds[index];
+          const tempUpload = validatedTempUploads[index];
+
+          return {
+            name: `process-vehicle-image-${imageId}`,
+            data: {
+              image_id: imageId,
+              vehicle_id: vehicleId,
+              source_path: tempUpload.storage_path,
+            } as ProcessVehicleImageJob,
+            opts: {
+              priority: img.order === 0 ? 1 : 5,
+              attempts: 3,
+              backoff: { type: "exponential", delay: 2000 },
+            },
+          };
+        });
+
+        await this.imageQueue.addBulk(jobs);
+      }
 
       await this.vehicle_search_indexer.syncVehicle(
         vehicle.id,
@@ -304,7 +412,7 @@ export class CreateVehicleService {
   }
 
   private async promoteMedia(
-    images: VehicleMediaDto[],
+    images: Array<{ path: string; order: number }>,
     videos: VehicleMediaDto[],
   ): Promise<PromotedVehicleMedia> {
     const ordered_images = [...images].sort((a, b) => a.order - b.order);

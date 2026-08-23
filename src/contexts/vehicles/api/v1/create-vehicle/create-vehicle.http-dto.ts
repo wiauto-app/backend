@@ -23,8 +23,10 @@ import {
   ValidateNested,
 } from "class-validator";
 import { VehicleMediaHttpDto } from "./vehicleMedia.http-dto";
+import { VehicleImageHttpDto } from "./vehicleImageUploadId.http-dto";
 
 export type VehicleMediaDto = VehicleMediaHttpDto;
+export type VehicleImageDto = VehicleImageHttpDto;
 
 export class CreateVehicleDto {
   @IsOptional()
@@ -187,8 +189,8 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => VehicleMediaHttpDto)
-  images?: VehicleMediaHttpDto[];
+  @Type(() => VehicleImageHttpDto)
+  images?: VehicleImageHttpDto[];
 
   @IsOptional()
   @IsArray()

@@ -61,6 +61,7 @@ export const mimetype_to_extension: Record<string, string> = {
 // queues
 export const UPLOAD_IMAGE_QUEUE = "upload-image-queue";
 export const UPLOAD_VIDEO_QUEUE = "upload-video-queue";
+export const PROCESS_VEHICLE_IMAGE_QUEUE = "process-vehicle-image-queue";
 
 export const GENERATE_FILE_SIGNED_URL = "v1/generate-file-signed-url";
 export const CONFIRM_VIDEO_UPLOAD = "v1/confirm-video-upload";

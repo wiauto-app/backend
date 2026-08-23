@@ -109,8 +109,9 @@ const map_vehicle_list_images = (
   images: VehicleImagesEntity[] | undefined,
 ): VehicleListItemImage[] =>
   [...(images ?? [])]
+    .filter((image) => image.url !== null) // Solo imágenes con URL (ready o uploaded con source)
     .sort((a, b) => a.order - b.order)
-    .map((image) => ({ id: image.id, url: image.url, order: image.order }));
+    .map((image) => ({ id: image.id, url: image.url!, order: image.order }));
 
 const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   make_name: entity.version.make.name,
