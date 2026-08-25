@@ -22,6 +22,7 @@ export const STATUS_VEHICLE = {
 export const CONDITION_VEHICLE = {
   NEW: "new",
   USED: "used",
+  "0KM": "0KM",
 } as const;
 
 export type ConditionVehicle = (typeof CONDITION_VEHICLE)[keyof typeof CONDITION_VEHICLE];

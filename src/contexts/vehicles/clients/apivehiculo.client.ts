@@ -119,13 +119,14 @@ export interface ApiVehiculoSubscriptionMe {
 @Injectable()
 export class ApiVehiculoClient {
   private readonly logger = new Logger(ApiVehiculoClient.name);
-
+  private readonly subscriptions_url = "subscriptions/me";
+  private readonly vehicles_lookup_url = "vehicles/lookup";
   private buildUrl(path: string): string {
     return `${envs.APIVEHICULO_BASE_URL}/${path}`;
   }
 
   async getSubscriptionMe(): Promise<ApiVehiculoSubscriptionMe> {
-    const url = this.buildUrl("subscriptions/me");
+    const url = this.buildUrl(this.subscriptions_url);
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -141,7 +142,7 @@ export class ApiVehiculoClient {
       throw new VehicleExternalLookupConfigException();
     }
     if (!response.ok) {
-     
+
       throw new VehicleExternalLookupConfigException();
     }
 
@@ -149,7 +150,6 @@ export class ApiVehiculoClient {
   }
 
   async lookup(query: VehicleExternalLookupQuery): Promise<ApiVehicleData> {
-
     const has_plate =
       typeof query.plate === "string" && query.plate.trim().length > 0;
     const has_vin =
@@ -161,7 +161,8 @@ export class ApiVehiculoClient {
       );
     }
 
-    const base_url = envs.APIVEHICULO_BASE_URL;
+
+    const base_url = this.buildUrl(this.vehicles_lookup_url);
     const url = new URL(base_url);
 
     if (has_plate) {
@@ -173,7 +174,6 @@ export class ApiVehiculoClient {
         url.searchParams.set("country", query.country.trim());
       }
     }
-
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
@@ -181,7 +181,6 @@ export class ApiVehiculoClient {
         Accept: "application/json",
       },
     });
-console
     if (response.status === 400) {
       throw new BadRequestException(
         "La consulta de identificación no es válida",

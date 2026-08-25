@@ -5,7 +5,6 @@ import { TransmissionType } from "@/src/contexts/vehicles/types/vehicle";
 
 import {
   ApiVehiculoClient,
-  ApiVehicleData,
   ApiVehicleResponse,
 } from "../clients/apivehiculo.client";
 import { CatalogReverseMatchService } from "./catalog-reverse-match.service";
@@ -97,11 +96,11 @@ export class VehicleIdentificationService {
         "Debes enviar exactamente uno de plate o vin",
       );
     }
-
+    console.log(has_plate, has_vin)
     const api_data = await this.api_vehiculo_client.lookup({
       plate: has_plate ? plate : undefined,
       vin: has_vin ? vin : undefined,
-      country: dto.country?.trim() ?? "ES",
+      // country: dto.country?.trim() ?? "ES",
     });
     console.log(api_data)
     // const api_data = {
