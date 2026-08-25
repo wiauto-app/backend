@@ -21,6 +21,7 @@ const TRANSMISSION_TYPE_MAP: Record<TransmissionType, string> = {
 };
 
 const CONDITION_MAP: Record<ConditionVehicle, string> = {
+  [CONDITION_VEHICLE["0KM"]]: "0KM",
   [CONDITION_VEHICLE.NEW]: "nuevo",
   [CONDITION_VEHICLE.USED]: "usado",
 };
@@ -42,7 +43,7 @@ const joinNames = (items: ActiveFilterItem[]): string | null => {
   }
   const names = items
     .map((item) => item.name.trim())
-    .filter((name): name is string => Boolean(name));
+    .filter(Boolean);
   if (names.length === 0) {
     return null;
   }
@@ -76,7 +77,7 @@ const pushRange = (
     parts.push(`desde ${formatRangeValue(since, unit)}`);
     return;
   }
-  parts.push(`hasta ${formatRangeValue(until!, unit)}`);
+  parts.push(`hasta ${formatRangeValue(until ?? 0, unit)}`);
 };
 
 const pushIfPresent = (parts: string[], segment: string | null): void => {
