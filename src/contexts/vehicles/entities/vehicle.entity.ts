@@ -514,6 +514,12 @@ export class VehicleEntity {
   })
   dealership_id?: string | null;
 
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  show_review_collab: boolean;
+
   @ManyToOne(
     () => DealershipEntity,
     (dealership) => dealership.vehicles,
