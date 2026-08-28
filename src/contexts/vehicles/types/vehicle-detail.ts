@@ -23,6 +23,7 @@ export interface VehicleDetailPrice {
 
 /** Detalle público de un anuncio con relaciones cargadas. */
 export interface VehicleDetail extends VehicleListItem {
+  show_review_collab: boolean;
   show_first_cuota: boolean;
   by_brand_warranty: boolean;
   show_exact_location: boolean;
@@ -182,4 +183,5 @@ export const vehicleDetailToPrimitives = (
   show_exact_location: detail.show_exact_location,
   by_brand_warranty: detail.by_brand_warranty,
   show_first_cuota: detail.show_first_cuota,
+  show_review_collab: detail.show_review_collab,
 });

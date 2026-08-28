@@ -232,6 +232,7 @@ export class CreateVehicleService {
           show_exact_location: dto.show_exact_location ?? false,
           by_brand_warranty: dto.by_brand_warranty ?? false,
           show_first_cuota: dto.show_first_cuota ?? false,
+          show_review_collab: dto.show_review_collab ?? false,
         });
 
         const saved = await manager.save(VehicleEntity, entity);
@@ -407,6 +408,7 @@ export class CreateVehicleService {
         show_exact_location: vehicle.show_exact_location,
         by_brand_warranty: vehicle.by_brand_warranty,
         show_first_cuota: vehicle.show_first_cuota,
+        show_review_collab: vehicle.show_review_collab,
       },
     };
   }

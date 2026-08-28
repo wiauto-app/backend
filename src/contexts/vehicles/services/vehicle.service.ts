@@ -14,6 +14,7 @@ import { CatalogYearsService } from "../catalog/years/services/catalog-years.ser
 import {
   ConditionVehicle,
   applyVehicleUpdates,
+  normalizeNullableUuid,
   PUBLISHER_TYPE,
   STATUS_VEHICLE,
   StatusVehicle,
@@ -165,7 +166,7 @@ export class VehicleService {
 
   async findOne(get_vehicle_dto: GetVehicleDto,profile_id?: string): Promise<VehicleDetail> {
     const vehicle = await this.vehicle_repository.findOne(get_vehicle_dto.id,profile_id);
-    if (!vehicle) {
+    if (!vehicle) { 
       throw new VehicleNotFoundException(get_vehicle_dto.id);
     }
     return vehicle;
@@ -224,7 +225,6 @@ export class VehicleService {
 
     const { id, images, videos, price, vehicle_price_id, ...dto_fields } =
       update_vehicle_dto;
-    const existing_primitive = vehicleDetailToPrimitives(existing);
 
     const patch = Object.fromEntries(
       Object.entries(dto_fields as Record<string, unknown>).filter(
@@ -238,10 +238,12 @@ export class VehicleService {
     if (publisher_context.publisher_type !== existing.publisher_type) {
       patch.publisher_type = publisher_context.publisher_type;
     }
-    if (publisher_context.dealership_id !== existing_primitive.dealership_id) {
+    if (
+      publisher_context.dealership_id !==
+      normalizeNullableUuid(existing.dealership?.id)
+    ) {
       patch.dealership_id = publisher_context.dealership_id;
     }
-
     const coordinates_changed =
       (patch.lat !== undefined && patch.lat !== existing.lat) ||
       (patch.lng !== undefined && patch.lng !== existing.lng);
@@ -257,35 +259,10 @@ export class VehicleService {
     }
 
     const has_vehicle_updates = Object.keys(patch).length > 0;
-    let updated = existing_primitive;
 
     if (has_vehicle_updates) {
-      updated = applyVehicleUpdates(existing_primitive, patch);
-      const version = await this.catalog_versions_service.findById(
-        updated.version_id,
-      );
-      if (!version) {
-        throw new InvalidateVehicleVersionIdException();
-      }
-
-      const fuel_type = await this.catalog_fuel_types_service.findById(
-        version.fuel_type_id,
-      );
-      if (!fuel_type) {
-        throw new CatalogFuelTypeNotFoundException(version.fuel_type_id);
-      }
-
-      updated.suggestions = validateVehicleCreationRules({
-        battery_capacity: updated.battery_capacity,
-        time_to_charge: updated.time_to_charge,
-        autonomy: updated.autonomy,
-        displacement: updated.displacement,
-        mileage: updated.mileage,
-        condition: updated.condition,
-        can_charge: fuel_type.can_charge,
-      });
-
-      await this.vehicle_repository.update(updated);
+      patch.suggestions = await this.resolvePatchedSuggestions(existing, patch);
+      await this.vehicle_repository.patch(id, patch);
     }
 
     if (price !== undefined || vehicle_price_id !== undefined) {
@@ -332,7 +309,38 @@ export class VehicleService {
       await this.vehicle_search_indexer.indexVehicle(id);
     }
 
-    return { vehicle: updated };
+    return {
+      vehicle: applyVehicleUpdates(vehicleDetailToPrimitives(existing), patch),
+    };
+  }
+
+  private async resolvePatchedSuggestions(
+    existing: VehicleDetail,
+    patch: VehicleUpdateFields,
+  ): Promise<string[]> {
+    const version = await this.catalog_versions_service.findById(
+      patch.version_id ?? existing.version_id,
+    );
+    if (!version) {
+      throw new InvalidateVehicleVersionIdException();
+    }
+
+    const fuel_type = await this.catalog_fuel_types_service.findById(
+      version.fuel_type_id,
+    );
+    if (!fuel_type) {
+      throw new CatalogFuelTypeNotFoundException(version.fuel_type_id);
+    }
+
+    return validateVehicleCreationRules({
+      battery_capacity: patch.battery_capacity ?? existing.battery_capacity,
+      time_to_charge: patch.time_to_charge ?? existing.time_to_charge,
+      autonomy: patch.autonomy ?? existing.autonomy,
+      displacement: patch.displacement ?? existing.displacement,
+      mileage: patch.mileage ?? existing.mileage,
+      condition: (patch.condition ?? existing.condition) as ConditionVehicle,
+      can_charge: fuel_type.can_charge,
+    });
   }
 
   private async replaceVehicleVideosFromTemp(

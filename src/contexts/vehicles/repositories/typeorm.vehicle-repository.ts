@@ -3,7 +3,11 @@ import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectab
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 
-import { normalizeNullableUuid, PrimitiveVehicle } from "../types/vehicle";
+import {
+  normalizeNullableUuid,
+  PrimitiveVehicle,
+  VehicleUpdateFields,
+} from "../types/vehicle";
 import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../exceptions/invalid-vehicle-catalog-id.exception";
@@ -344,6 +348,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
 
   return {
     ...base,
+    show_review_collab: entity.show_review_collab,
     description: entity.description ?? "",
     publisher_type: entity.publisher_type,
     status: entity.status,
@@ -493,10 +498,25 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     show_exact_location: entity.show_exact_location,
     by_brand_warranty: entity.by_brand_warranty,
     show_first_cuota: entity.show_first_cuota,
+    show_review_collab: entity.show_review_collab,
     address: entity.address ?? null,
     address_details: entity.address_details ?? null,
   };
 }
+
+/**
+ * Claves de `PrimitiveVehicle` que no se copian tal cual a la entity: `id` se
+ * fija aparte, `ref`/`created_at` los genera la BD y los `*_ids` se resuelven
+ * como relaciones many-to-many.
+ */
+const NON_PATCHABLE_VEHICLE_FIELDS = new Set<string>([
+  "id",
+  "ref",
+  "created_at",
+  "features_ids",
+  "services_ids",
+  "cuota_ids",
+]);
 
 @Injectable()
 export class TypeOrmVehicleRepository {
@@ -716,6 +736,7 @@ export class TypeOrmVehicleRepository {
       show_exact_location: p.show_exact_location ?? false,
       by_brand_warranty: p.by_brand_warranty ?? false,
       show_first_cuota: p.show_first_cuota ?? false,
+      show_review_collab: p.show_review_collab ?? false,
     };
     if (p.status !== undefined) {
       payload.status = p.status;
@@ -966,6 +987,108 @@ export class TypeOrmVehicleRepository {
       throw new VehicleNotFoundException(vehicle.id);
     }
     await this.vehicle_repository.save(preloaded);
+  }
+
+  /**
+   * Escribe únicamente las claves presentes en `fields`. Los nombres de
+   * `PrimitiveVehicle` coinciden con las columnas de la entity, así que un campo
+   * nuevo no requiere tocar este método.
+   */
+  async patch(id: string, fields: VehicleUpdateFields): Promise<void> {
+    await this.assert_patch_catalog_refs(fields);
+
+    const payload: Record<string, unknown> = { id };
+    for (const [key, value] of Object.entries(
+      fields as Record<string, unknown>,
+    )) {
+      if (value === undefined || NON_PATCHABLE_VEHICLE_FIELDS.has(key)) {
+        continue;
+      }
+      payload[key] = value;
+    }
+
+    if (fields.dealership_id !== undefined) {
+      payload.dealership_id = normalizeNullableUuid(fields.dealership_id);
+    }
+    if (fields.features_ids !== undefined) {
+      payload.features = unique_string_ids(fields.features_ids).map(
+        (feature_id) => this.features_repository.create({ id: feature_id }),
+      );
+    }
+    if (fields.services_ids !== undefined) {
+      payload.services = unique_string_ids(fields.services_ids).map(
+        (service_id) => this.service_repository.create({ id: service_id }),
+      );
+    }
+    if (fields.cuota_ids !== undefined) {
+      payload.cuotas = unique_string_ids(fields.cuota_ids).map((cuota_id) =>
+        this.cuota_repository.create({ id: cuota_id }),
+      );
+    }
+
+    const preloaded = await this.vehicle_repository.preload(
+      payload as DeepPartial<VehicleEntity>,
+    );
+    if (!preloaded) {
+      throw new VehicleNotFoundException(id);
+    }
+    await this.vehicle_repository.save(preloaded);
+  }
+
+  private async assert_patch_catalog_refs(
+    fields: VehicleUpdateFields,
+  ): Promise<void> {
+    if (fields.features_ids !== undefined) {
+      await this.assert_feature_ids_exist(fields.features_ids);
+    }
+    if (fields.services_ids !== undefined) {
+      await this.assert_service_ids_exist(fields.services_ids);
+    }
+    if (fields.cuota_ids !== undefined) {
+      await this.assert_cuota_ids_exist(fields.cuota_ids);
+    }
+    if (fields.vehicle_type_id !== undefined) {
+      await this.assert_optional_fk(
+        this.vehicle_type_repository,
+        fields.vehicle_type_id,
+        "vehicle_type_id",
+      );
+    }
+    if (fields.category_id !== undefined) {
+      await this.assert_optional_fk(
+        this.category_repository,
+        fields.category_id,
+        "category_id",
+      );
+    }
+    if (fields.color_id !== undefined) {
+      await this.assert_optional_fk(
+        this.color_repository,
+        fields.color_id,
+        "color_id",
+      );
+    }
+    if (fields.dgt_label_id !== undefined) {
+      await this.assert_optional_fk(
+        this.dgt_label_repository,
+        fields.dgt_label_id,
+        "dgt_label_id",
+      );
+    }
+    if (fields.warranty_type_id !== undefined) {
+      await this.assert_optional_fk(
+        this.warranty_type_repository,
+        fields.warranty_type_id,
+        "warranty_type_id",
+      );
+    }
+    if (fields.traction_id !== undefined) {
+      await this.assert_optional_fk(
+        this.traction_repository,
+        fields.traction_id,
+        "traction_id",
+      );
+    }
   }
 
   async remove(id: string): Promise<void> {

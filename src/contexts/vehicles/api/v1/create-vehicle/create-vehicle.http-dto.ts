@@ -182,6 +182,10 @@ export class CreateVehicleDto {
   by_brand_warranty?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  show_review_collab?: boolean;
+
+  @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsNumber()
   first_cuota?: number;

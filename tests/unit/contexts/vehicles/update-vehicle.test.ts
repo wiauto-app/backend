@@ -88,6 +88,7 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
   const vehicle_repository = {
     findOne: vi.fn().mockResolvedValue(existing),
     update: vi.fn().mockResolvedValue(),
+    patch: vi.fn().mockResolvedValue(),
   };
   const set_vehicle_price_service = {
     execute: vi.fn().mockResolvedValue(),
@@ -164,11 +165,40 @@ describe("vehicle update flow", () => {
 
     await service.update({ id: vehicle_id, finance_price: 12_000 });
 
-    expect(vehicle_repository.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        dealership_id: null,
-        finance_price: 12_000,
-      }),
+    expect(vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ finance_price: 12_000 }),
+    );
+    expect(vehicle_repository.patch.mock.calls[0][1]).not.toHaveProperty(
+      "dealership_id",
+    );
+  });
+
+  it("only sends the changed fields to persistence", async () => {
+    const { service, vehicle_repository } = createService();
+
+    await service.update({ id: vehicle_id, mileage: 55_000 });
+
+    const [, patch] = vehicle_repository.patch.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(Object.keys(patch).toSorted()).toEqual(["mileage", "suggestions"]);
+  });
+
+  it("persists show_review_collab in both directions", async () => {
+    const enabled = createService();
+    await enabled.service.update({ id: vehicle_id, show_review_collab: true });
+    expect(enabled.vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ show_review_collab: true }),
+    );
+
+    const disabled = createService();
+    await disabled.service.update({ id: vehicle_id, show_review_collab: false });
+    expect(disabled.vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ show_review_collab: false }),
     );
   });
 
@@ -182,7 +212,7 @@ describe("vehicle update flow", () => {
 
     await service.update({ id: vehicle_id });
 
-    expect(vehicle_repository.update).not.toHaveBeenCalled();
+    expect(vehicle_repository.patch).not.toHaveBeenCalled();
     expect(vehicle_search_indexer.indexVehicle).not.toHaveBeenCalled();
     expect(
       alert_processing_enqueue_service.enqueue_vehicle_event,
