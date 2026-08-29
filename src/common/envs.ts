@@ -19,6 +19,8 @@ const envsSchema = z.object({
   GOOGLE_CALLBACK_URL: z.string().default(""),
 
   APPLE_CLIENT_ID: z.string().default(""),
+  /** Bundle identifier de la app iOS; audiencia de los identity tokens nativos. */
+  APPLE_APP_BUNDLE_ID: z.string().default(""),
   APPLE_TEAM_ID: z.string().default(""),
   APPLE_KEY_ID: z.string().default(""),
   APPLE_PRIVATE_KEY: z.string().default(""),

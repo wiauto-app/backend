@@ -20,7 +20,27 @@ export class AppleTokenService {
     rateLimit: true,
   });
 
+  /**
+   * Web sign-in tokens carry the Service ID as audience, while native iOS
+   * tokens carry the app bundle identifier. Both are accepted.
+   */
+  private get allowedAudiences(): [string, ...string[]] | null {
+    const audiences = [envs.APPLE_CLIENT_ID, envs.APPLE_APP_BUNDLE_ID]
+      .map((audience) => audience.trim())
+      .filter((audience) => audience.length > 0);
+
+    const [first, ...rest] = audiences;
+    return first ? [first, ...rest] : null;
+  }
+
   async verifyIdentityToken(identityToken: string): Promise<OAuthProfile> {
+    const audiences = this.allowedAudiences;
+
+    if (!audiences) {
+      this.logger.error("Apple sign-in sin audiencia configurada");
+      throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
+    }
+
     const decoded = jwt.decode(identityToken, { complete: true });
     if (!decoded || typeof decoded === "string" || !decoded.header.kid) {
       this.logger.error("Apple token inválido");
@@ -39,7 +59,7 @@ export class AppleTokenService {
     let payload: AppleIdTokenPayload;
     try {
       payload = jwt.verify(identityToken, publicKey, {
-        audience: envs.APPLE_CLIENT_ID,
+        audience: audiences,
         issuer: "https://appleid.apple.com",
       }) as AppleIdTokenPayload;
     } catch {
