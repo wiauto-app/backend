@@ -24,6 +24,7 @@ import { VerifyBackupCodeLoginHttpDto } from "../dto/verify-backup-code-login.ht
 import type { SessionPayload } from "../types/auth.types";
 import { AppleAuthGuard } from "../guards/apple-auth.guard";
 import { AppleMobileDto } from "../dto/apple-mobile.dto";
+import { RefreshTokenMobileDto } from "../dto/refresh-token-mobile.dto";
 import { AppleTokenService } from "../services/apple-token.service";
 import { RegisterService } from "../services/register.service";
 import { RegisterDto } from "../dto/register.dto";
@@ -179,6 +180,15 @@ export class AuthController {
     const profile = await this.appleTokenService.verifyIdentityToken(dto.identity_token);
     const token = await this.authService.signInWithOAuthProfile(profile, req);
     return { token };
+  }
+
+  /**
+   * Refresh para clientes sin cookies (app móvil): el token viaja en el body
+   * y la respuesta devuelve el par completo, sin `Set-Cookie`.
+   */
+  @Post("refresh/mobile")
+  async refreshTokenMobile(@Body() dto: RefreshTokenMobileDto) {
+    return this.authService.refreshToken(dto.refresh_token);
   }
 
   @Post("refresh")
