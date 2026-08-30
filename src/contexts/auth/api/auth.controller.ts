@@ -151,9 +151,9 @@ export class AuthController {
 
   @Post("google/mobile")
   async googleMobile(@Body() dto: GoogleMobileDto, @Req() req: Request) {
-    const profile = await this.googleTokenService.verifyIdToken(dto.id_token);
-    const token = await this.authService.signInWithOAuthProfile(profile, req);
-    return { token };
+    const profile = await this.googleTokenService.verifyIdToken(dto);
+    const data = await this.authService.signInWithOAuthProfile(profile, req);
+    return data;
   }
 
   // ---- Apple (deshabilitado hasta tener credenciales) ----
@@ -178,8 +178,8 @@ export class AuthController {
   @Post("apple/mobile")
   async appleMobile(@Body() dto: AppleMobileDto, @Req() req: Request) {
     const profile = await this.appleTokenService.verifyIdentityToken(dto.identity_token);
-    const token = await this.authService.signInWithOAuthProfile(profile, req);
-    return { token };
+    const data = await this.authService.signInWithOAuthProfile(profile, req);
+    return data;
   }
 
   /**
