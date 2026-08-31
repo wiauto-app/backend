@@ -17,7 +17,6 @@ export class FindAllVehiclesController {
     @Query() findAllVehiclesHttpDto: FindAllVehiclesHttpDto,
     @GetOptionalUserId() profile_id?: string,
   ) {
-    console.log("findAllVehiclesHttpDto", findAllVehiclesHttpDto);
     return this.vehicle_service.findAll(findAllVehiclesHttpDto, profile_id);
   }
 }

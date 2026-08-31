@@ -4,6 +4,7 @@
 export interface CatalogModelSearchItem {
   id: number;
   make_id: number;
+  make_slug?: string;
   model_id: number;
   name: string;
   slug: string;

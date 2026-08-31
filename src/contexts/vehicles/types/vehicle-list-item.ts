@@ -36,6 +36,7 @@ export interface VehicleListItemPublisher {
  */
 export interface VehicleListItem {
   id: string;
+  is_featured: boolean;
   ref: number;
   price: number;
   mileage: number;

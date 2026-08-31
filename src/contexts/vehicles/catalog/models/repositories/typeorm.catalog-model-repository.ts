@@ -192,6 +192,8 @@ export class TypeormCatalogModelRepository {
     const { make_id, search, province_id, since_price, until_price } = filter;
     const search_query = this.repo
       .createQueryBuilder("model")
+      .leftJoin("make", "make", "make.id = model.make_id")
+      .addSelect("make.slug", "make_slug")
       .where("model.make_id = :make_id", { make_id })
       .orderBy("model.name", "ASC")
       .take(filter.limit);
@@ -202,7 +204,11 @@ export class TypeormCatalogModelRepository {
       });
     }
 
-    const rows = await search_query.getMany();
+    const { entities, raw } = await search_query.getRawAndEntities();
+    const rows = entities.map((entity, index) => ({
+      ...entity,
+      make_slug: raw[index]?.make_slug as string | undefined,
+    }));
     const model_ids = rows.map((row) => row.id);
     const vehicle_count_by_model_id = await this.find_vehicle_count_by_model_ids(
       make_id,
@@ -237,6 +243,8 @@ export class TypeormCatalogModelRepository {
     const slugifiedQuery = query.toLowerCase().replace(/\s+/g, "-");
     const search_query = this.repo
       .createQueryBuilder("model")
+      .leftJoin("make", "make", "make.id = model.make_id")
+      .addSelect("make.slug", "make_slug")
       .orderBy("model.name", "ASC")
       .take(limit);
 
@@ -248,7 +256,11 @@ export class TypeormCatalogModelRepository {
       },
     );
 
-    const rows = await search_query.getMany();
+    const { entities, raw } = await search_query.getRawAndEntities();
+    const rows = entities.map((entity, index) => ({
+      ...entity,
+      make_slug: raw[index]?.make_slug as string | undefined,
+    }));
     const models_by_make = new Map<number, typeof rows>();
 
     for (const row of rows) {
@@ -275,6 +287,7 @@ export class TypeormCatalogModelRepository {
         results.push({
           id: row.id,
           make_id: row.make_id,
+          make_slug: row.make_slug,
           model_id: row.model_id,
           name: row.name,
           slug: row.slug,

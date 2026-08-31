@@ -43,6 +43,11 @@ export class CatalogModelsController {
     return this.catalog_models_service.findSearchModels(query);
   }
 
+  @Get("search/global")
+  findGlobalSearchModels(@Query("search") search: string, @Query("limit") limit?: string) {
+    return this.catalog_models_service.findGlobalSearchModels(search, limit ? Number(limit) : 15);
+  }
+
   @Get(":id")
   findOne(@Param("id", ParseIntPipe) id: number) {
     return this.catalog_models_service.findOne(id);

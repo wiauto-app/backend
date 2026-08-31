@@ -133,6 +133,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     lat: Number(entity.lat),
     lng: Number(entity.lng),
     condition: entity.condition,
+    is_featured: entity.is_featured,
     version_summary: map_version_summary(entity),
     created_at: entity.created_at,
     publisher_type: entity.publisher_type,
