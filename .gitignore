@@ -10,3 +10,4 @@ coverage/
 k6-results
 .backup
 backup.sql
+scripts/backups/*.dump

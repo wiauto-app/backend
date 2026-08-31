@@ -52,7 +52,7 @@ export { validateVehicleCreationRules } from "../../../services/validate-vehicle
 const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 
 interface PromotedVehicleMedia {
-  images: Array<{ path: string; order: number }>;
+  images: { path: string; order: number }[];
   videos: VehicleMediaDto[];
 }
 
@@ -65,10 +65,10 @@ const partitionVehicleImages = (
   images: VehicleImageDto[] | undefined,
 ): {
   async_images: AsyncVehicleImageInput[];
-  legacy_images: Array<{ path: string; order: number }>;
+  legacy_images: { path: string; order: number }[];
 } => {
   const async_images: AsyncVehicleImageInput[] = [];
-  const legacy_images: Array<{ path: string; order: number }> = [];
+  const legacy_images: { path: string; order: number }[] = [];
 
   for (const image of images ?? []) {
     if (image.upload_id) {
@@ -190,7 +190,7 @@ export class CreateVehicleService {
           description: dto.description?.trim() ?? "",
           version_id,
           publisher_type,
-          status: STATUS_VEHICLE.PENDING,
+          status: STATUS_VEHICLE.ACTIVE,
           status_change_message: null,
           transmission_type: dto.transmission_type,
           traction_id: dto.traction_id,
@@ -302,7 +302,7 @@ export class CreateVehicleService {
       });
 
       // Encolar procesamiento de imágenes FUERA de la transacción
-      if (enqueuedImageIds.length > 0 && vehicle) {
+      if (enqueuedImageIds.length > 0) {
         const vehicleId = vehicle.id;
         const jobs = async_images.map((img, index) => {
           const imageId = enqueuedImageIds[index];
@@ -414,7 +414,7 @@ export class CreateVehicleService {
   }
 
   private async promoteMedia(
-    images: Array<{ path: string; order: number }>,
+    images: { path: string; order: number }[],
     videos: VehicleMediaDto[],
   ): Promise<PromotedVehicleMedia> {
     const ordered_images = [...images].sort((a, b) => a.order - b.order);

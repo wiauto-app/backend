@@ -1,3 +1,5 @@
+import { DealershipEntity } from "../../dealership/entities/dealership.entity";
+import { VersionEntity } from "../catalog/versions/entities/version.entity";
 import {
   PublisherType,
   StatusVehicle,
@@ -56,6 +58,13 @@ export interface VehicleListItem {
   warranty_type: VehicleListItemCatalogRef | null;
   cuotas: (VehicleListItemCatalogRef & { value: number })[];
   publisher: VehicleListItemPublisher;
+  version: VersionEntity;
+  show_first_cuota: boolean;
+  by_brand_warranty: boolean;
+  show_exact_location: boolean;
+  show_review_collab: boolean;
+  finance_price: number | null;
+  dealership: DealershipEntity | null;
 }
 
 /** Proyección admin: listado público + campos de moderación y ficha técnica. */

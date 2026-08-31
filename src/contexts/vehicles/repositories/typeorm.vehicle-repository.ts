@@ -115,7 +115,7 @@ const map_vehicle_list_images = (
   [...(images ?? [])]
     .filter((image) => image.url !== null) // Solo imágenes con URL (ready o uploaded con source)
     .sort((a, b) => a.order - b.order)
-    .map((image) => ({ id: image.id, url: image.url!, order: image.order }));
+    .map((image) => ({ id: image.id, url: image.url ?? "", order: image.order }));
 
 const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   make_name: entity.version.make.name,
@@ -139,6 +139,12 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     power: entity.power,
     transmission_type: entity.transmission_type,
     displacement: entity.displacement,
+    show_first_cuota: entity.show_first_cuota,
+    by_brand_warranty: entity.by_brand_warranty,
+    show_exact_location: entity.show_exact_location,
+    show_review_collab: entity.show_review_collab,
+    finance_price: entity.finance_price,
+    dealership: entity.dealership,
     images: map_vehicle_list_images(entity.images),
     features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
       id: feature.id,
@@ -201,6 +207,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
       name: entity.profile.name,
       avatar_url: entity.profile.avatar_url ?? "",
     },
+    version: entity.version,
   };
 }
 
@@ -340,7 +347,7 @@ function map_dealership_schedules(
     });
 }
 
-function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[],profile_id?: string): VehicleDetail {
+function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[], profile_id?: string): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find(
     (member) => member.profile_id === entity.profile.id,
@@ -393,17 +400,17 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     first_cuota: entity.first_cuota,
     dealership: dealership
       ? {
-          id: dealership.id,
-          name: dealership.name,
-          slug: dealership.slug,
-          avatar_url: dealership.avatar_url ?? "",
-          banner_url: dealership.banner_url ?? "",
-          description: dealership.description,
-          website_url: dealership.website_url ?? "",
-          email: dealership.email,
-          phone_code: dealership.phone_code,
-          schedules: map_dealership_schedules(dealership.schedules),
-        }
+        id: dealership.id,
+        name: dealership.name,
+        slug: dealership.slug,
+        avatar_url: dealership.avatar_url ?? "",
+        banner_url: dealership.banner_url ?? "",
+        description: dealership.description,
+        website_url: dealership.website_url ?? "",
+        email: dealership.email,
+        phone_code: dealership.phone_code,
+        schedules: map_dealership_schedules(dealership.schedules),
+      }
       : undefined,
   };
 }
@@ -826,7 +833,7 @@ export class TypeOrmVehicleRepository {
       .getCount();
   }
 
-  async findOne(id: string,profile_id?: string): Promise<VehicleDetail | null> {
+  async findOne(id: string, profile_id?: string): Promise<VehicleDetail | null> {
     const vehicle = await this.vehicle_repository.findOne({
       where: { id },
       relations: {
@@ -854,7 +861,7 @@ export class TypeOrmVehicleRepository {
         },
       },
     });
-    return entity_to_vehicle_detail(vehicle, dealership_members,profile_id);
+    return entity_to_vehicle_detail(vehicle, dealership_members, profile_id);
   }
 
   async findReportByIdAndProfileId(
@@ -921,6 +928,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("version.fuel_type", "fuel_type")
       .leftJoinAndSelect("version.make", "version_make")
       .leftJoinAndSelect("version.model", "version_model")
+      .leftJoinAndSelect("vehicle.dealership", "dealership")
       .leftJoinAndSelect(
         "vehicle.vehicle_prices",
         "vehicle_prices",
