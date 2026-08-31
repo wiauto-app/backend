@@ -25,10 +25,8 @@ import { get_vehicle_images_entity } from "../entities/vehicle-images-entity.rel
 import { AdminVehicleDetail } from "../types/admin-vehicle-detail";
 import {
   VehicleDetail,
-  Version,
 } from "../types/vehicle-detail";
 import type { SellerContactFields } from "../types/seller-contact-fields";
-import { VersionEntity } from "../catalog/versions/entities/version.entity";
 import { ColorEntity } from "../entities/color.entity";
 import { DgtLabelEntity } from "../entities/dgt-label.entity";
 import { FeaturesEntity } from "../entities/features.entity";
@@ -53,8 +51,6 @@ import {
   resolveMakeModelFilterMode,
 } from "../validators/make-model-filter-mode.utils";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import type { DealershipSchedule } from "@/src/contexts/dealership/entities/dealership-schedule.entity";
-import type { DealershipScheduleDayDto } from "@/src/contexts/dealership/types/dealership-schedule";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import { OwnerVehicleFilter } from "../types/owner-vehicle.filter";
 import { OwnerVehicleListItem } from "../types/owner-vehicle-list-item";
@@ -267,87 +263,6 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
   };
 }
 
-function entity_to_vehicle_detail_version(entity: VersionEntity): Version {
-  return {
-    id: entity.id,
-    make_id: entity.make_id,
-    model_id: entity.model_id,
-    body_type_id: entity.body_type_id,
-    fuel_type_id: entity.fuel_type_id,
-    year_id: entity.year_id,
-    name: entity.name,
-    slug: entity.slug,
-    created_at: entity.created_at,
-    make: {
-      id: entity.make.id,
-      name: entity.make.name,
-      slug: entity.make.slug,
-      created_at: entity.make.created_at,
-    },
-    model: {
-      id: entity.model.id,
-      make_id: entity.model.make_id,
-      model_id: entity.model.model_id,
-      name: entity.model.name,
-      slug: entity.model.slug,
-      created_at: entity.model.created_at,
-    },
-    body_type: {
-      id: entity.body_type.id,
-      name: entity.body_type.name,
-      slug: entity.body_type.slug,
-      doors: entity.body_type.doors,
-      created_at: entity.body_type.created_at,
-    },
-    fuel_type: {
-      id: entity.fuel_type.id,
-      name: entity.fuel_type.name,
-      slug: entity.fuel_type.slug,
-      created_at: entity.fuel_type.created_at,
-    },
-    year: {
-      id: entity.year.id,
-      year: entity.year.year,
-      slug: entity.year.slug,
-      created_at: entity.year.created_at,
-    },
-  };
-}
-
-function format_schedule_time(value: string): string {
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})/);
-  if (!match) {
-    return value;
-  }
-  return `${match[1].padStart(2, "0")}:${match[2]}`;
-}
-
-function map_dealership_schedules(
-  schedules: DealershipSchedule[] | undefined,
-): DealershipScheduleDayDto[] {
-  if (!schedules?.length) {
-    return [];
-  }
-
-  return [...schedules]
-    .sort((a, b) => Number(a.day) - Number(b.day))
-    .map((schedule) => {
-      const open_times = [...schedule.open_times].sort((a, b) =>
-        format_schedule_time(a.open_time).localeCompare(
-          format_schedule_time(b.open_time),
-        ),
-      );
-
-      return {
-        day: Number(schedule.day),
-        open_times: open_times.map((slot) => ({
-          open_time: format_schedule_time(slot.open_time),
-          close_time: format_schedule_time(slot.close_time),
-        })),
-      };
-    });
-}
-
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[], profile_id?: string): VehicleDetail {
   const base = entity_to_list_item(entity);
   const dealership = dealership_members.find(
@@ -376,7 +291,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     license_plate: entity.license_plate,
     vin_code: entity.vin_code,
     version_id: entity.version_id,
-    version: entity_to_vehicle_detail_version(entity.version),
+    version: entity.version,
     traction: entity.traction
       ? {
         id: entity.traction.id,
@@ -399,20 +314,8 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
     first_cuota: entity.first_cuota,
-    dealership: dealership
-      ? {
-        id: dealership.id,
-        name: dealership.name,
-        slug: dealership.slug,
-        avatar_url: dealership.avatar_url ?? "",
-        banner_url: dealership.banner_url ?? "",
-        description: dealership.description,
-        website_url: dealership.website_url ?? "",
-        email: dealership.email,
-        phone_code: dealership.phone_code,
-        schedules: map_dealership_schedules(dealership.schedules),
-      }
-      : undefined,
+    dealership: dealership ?? null,
+
   };
 }
 

@@ -13,7 +13,6 @@ import {
   VehicleListItemCatalogRef,
 } from "./vehicle-list-item";
 import { DealershipScheduleDayDto } from "../../dealership/types/dealership-schedule";
-
 export interface VehicleDetailPrice {
   id: string;
   price: number;
@@ -57,10 +56,8 @@ export interface VehicleDetail extends VehicleListItem {
   profile_id: string;
   suggestions: string[];
   prices: VehicleDetailPrice[];
-  version: Version;
   address?: string | null;
   address_details?: VehicleAddressDetails | null;
-  dealership?: VehicleDetailDealership;
 }
 
 export interface Version {
