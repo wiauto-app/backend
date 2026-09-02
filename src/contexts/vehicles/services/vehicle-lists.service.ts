@@ -1,6 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 
-import { List, PrimitiveList } from "../types/list";
+import { List, PrimitiveList, VehicleListSummary } from "../types/list";
 import { ListItem, PrimitiveListItem } from "../types/list-item";
 import { VehicleListForbiddenException } from "../exceptions/vehicle-list-forbidden.exception";
 import { VehicleListNotFoundException } from "../exceptions/vehicle-list-not-found.exception";
@@ -43,6 +44,13 @@ export interface RemoveVehicleListItemInput {
   list_id: string;
   profile_id: string;
   vehicle_id: string;
+}
+
+export interface FindVehicleListItemsInput {
+  listId: string;
+  profileId: string;
+  page: number;
+  limit: number;
 }
 
 @Injectable()
@@ -88,11 +96,19 @@ export class VehicleListsService {
     return list.toPrimitives();
   }
 
-  async findAll(profile_id: string): Promise<PrimitiveList[]> {
-    await this.ensureDefault(profile_id);
+  async findAll(profileId: string): Promise<VehicleListSummary[]> {
+    await this.ensureDefault(profileId);
     const lists =
-      await this.vehicle_list_repository.findAllByProfileId(profile_id);
-    return lists.map((list) => list.toPrimitives());
+      await this.vehicle_list_repository.findAllByProfileId(profileId);
+    const primitives = lists.map((list) => list.toPrimitives());
+    const counts = await this.vehicle_list_item_repository.countByListIds(
+      primitives.map((list) => list.id),
+    );
+
+    return primitives.map((list) => ({
+      ...list,
+      item_count: counts.get(list.id) ?? 0,
+    }));
   }
 
   async findOne(input: VehicleListOwnershipInput): Promise<VehicleListDetail> {
@@ -188,16 +204,20 @@ export class VehicleListsService {
   }
 
   async findItems(
-    input: VehicleListOwnershipInput,
-  ): Promise<VehicleListDetailItem[]> {
-    const list = await this.vehicle_list_repository.findOne(input.list_id);
+    input: FindVehicleListItemsInput,
+  ): Promise<PaginatedResult<VehicleListDetailItem>> {
+    const list = await this.vehicle_list_repository.findOne(input.listId);
     if (!list) {
-      throw new VehicleListNotFoundException(input.list_id);
+      throw new VehicleListNotFoundException(input.listId);
     }
-    if (list.toPrimitives().profile_id !== input.profile_id) {
+    if (list.toPrimitives().profile_id !== input.profileId) {
       throw new VehicleListForbiddenException();
     }
 
-    return this.vehicle_list_item_repository.findAllByListId(input.list_id);
+    return this.vehicle_list_item_repository.findAllByListId(
+      input.listId,
+      input.page,
+      input.limit,
+    );
   }
 }

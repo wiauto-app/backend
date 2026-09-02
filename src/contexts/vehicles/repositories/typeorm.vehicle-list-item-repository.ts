@@ -1,6 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { DataSource, QueryFailedError, Repository } from "typeorm";
+import { DataSource, In, QueryFailedError, Repository } from "typeorm";
 
 import { ListItem } from "../types/list-item";
 import { VehicleListItemAlreadyExistsException } from "../exceptions/vehicle-list-item-already-exists.exception";
@@ -135,8 +136,12 @@ export class TypeOrmVehicleListItemRepository {
     });
   }
 
-  async findAllByListId(list_id: string): Promise<VehicleListDetailItem[]> {
-    const rows = await this.vehicle_list_item_repository
+  async findAllByListId(
+    listId: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResult<VehicleListDetailItem>> {
+    const [rows, total] = await this.vehicle_list_item_repository
       .createQueryBuilder("item")
       .leftJoinAndSelect("item.vehicle", "vehicle")
       .leftJoinAndSelect("vehicle.images", "images")
@@ -146,17 +151,42 @@ export class TypeOrmVehicleListItemRepository {
       .leftJoinAndSelect("version.make", "version_make")
       .leftJoinAndSelect("version.model", "version_model")
       .leftJoinAndSelect("vehicle.vehicle_prices", "vehicle_prices")
-      .where("item.list_id = :list_id", { list_id })
+      .where("item.list_id = :listId", { listId })
       .orderBy("item.created_at", "DESC")
-      .getMany();
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
-    return rows.map((item) => ({
-      id: item.id,
-      vehicle_list_id: item.list_id,
-      vehicle_id: item.vehicle_id,
-      created_at: item.created_at,
-      vehicle: map_vehicle_preview(item.vehicle),
-    }));
+    return new PaginatedResult(
+      rows.map((item) => ({
+        id: item.id,
+        vehicle_list_id: item.list_id,
+        vehicle_id: item.vehicle_id,
+        created_at: item.created_at,
+        vehicle: map_vehicle_preview(item.vehicle),
+      })),
+      total,
+      page,
+      limit,
+    );
+  }
+
+  async countByListIds(listIds: string[]): Promise<Map<string, number>> {
+    if (listIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.vehicle_list_item_repository
+      .createQueryBuilder("item")
+      .select("item.list_id", "list_id")
+      .addSelect("COUNT(item.id)", "item_count")
+      .where({ list_id: In(listIds) })
+      .groupBy("item.list_id")
+      .getRawMany<{ list_id: string; item_count: string }>();
+
+    return new Map(
+      rows.map((row) => [row.list_id, Number(row.item_count)]),
+    );
   }
 
   async exists(list_id: string, vehicle_id: string): Promise<boolean> {

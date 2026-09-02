@@ -9,6 +9,10 @@ export interface PrimitiveList {
   created_at: Date;
 }
 
+export interface VehicleListSummary extends PrimitiveList {
+  item_count: number;
+}
+
 export class List {
   constructor(private readonly primitive_list: PrimitiveList) { }
 

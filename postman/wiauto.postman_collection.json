@@ -4963,7 +4963,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/vehicle-lists",
-                "description": "JWT (`JwtGuard`). Si el usuario no tiene listas, crea automáticamente la lista default \"Favoritos\"."
+                "description": "JWT (`JwtGuard`). Si el usuario no tiene listas, crea automáticamente la lista default \"Favoritos\". Cada lista incluye `item_count`."
               },
               "response": []
             },
@@ -5076,8 +5076,8 @@
                     "value": "Bearer {{access_token}}"
                   }
                 ],
-                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items",
-                "description": "JWT (`JwtGuard`). Items con preview enriquecido del vehículo (precio, categoría, publisher, price_change, etc.). Solo el dueño de la lista."
+                "url": "{{base_url}}/v1/vehicle-lists/{{list_id}}/items?page=1&limit=10",
+                "description": "JWT (`JwtGuard`). Solo el dueño de la lista. Devuelve `{ data, total, page, limit }`; `page` empieza en 1 y `limit` admite de 1 a 100."
               },
               "response": []
             },

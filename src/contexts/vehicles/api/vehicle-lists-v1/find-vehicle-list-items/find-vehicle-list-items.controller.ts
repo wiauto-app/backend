@@ -1,4 +1,12 @@
-import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
+import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import { VehicleListsService } from "@/src/contexts/vehicles/services/vehicle-lists.service";
 
 import { GetUserId } from "@/src/contexts/auth/decorators/GetUserId.decorator";
@@ -13,12 +21,15 @@ export class FindVehicleListItemsController {
 
   @Get(":list_id/items")
   run(
-    @GetUserId() profile_id: string,
-    @Param("list_id", new ParseUUIDPipe()) list_id: string,
+    @GetUserId() profileId: string,
+    @Param("list_id", new ParseUUIDPipe()) listId: string,
+    @Query() query: PaginationHttpDto,
   ) {
     return this.vehicle_lists_service.findItems({
-      list_id,
-      profile_id,
+      listId,
+      profileId,
+      page: query.page,
+      limit: query.limit,
     });
   }
 }
