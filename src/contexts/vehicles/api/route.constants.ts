@@ -34,3 +34,5 @@ export const V1_SEARCH_AI_FILTERS = "v1/search/ai-filters";
 export const V1_ADMIN_SEARCH_REINDEX_HERO = "v1/admin/search/reindex-hero";
 export const V1_FILTERS = "v1/filters";
 export const V1_VEHICLES_BY_REF = "by-ref";
+export const V1_SITEMAP_VEHICLES = "v1/sitemap/vehicles";
+export const V1_SITEMAP_VEHICLE_LISTINGS = "v1/sitemap/vehicle-listings";

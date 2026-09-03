@@ -110,6 +110,11 @@ import { VideosEntity } from "./entities/videos.entity";
 import { VehiclePermissionsService } from "./api/v1/vehicle-permissions/vehicle-permissions.service";
 import { VehicleSpecsController } from "./vehicle-specs/api/vehicle-specs.controller";
 import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.service";
+import { VehicleSitemapController } from "./api/v1/vehicle-sitemap/vehicle-sitemap.controller";
+import { VehicleSitemapService } from "./api/v1/vehicle-sitemap/vehicle-sitemap.service";
+import { VehicleSitemapListController } from "./api/v1/vehicle-sitemap-list/vehicle-sitemap-list.controller";
+import { VehicleSitemapListService } from "./api/v1/vehicle-sitemap-list/vehicle-sitemap-list.service";
+import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.service";
 
 @Module({
   controllers: [
@@ -137,7 +142,9 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     AdminUpdateVehicleStatusController,
     FindFiltersController,
     FindActiveFiltersController,
-    VehicleSpecsController],
+    VehicleSpecsController,
+    VehicleSitemapController,
+    VehicleSitemapListController],
   providers: [
     VehicleCreationGuard,
     VehicleOwnerGuard,
@@ -173,6 +180,9 @@ import { VehicleSpecsService } from "./vehicle-specs/services/vehicle-specs.serv
     TypeOrmActiveFilters,
     VehiclePermissionsService,
     VehicleSpecsService,
+    VehicleSitemapService,
+    VehicleSitemapListService,
+    SitemapVehiclesListService,
     {
       provide: PublishedVehicleSnapshotPort,
       useExisting: PublishedVehicleSnapshotService,

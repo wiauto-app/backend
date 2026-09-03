@@ -3082,6 +3082,156 @@
               ]
             },
             {
+              "name": "sitemap",
+              "item": [
+                {
+                  "name": "meta sitemap vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicles/meta?limit=5000",
+                      "query": [
+                        {
+                          "key": "limit",
+                          "value": "5000",
+                          "description": "Opcional. Tamaño de página para calcular totalPages (máx. 5000)."
+                        }
+                      ]
+                    },
+                    "description": "Público. Metadatos para sitemap paginado de vehículos activos. Respuesta: `{ total, limit, totalPages }`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "listado sitemap vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicles?page=1&limit=5000",
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "description": "Página 1-based."
+                        },
+                        {
+                          "key": "limit",
+                          "value": "5000",
+                          "description": "Máx. 5000 entradas por página."
+                        }
+                      ]
+                    },
+                    "description": "Público. Lista ligera de vehículos activos para sitemap (`id`, `updatedAt`). Respuesta: `{ data, total, page, limit, totalPages }`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "meta sitemap listados vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicle-listings/meta?variant=catalog&limit=5000",
+                      "query": [
+                        {
+                          "key": "variant",
+                          "value": "catalog",
+                          "description": "catalog | with-province"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "5000",
+                          "description": "Opcional. Tamaño de página para calcular totalPages (máx. 5000)."
+                        }
+                      ]
+                    },
+                    "description": "Público. Metadatos para sitemap de listados indexables (`/vehiculos/{marca}/{modelo}` o con provincia). Respuesta: `{ total, limit, totalPages, variant }`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "listado sitemap listados vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicle-listings?variant=with-province&page=1&limit=5000",
+                      "query": [
+                        {
+                          "key": "variant",
+                          "value": "with-province",
+                          "description": "catalog | with-province"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "description": "Página 1-based."
+                        },
+                        {
+                          "key": "limit",
+                          "value": "5000",
+                          "description": "Máx. 5000 entradas por página."
+                        }
+                      ]
+                    },
+                    "description": "Público. Combinaciones marca/modelo[/provincia] con vehículos activos. Respuesta: `{ data: [{ makeSlug, modelSlug, provinceSlug? }], total, page, limit, totalPages, variant }`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "meta sitemap listados vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicle-listings/meta?variant=catalog&limit=5000",
+                      "query": [
+                        {
+                          "key": "variant",
+                          "value": "catalog",
+                          "description": "catalog | with-province"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "5000"
+                        }
+                      ]
+                    },
+                    "description": "Público. Metadatos de combinaciones marca/modelo[/provincia] con vehículos activos."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "listado sitemap listados vehículos",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/v1/sitemap/vehicle-listings?variant=with-province&page=1&limit=5000",
+                      "query": [
+                        {
+                          "key": "variant",
+                          "value": "with-province"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "5000"
+                        }
+                      ]
+                    },
+                    "description": "Público. Combinaciones indexables `{ makeSlug, modelSlug, provinceSlug? }`."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "search",
               "item": [
                 {
@@ -3222,6 +3372,36 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "sitemap vehículos — meta",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/sitemap/vehicles/meta",
+                "description": "Público. Metadatos para sitemaps SEO: `{ total, limit, totalPages }` de vehículos active indexables."
+              }
+            },
+            {
+              "name": "sitemap vehículos — página",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/v1/sitemap/vehicles?page=1&limit=5000",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "5000"
+                    }
+                  ]
+                },
+                "description": "Público. Entradas mínimas para sitemap: `{ data: [{ id, updatedAt }], total, page, limit, totalPages }`."
+              }
             },
             {
               "name": "obtener vehículo por ref",

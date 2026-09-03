@@ -69,6 +69,10 @@ import {
   TREND_PERIOD_MS,
 } from "../utils/owner-vehicle-rules";
 import { STATUS_VEHICLE } from "../types/vehicle";
+import {
+  VehicleListingSitemapEntry,
+  VehicleListingSitemapVariant,
+} from "../types/vehicle-listing-sitemap";
 
 const unique_string_ids = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -1493,5 +1497,156 @@ export class TypeOrmVehicleRepository {
     }
 
     return new_id;
+  }
+
+  private createSitemapVehiclesQueryBuilder() {
+    return this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .where("vehicle.status = :status", { status: STATUS_VEHICLE.ACTIVE })
+      .andWhere("vehicle.deleted_at IS NULL");
+  }
+
+  async countSitemapVehicles(): Promise<number> {
+    return this.createSitemapVehiclesQueryBuilder().getCount();
+  }
+
+  async findSitemapVehicles({
+    page,
+    limit,
+  }: {
+    page: number;
+    limit: number;
+  }): Promise<{
+    data: { id: string; updatedAt: string; isFeatured: boolean }[];
+    total: number;
+  }> {
+    const skip = getSkip(page, limit);
+    const [rows, total] = await this.createSitemapVehiclesQueryBuilder()
+      .select([
+        "vehicle.id",
+        "vehicle.updated_at",
+        "vehicle.is_featured",
+        "vehicle.featured_expires_at",
+      ])
+      .orderBy("vehicle.updated_at", "DESC")
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        updatedAt: row.updated_at.toISOString(),
+        isFeatured: isFeaturedActive({
+          is_featured: row.is_featured,
+          featured_expires_at: row.featured_expires_at,
+        }),
+      })),
+      total,
+    };
+  }
+
+  private static readonly SQL_VEHICLE_POINT =
+    "ST_SetSRID(ST_MakePoint(CAST(vehicle.lng AS double precision), CAST(vehicle.lat AS double precision)), 4326)";
+
+  private createSitemapListingBaseQueryBuilder(
+    variant: VehicleListingSitemapVariant,
+  ) {
+    const qb = this.vehicle_repository
+      .createQueryBuilder("vehicle")
+      .innerJoin("vehicle.version", "catalog_ver")
+      .innerJoin("make", "cat_make", "cat_make.id = catalog_ver.make_id")
+      .innerJoin("model", "cat_model", "cat_model.id = catalog_ver.model_id")
+      .where("vehicle.status = :status", { status: STATUS_VEHICLE.ACTIVE })
+      .andWhere("vehicle.deleted_at IS NULL")
+      .andWhere("vehicle.version_id IS NOT NULL");
+
+    if (variant === "with-province") {
+      qb.andWhere("vehicle.lat IS NOT NULL")
+        .andWhere("vehicle.lng IS NOT NULL")
+        .innerJoin(
+          "provinces",
+          "province",
+          `ST_Intersects(${TypeOrmVehicleRepository.SQL_VEHICLE_POINT}, province.geom)`,
+        );
+    }
+
+    return qb;
+  }
+
+  private buildSitemapListingGroupedQuery(
+    variant: VehicleListingSitemapVariant,
+  ) {
+    const qb = this.createSitemapListingBaseQueryBuilder(variant)
+      .select("cat_make.slug", "make_slug")
+      .addSelect("cat_model.slug", "model_slug")
+      .groupBy("cat_make.slug")
+      .addGroupBy("cat_model.slug");
+
+    if (variant === "with-province") {
+      qb.addSelect("province.slug", "province_slug").addGroupBy("province.slug");
+    }
+
+    return qb;
+  }
+
+  async countSitemapVehicleListings({
+    variant,
+  }: {
+    variant: VehicleListingSitemapVariant;
+  }): Promise<number> {
+    const grouped = this.buildSitemapListingGroupedQuery(variant);
+    const count_row = await this.vehicle_repository.manager
+      .createQueryBuilder()
+      .select("COUNT(*)", "total")
+      .from(`(${grouped.getQuery()})`, "listing_combinations")
+      .setParameters(grouped.getParameters())
+      .getRawOne<{ total: string }>();
+
+    return Number(count_row?.total ?? 0);
+  }
+
+  async findSitemapVehicleListings({
+    page,
+    limit,
+    variant,
+  }: {
+    page: number;
+    limit: number;
+    variant: VehicleListingSitemapVariant;
+  }): Promise<{
+    data: VehicleListingSitemapEntry[];
+    total: number;
+  }> {
+    const skip = getSkip(page, limit);
+    const grouped = this.buildSitemapListingGroupedQuery(variant)
+      .orderBy("cat_make.slug", "ASC")
+      .addOrderBy("cat_model.slug", "ASC");
+
+    if (variant === "with-province") {
+      grouped.addOrderBy("province.slug", "ASC");
+    }
+
+    const rows = await grouped
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<{
+        make_slug: string;
+        model_slug: string;
+        province_slug?: string;
+      }>();
+
+    const total = await this.countSitemapVehicleListings({ variant });
+
+    return {
+      data: rows.map((row) => ({
+        makeSlug: row.make_slug,
+        modelSlug: row.model_slug,
+        ...(variant === "with-province"
+          ? { provinceSlug: row.province_slug }
+          : {}),
+      })),
+      total,
+    };
   }
 }
