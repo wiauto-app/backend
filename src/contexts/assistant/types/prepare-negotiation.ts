@@ -6,7 +6,7 @@ export interface NegotiationOfferRange {
 
 export interface PrepareNegotiationResult {
   vehicle_id: string;
-  ref: number;
+  ref: string | null;
   talking_points: string[];
   offer_range?: NegotiationOfferRange;
   caveats: string[];

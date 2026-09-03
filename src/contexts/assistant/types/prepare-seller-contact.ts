@@ -11,12 +11,12 @@ export interface SellerContactChannel {
   href?: string;
   publisher_profile_id?: string;
   vehicle_id?: string;
-  vehicle_ref?: number;
+  vehicle_ref?: string | null;
 }
 
 export interface SellerContactVehicleSummary {
   id: string;
-  ref: number;
+  ref: string | null;
   title: string;
   price: number;
   mileage: number;

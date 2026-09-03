@@ -85,7 +85,7 @@ export const createPrepareSellerContactTool = ({
         });
       }
 
-      if (contact.email?.trim()) {
+      if (contact.email.trim()) {
         channels.push({
           type: "email",
           label: "Email",

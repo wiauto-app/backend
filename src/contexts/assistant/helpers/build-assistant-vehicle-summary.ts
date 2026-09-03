@@ -2,7 +2,7 @@ import type { VehicleDetail } from "@/src/contexts/vehicles/types/vehicle-detail
 
 export interface AssistantVehicleSummary {
   id: string;
-  ref: number;
+  ref: string | null;
   title: string;
   price: number;
   mileage: number;
@@ -38,7 +38,7 @@ const buildLocation = (vehicle: VehicleDetail): string | null => {
   }
 
   const formatted = vehicle.address_details?.formatted_lines
-    ?.filter(Boolean)
+    .filter(Boolean)
     .join(", ")
     .trim();
 
@@ -46,13 +46,13 @@ const buildLocation = (vehicle: VehicleDetail): string | null => {
     return formatted;
   }
 
-  return vehicle.address?.trim() || null;
+  return vehicle.address ?? "";
 };
 
 const buildKeyFeatures = (vehicle: VehicleDetail): string | null => {
-  const names = (vehicle.features ?? [])
-    .map((feature) => feature.name?.trim())
-    .filter((name): name is string => Boolean(name))
+  const names = (vehicle.features)
+    .map((feature) => feature.name)
+    .filter(Boolean)
     .slice(0, 5);
 
   if (names.length === 0) {
@@ -65,7 +65,7 @@ const buildKeyFeatures = (vehicle: VehicleDetail): string | null => {
 export const buildAssistantVehicleSummary = (
   vehicle: VehicleDetail,
 ): AssistantVehicleSummary => {
-  const make = vehicle.version?.make?.name ?? vehicle.version_summary?.make_name ?? null;
+  const make = vehicle.version.make.name ?? vehicle.version_summary?.make_name;
   const model =
     vehicle.version?.model?.name ?? vehicle.version_summary?.model_name ?? null;
   const versionName =
@@ -83,14 +83,14 @@ export const buildAssistantVehicleSummary = (
     make,
     model,
     version: versionName,
-    fuel: vehicle.version?.fuel_type?.name ?? null,
-    transmission: vehicle.transmission_type ?? null,
-    power: vehicle.power ?? null,
+    fuel: vehicle.version.fuel_type.name,
+    transmission: vehicle.transmission_type,
+    power: vehicle.power,
     publisher_type: vehicle.publisher_type,
     warranty: vehicle.warranty_type?.name ?? null,
     dgt_label: vehicle.dgt_label?.name ?? vehicle.dgt_label?.code ?? null,
     condition: vehicle.condition,
-    description: vehicle.description ?? "",
+    description: vehicle.description,
     location: buildLocation(vehicle),
     key_features: buildKeyFeatures(vehicle),
     autonomy: vehicle.autonomy > 0 ? vehicle.autonomy : null,
