@@ -22,6 +22,7 @@ import { EntitlementsService } from "./entitlements.service";
 import { SubscriptionOverridesService } from "./subscription-overrides.service";
 import { PLAN_LEAD_STATUS } from "../types/billing.enums";
 import { SubscriptionEntity } from "../entities/subscription.entity";
+import { ProfessionalAccountEntity } from "../entities/professional-account.entity";
 import { hashPassword } from "@/src/contexts/auth/utils/passwordUtils";
 
 export interface ProvisionCheckoutResult {
@@ -52,6 +53,8 @@ export class BillingSubscriptionProvisioningService {
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
     @InjectRepository(SubscriptionEntity)
     private readonly subscription_entity_repository: Repository<SubscriptionEntity>,
+    @InjectRepository(ProfessionalAccountEntity)
+    private readonly professional_account_repository: Repository<ProfessionalAccountEntity>,
   ) {}
 
   async provisionFromCheckoutSession(
@@ -133,6 +136,11 @@ export class BillingSubscriptionProvisioningService {
         plan_version_id,
         stripe_price_id,
       },
+    );
+    await this.linkProfessionalAccount(
+      profile_id,
+      customer_id,
+      full_session.metadata?.professional_account_id,
     );
     await this.applyPlanEntitlements(profile_id, plan_id);
 
@@ -216,6 +224,39 @@ export class BillingSubscriptionProvisioningService {
 
     if (preloaded) {
       await this.dealership_repository.save(preloaded);
+    }
+  }
+
+  async linkProfessionalAccount(
+    profile_id: string,
+    stripe_customer_id: string,
+    professional_account_id?: string,
+  ): Promise<void> {
+    let account: ProfessionalAccountEntity | null = null;
+
+    if (professional_account_id) {
+      account = await this.professional_account_repository.findOne({
+        where: { id: professional_account_id },
+      });
+    }
+
+    if (!account) {
+      account = await this.professional_account_repository.findOne({
+        where: { profile_id },
+      });
+    }
+
+    if (!account) {
+      return;
+    }
+
+    const preloaded = await this.professional_account_repository.preload({
+      id: account.id,
+      stripe_customer_id,
+    });
+
+    if (preloaded) {
+      await this.professional_account_repository.save(preloaded);
     }
   }
 

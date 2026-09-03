@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
+import { envs } from "@/src/common/envs";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
@@ -21,6 +22,8 @@ import { StripeClient } from "../clients/stripe.client";
 import { BILLING_TYPE, ONE_TIME_PRODUCT_KIND, PLAN_TYPE } from "../types/billing.enums";
 import { SubscriptionEntity } from "../entities/subscription.entity";
 import { OneTimePurchaseEntity } from "../entities/one-time-purchase.entity";
+import { ProfessionalAccountEntity } from "../entities/professional-account.entity";
+import { CreateSubscriptionCheckoutHttpDto } from "../api/user/create-subscription-checkout/create-subscription-checkout.http-dto";
 import { PlanVersionsService } from "./plan-versions.service";
 import { AssistantCreditPacksService } from "./assistant-credit-packs.service";
 import { FeaturedListingOffersService } from "./featured-listing-offers.service";
@@ -318,6 +321,8 @@ export class BillingCheckoutService {
     private readonly featured_listing_offers_service: FeaturedListingOffersService,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
+    @InjectRepository(ProfessionalAccountEntity)
+    private readonly professional_account_repository: Repository<ProfessionalAccountEntity>,
   ) {}
 
   private async resolveCustomer(profile_id: string) {
@@ -327,6 +332,9 @@ export class BillingCheckoutService {
     }
 
     if (profile.stripe_customer_id) {
+      await this.stripe_client.updateCustomerPreferredLocales(
+        profile.stripe_customer_id,
+      );
       return profile.stripe_customer_id;
     }
 
@@ -373,13 +381,54 @@ export class BillingCheckoutService {
     await this.resolveRecurringPrice(plan_price_id);
 
     if (profile_id) {
-      return this.createSubscriptionCheckout(profile_id, plan_price_id);
+      return this.createLegacySubscriptionCheckout(profile_id, plan_price_id);
     }
 
     return this.createGuestSubscriptionCheckout(plan_price_id);
   }
 
-  async createSubscriptionCheckout(profile_id: string, plan_price_id: string) {
+  async createSubscriptionCheckout(
+    profile_id: string,
+    dto: CreateSubscriptionCheckoutHttpDto,
+  ) {
+    const price = await this.resolveRecurringPrice(dto.plan_price_id);
+    const published = await this.plan_versions_service.findPublishedByPlanId(
+      price.plan_id,
+    );
+    if (!published) {
+      throw new BadRequestException(
+        "El plan no tiene una versión publicada de entitlements",
+      );
+    }
+
+    const professional_account = await this.upsertProfessionalAccount(
+      profile_id,
+      dto,
+    );
+    const dealership_id = await this.resolveDealershipId(profile_id);
+    const customer_id = await this.resolveCustomer(profile_id);
+    const checkout_url = await this.stripe_client.createSubscriptionCheckout({
+      customer_id,
+      stripe_price_id: price.stripe_price_id!,
+      profile_id,
+      plan_id: price.plan_id,
+      plan_price_id: dto.plan_price_id,
+      plan_version_id: published.id,
+      dealership_id,
+      professional_account_id: professional_account.id,
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true },
+      success_url: `${envs.FRONTEND_URL}/billing-plan/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${envs.FRONTEND_URL}/billing-plan?plan_price_id=${dto.plan_price_id}`,
+    });
+
+    return { checkout_url };
+  }
+
+  private async createLegacySubscriptionCheckout(
+    profile_id: string,
+    plan_price_id: string,
+  ) {
     const price = await this.resolveRecurringPrice(plan_price_id);
     const published = await this.plan_versions_service.findPublishedByPlanId(
       price.plan_id,
@@ -403,6 +452,52 @@ export class BillingCheckoutService {
     });
 
     return { checkout_url };
+  }
+
+  private async upsertProfessionalAccount(
+    profile_id: string,
+    dto: CreateSubscriptionCheckoutHttpDto,
+  ): Promise<ProfessionalAccountEntity> {
+    const existing = await this.professional_account_repository.findOne({
+      where: { profile_id },
+    });
+
+    const commercial_name = dto.commercial_name ?? null;
+    const accepted_terms_at = new Date();
+
+    if (existing) {
+      const preloaded = await this.professional_account_repository.preload({
+        id: existing.id,
+        type: dto.account_type,
+        legal_name: dto.legal_name,
+        commercial_name,
+        tax_id: dto.tax_id,
+        email: dto.email,
+        phone_code: dto.phone_code,
+        phone: dto.phone,
+        accepted_terms_at,
+      });
+
+      if (!preloaded) {
+        throw new BadRequestException("No se pudo actualizar la cuenta profesional");
+      }
+
+      return this.professional_account_repository.save(preloaded);
+    }
+
+    const created = this.professional_account_repository.create({
+      profile_id,
+      type: dto.account_type,
+      legal_name: dto.legal_name,
+      commercial_name,
+      tax_id: dto.tax_id,
+      email: dto.email,
+      phone_code: dto.phone_code,
+      phone: dto.phone,
+      accepted_terms_at,
+    });
+
+    return this.professional_account_repository.save(created);
   }
 
   private async createGuestSubscriptionCheckout(plan_price_id: string) {

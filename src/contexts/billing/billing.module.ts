@@ -74,6 +74,7 @@ import { FindAssistantCreditPacksCatalogController } from "./api/user/find-assis
 import { FindFeaturedListingOffersCatalogController } from "./api/user/find-featured-listing-offers-catalog/find-featured-listing-offers-catalog.controller";
 import { PlanAccessGrantEntity } from "./entities/plan-access-grant.entity";
 import { PlanAccessGrantUsageEntity } from "./entities/plan-access-grant-usage.entity";
+import { ProfessionalAccountEntity } from "./entities/professional-account.entity";
 import { PlanAccessGrantsService } from "./services/plan-access-grants.service";
 import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/plan-access-grants-admin.controller";
 
@@ -104,6 +105,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
       PlanLeadRequestEntity,
       PlanAccessGrantEntity,
       PlanAccessGrantUsageEntity,
+      ProfessionalAccountEntity,
     ]),
     forwardRef(() => VehiclesModule),
     VehicleSearchModule,

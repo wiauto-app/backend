@@ -5,6 +5,9 @@ import { envs } from "@/src/common/envs";
 import { BILLING_TYPE, PRICE_INTERVAL } from "../types/billing.enums";
 import { SubscriptionPlan } from "../types/subscription-plan";
 
+export const STRIPE_PREFERRED_LOCALES = ["es"] as const;
+export const STRIPE_CHECKOUT_LOCALE = "es";
+
 @Injectable()
 export class StripeClient {
   private readonly stripe: Stripe;
@@ -95,6 +98,7 @@ export class StripeClient {
     const customer = await this.stripe.customers.create({
       email: params.email,
       name: params.name,
+      preferred_locales: [...STRIPE_PREFERRED_LOCALES],
       metadata: { profile_id: params.profile_id },
     });
 
@@ -110,6 +114,11 @@ export class StripeClient {
     plan_version_id: string;
     dealership_id?: string;
     lead_request_id?: string;
+    professional_account_id?: string;
+    billing_address_collection?: "auto" | "required";
+    tax_id_collection?: { enabled: boolean };
+    success_url?: string;
+    cancel_url?: string;
   }): Promise<string> {
     const shared_metadata: Record<string, string> = {
       profile_id: params.profile_id,
@@ -123,14 +132,30 @@ export class StripeClient {
     if (params.lead_request_id) {
       shared_metadata.lead_request_id = params.lead_request_id;
     }
+    if (params.professional_account_id) {
+      shared_metadata.professional_account_id = params.professional_account_id;
+    }
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
+      locale: STRIPE_CHECKOUT_LOCALE,
       customer: params.customer_id,
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
-      success_url: envs.STRIPE_SUCCESS_URL,
-      cancel_url: envs.STRIPE_CANCEL_URL,
+      success_url: this.resolveCheckoutUrl(
+        params.success_url,
+        envs.STRIPE_SUCCESS_URL,
+      ),
+      cancel_url: this.resolveCheckoutUrl(
+        params.cancel_url,
+        envs.STRIPE_CANCEL_URL,
+      ),
       allow_promotion_codes: true,
+      ...(params.billing_address_collection
+        ? { billing_address_collection: params.billing_address_collection }
+        : {}),
+      ...(params.tax_id_collection
+        ? { tax_id_collection: params.tax_id_collection }
+        : {}),
       metadata: shared_metadata,
       subscription_data: {
         metadata: {
@@ -142,6 +167,9 @@ export class StripeClient {
             : {}),
           ...(params.lead_request_id
             ? { lead_request_id: params.lead_request_id }
+            : {}),
+          ...(params.professional_account_id
+            ? { professional_account_id: params.professional_account_id }
             : {}),
         },
       },
@@ -174,6 +202,7 @@ export class StripeClient {
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
+      locale: STRIPE_CHECKOUT_LOCALE,
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
       success_url: envs.STRIPE_SUCCESS_URL,
       cancel_url: envs.STRIPE_CANCEL_URL,
@@ -215,6 +244,12 @@ export class StripeClient {
     metadata: Record<string, string>,
   ): Promise<void> {
     await this.stripe.customers.update(customer_id, { metadata });
+  }
+
+  async updateCustomerPreferredLocales(customer_id: string): Promise<void> {
+    await this.stripe.customers.update(customer_id, {
+      preferred_locales: [...STRIPE_PREFERRED_LOCALES],
+    });
   }
 
   async updateSubscriptionMetadata(
@@ -320,6 +355,7 @@ export class StripeClient {
   }): Promise<string> {
     const session = await this.stripe.checkout.sessions.create({
       mode: "payment",
+      locale: STRIPE_CHECKOUT_LOCALE,
       customer: params.customer_id,
       line_items: [{ price: params.stripe_price_id, quantity: 1 }],
       success_url: this.resolveCheckoutUrl(

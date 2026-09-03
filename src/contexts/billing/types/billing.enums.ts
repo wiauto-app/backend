@@ -90,3 +90,11 @@ export const PLAN_LEAD_STATUS = {
 
 export type PlanLeadStatus =
   (typeof PLAN_LEAD_STATUS)[keyof typeof PLAN_LEAD_STATUS];
+
+export const PROFESSIONAL_ACCOUNT_TYPE = {
+  SELF_EMPLOYED: "self_employed",
+  COMPANY: "company",
+} as const;
+
+export type ProfessionalAccountType =
+  (typeof PROFESSIONAL_ACCOUNT_TYPE)[keyof typeof PROFESSIONAL_ACCOUNT_TYPE];

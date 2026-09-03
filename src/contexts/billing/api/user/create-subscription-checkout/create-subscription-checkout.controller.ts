@@ -18,9 +18,6 @@ export class CreateSubscriptionCheckoutController {
     @GetUserId() profile_id: string,
     @Body() body: CreateSubscriptionCheckoutHttpDto,
   ) {
-    return this.checkout_service.createSubscriptionCheckout(
-      profile_id,
-      body.plan_price_id,
-    );
+    return this.checkout_service.createSubscriptionCheckout(profile_id, body);
   }
 }

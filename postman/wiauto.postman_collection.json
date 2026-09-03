@@ -8762,10 +8762,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\"\n}"
+                  "raw": "{\n  \"plan_price_id\": \"{{plan_price_id}}\",\n  \"account_type\": \"self_employed\",\n  \"legal_name\": \"Juan Pérez\",\n  \"tax_id\": \"12345678Z\",\n  \"commercial_name\": \"Taller Juan\",\n  \"email\": \"juan@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"612345678\",\n  \"accepted_terms\": true\n}"
                 },
                 "url": "{{base_url}}/v1/billing/checkout/subscription",
-                "description": "Devuelve checkout_url de Stripe Checkout (mode subscription)."
+                "description": "JWT. Upsert de cuenta profesional (datos fiscales + contacto) y checkout_url de Stripe (mode subscription)."
               },
               "response": []
             },
