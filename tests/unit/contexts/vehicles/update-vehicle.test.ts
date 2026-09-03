@@ -202,6 +202,28 @@ describe("vehicle update flow", () => {
     );
   });
 
+  it("trims and patches optional ref", async () => {
+    const { service, vehicle_repository } = createService();
+
+    await service.update({ id: vehicle_id, ref: "  REF-42  " });
+
+    expect(vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ ref: "REF-42" }),
+    );
+  });
+
+  it("clears ref when blank string is sent", async () => {
+    const { service, vehicle_repository } = createService();
+
+    await service.update({ id: vehicle_id, ref: "   " });
+
+    expect(vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ ref: null }),
+    );
+  });
+
   it("does not persist, index or notify for an empty patch", async () => {
     const {
       service,

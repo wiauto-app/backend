@@ -32,8 +32,8 @@ export type TransmissionType =
 
 export interface PrimitiveVehicle {
   id: string;
-  /** Referencia pública autoincremental (generada por BD). */
-  ref?: number;
+  /** Referencia pública del anuncio (varchar unique nullable). */
+  ref?: string | null;
   mileage: number;
   lat: number;
   lng: number;

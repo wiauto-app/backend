@@ -50,6 +50,13 @@ describe("CreateVehicleDto", () => {
     expect(await validate(validDto())).toHaveLength(0);
   });
 
+  it("accepts an optional ref string", async () => {
+    const dto = validDto();
+    dto.ref = "REF-ABC-01";
+
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
   it("rejects a negative price", async () => {
     const dto = validDto();
     dto.price = -1;
@@ -172,6 +179,117 @@ describe("CreateVehicleService", () => {
     expect(saved_targets).toContain(VehiclePriceEntity);
     expect(result.vehicle.id).toBe("vehicle-id");
     expect(result.vehicle.profile_id).toBe("profile-id");
+  });
+
+  it("persists trimmed optional ref on create", async () => {
+    const created_payloads: Record<string, unknown>[] = [];
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => {
+        if (_target === VehicleEntity) {
+          created_payloads.push(payload as Record<string, unknown>);
+        }
+        return payload;
+      }),
+      save: vi.fn(async (target, payload) => {
+        if (target === VehicleEntity) {
+          return {
+            ...payload,
+            id: "vehicle-id",
+            ref: (payload as { ref?: string | null }).ref,
+            created_at: new Date("2026-08-16T00:00:00Z"),
+            updated_at: new Date("2026-08-16T00:00:00Z"),
+          };
+        }
+        return payload;
+      }),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async callback => callback(manager)),
+    };
+    const service = new CreateVehicleService(
+      data_source as never,
+      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+      { resolve: vi.fn().mockResolvedValue(null) } as never,
+      { execute: vi.fn() } as never,
+      { syncVehicle: vi.fn().mockResolvedValue(null) } as never,
+      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
+      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
+      { findOne: vi.fn().mockResolvedValue(null) } as never,
+      { enqueue_vehicle_published: vi.fn() } as never,
+      { addBulk: vi.fn() } as never,
+      {
+        validateAndGetTempUpload: vi.fn(),
+        markAsConsumed: vi.fn(),
+      } as never,
+    );
+    const dto = validDto();
+    dto.ref = "  REF-99  ";
+
+    const result = await service.create(dto, "profile-id");
+
+    expect(created_payloads[0]?.ref).toBe("REF-99");
+    expect(result.vehicle.ref).toBe("REF-99");
+  });
+
+  it("stores null ref when omitted or blank", async () => {
+    const created_payloads: Record<string, unknown>[] = [];
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => {
+        if (_target === VehicleEntity) {
+          created_payloads.push(payload as Record<string, unknown>);
+        }
+        return payload;
+      }),
+      save: vi.fn(async (target, payload) => {
+        if (target === VehicleEntity) {
+          return {
+            ...payload,
+            id: "vehicle-id",
+            ref: null,
+            created_at: new Date("2026-08-16T00:00:00Z"),
+            updated_at: new Date("2026-08-16T00:00:00Z"),
+          };
+        }
+        return payload;
+      }),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async callback => callback(manager)),
+    };
+    const service = new CreateVehicleService(
+      data_source as never,
+      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+      { resolve: vi.fn().mockResolvedValue(null) } as never,
+      { execute: vi.fn() } as never,
+      { syncVehicle: vi.fn().mockResolvedValue(null) } as never,
+      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
+      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
+      { findOne: vi.fn().mockResolvedValue(null) } as never,
+      { enqueue_vehicle_published: vi.fn() } as never,
+      { addBulk: vi.fn() } as never,
+      {
+        validateAndGetTempUpload: vi.fn(),
+        markAsConsumed: vi.fn(),
+      } as never,
+    );
+    const dto = validDto();
+    dto.ref = "   ";
+
+    await service.create(dto, "profile-id");
+
+    expect(created_payloads[0]?.ref).toBeNull();
   });
 
   it("restores promoted media when the database transaction fails", async () => {

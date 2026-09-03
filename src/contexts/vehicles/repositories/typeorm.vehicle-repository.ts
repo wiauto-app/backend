@@ -12,6 +12,10 @@ import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle
 import { InvalidVehicleServiceIdsException } from "../exceptions/invalid-vehicle-service-ids.exception";
 import { InvalidVehicleCatalogIdException } from "../exceptions/invalid-vehicle-catalog-id.exception";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
+import {
+  isVehicleRefUniqueViolation,
+  VehicleRefAlreadyExistsException,
+} from "../exceptions/vehicle-ref-already-exists.exception";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { VehicleFilter } from "../types/vehicle.filter";
 import {
@@ -421,12 +425,11 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
 
 /**
  * Claves de `PrimitiveVehicle` que no se copian tal cual a la entity: `id` se
- * fija aparte, `ref`/`created_at` los genera la BD y los `*_ids` se resuelven
+ * fija aparte, `created_at` lo genera la BD y los `*_ids` se resuelven
  * como relaciones many-to-many.
  */
 const NON_PATCHABLE_VEHICLE_FIELDS = new Set<string>([
   "id",
-  "ref",
   "created_at",
   "features_ids",
   "services_ids",
@@ -902,7 +905,14 @@ export class TypeOrmVehicleRepository {
     if (!preloaded) {
       throw new VehicleNotFoundException(vehicle.id);
     }
-    await this.vehicle_repository.save(preloaded);
+    try {
+      await this.vehicle_repository.save(preloaded);
+    } catch (error) {
+      if (isVehicleRefUniqueViolation(error)) {
+        throw new VehicleRefAlreadyExistsException();
+      }
+      throw error;
+    }
   }
 
   /**
@@ -948,7 +958,14 @@ export class TypeOrmVehicleRepository {
     if (!preloaded) {
       throw new VehicleNotFoundException(id);
     }
-    await this.vehicle_repository.save(preloaded);
+    try {
+      await this.vehicle_repository.save(preloaded);
+    } catch (error) {
+      if (isVehicleRefUniqueViolation(error)) {
+        throw new VehicleRefAlreadyExistsException();
+      }
+      throw error;
+    }
   }
 
   private async assert_patch_catalog_refs(
@@ -1089,9 +1106,9 @@ export class TypeOrmVehicleRepository {
     return entity_to_primitives(row);
   }
 
-  async findActiveIdByRef(ref: number): Promise<string | null> {
+  async findActiveIdByRef(ref: string | number): Promise<string | null> {
     const row = await this.vehicle_repository.findOne({
-      where: { ref, status: STATUS_VEHICLE.ACTIVE },
+      where: { ref: String(ref), status: STATUS_VEHICLE.ACTIVE },
       select: { id: true },
     });
     return row?.id ?? null;

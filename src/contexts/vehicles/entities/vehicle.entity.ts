@@ -52,11 +52,11 @@ export class VehicleEntity {
   id: string;
 
   @Column({
-    type: "int",
+    type: "varchar",
     unique: true,
-    generated: "increment",
+    nullable: true,
   })
-  ref: number;
+  ref: string | null;
 
   // ===========================================================================
   // ANUNCIO

@@ -172,7 +172,7 @@ export class VehicleService {
     return vehicle;
   }
 
-  async findActiveIdByRef(ref: number): Promise<{ id: string }> {
+  async findActiveIdByRef(ref: string | number): Promise<{ id: string }> {
     const id = await this.vehicle_repository.findActiveIdByRef(ref);
     if (!id) {
       throw new NotFoundException(
@@ -231,6 +231,10 @@ export class VehicleService {
         ([, value]) => value !== undefined,
       ),
     ) as VehicleUpdateFields;
+
+    if (patch.ref !== undefined) {
+      patch.ref = typeof patch.ref === "string" ? patch.ref.trim() || null : null;
+    }
 
     const publisher_context = await this.resolvePublisherContext(
       existing.profile_id,

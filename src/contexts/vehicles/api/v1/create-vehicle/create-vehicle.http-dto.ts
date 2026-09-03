@@ -31,6 +31,10 @@ export type VehicleImageDto = VehicleImageHttpDto;
 export class CreateVehicleDto {
   @IsOptional()
   @IsString()
+  ref?: string;
+
+  @IsOptional()
+  @IsString()
   vin_code?: string;
 
   @IsOptional()

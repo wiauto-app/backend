@@ -18,6 +18,10 @@ import { InvalidateVehicleVersionIdException } from "../../../exceptions/Invalid
 import { InvalidVehicleCatalogIdException } from "../../../exceptions/invalid-vehicle-catalog-id.exception";
 import { InvalidVehicleFeatureIdsException } from "../../../exceptions/invalid-vehicle-feature-ids.exception";
 import { InvalidVehicleServiceIdsException } from "../../../exceptions/invalid-vehicle-service-ids.exception";
+import {
+  isVehicleRefUniqueViolation,
+  VehicleRefAlreadyExistsException,
+} from "../../../exceptions/vehicle-ref-already-exists.exception";
 import { CategoryEntity } from "../../../entities/category.entity";
 import { ColorEntity } from "../../../entities/color.entity";
 import { CuotaEntity } from "../../../entities/cuota.entity";
@@ -180,6 +184,7 @@ export class CreateVehicleService {
       vehicle = await this.data_source.transaction(async manager => {
         const relations = await this.loadAndValidateRelations(manager, dto);
         const entity = manager.create(VehicleEntity, {
+          ref: dto.ref?.trim() || null,
           vin_code: dto.vin_code?.trim() ?? "",
           profile_id: publisher_profile_id,
           dealership_id: membership?.dealership_id ?? null,
@@ -347,6 +352,10 @@ export class CreateVehicleService {
           [error, rollback_error],
           "Falló la creación del vehículo y también su rollback",
         );
+      }
+
+      if (isVehicleRefUniqueViolation(error)) {
+        throw new VehicleRefAlreadyExistsException();
       }
 
       throw error;

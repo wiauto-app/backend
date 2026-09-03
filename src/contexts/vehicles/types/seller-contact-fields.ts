@@ -1,7 +1,7 @@
 /** Contacto del vendedor sin redacción pública (uso interno / asistente). */
 export interface SellerContactFields {
   id: string;
-  ref: number;
+  ref: string | null;
   has_whatsapp: boolean;
   show_phone: boolean;
   phone_code: string;
