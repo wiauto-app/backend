@@ -58,9 +58,13 @@ export class MeService {
       billing_summary: billingSummary,
     });
 
-    //5 minute
-    await this.cacheManager.set(`me:${user.id}`, me, 300);
+    // 5 minutes (cache-manager TTL en milisegundos)
+    await this.cacheManager.set(`me:${user.id}`, me, 5 * 60 * 1000);
     return me;
+  }
+
+  async invalidateMeCache(user_id: string): Promise<void> {
+    await this.cacheManager.del(`me:${user_id}`);
   }
 
   async deleteAccount(user_id: string, session_id: string): Promise<{ message: string; data: null }> {

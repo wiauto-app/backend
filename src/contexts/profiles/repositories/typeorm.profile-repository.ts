@@ -34,6 +34,10 @@ export class TypeOrmProfileRepository {
     private readonly profileRepository: Repository<ProfileEntity>,
   ) { }
 
+  async findByPhone(phone: string): Promise<ProfileEntity | null> {
+    return this.profileRepository.findOne({ where: { phone } });
+  }
+
   async save(input: SaveProfileInput): Promise<ProfileEntity> {
     const entity = this.profileRepository.create({
       id: input.id,
@@ -128,7 +132,9 @@ export class TypeOrmProfileRepository {
       image_url: input.image_url ?? undefined,
       phone_code: input.phone_code ?? undefined,
       phone: input.phone ?? undefined,
-      province_id: input.province_id ?? null,
+      ...(input.province_id !== undefined
+        ? { province_id: input.province_id }
+        : {}),
     });
     if (!preloaded) {
       return null;

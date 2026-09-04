@@ -14,11 +14,8 @@ export class UpdateProfileController {
   @Patch(":id")
   update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() update_profile_http_dto: UpdateProfileHttpDto,
+    @Body() updateProfileHttpDto: UpdateProfileHttpDto,
   ) {
-    return this.profile_service.update({
-      id,
-      ...update_profile_http_dto,
-    });
+    return this.profile_service.update(id, updateProfileHttpDto);
   }
 }

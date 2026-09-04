@@ -45,6 +45,8 @@ export class MeController {
       user_id,
     );
 
+    await this.me_service.invalidateMeCache(user_id);
+
     void this.email_verification_service
       .enqueueSendVerificationForUser(user_id, me_update_email_http_dto.email)
 
@@ -52,17 +54,21 @@ export class MeController {
   }
 
   @Patch("password")
-  updatePassword(
+  async updatePassword(
     @GetUserId() user_id: string,
     @Body() me_update_password_http_dto: MeUpdatePasswordHttpDto,
   ) {
-    return this.user_service.updatePassword(
+    const response = await this.user_service.updatePassword(
       {
         current_password: me_update_password_http_dto.current_password,
         password: me_update_password_http_dto.password,
       },
       user_id,
     );
+
+    await this.me_service.invalidateMeCache(user_id);
+
+    return response;
   }
 
   @Delete()

@@ -476,6 +476,21 @@
           "response": []
         },
         {
+          "name": "Obtener mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/me/profile",
+            "description": "Perfil del usuario autenticado sin caché Redis. Fuente de verdad del formulario. `JwtGuard`."
+          },
+          "response": []
+        },
+        {
           "name": "Actualizar mi perfil",
           "request": {
             "method": "PATCH",
@@ -491,10 +506,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"avatar_url\": \"profile-images/avatars/ejemplo.webp\"\n}"
+              "raw": "{\n  \"name\": \"Nombre\",\n  \"last_name\": \"Apellido\",\n  \"avatar_url\": \"profile-images/avatars/ejemplo.webp\",\n  \"province_id\": 28\n}"
             },
             "url": "{{base_url}}/auth/me/profile",
-            "description": "Actualiza nombre, apellido y avatar del perfil del usuario autenticado."
+            "description": "Actualiza nombre, apellido, teléfono, avatar y provincia del perfil del usuario autenticado. Invalida caché `me:{id}`."
           },
           "response": []
         },

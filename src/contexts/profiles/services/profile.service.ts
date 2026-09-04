@@ -27,6 +27,7 @@ import { CreateProfileDto } from "../dto/create-profile";
 import { UpdateProfileDto } from "../dto/update-profile.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "@nestjs/cache-manager";
+import { UpdateMyProfileHttpDto } from "../api/auth-me/update-my-profile/update-my-profile.http-dto";
 
 const dealership_member_roles = new Set<PrimitiveDealershipMember["role"]>([
   "owner",
@@ -68,6 +69,7 @@ export interface UpdateMyProfileInput {
   phone?: string;
   avatar_url?: string;
   image_url?: string;
+  province_id?: number;
 }
 
 @Injectable()
@@ -82,7 +84,7 @@ export class ProfileService {
     private readonly newsletter_service: NewsletterService,
     @Inject(CACHE_MANAGER)
     private readonly cache_manager: Cache,
-  ) {}
+  ) { }
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
     return this.create(createProfileDto);
@@ -221,26 +223,23 @@ export class ProfileService {
     user_id: string,
     dto: UpdateProfileDto,
   ): Promise<ProfileResponse> {
-    return this.update({ id: user_id, ...dto });
+    return this.update(user_id, dto);
   }
 
-  async update(input: {
-    id: string;
-    name?: string;
-    last_name?: string;
-    avatar_url?: string;
-    image_url?: string;
-    phone_code?: string;
-    phone?: string;
-    province_id?: number;
-  }): Promise<ProfileResponse> {
-    const { id, ...patch_fields } = input;
+  async update(id: string, dto: UpdateMyProfileHttpDto): Promise<ProfileResponse> {
     const profile = await this.profile_repository.findOne(id);
     if (!profile) {
       throw new ProfileNotFoundException(id);
     }
 
-    const updated = await this.profile_repository.update(id, patch_fields);
+    if (dto.phone && dto.phone !== profile.phone) {
+      const phone_exists = await this.profile_repository.findByPhone(dto.phone);
+      if (phone_exists) {
+        throw new BadRequestException("El teléfono ya está en uso");
+      }
+    }
+
+    const updated = await this.profile_repository.update(id, dto);
     if (!updated) {
       throw new ProfileNotFoundException(id);
     }
@@ -253,11 +252,15 @@ export class ProfileService {
     return mapProfileToResponse(reloaded);
   }
 
+  async getMyProfile(user_id: string): Promise<ProfileResponse> {
+    return this.findOnePrimitives(user_id);
+  }
+
   async updateMyProfile(
-    input: UpdateMyProfileInput,
+    user_id: string,
+    dto: UpdateMyProfileHttpDto,
   ): Promise<ProfileResponse> {
-    const { user_id, ...patch_fields } = input;
-    return this.update({ id: user_id, ...patch_fields });
+    return this.update(user_id, dto);
   }
 
   async removeProfile(id: string): Promise<void> {

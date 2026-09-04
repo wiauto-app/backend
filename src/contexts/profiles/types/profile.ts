@@ -29,6 +29,7 @@ export interface ProfileResponse {
   user?: ProfileUserResponse | null;
   phone_code?: string | null;
   phone?: string | null;
+  province_id?: number | null;
 }
 
 const resolveUserProviders = (
@@ -78,5 +79,6 @@ export const mapProfileToResponse = (
   image_url: entity.image_url,
   phone_code: entity.phone_code,
   phone: entity.phone,
+  province_id: entity.province_id ?? null,
   user: mapUserToResponse(entity.user),
 });
