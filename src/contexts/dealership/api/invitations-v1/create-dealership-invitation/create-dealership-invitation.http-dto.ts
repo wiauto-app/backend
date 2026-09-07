@@ -10,7 +10,4 @@ export class CreateDealershipInvitationHttpDto {
   @IsIn(["admin", "member"])
   role: "admin" | "member";
 
-  @IsString()
-  @IsNotEmpty()
-  dealership_id: string;
 }

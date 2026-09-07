@@ -13,10 +13,10 @@ import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/rep
 export class DealershipMemberGuard implements CanActivate {
   constructor(
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const { request, user } = getGuardRequest(context);
+    const { user } = getGuardRequest(context);
     if (!user?.profile) {
       throw new ForbiddenException("Usuario no autenticado");
     }
@@ -25,15 +25,10 @@ export class DealershipMemberGuard implements CanActivate {
       return true;
     }
 
-    const dealership_id = request.params?.id as string | undefined;
-    if (!dealership_id) {
-      throw new ForbiddenException("Identificador de concesionario no válido");
-    }
 
     const membership =
-      await this.dealership_member_repository.findOneByDealershipIdAndProfileId(
-        dealership_id,
-        user.profile.id,
+      await this.dealership_member_repository.findOneByProfileId(
+        user.id,
       );
 
     if (!membership) {

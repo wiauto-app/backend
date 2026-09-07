@@ -7,30 +7,16 @@ import {
 } from "@nestjs/common";
 
 import { getGuardRequest } from "@/src/contexts/shared/guardRequest/getGuardRequest";
-import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-invitation-repository";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
-
-const resolve_dealership_id = (request: {
-  body?: { dealership_id?: string };
-  params?: { id?: string; dealership_id?: string };
-  query?: { dealership_id?: string };
-}): string | undefined => {
-  return (
-    request.body?.dealership_id ??
-    request.params?.dealership_id ??
-    (request.query?.dealership_id as string | undefined)
-  );
-};
 
 @Injectable()
 export class DealershipTeamManagerGuard implements CanActivate {
   constructor(
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-    private readonly dealership_invitation_repository: TypeOrmDealershipInvitationRepository,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const { request, user } = getGuardRequest(context);
+    const { user } = getGuardRequest(context);
     if (!user?.profile) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
@@ -39,34 +25,17 @@ export class DealershipTeamManagerGuard implements CanActivate {
       return true;
     }
 
-    let dealership_id = resolve_dealership_id(request);
-
-    if (!dealership_id && request.params?.id) {
-      const invitation = await this.dealership_invitation_repository.findOne(
-        request.params.id as string,
-      );
-      dealership_id = invitation?.dealership_id;
-    }
-
-    if (!dealership_id) {
-      dealership_id = request.params?.id as string | undefined;
-    }
-
-    if (!dealership_id) {
-      throw new ForbiddenException("Identificador de concesionario no válido");
-    }
 
     const membership =
-      await this.dealership_member_repository.findOneByDealershipIdAndProfileId(
-        dealership_id,
-        user.profile.id,
+      await this.dealership_member_repository.findOneByProfileId(
+        user.id,
       );
 
     if (!membership) {
       throw new ForbiddenException("No perteneces a este concesionario");
     }
 
-    const member_role = membership.toPrimitives().role;
+    const member_role = membership.role;
     if (member_role !== "owner" && member_role !== "admin") {
       throw new ForbiddenException("No tienes permiso para gestionar el equipo");
     }

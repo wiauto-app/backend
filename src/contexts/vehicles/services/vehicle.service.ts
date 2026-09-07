@@ -160,7 +160,7 @@ export class VehicleService {
 
     return {
       publisher_type: PUBLISHER_TYPE.DEALERSHIP,
-      dealership_id: membership.toPrimitives().dealership_id,
+      dealership_id: membership.dealership_id,
     };
   }
 

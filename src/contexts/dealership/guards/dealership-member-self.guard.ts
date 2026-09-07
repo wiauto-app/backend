@@ -13,7 +13,7 @@ import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/rep
 export class DealershipMemberSelfGuard implements CanActivate {
   constructor(
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const { request, user } = getGuardRequest(context);
@@ -25,14 +25,8 @@ export class DealershipMemberSelfGuard implements CanActivate {
       return true;
     }
 
-    const dealership_id = request.params?.id as string | undefined;
-    if (!dealership_id) {
-      throw new ForbiddenException("Identificador de concesionario no válido");
-    }
-
     const membership =
-      await this.dealership_member_repository.findOneByDealershipIdAndProfileId(
-        dealership_id,
+      await this.dealership_member_repository.findOneByProfileId(
         user.profile.id,
       );
 
@@ -40,14 +34,13 @@ export class DealershipMemberSelfGuard implements CanActivate {
       throw new ForbiddenException("No perteneces a este concesionario");
     }
 
-    const member_primitive = membership.toPrimitives();
-    if (member_primitive.role !== "member") {
+    if (membership.role !== "member") {
       throw new ForbiddenException(
         "Solo los miembros con rol member pueden salir del equipo por esta vía",
       );
     }
 
-    request.dealership_member_id = member_primitive.id;
+    request.dealership_member_id = membership.id;
     return true;
   }
 }

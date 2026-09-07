@@ -84,10 +84,9 @@ export class DealershipService {
       throw new DealershipNotFoundException(find_one_dealership_dto.id);
     }
 
-    const members =
-      await this.dealership_member_repository.findAllByDealershipId(
-        find_one_dealership_dto.id,
-      );
+    const members = await this.dealership_members_service.findTeam(
+      find_one_dealership_dto.id,
+    );
     const schedules =
       await this.dealership_schedule_service.findByDealershipId(
         find_one_dealership_dto.id,
@@ -113,10 +112,7 @@ export class DealershipService {
     }
 
     const primitives = dealership.toPrimitives();
-    const members =
-      await this.dealership_member_repository.findAllByDealershipId(
-        primitives.id,
-      );
+    const members = await this.dealership_members_service.findTeam(primitives.id);
     const schedules =
       await this.dealership_schedule_service.findByDealershipId(primitives.id);
 

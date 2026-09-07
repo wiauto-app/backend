@@ -2,7 +2,6 @@ import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/t
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
 import { DealershipMemberInputDto } from "../dto/dealership-member-input.dto";
-import { DealershipMember } from "../types/dealership-member";
 import { DealershipMemberNotFoundException } from "../exceptions/dealership-member-not-found.exception";
 import { InvalidDealershipMembersException } from "../exceptions/invalid-dealership-members.exception";
 import { ProfileNotFoundForMemberException } from "../exceptions/profile-not-found-for-member.exception";
@@ -44,14 +43,30 @@ export class DealershipMembersService {
   ) {}
 
   async create(input: CreateDealershipMemberInput): Promise<void> {
-    const dealership_member = DealershipMember.create(input);
-    await this.dealership_member_repository.save(dealership_member);
+    await this.dealership_member_repository.save(input);
   }
 
   async findTeam(dealership_id: string): Promise<DealershipMemberDetail[]> {
-    return this.dealership_member_repository.findAllByDealershipId(
-      dealership_id,
-    );
+    const members =
+      await this.dealership_member_repository.findAllByDealershipId(
+        dealership_id,
+      );
+
+    return members.map(member => ({
+      id: member.id,
+      dealership_id: member.dealership_id,
+      profile_id: member.profile_id,
+      role: member.role,
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      profile: {
+        id: member.profile.id,
+        name: member.profile.name,
+        last_name: member.profile.last_name,
+        avatar_url: member.profile.avatar_url,
+        email: member.profile.user.email,
+      },
+    }));
   }
 
   async updateRole(input: UpdateDealershipMemberRoleInput): Promise<void> {
@@ -62,19 +77,17 @@ export class DealershipMembersService {
       throw new DealershipMemberNotFoundException(input.member_id);
     }
 
-    const member_primitives = member.toPrimitives();
-    if (member_primitives.dealership_id !== input.dealership_id) {
+    if (member.dealership_id !== input.dealership_id) {
       throw new DealershipMemberNotFoundException(input.member_id);
     }
 
-    if (member_primitives.role === "owner") {
+    if (member.role === "owner") {
       throw new InvalidDealershipMembersException(
         "No se puede cambiar el rol del propietario del concesionario",
       );
     }
 
-    const updated_member = member.update({ role: input.role });
-    await this.dealership_member_repository.update(updated_member);
+    await this.dealership_member_repository.updateRole(member.id, input.role);
   }
 
   async removeMember(input: RemoveDealershipMemberInput): Promise<void> {
@@ -85,18 +98,17 @@ export class DealershipMembersService {
       throw new DealershipMemberNotFoundException(input.member_id);
     }
 
-    const member_primitives = member.toPrimitives();
-    if (member_primitives.dealership_id !== input.dealership_id) {
+    if (member.dealership_id !== input.dealership_id) {
       throw new DealershipMemberNotFoundException(input.member_id);
     }
 
-    if (member_primitives.role === "owner") {
+    if (member.role === "owner") {
       const team =
         await this.dealership_member_repository.findAllByDealershipId(
           input.dealership_id,
         );
       const owner_count = team.filter(
-        (team_member) => team_member.role === "owner",
+        team_member => team_member.role === "owner",
       ).length;
       if (owner_count <= 1) {
         throw new InvalidDealershipMembersException(
@@ -119,14 +131,13 @@ export class DealershipMembersService {
       throw new DealershipMemberNotFoundException(input.profile_id);
     }
 
-    const member_primitives = member.toPrimitives();
-    if (member_primitives.role !== "member") {
+    if (member.role !== "member") {
       throw new InvalidDealershipMembersException(
         "Solo los miembros con rol member pueden salir del equipo por esta vía",
       );
     }
 
-    await this.dealership_member_repository.remove(member_primitives.id);
+    await this.dealership_member_repository.remove(member.id);
   }
 
   async sync(input: SyncDealershipMembersInput): Promise<void> {
@@ -142,7 +153,7 @@ export class DealershipMembersService {
       );
 
     const incoming_by_profile_id = new Map(
-      members.map((member) => [member.profile_id, member]),
+      members.map(member => [member.profile_id, member]),
     );
 
     for (const existing_member of existing_members) {
@@ -154,20 +165,15 @@ export class DealershipMembersService {
       }
 
       if (existing_member.role !== incoming.role) {
-        const updated_member = DealershipMember.fromPrimitives({
-          id: existing_member.id,
-          dealership_id: existing_member.dealership_id,
-          profile_id: existing_member.profile_id,
-          role: incoming.role,
-          created_at: existing_member.created_at,
-          updated_at: new Date(),
-        });
-        await this.dealership_member_repository.update(updated_member);
+        await this.dealership_member_repository.updateRole(
+          existing_member.id,
+          incoming.role,
+        );
       }
     }
 
     const existing_profile_ids = new Set(
-      existing_members.map((member) => member.profile_id),
+      existing_members.map(member => member.profile_id),
     );
 
     for (const incoming_member of members) {
@@ -175,18 +181,17 @@ export class DealershipMembersService {
         continue;
       }
 
-      const new_member = DealershipMember.create({
+      await this.dealership_member_repository.save({
         dealership_id,
         profile_id: incoming_member.profile_id,
         role: incoming_member.role,
       });
-      await this.dealership_member_repository.save(new_member);
     }
   }
 
   private validateOwnerCount(members: DealershipMemberInputDto[]): void {
     const owner_count = members.filter(
-      (member) => member.role === "owner",
+      member => member.role === "owner",
     ).length;
 
     if (owner_count !== 1) {
@@ -199,7 +204,7 @@ export class DealershipMembersService {
   private validateNoDuplicateProfileIds(
     members: DealershipMemberInputDto[],
   ): void {
-    const profile_ids = members.map((member) => member.profile_id);
+    const profile_ids = members.map(member => member.profile_id);
     const unique_profile_ids = new Set(profile_ids);
 
     if (unique_profile_ids.size !== profile_ids.length) {
@@ -212,9 +217,9 @@ export class DealershipMembersService {
   private async validateProfilesExist(
     members: DealershipMemberInputDto[],
   ): Promise<void> {
-    const profile_ids = members.map((member) => member.profile_id);
+    const profile_ids = members.map(member => member.profile_id);
     const profiles = await this.profile_repository.findByIds(profile_ids);
-    const found_profile_ids = new Set(profiles.map((profile) => profile.id));
+    const found_profile_ids = new Set(profiles.map(profile => profile.id));
 
     for (const member of members) {
       if (!found_profile_ids.has(member.profile_id)) {

@@ -33,12 +33,14 @@ export class HttpErrorFilter
       message = exceptionResponse;
     }
 
-    if (
-      typeof exceptionResponse === 'object'
-    ) {
-      message =
-        (exceptionResponse as Record<string, any>)
-          .message ?? message;
+    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      const raw_message = (exceptionResponse as Record<string, unknown>)
+        .message;
+      if (Array.isArray(raw_message)) {
+        message = raw_message.map(String).join(', ');
+      } else if (typeof raw_message === 'string' && raw_message.trim()) {
+        message = raw_message;
+      }
     }
 
     response.status(status).json({

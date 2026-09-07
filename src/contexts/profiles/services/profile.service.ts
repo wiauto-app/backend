@@ -5,10 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
-import {
-  DealershipMember,
-  PrimitiveDealershipMember,
-} from "@/src/contexts/dealership/types/dealership-member";
+import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-invitation-repository";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
@@ -29,7 +26,7 @@ import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "@nestjs/cache-manager";
 import { UpdateMyProfileHttpDto } from "../api/auth-me/update-my-profile/update-my-profile.http-dto";
 
-const dealership_member_roles = new Set<PrimitiveDealershipMember["role"]>([
+const dealership_member_roles = new Set<DealershipMembersEntity["role"]>([
   "owner",
   "admin",
   "member",
@@ -126,12 +123,11 @@ export class ProfileService {
         );
 
       if (!member_exists) {
-        const dealership_member = DealershipMember.create({
+        await this.dealership_member_repository.save({
           dealership_id: accepted_invitation.dealership_id,
           profile_id: input.id,
           role: dealership_member_role,
         });
-        await this.dealership_member_repository.save(dealership_member);
       }
     }
 
@@ -273,11 +269,11 @@ export class ProfileService {
 
   private toDealershipMemberRole(
     role: string,
-  ): PrimitiveDealershipMember["role"] {
+  ): DealershipMembersEntity["role"] {
     if (
-      dealership_member_roles.has(role as PrimitiveDealershipMember["role"])
+      dealership_member_roles.has(role as DealershipMembersEntity["role"])
     ) {
-      return role as PrimitiveDealershipMember["role"];
+      return role as DealershipMembersEntity["role"];
     }
 
     throw new BadRequestException(

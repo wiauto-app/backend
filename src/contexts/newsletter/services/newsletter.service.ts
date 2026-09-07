@@ -125,7 +125,9 @@ export class NewsletterService {
     profile_id: string,
     patch: UpdateNewsletterPreferencesHttpDto,
   ): Promise<NewsletterSubscriptionEntity> {
-    const has_updates = Object.values(patch).some((value) => value !== undefined);
+    const has_updates = Object.values(patch).some(
+      (value) => value !== undefined,
+    );
     if (!has_updates) {
       throw new BadRequestException(
         "Debes enviar al menos un campo para actualizar",
@@ -133,37 +135,29 @@ export class NewsletterService {
     }
 
     const subscription = await this.getOrCreateForProfile(profile_id);
-    const updated = await this.newsletter_repository.preload({
-      id: subscription.id,
-      ...(patch.enabled_category_slugs !== undefined
-        ? {
-            enabled_category_slugs: patch.enabled_category_slugs.map((slug) =>
-              slug.trim().toLowerCase(),
-            ),
-          }
-        : {}),
-      ...(patch.channel_email !== undefined
-        ? { channel_email: patch.channel_email }
-        : {}),
-      ...(patch.channel_push !== undefined
-        ? { channel_push: patch.channel_push }
-        : {}),
-      ...(patch.channel_sms !== undefined
-        ? { channel_sms: patch.channel_sms }
-        : {}),
-      ...(patch.channel_in_app !== undefined
-        ? { channel_in_app: patch.channel_in_app }
-        : {}),
-      ...(patch.channel_whatsapp !== undefined
-        ? { channel_whatsapp: patch.channel_whatsapp }
-        : {}),
-    });
 
-    if (!updated) {
-      throw new NotFoundException("Suscripción de newsletter no encontrada");
+    if (patch.enabled_category_slugs !== undefined) {
+      subscription.enabled_category_slugs = patch.enabled_category_slugs
+        .map((slug) => String(slug ?? "").trim().toLowerCase())
+        .filter((slug) => slug.length > 0);
+    }
+    if (patch.channel_email !== undefined) {
+      subscription.channel_email = patch.channel_email;
+    }
+    if (patch.channel_push !== undefined) {
+      subscription.channel_push = patch.channel_push;
+    }
+    if (patch.channel_sms !== undefined) {
+      subscription.channel_sms = patch.channel_sms;
+    }
+    if (patch.channel_in_app !== undefined) {
+      subscription.channel_in_app = patch.channel_in_app;
+    }
+    if (patch.channel_whatsapp !== undefined) {
+      subscription.channel_whatsapp = patch.channel_whatsapp;
     }
 
-    return this.newsletter_repository.save(updated);
+    return this.newsletter_repository.save(subscription);
   }
 
   async findByCategorySlug(

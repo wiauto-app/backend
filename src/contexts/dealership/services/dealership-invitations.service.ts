@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, forwardRef } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from "@nestjs/common";
 
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { ProfileService } from "@/src/contexts/profiles/services/profile.service";
@@ -8,11 +13,8 @@ import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-
 import { generateToken } from "@/src/contexts/shared/token_management/generate_token";
 import { hashToken } from "@/src/contexts/shared/token_management/hash_token";
 
-import { DealershipInvitation } from "../types/dealership-invitations";
-import {
-  DealershipMember,
-  PrimitiveDealershipMember,
-} from "../types/dealership-member";
+import { DealershipInvitationsEntity } from "../entities/dealership-invitations.entity";
+import { DealershipMembersEntity } from "../entities/dealership-members.entity";
 import { InvitationAlreadyAcceptedException } from "../exceptions/invitation-already-accepted.exception";
 import { InvitationExpiredException } from "../exceptions/invitation-expired.exception";
 import { InvitationNotFoundException } from "../exceptions/invitation-not-found.exception";
@@ -22,18 +24,13 @@ import { DealershipInvitationsFilter } from "../types/dealership-invitation.filt
 import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-invitation-repository";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DealershipInvitationMailService } from "../services/dealership-invitation-mail.service";
+import { CreateDealershipInvitationHttpDto } from "../api/invitations-v1/create-dealership-invitation/create-dealership-invitation.http-dto";
 
-const dealership_member_roles = new Set<PrimitiveDealershipMember["role"]>([
+const dealership_member_roles = new Set<DealershipMembersEntity["role"]>([
   "owner",
   "admin",
-  "member"]);
-
-export interface CreateDealershipInvitationInput {
-  email: string;
-  role: "owner" | "admin" | "member";
-  dealership_id: string;
-  invited_by_id: string;
-}
+  "member",
+]);
 
 export interface FindAllDealershipInvitationsInput {
   dealership_id: string;
@@ -57,51 +54,65 @@ export class DealershipInvitationsService {
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
-  async create(input: CreateDealershipInvitationInput): Promise<void> {
+  async create(
+    dto: CreateDealershipInvitationHttpDto,
+    invited_by_id: string,
+  ): Promise<DealershipInvitationsEntity> {
     const accepted_invitation =
       await this.dealership_invitation_repository.findAcceptedByEmail(
-        input.email,
+        dto.email,
       );
     if (accepted_invitation) {
       throw new InvitationAlreadyAcceptedException();
     }
 
+    const member =
+      await this.dealership_member_repository.findOneByProfileId(invited_by_id);
+
+    if (!member) {
+      throw new ForbiddenException("No perteneces a este equipo");
+    }
+    const dealership_id = member.dealership_id;
     const pending_invitation =
       await this.dealership_invitation_repository.findPendingByEmailAndDealershipId(
-        input.email,
-        input.dealership_id,
+        dto.email,
+        dealership_id,
       );
 
     if (pending_invitation) {
-      const revoked = pending_invitation.update({ status: "revoked" });
-      await this.dealership_invitation_repository.update(revoked);
+      await this.dealership_invitation_repository.update(
+        pending_invitation.id,
+        { status: "revoked" },
+      );
     }
 
     const token = generateToken();
     const token_hash = hashToken(token);
-    const dealership_invitation = DealershipInvitation.create({
-      email: input.email,
-      role: input.role,
-      dealership_id: input.dealership_id,
-      invited_by_id: input.invited_by_id,
-      token_hash,
-      status: "pending",
-      expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24),
-      accepted_at: null,
-    });
-    await this.dealership_invitation_repository.save(dealership_invitation);
+    const dealership_invitation =
+      await this.dealership_invitation_repository.save({
+        email: dto.email,
+        role: dto.role,
+        dealership_id,
+        invited_by_id: invited_by_id,
+        token_hash,
+        status: "pending",
+        expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        accepted_at: null,
+      });
 
     await this.dealership_invitation_mail_service.send_invitation_email({
-      invited_email: input.email,
-      invited_role: input.role,
-      dealership_id: input.dealership_id,
+      invited_email: dto.email,
+      invited_role: dto.role,
+      dealership_id,
       invitation_token: token,
     });
+
+    return dealership_invitation;
   }
 
   async findAll(
     input: FindAllDealershipInvitationsInput,
-  ): Promise<PaginatedResult<DealershipInvitation>> {
+  ): Promise<PaginatedResult<DealershipInvitationsEntity>> {
     const filter = new DealershipInvitationsFilter({
       dealership_id: input.dealership_id,
       status: input.status as never,
@@ -113,24 +124,28 @@ export class DealershipInvitationsService {
     return this.dealership_invitation_repository.findAll(filter);
   }
 
-  async accept(token: string): Promise<{ must_create: boolean; email: string }> {
+  async accept(
+    token: string,
+  ): Promise<{ mustCreateProfile: boolean; email: string }> {
     const token_hash = hashToken(token);
     const dealership_invitation =
-      await this.dealership_invitation_repository.findOneByTokenHash(token_hash);
+      await this.dealership_invitation_repository.findOneByTokenHash(
+        token_hash,
+      );
     if (!dealership_invitation) {
       throw new InvitationNotFoundException(token_hash);
     }
-    if (dealership_invitation.is_expired()) {
+    if (dealership_invitation.expires_at < new Date()) {
       throw new InvitationExpiredException();
     }
-    if (dealership_invitation.is_accepted()) {
+    if (dealership_invitation.accepted_at !== null) {
       throw new InvitationAlreadyAcceptedException();
     }
-    if (dealership_invitation.is_revoked()) {
+    if (dealership_invitation.status === "revoked") {
       throw new InvitationRevokedException();
     }
 
-    const email = dealership_invitation.toPrimitives().email;
+    const email = dealership_invitation.email;
     const profile_exists =
       await this.profile_user_repository.existsByEmail(email);
     let added_to_team = false;
@@ -146,21 +161,22 @@ export class DealershipInvitationsService {
         const member_role = this.toDealershipMemberRole(
           dealership_invitation.role,
         );
-        const dealership_member = DealershipMember.create({
+        await this.dealership_member_repository.save({
           dealership_id: dealership_invitation.dealership_id,
           profile_id: profile.id,
           role: member_role,
         });
-        await this.dealership_member_repository.save(dealership_member);
         added_to_team = true;
       }
     }
 
-    const accepted_invitation = dealership_invitation.update({
-      status: "accepted",
-      accepted_at: new Date(),
-    });
-    await this.dealership_invitation_repository.update(accepted_invitation);
+    await this.dealership_invitation_repository.update(
+      dealership_invitation.id,
+      {
+        status: "accepted",
+        accepted_at: new Date(),
+      },
+    );
 
     if (added_to_team) {
       await this.outbound_mail_enqueue_service.enqueue_dealership_team_joined({
@@ -170,32 +186,36 @@ export class DealershipInvitationsService {
       });
     }
 
-    return { must_create: !profile_exists, email };
+    return { mustCreateProfile: !profile_exists, email };
   }
 
   async reject(token: string): Promise<{ email: string }> {
     const token_hash = hashToken(token);
     const dealership_invitation =
-      await this.dealership_invitation_repository.findOneByTokenHash(token_hash);
+      await this.dealership_invitation_repository.findOneByTokenHash(
+        token_hash,
+      );
 
     if (!dealership_invitation) {
       throw new InvitationNotFoundException(token_hash);
     }
-    if (dealership_invitation.is_expired()) {
+    if (dealership_invitation.expires_at < new Date()) {
       throw new InvitationExpiredException();
     }
-    if (dealership_invitation.is_accepted()) {
+    if (dealership_invitation.accepted_at !== null) {
       throw new InvitationAlreadyAcceptedException();
     }
-    if (dealership_invitation.is_revoked()) {
+    if (dealership_invitation.status === "revoked") {
       throw new InvitationRevokedException();
     }
 
-    const email = dealership_invitation.toPrimitives().email;
-    const revoked_invitation = dealership_invitation.update({
-      status: "revoked",
-    });
-    await this.dealership_invitation_repository.update(revoked_invitation);
+    const email = dealership_invitation.email;
+    await this.dealership_invitation_repository.update(
+      dealership_invitation.id,
+      {
+        status: "revoked",
+      },
+    );
     return { email };
   }
 
@@ -205,22 +225,20 @@ export class DealershipInvitationsService {
       throw new InvitationNotFoundException(id);
     }
 
-    const primitives = invitation.toPrimitives();
-    if (primitives.status !== "pending") {
+    if (invitation.status !== "pending") {
       throw new InvitationNotPendingException(id);
     }
 
-    const revoked = invitation.update({ status: "revoked" });
-    await this.dealership_invitation_repository.update(revoked);
+    await this.dealership_invitation_repository.update(invitation.id, {
+      status: "revoked",
+    });
   }
 
   private toDealershipMemberRole(
     role: string,
-  ): PrimitiveDealershipMember["role"] {
-    if (
-      dealership_member_roles.has(role as PrimitiveDealershipMember["role"])
-    ) {
-      return role as PrimitiveDealershipMember["role"];
+  ): DealershipMembersEntity["role"] {
+    if (dealership_member_roles.has(role as DealershipMembersEntity["role"])) {
+      return role as DealershipMembersEntity["role"];
     }
     throw new BadRequestException(
       `La invitación tiene un rol inválido: ${role}`,

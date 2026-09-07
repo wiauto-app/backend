@@ -12,7 +12,7 @@ import { CreateDealershipInvitationHttpDto } from "./create-dealership-invitatio
 export class CreateDealershipInvitationController {
   constructor(
     private readonly dealership_invitations_service: DealershipInvitationsService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtGuard, DealershipTeamManagerGuard)
@@ -20,9 +20,6 @@ export class CreateDealershipInvitationController {
     @Body() body: CreateDealershipInvitationHttpDto,
     @GetUserId() invited_by_id: string,
   ) {
-    return this.dealership_invitations_service.create({
-      ...body,
-      invited_by_id,
-    });
+    return this.dealership_invitations_service.create(body, invited_by_id);
   }
 }
