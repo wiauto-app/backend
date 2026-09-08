@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Inject,
+  UnauthorizedException,
   forwardRef,
 } from "@nestjs/common";
 
@@ -25,6 +26,8 @@ import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DealershipInvitationMailService } from "../services/dealership-invitation-mail.service";
 import { CreateDealershipInvitationHttpDto } from "../api/invitations-v1/create-dealership-invitation/create-dealership-invitation.http-dto";
+import { ProfileNotFoundException } from "../../profiles/exceptions/profile-not-found.exception";
+import { DealershipInvitationJoinStatusResponse } from "../dto/dealership-invitation-join-status.response";
 
 const dealership_member_roles = new Set<DealershipMembersEntity["role"]>([
   "owner",
@@ -52,7 +55,7 @@ export class DealershipInvitationsService {
     private readonly profile_service: ProfileService,
     private readonly dealership_invitation_mail_service: DealershipInvitationMailService,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
-  ) {}
+  ) { }
 
   async create(
     dto: CreateDealershipInvitationHttpDto,
@@ -68,10 +71,14 @@ export class DealershipInvitationsService {
 
     const member =
       await this.dealership_member_repository.findOneByProfileId(invited_by_id);
-
     if (!member) {
       throw new ForbiddenException("No perteneces a este equipo");
     }
+
+    if (member.profile.user.email === dto.email) {
+      throw new ForbiddenException("No te puedes invitar a ti mismo");
+    }
+
     const dealership_id = member.dealership_id;
     const pending_invitation =
       await this.dealership_invitation_repository.findPendingByEmailAndDealershipId(
@@ -86,6 +93,16 @@ export class DealershipInvitationsService {
       );
     }
 
+    const invitedProfile = await this.profile_service.findByEmail(dto.email);
+    if (invitedProfile) {
+      const member = await this.dealership_member_repository.findOneByProfileId(invitedProfile.id);
+      if (member && member.dealership_id === dealership_id) {
+        throw new ForbiddenException("Este usuario ya pertenece a este equipo");
+      }
+      if (member && member.dealership_id !== dealership_id) {
+        throw new ForbiddenException("Este usuario ya pertenece a otro equipo");
+      }
+    }
     const token = generateToken();
     const token_hash = hashToken(token);
     const dealership_invitation =
@@ -124,9 +141,11 @@ export class DealershipInvitationsService {
     return this.dealership_invitation_repository.findAll(filter);
   }
 
-  async accept(
-    token: string,
-  ): Promise<{ mustCreateProfile: boolean; email: string }> {
+  async accept(token: string): Promise<{
+    mustCreateProfile: boolean;
+    email: string;
+    invitation_id: string;
+  }> {
     const token_hash = hashToken(token);
     const dealership_invitation =
       await this.dealership_invitation_repository.findOneByTokenHash(
@@ -152,6 +171,9 @@ export class DealershipInvitationsService {
 
     if (profile_exists) {
       const profile = await this.profile_service.findByEmail(email);
+      if (!profile) {
+        throw new ProfileNotFoundException(email);
+      }
       const dealership_member_exists =
         await this.dealership_member_repository.existsByDealershipIdAndProfileId(
           dealership_invitation.dealership_id,
@@ -186,7 +208,11 @@ export class DealershipInvitationsService {
       });
     }
 
-    return { mustCreateProfile: !profile_exists, email };
+    return {
+      mustCreateProfile: !profile_exists,
+      email,
+      invitation_id: dealership_invitation.id,
+    };
   }
 
   async reject(token: string): Promise<{ email: string }> {
@@ -219,6 +245,43 @@ export class DealershipInvitationsService {
     return { email };
   }
 
+  async deleteInvitationsByEmail(email: string): Promise<void> {
+    await this.dealership_invitation_repository.deleteByEmail(email);
+  }
+
+  async getJoinStatus(
+    invitation_id: string,
+    current_user_id: string,
+  ): Promise<DealershipInvitationJoinStatusResponse> {
+    const invitation =
+      await this.dealership_invitation_repository.findOneWithDealership(
+        invitation_id,
+      );
+    if (!invitation) {
+      throw new InvitationNotFoundException(invitation_id);
+    }
+
+    const current_user_email =
+      await this.profile_user_repository.findEmailById(current_user_id);
+    if (!current_user_email) {
+      throw new UnauthorizedException("Usuario no encontrado");
+    }
+
+    const invited_email = invitation.email;
+    const belongs_to_current_user =
+      invited_email.toLowerCase() === current_user_email.toLowerCase();
+
+    return {
+      invitation_id: invitation.id,
+      belongs_to_current_user,
+      invited_email,
+      current_user_email,
+      dealership_id: invitation.dealership_id,
+      dealership_name: invitation.dealership.name,
+      status: invitation.status,
+    };
+  }
+
   async revoke(id: string): Promise<void> {
     const invitation = await this.dealership_invitation_repository.findOne(id);
     if (!invitation) {
@@ -244,4 +307,6 @@ export class DealershipInvitationsService {
       `La invitación tiene un rol inválido: ${role}`,
     );
   }
+
+
 }

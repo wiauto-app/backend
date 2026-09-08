@@ -11,6 +11,7 @@ import { DealershipTeamManagerGuard } from "../guards/dealership-team-manager.gu
 import { AcceptDealershipInvitationController } from "../api/invitations-v1/accept-dealership-invitation/accept-dealership-invitation.controller";
 import { CreateDealershipInvitationController } from "../api/invitations-v1/create-dealership-invitation/create-dealership-invitation.controller";
 import { FindAllDealershipInvitationsController } from "../api/invitations-v1/find-all-dealership-invitations/find-all-dealership-invitations.controller";
+import { GetDealershipInvitationJoinStatusController } from "../api/invitations-v1/get-dealership-invitation-join-status/get-dealership-invitation-join-status.controller";
 import { RejectDealershipInvitationController } from "../api/invitations-v1/reject-dealership-invitation/reject-dealership-invitation.controller";
 import { RevokeDealershipInvitationController } from "../api/invitations-v1/revoke-dealership-invitation/revoke-dealership-invitation.controller";
 import { DealershipInvitationsEntity } from "../entities/dealership-invitations.entity";
@@ -28,6 +29,7 @@ import { DealershipMembersService } from "../services/dealership-members.service
   controllers: [
     CreateDealershipInvitationController,
     FindAllDealershipInvitationsController,
+    GetDealershipInvitationJoinStatusController,
     RevokeDealershipInvitationController,
     AcceptDealershipInvitationController,
     RejectDealershipInvitationController],

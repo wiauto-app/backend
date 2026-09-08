@@ -20,6 +20,11 @@ export class TypeOrmDealershipMemberRepository {
   async findOneById(id: string): Promise<DealershipMembersEntity | null> {
     return this.dealership_member_entity_repository.findOne({
       where: { id },
+      relations: {
+        profile: {
+          user: true,
+        },
+      },
     });
   }
 
@@ -70,6 +75,11 @@ export class TypeOrmDealershipMemberRepository {
   ): Promise<DealershipMembersEntity | null> {
     return this.dealership_member_entity_repository.findOne({
       where: { profile_id },
+      relations: {
+        profile: {
+          user: true,
+        },
+      },
     });
   }
 

@@ -8,7 +8,7 @@ export class AcceptDealershipInvitationHttpDto {
 
   /** Si es true, responde JSON en lugar de redirigir (útil para app móvil). */
   @IsOptional()
-  @Transform(({ value }) => value === true || value === "true")
+  @Transform(({ value }) => value === "true")
   @IsBoolean()
   with_response?: boolean;
 }

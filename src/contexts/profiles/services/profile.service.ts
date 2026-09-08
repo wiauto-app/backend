@@ -25,6 +25,7 @@ import { UpdateProfileDto } from "../dto/update-profile.dto";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "@nestjs/cache-manager";
 import { UpdateMyProfileHttpDto } from "../api/auth-me/update-my-profile/update-my-profile.http-dto";
+import { ProfileEntity } from "../entities/profile.entity";
 
 const dealership_member_roles = new Set<DealershipMembersEntity["role"]>([
   "owner",
@@ -207,12 +208,9 @@ export class ProfileService {
     return mapProfileToResponse(profile);
   }
 
-  async findByEmail(email: string): Promise<ProfileResponse> {
+  async findByEmail(email: string): Promise<ProfileEntity | null> {
     const profile = await this.profile_repository.findByEmail(email);
-    if (!profile) {
-      throw new ProfileNotFoundException(email);
-    }
-    return mapProfileToResponse(profile);
+    return profile;
   }
 
   async updateProfile(

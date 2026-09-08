@@ -7,6 +7,7 @@ import { InvalidDealershipMembersException } from "../exceptions/invalid-dealers
 import { ProfileNotFoundForMemberException } from "../exceptions/profile-not-found-for-member.exception";
 import { DealershipMemberDetail } from "../types/dealership-detail";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
+import { DealershipInvitationsService } from "./dealership-invitations.service";
 
 export interface CreateDealershipMemberInput {
   dealership_id: string;
@@ -40,6 +41,7 @@ export class DealershipMembersService {
   constructor(
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly profile_repository: TypeOrmProfileRepository,
+    private readonly dealershipInvitationsService: DealershipInvitationsService,
   ) {}
 
   async create(input: CreateDealershipMemberInput): Promise<void> {
@@ -117,6 +119,7 @@ export class DealershipMembersService {
       }
     }
 
+    await this.dealershipInvitationsService.deleteInvitationsByEmail(member.profile.user.email);
     await this.dealership_member_repository.remove(input.member_id);
   }
 

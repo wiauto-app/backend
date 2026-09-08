@@ -87,7 +87,7 @@ export class MailService {
       occurred_at: payload.occurred_at,
       audience: payload.audience,
       account_url: getFrontendUrl("SIGNIN"),
-      recovery_url: getFrontendUrl("RESET_PASSWORD"),
+      recovery_url: getFrontendUrl("FORGOT_PASSWORD"),
     });
     const subject =
       payload.audience === "admin"
@@ -115,7 +115,7 @@ export class MailService {
   }): Promise<void> {
     const html = this.mail_template_renderer.renderPasswordChanged({
       occurred_at: payload.occurred_at,
-      recovery_url: getFrontendUrl("RESET_PASSWORD"),
+      recovery_url: getFrontendUrl("FORGOT_PASSWORD"),
     });
 
     try {

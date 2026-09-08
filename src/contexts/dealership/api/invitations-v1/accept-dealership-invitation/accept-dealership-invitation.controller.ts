@@ -19,21 +19,17 @@ export class AcceptDealershipInvitationController {
     @Query() query: AcceptDealershipInvitationHttpDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { mustCreateProfile, email } = await this.dealership_invitations_service.accept(
-      query.token,
-    );
+    const { mustCreateProfile, email, invitation_id } =
+      await this.dealership_invitations_service.accept(query.token);
 
     if (query.with_response) {
-      return { mustCreateProfile, email };
+      return { mustCreateProfile, email, invitation_id };
     }
 
-    if (mustCreateProfile) {
-      res.redirect(
-        HttpStatus.FOUND,
-        `${getFrontendUrl("REGISTER")}?email=${encodeURIComponent(email)}`,
-      );
-    } else {
-      res.redirect(HttpStatus.FOUND, `${getFrontendUrl("TEAM")}?joined=1`);
-    }
+    const url = mustCreateProfile
+      ? `${getFrontendUrl("REGISTER")}?email=${encodeURIComponent(email)}`
+      : `${getFrontendUrl("TEAM")}?invitation=${encodeURIComponent(invitation_id)}`;
+
+    res.redirect(HttpStatus.FOUND, url);
   }
 }

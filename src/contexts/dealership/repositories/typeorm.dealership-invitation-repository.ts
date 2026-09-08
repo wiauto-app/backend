@@ -57,6 +57,15 @@ export class TypeOrmDealershipInvitationRepository {
     });
   }
 
+  async findOneWithDealership(
+    id: string,
+  ): Promise<DealershipInvitationsEntity | null> {
+    return this.dealership_invitation_entity_repository.findOne({
+      where: { id },
+      relations: { dealership: true },
+    });
+  }
+
   async findOneByTokenHash(
     token_hash: string,
   ): Promise<DealershipInvitationsEntity | null> {
@@ -126,6 +135,11 @@ export class TypeOrmDealershipInvitationRepository {
 
   async delete(id: string): Promise<void> {
     await this.dealership_invitation_entity_repository.delete(id);
+  }
+  
+
+  async deleteByEmail(email: string): Promise<void> {
+    await this.dealership_invitation_entity_repository.delete({ email });
   }
 
   async findOneByEmail(

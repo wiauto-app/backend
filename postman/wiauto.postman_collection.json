@@ -2344,7 +2344,22 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/v1/dealership-invitations/accept?token={{dealership_invitation_token}}",
-            "description": "Público (sin Authorization). Query `token` (plano). Opcional `with_response=true` para JSON `{ must_create, email }`; si no, redirect al front."
+            "description": "Público (sin Authorization). Query `token` (plano). Opcional `with_response=true` para JSON `{ mustCreateProfile, email, invitation_id }`; si no, redirect a `/usuario/equipo?invitation=` o registro."
+          },
+          "response": []
+        },
+        {
+          "name": "estado de unión por invitación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/dealership-invitations/{{dealership_invitation_id}}/join-status",
+            "description": "JWT (cualquier usuario autenticado). Compara el email de la invitación con el de la sesión. Respuesta: `belongs_to_current_user`, emails, dealership_name, status."
           },
           "response": []
         },
