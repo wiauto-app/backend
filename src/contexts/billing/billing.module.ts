@@ -20,6 +20,7 @@ import { EntitlementsService } from "./services/entitlements.service";
 import { PlanVersionsService } from "./services/plan-versions.service";
 import { SubscriptionOverridesService } from "./services/subscription-overrides.service";
 import { PlanLeadRequestsService } from "./services/plan-lead-requests.service";
+import { PlanContactLeadsService } from "./services/plan-contact-leads.service";
 import { StripeWebhookService } from "./services/stripe-webhook.service";
 import {
   TypeOrmBillingInvoiceRepository,
@@ -34,8 +35,10 @@ import { BillingPlansAdminController } from "./api/admin/billing-plans/billing-p
 import { BillingSubscriptionsAdminController } from "./api/admin/billing-subscriptions/billing-subscriptions-admin.controller";
 import { DiscountCouponsAdminController } from "./api/admin/discount-coupons/discount-coupons-admin.controller";
 import { PlanLeadRequestsAdminController } from "./api/admin/plan-lead-requests/plan-lead-requests-admin.controller";
+import { PlanContactLeadsAdminController } from "./api/admin/plan-contact-leads/plan-contact-leads-admin.controller";
 import { PlanVersionsAdminController } from "./api/admin/plan-versions/plan-versions-admin.controller";
 import { CreatePlanLeadRequestController } from "./api/public/create-plan-lead-request/create-plan-lead-request.controller";
+import { CreatePlanContactLeadController } from "./api/public/create-plan-contact-lead/create-plan-contact-lead.controller";
 import { CreatePublicSubscriptionCheckoutController } from "./api/public/create-subscription-checkout/create-public-subscription-checkout.controller";
 import { FindPublicPlansCatalogController } from "./api/public/find-public-plans-catalog/find-public-plans-catalog.controller";
 import { CreateBillingPortalController } from "./api/user/create-billing-portal/create-billing-portal.controller";
@@ -54,6 +57,7 @@ import { SubscriptionEntity } from "./entities/subscription.entity";
 import { SubscriptionPlanPriceEntity } from "./entities/subscription-plan-price.entity";
 import { SubscriptionPlanEntity } from "./entities/subscription-plan.entity";
 import { PlanLeadRequestEntity } from "./entities/plan-lead-request.entity";
+import { PlanContactLeadEntity } from "./entities/plan-contact-lead.entity";
 import { PlanVersionEntity } from "./entities/plan-version.entity";
 import { PlanEntitlementEntity } from "./entities/plan-entitlement.entity";
 import { SubscriptionEntitlementOverrideEntity } from "./entities/subscription-entitlement-override.entity";
@@ -103,6 +107,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
       DealershipEntity,
       DealershipMembersEntity,
       PlanLeadRequestEntity,
+      PlanContactLeadEntity,
       PlanAccessGrantEntity,
       PlanAccessGrantUsageEntity,
       ProfessionalAccountEntity,
@@ -113,6 +118,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
   controllers: [
     FindPublicPlansCatalogController,
     CreatePlanLeadRequestController,
+    CreatePlanContactLeadController,
     CreatePublicSubscriptionCheckoutController,
     // Must register before BillingPlansAdminController so GET /plans/catalog
     // is not captured by GET /plans/:id (ParseUUIDPipe rejects "catalog").
@@ -126,6 +132,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     DiscountCouponsAdminController,
     BillingSubscriptionsAdminController,
     PlanLeadRequestsAdminController,
+    PlanContactLeadsAdminController,
     PlanAccessGrantsAdminController,
     GetBillingMeController,
     CreateSubscriptionCheckoutController,
@@ -145,6 +152,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     AssistantCreditPacksService,
     FeaturedListingOffersService,
     PlanLeadRequestsService,
+    PlanContactLeadsService,
     PlanAccessGrantsService,
     PlanLeadRequestNotificationMailService,
     BillingNotificationMailService,

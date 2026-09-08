@@ -78,6 +78,11 @@
       "value": ""
     },
     {
+      "key": "plan_contact_lead_id",
+      "value": "",
+      "description": "UUID de lead de contacto planes (`GET|PATCH /v1/admin/plan-contact-leads/:id`)."
+    },
+    {
       "key": "traction_id",
       "value": ""
     },
@@ -8579,6 +8584,59 @@
                 "description": "JWT + billing.manage. Crea Price en Stripe, marca proposal_sent y envía email con checkout."
               },
               "response": []
+            },
+            {
+              "name": "listar leads contacto planes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/plan-contact-leads?page=1&limit=10",
+                "description": "JWT admin. Listado paginado de leads de callback telefónico de /planes."
+              },
+              "response": []
+            },
+            {
+              "name": "detalle lead contacto planes",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/admin/plan-contact-leads/{{plan_contact_lead_id}}",
+                "description": "JWT admin. Detalle de lead de contacto."
+              },
+              "response": []
+            },
+            {
+              "name": "actualizar estado lead contacto planes",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"contacted\"\n}"
+                },
+                "url": "{{base_url}}/v1/admin/plan-contact-leads/{{plan_contact_lead_id}}",
+                "description": "JWT admin. Actualiza status: pending | contacted | closed."
+              },
+              "response": []
             }
           ]
         },
@@ -8719,6 +8777,25 @@
                 },
                 "url": "{{base_url}}/v1/public/billing/plan-lead-requests",
                 "description": "Formulario público de solicitud de información sobre planes (sin JWT)."
+              },
+              "response": []
+            },
+            {
+              "name": "crear lead contacto planes",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+34 612345678\",\n  \"source\": \"planes\"\n}"
+                },
+                "url": "{{base_url}}/v1/public/billing/plan-contact-leads",
+                "description": "Callback telefónico público de /planes (sin JWT). Solo phone; source opcional (default planes)."
               },
               "response": []
             },

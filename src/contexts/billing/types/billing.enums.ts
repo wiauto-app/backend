@@ -91,6 +91,22 @@ export const PLAN_LEAD_STATUS = {
 export type PlanLeadStatus =
   (typeof PLAN_LEAD_STATUS)[keyof typeof PLAN_LEAD_STATUS];
 
+export const PLAN_CONTACT_LEAD_STATUS = {
+  PENDING: "pending",
+  CONTACTED: "contacted",
+  CLOSED: "closed",
+} as const;
+
+export type PlanContactLeadStatus =
+  (typeof PLAN_CONTACT_LEAD_STATUS)[keyof typeof PLAN_CONTACT_LEAD_STATUS];
+
+export const PLAN_CONTACT_LEAD_SOURCE = {
+  PLANES: "planes",
+} as const;
+
+export type PlanContactLeadSource =
+  (typeof PLAN_CONTACT_LEAD_SOURCE)[keyof typeof PLAN_CONTACT_LEAD_SOURCE];
+
 export const PROFESSIONAL_ACCOUNT_TYPE = {
   SELF_EMPLOYED: "self_employed",
   COMPANY: "company",

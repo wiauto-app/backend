@@ -19,7 +19,9 @@ export const V1_PUBLIC = "v1/public";
 export const V1_PUBLIC_BILLING = `${V1_PUBLIC}/billing`;
 export const V1_PUBLIC_BILLING_PLANS_CATALOG = `${V1_PUBLIC_BILLING}/plans/catalog`;
 export const V1_PUBLIC_BILLING_PLAN_LEAD_REQUESTS = `${V1_PUBLIC_BILLING}/plan-lead-requests`;
+export const V1_PUBLIC_BILLING_PLAN_CONTACT_LEADS = `${V1_PUBLIC_BILLING}/plan-contact-leads`;
 export const V1_PUBLIC_BILLING_CHECKOUT_SUBSCRIPTION = `${V1_PUBLIC_BILLING}/checkout/subscription`;
 
 export const V1_ADMIN_PLAN_LEAD_REQUESTS = "v1/admin/plan-lead-requests";
+export const V1_ADMIN_PLAN_CONTACT_LEADS = "v1/admin/plan-contact-leads";
 export const V1_ADMIN_PLAN_ACCESS_GRANTS = "v1/admin/plan-access-grants";
