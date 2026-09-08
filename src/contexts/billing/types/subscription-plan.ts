@@ -14,7 +14,7 @@ export type PlanEffectConfig =
   | FeatureVehicleEffectConfig
   | Record<string, never>;
 
-export interface PrimitivePlanFeature {
+export interface PlanFeatureInput {
   id?: string;
   plan_id?: string;
   label: string;
@@ -23,7 +23,7 @@ export interface PrimitivePlanFeature {
   sort_order: number;
 }
 
-export interface PrimitivePlanPrice {
+export interface PlanPriceInput {
   id?: string;
   plan_id?: string;
   interval: string;
@@ -33,8 +33,7 @@ export interface PrimitivePlanPrice {
   is_active: boolean;
 }
 
-export interface PrimitiveSubscriptionPlan {
-  id?: string;
+export interface CreateSubscriptionPlanData {
   name: string;
   slug?: string | null;
   description?: string | null;
@@ -47,36 +46,10 @@ export interface PrimitiveSubscriptionPlan {
   is_featured: boolean;
   sort_order: number;
   effect_config?: PlanEffectConfig;
-  prices?: PrimitivePlanPrice[];
-  features?: PrimitivePlanFeature[];
-  created_at?: Date;
-  updated_at?: Date;
+  prices?: PlanPriceInput[];
+  features?: PlanFeatureInput[];
 }
 
-export class SubscriptionPlan {
-  constructor(private readonly props: PrimitiveSubscriptionPlan) {}
-
-  static create(props: Omit<PrimitiveSubscriptionPlan, "id">): SubscriptionPlan {
-    return new SubscriptionPlan({ ...props });
-  }
-
-  static fromPrimitives(props: PrimitiveSubscriptionPlan): SubscriptionPlan {
-    return new SubscriptionPlan(props);
-  }
-
-  toPrimitives(): PrimitiveSubscriptionPlan {
-    return { ...this.props };
-  }
-
-  get id(): string | undefined {
-    return this.props.id;
-  }
-
-  get stripe_product_id(): string | null | undefined {
-    return this.props.stripe_product_id;
-  }
-
-  applyUpdates(updates: Partial<PrimitiveSubscriptionPlan>): SubscriptionPlan {
-    return new SubscriptionPlan({ ...this.props, ...updates });
-  }
+export interface UpdateSubscriptionPlanData extends CreateSubscriptionPlanData {
+  id: string;
 }

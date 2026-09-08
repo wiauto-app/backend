@@ -149,7 +149,7 @@ export class StripeWebhookService {
 
     if (plan_id) {
       const plan = await this.plan_repository.findOne(plan_id);
-      plan_name = plan?.toPrimitives().name ?? null;
+      plan_name = plan?.name ?? null;
     }
 
     await this.billing_notification_mail_service.enqueueCheckoutAbandoned({
@@ -209,8 +209,8 @@ export class StripeWebhookService {
       if (profile && previous_plan && new_plan) {
         await this.billing_notification_mail_service.enqueueSubscriptionPlanChanged({
           to: profile.email,
-          previous_plan_name: previous_plan.toPrimitives().name,
-          new_plan_name: new_plan.toPrimitives().name,
+          previous_plan_name: previous_plan.name,
+          new_plan_name: new_plan.name,
           stripe_customer_id: customer_id,
           stripe_subscription_id: subscription.id,
           new_plan_id: plan_id,
@@ -244,7 +244,7 @@ export class StripeWebhookService {
 
     if (plan_id) {
       const plan = await this.plan_repository.findOne(plan_id);
-      plan_name = plan?.toPrimitives().name ?? plan_name;
+      plan_name = plan?.name ?? plan_name;
     }
 
     const profile = await this.billing_profile_repository.findById(profile_id);
@@ -302,7 +302,7 @@ export class StripeWebhookService {
     let plan_name = "tu plan";
     if (active_sub?.plan_id) {
       const plan = await this.plan_repository.findOne(active_sub.plan_id);
-      plan_name = plan?.toPrimitives().name ?? plan_name;
+      plan_name = plan?.name ?? plan_name;
     }
 
     await this.billing_notification_mail_service.enqueueSubscriptionPaymentReceived({
@@ -483,7 +483,7 @@ export class StripeWebhookService {
 
     await this.billing_notification_mail_service.enqueueSubscriptionCancelScheduled({
       to: profile.email,
-      plan_name: plan.toPrimitives().name,
+      plan_name: plan.name,
       period_end,
       portal_url,
     });
@@ -556,8 +556,10 @@ export class StripeWebhookService {
       return;
     }
 
-    const primitives = plan.toPrimitives();
-    const effect_config = primitives.effect_config ?? {};
+    const effect_config = (plan.effect_config ?? {}) as {
+      type?: string;
+      credits?: number;
+    };
     const effect_type = effect_config.type;
 
     if (effect_type === "assistant_credits") {

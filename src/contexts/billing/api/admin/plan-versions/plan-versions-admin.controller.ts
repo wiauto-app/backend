@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
-  Post,
   Put,
 } from "@nestjs/common";
 
@@ -32,34 +31,22 @@ export class PlanVersionsAdminController {
     return this.plan_versions_service.listByPlanId(plan_id);
   }
 
-  @Post(`${V1_BILLING_PLANS}/:planId/versions/draft`)
-  ensureDraft(@Param("planId", ParseUUIDPipe) plan_id: string) {
-    return this.plan_versions_service.ensureDraftVersion(plan_id);
+  @Get(`${V1_BILLING_PLANS}/:planId/entitlements`)
+  async getEntitlements(@Param("planId", ParseUUIDPipe) plan_id: string) {
+    await this.plan_versions_service.assertPlanExists(plan_id);
+    return this.plan_versions_service.getCurrentVersion(plan_id);
   }
 
-  @Put(`${V1_BILLING_PLANS}/:planId/versions/draft/entitlements`)
-  replaceDraftEntitlements(
+  @Put(`${V1_BILLING_PLANS}/:planId/entitlements`)
+  replaceEntitlements(
     @Param("planId", ParseUUIDPipe) plan_id: string,
     @Body() body: ReplacePlanEntitlementsHttpDto,
   ) {
-    return this.plan_versions_service.replaceDraftEntitlements(
+    return this.plan_versions_service.replaceEntitlements(
       plan_id,
       body.entitlements as unknown as Parameters<
-        PlanVersionsService["replaceDraftEntitlements"]
+        PlanVersionsService["replaceEntitlements"]
       >[1],
     );
-  }
-
-  @Post(`${V1_BILLING_PLANS}/:planId/versions/:versionId/publish`)
-  publishVersion(
-    @Param("planId", ParseUUIDPipe) plan_id: string,
-    @Param("versionId", ParseUUIDPipe) version_id: string,
-  ) {
-    return this.plan_versions_service.publish(plan_id, version_id);
-  }
-
-  @Post(`${V1_BILLING_PLANS}/:planId/publish`)
-  publishLatestDraft(@Param("planId", ParseUUIDPipe) plan_id: string) {
-    return this.plan_versions_service.publish(plan_id);
   }
 }

@@ -183,7 +183,7 @@ export class BillingSubscriptionProvisioningService {
     if (profile && plan) {
       await this.billing_notification_mail_service.enqueueSubscriptionWelcome({
         to: profile.email,
-        plan_name: plan.toPrimitives().name,
+        plan_name: plan.name,
         is_new_guest_user,
         temporary_password,
       });

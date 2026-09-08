@@ -3,7 +3,7 @@ import Stripe from "stripe";
 
 import { envs } from "@/src/common/envs";
 import { BILLING_TYPE, PRICE_INTERVAL } from "../types/billing.enums";
-import { SubscriptionPlan } from "../types/subscription-plan";
+import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 
 export const STRIPE_PREFERRED_LOCALES = ["es"] as const;
 export const STRIPE_CHECKOUT_LOCALE = "es";
@@ -28,29 +28,27 @@ export class StripeClient {
     );
   }
 
-  async createOrUpdateProduct(plan: SubscriptionPlan): Promise<string> {
-    const p = plan.toPrimitives();
-
-    if (p.stripe_product_id) {
-      await this.stripe.products.update(p.stripe_product_id, {
-        name: p.name,
-        description: p.description ?? undefined,
-        active: p.is_active,
+  async createOrUpdateProduct(plan: SubscriptionPlanEntity): Promise<string> {
+    if (plan.stripe_product_id) {
+      await this.stripe.products.update(plan.stripe_product_id, {
+        name: plan.name,
+        description: plan.description ?? undefined,
+        active: plan.is_active,
         metadata: {
-          plan_id: p.id ?? "",
-          billing_type: p.billing_type,
+          plan_id: plan.id,
+          billing_type: plan.billing_type,
         },
       });
-      return p.stripe_product_id;
+      return plan.stripe_product_id;
     }
 
     const product = await this.stripe.products.create({
-      name: p.name,
-      description: p.description ?? undefined,
-      active: p.is_active,
+      name: plan.name,
+      description: plan.description ?? undefined,
+      active: plan.is_active,
       metadata: {
-        plan_id: p.id ?? "",
-        billing_type: p.billing_type,
+        plan_id: plan.id,
+        billing_type: plan.billing_type,
       },
     });
 

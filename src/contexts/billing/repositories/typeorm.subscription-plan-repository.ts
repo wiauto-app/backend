@@ -5,49 +5,15 @@ import { ILike, Repository } from "typeorm";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import {
-  PrimitivePlanFeature,
-  PrimitivePlanPrice,
-  PrimitiveSubscriptionPlan,
-  SubscriptionPlan,
+  CreateSubscriptionPlanData,
+  PlanFeatureInput,
+  PlanPriceInput,
+  UpdateSubscriptionPlanData,
 } from "../types/subscription-plan";
+import { PLAN_VERSION_STATUS } from "../types/billing.enums";
 import { PlanFeatureEntity } from "../entities/plan-feature.entity";
 import { SubscriptionPlanPriceEntity } from "../entities/subscription-plan-price.entity";
 import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
-
-const entity_to_plan = (entity: SubscriptionPlanEntity): SubscriptionPlan =>
-  SubscriptionPlan.fromPrimitives({
-    id: entity.id,
-    name: entity.name,
-    slug: entity.slug,
-    description: entity.description,
-    audience: entity.audience,
-    billing_type: entity.billing_type,
-    type: entity.type,
-    stripe_product_id: entity.stripe_product_id,
-    is_active: entity.is_active,
-    is_featured: entity.is_featured,
-    sort_order: entity.sort_order,
-    effect_config: (entity.effect_config ?? {}) as PrimitiveSubscriptionPlan["effect_config"],
-    created_at: entity.created_at,
-    updated_at: entity.updated_at,
-    prices: entity.prices?.map((price) => ({
-      id: price.id,
-      plan_id: price.plan_id,
-      interval: price.interval,
-      amount_cents: price.amount_cents,
-      currency: price.currency,
-      stripe_price_id: price.stripe_price_id,
-      is_active: price.is_active,
-    })),
-    features: entity.features?.map((feature) => ({
-      id: feature.id,
-      plan_id: feature.plan_id,
-      label: feature.label,
-      description: feature.description,
-      included: feature.included,
-      sort_order: feature.sort_order,
-    })),
-  });
 
 @Injectable()
 export class TypeOrmSubscriptionPlanRepository {
@@ -58,50 +24,47 @@ export class TypeOrmSubscriptionPlanRepository {
     private readonly price_repository: Repository<SubscriptionPlanPriceEntity>,
     @InjectRepository(PlanFeatureEntity)
     private readonly feature_repository: Repository<PlanFeatureEntity>,
-  ) {
-  }
+  ) {}
 
-  async create(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
-    const p = plan.toPrimitives();
+  async create(data: CreateSubscriptionPlanData): Promise<SubscriptionPlanEntity> {
     const saved = await this.plan_repository.save({
-      name: p.name,
-      slug: p.slug ?? null,
-      description: p.description ?? null,
-      audience: (p.audience ?? null) as SubscriptionPlanEntity["audience"],
-      billing_type: p.billing_type as SubscriptionPlanEntity["billing_type"],
-      type: (p.type ?? "standard") as SubscriptionPlanEntity["type"],
-      stripe_product_id: p.stripe_product_id ?? null,
-      is_active: p.is_active,
-      is_featured: p.is_featured,
-      sort_order: p.sort_order,
-      effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
+      name: data.name,
+      slug: data.slug ?? null,
+      description: data.description ?? null,
+      audience: (data.audience ?? null) as SubscriptionPlanEntity["audience"],
+      billing_type: data.billing_type as SubscriptionPlanEntity["billing_type"],
+      type: (data.type ?? "standard") as SubscriptionPlanEntity["type"],
+      stripe_product_id: data.stripe_product_id ?? null,
+      is_active: data.is_active,
+      is_featured: data.is_featured,
+      sort_order: data.sort_order,
+      effect_config: (data.effect_config ?? {}) as Record<string, unknown>,
     });
 
-    if (p.prices?.length) {
-      await this.savePrices(saved.id, p.prices);
+    if (data.prices?.length) {
+      await this.savePrices(saved.id, data.prices);
     }
-    if (p.features?.length) {
-      await this.saveFeatures(saved.id, p.features);
+    if (data.features?.length) {
+      await this.saveFeatures(saved.id, data.features);
     }
 
-    return (await this.findOne(saved.id)) as SubscriptionPlan;
+    return (await this.findOne(saved.id)) as SubscriptionPlanEntity;
   }
 
-  async update(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
-    const p = plan.toPrimitives();
+  async update(data: UpdateSubscriptionPlanData): Promise<SubscriptionPlanEntity> {
     const preloaded = await this.plan_repository.preload({
-      id: p.id,
-      name: p.name,
-      slug: p.slug ?? null,
-      description: p.description ?? null,
-      audience: (p.audience ?? null) as SubscriptionPlanEntity["audience"],
-      billing_type: p.billing_type as SubscriptionPlanEntity["billing_type"],
-      type: (p.type ?? "standard") as SubscriptionPlanEntity["type"],
-      stripe_product_id: p.stripe_product_id ?? null,
-      is_active: p.is_active,
-      is_featured: p.is_featured,
-      sort_order: p.sort_order,
-      effect_config: (p.effect_config ?? {}) as Record<string, unknown>,
+      id: data.id,
+      name: data.name,
+      slug: data.slug ?? null,
+      description: data.description ?? null,
+      audience: (data.audience ?? null) as SubscriptionPlanEntity["audience"],
+      billing_type: data.billing_type as SubscriptionPlanEntity["billing_type"],
+      type: (data.type ?? "standard") as SubscriptionPlanEntity["type"],
+      stripe_product_id: data.stripe_product_id ?? null,
+      is_active: data.is_active,
+      is_featured: data.is_featured,
+      sort_order: data.sort_order,
+      effect_config: (data.effect_config ?? {}) as Record<string, unknown>,
     });
 
     if (!preloaded) {
@@ -110,34 +73,32 @@ export class TypeOrmSubscriptionPlanRepository {
 
     await this.plan_repository.save(preloaded);
 
-    if (p.prices) {
-      await this.savePrices(preloaded.id, p.prices);
+    if (data.prices) {
+      await this.savePrices(preloaded.id, data.prices);
     }
-    if (p.features) {
-      await this.saveFeatures(preloaded.id, p.features);
+    if (data.features) {
+      await this.saveFeatures(preloaded.id, data.features);
     }
 
-    return (await this.findOne(preloaded.id)) as SubscriptionPlan;
+    return (await this.findOne(preloaded.id)) as SubscriptionPlanEntity;
   }
 
   async delete(id: string): Promise<void> {
     await this.plan_repository.delete(id);
   }
 
-  async findOne(id: string): Promise<SubscriptionPlan | null> {
-    const entity = await this.plan_repository.findOne({
+  async findOne(id: string): Promise<SubscriptionPlanEntity | null> {
+    return this.plan_repository.findOne({
       where: { id },
       relations: { prices: true, features: true },
     });
-
-    return entity ? entity_to_plan(entity) : null;
   }
 
   async findAll(params: {
     page: number;
     limit: number;
     search?: string;
-  }): Promise<PaginatedResult<SubscriptionPlan>> {
+  }): Promise<PaginatedResult<SubscriptionPlanEntity>> {
     const skip = getSkip(params.page, params.limit);
     const where = params.search
       ? { name: ILike(`%${params.search}%`) }
@@ -151,33 +112,36 @@ export class TypeOrmSubscriptionPlanRepository {
       take: params.limit,
     });
 
-    return new PaginatedResult(
-      rows.map(entity_to_plan),
-      total,
-      params.page,
-      params.limit,
-    );
+    return new PaginatedResult(rows, total, params.page, params.limit);
   }
 
-  async findCatalog(billing_type?: string): Promise<SubscriptionPlan[]> {
-    const rows = await this.plan_repository.find({
-      where: {
-        is_active: true,
-        ...(billing_type
-          ? {
-              billing_type:
-                billing_type as SubscriptionPlanEntity["billing_type"],
-            }
-          : {}),
-      },
-      relations: { prices: true, features: true },
-      order: { sort_order: "ASC", name: "ASC" },
-    });
+  /**
+   * Catálogo activo con prices, features y versión published + entitlements en un solo join.
+   */
+  async findCatalog(billing_type?: string): Promise<SubscriptionPlanEntity[]> {
+    const qb = this.plan_repository
+      .createQueryBuilder("plan")
+      .leftJoinAndSelect("plan.prices", "prices")
+      .leftJoinAndSelect("plan.features", "features")
+      .leftJoinAndSelect(
+        "plan.versions",
+        "versions",
+        "versions.status = :published_status",
+        { published_status: PLAN_VERSION_STATUS.PUBLISHED },
+      )
+      .leftJoinAndSelect("versions.entitlements", "entitlements")
+      .where("plan.is_active = :is_active", { is_active: true })
+      .orderBy("plan.sort_order", "ASC")
+      .addOrderBy("plan.name", "ASC");
 
-    return rows.map(entity_to_plan);
+    if (billing_type) {
+      qb.andWhere("plan.billing_type = :billing_type", { billing_type });
+    }
+
+    return qb.getMany();
   }
 
-  async savePrices(plan_id: string, prices: PrimitivePlanPrice[]): Promise<void> {
+  async savePrices(plan_id: string, prices: PlanPriceInput[]): Promise<void> {
     await this.price_repository.delete({ plan_id });
 
     if (!prices.length) {
@@ -196,7 +160,10 @@ export class TypeOrmSubscriptionPlanRepository {
     );
   }
 
-  async saveFeatures(plan_id: string, features: PrimitivePlanFeature[]): Promise<void> {
+  async saveFeatures(
+    plan_id: string,
+    features: PlanFeatureInput[],
+  ): Promise<void> {
     await this.feature_repository.delete({ plan_id });
 
     if (!features.length) {
@@ -232,7 +199,7 @@ export class TypeOrmSubscriptionPlanRepository {
       amount_cents: price.amount_cents,
       currency: price.currency,
       is_active: price.is_active,
-      plan: entity_to_plan(price.plan),
+      plan: price.plan,
     };
   }
 

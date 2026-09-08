@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -16,7 +15,6 @@ import {
   EntitlementValue,
   EntitlementValueType,
   FEATURE_CATALOG,
-  FREE_ENTITLEMENTS,
   isEntitlementFeature,
 } from "../types/entitlement-features";
 
@@ -37,64 +35,27 @@ export class PlanVersionsService {
     private readonly plan_repository: Repository<SubscriptionPlanEntity>,
   ) {}
 
-  async ensureDraftVersion(plan_id: string): Promise<PlanVersionEntity> {
+  async assertPlanExists(plan_id: string): Promise<SubscriptionPlanEntity> {
     const plan = await this.plan_repository.findOne({ where: { id: plan_id } });
     if (!plan) {
       throw new NotFoundException("Plan no encontrado");
     }
-
-    const draft = await this.plan_version_repository.findOne({
-      where: { plan_id, status: PLAN_VERSION_STATUS.DRAFT },
-      relations: { entitlements: true },
-      order: { version: "DESC" },
-    });
-    if (draft) {
-      return draft;
-    }
-
-    const latest = await this.plan_version_repository.findOne({
-      where: { plan_id },
-      order: { version: "DESC" },
-      relations: { entitlements: true },
-    });
-
-    const next_version = (latest?.version ?? 0) + 1;
-    const created = await this.plan_version_repository.save({
-      plan_id,
-      version: next_version,
-      status: PLAN_VERSION_STATUS.DRAFT,
-      published_at: null,
-    });
-
-    const source_entitlements =
-      latest?.entitlements?.length
-        ? latest.entitlements
-        : FREE_ENTITLEMENTS.map((item) => ({
-            feature: item.feature,
-            value_type: item.value_type,
-            value: item.value,
-          }));
-
-    for (const entitlement of source_entitlements) {
-      await this.plan_entitlement_repository.save({
-        plan_version_id: created.id,
-        feature: entitlement.feature,
-        value_type: entitlement.value_type,
-        value: entitlement.value,
-      });
-    }
-
-    return (await this.plan_version_repository.findOne({
-      where: { id: created.id },
-      relations: { entitlements: true },
-    })) as PlanVersionEntity;
+    return plan;
   }
 
-  async findPublishedByPlanId(plan_id: string): Promise<PlanVersionEntity | null> {
+  /**
+   * Versión vigente del plan: published de mayor `version`.
+   */
+  async getCurrentVersion(plan_id: string): Promise<PlanVersionEntity | null> {
     return this.plan_version_repository.findOne({
       where: { plan_id, status: PLAN_VERSION_STATUS.PUBLISHED },
       relations: { entitlements: true },
+      order: { version: "DESC" },
     });
+  }
+
+  async findPublishedByPlanId(plan_id: string): Promise<PlanVersionEntity | null> {
+    return this.getCurrentVersion(plan_id);
   }
 
   async findById(id: string): Promise<PlanVersionEntity> {
@@ -109,6 +70,7 @@ export class PlanVersionsService {
   }
 
   async listByPlanId(plan_id: string) {
+    await this.assertPlanExists(plan_id);
     return this.plan_version_repository.find({
       where: { plan_id },
       relations: { entitlements: true },
@@ -116,71 +78,45 @@ export class PlanVersionsService {
     });
   }
 
-  async replaceDraftEntitlements(
+  /**
+   * Reemplaza entitlements in-place sobre la versión published vigente.
+   * Si no existe, crea published v1.
+   */
+  async replaceEntitlements(
     plan_id: string,
     entitlements: UpsertEntitlementInput[],
-  ) {
+  ): Promise<PlanVersionEntity> {
     this.validateEntitlements(entitlements);
-    const draft = await this.ensureDraftVersion(plan_id);
+    await this.assertPlanExists(plan_id);
+
+    let current = await this.getCurrentVersion(plan_id);
+    if (!current) {
+      const latest = await this.plan_version_repository.findOne({
+        where: { plan_id },
+        order: { version: "DESC" },
+      });
+      current = await this.plan_version_repository.save({
+        plan_id,
+        version: (latest?.version ?? 0) + 1,
+        status: PLAN_VERSION_STATUS.PUBLISHED,
+        published_at: new Date(),
+      });
+    }
 
     await this.plan_entitlement_repository.delete({
-      plan_version_id: draft.id,
+      plan_version_id: current.id,
     });
 
     for (const entitlement of entitlements) {
       await this.plan_entitlement_repository.save({
-        plan_version_id: draft.id,
+        plan_version_id: current.id,
         feature: entitlement.feature,
         value_type: entitlement.value_type,
         value: entitlement.value,
       });
     }
 
-    return this.findById(draft.id);
-  }
-
-  async publish(plan_id: string, version_id?: string) {
-    const draft = version_id
-      ? await this.findById(version_id)
-      : await this.plan_version_repository.findOne({
-          where: { plan_id, status: PLAN_VERSION_STATUS.DRAFT },
-          relations: { entitlements: true },
-          order: { version: "DESC" },
-        });
-
-    if (!draft || draft.plan_id !== plan_id) {
-      throw new NotFoundException("No hay versión draft para publicar");
-    }
-    if (draft.status !== PLAN_VERSION_STATUS.DRAFT) {
-      throw new ConflictException("Solo se pueden publicar versiones en draft");
-    }
-    if (!draft.entitlements?.length) {
-      throw new BadRequestException(
-        "La versión debe tener entitlements antes de publicarse",
-      );
-    }
-
-    const current_published = await this.findPublishedByPlanId(plan_id);
-    if (current_published) {
-      const archived = await this.plan_version_repository.preload({
-        id: current_published.id,
-        status: PLAN_VERSION_STATUS.ARCHIVED,
-      });
-      if (archived) {
-        await this.plan_version_repository.save(archived);
-      }
-    }
-
-    const published = await this.plan_version_repository.preload({
-      id: draft.id,
-      status: PLAN_VERSION_STATUS.PUBLISHED,
-      published_at: new Date(),
-    });
-    if (!published) {
-      throw new NotFoundException("Versión no encontrada");
-    }
-
-    return this.plan_version_repository.save(published);
+    return this.findById(current.id);
   }
 
   getFeatureCatalog() {

@@ -136,10 +136,8 @@ describe("BillingCheckoutService.createSubscriptionCheckout", () => {
       plan_id,
       stripe_price_id: "price_test_123",
       plan: {
-        toPrimitives: () => ({
-          id: plan_id,
-          billing_type: BILLING_TYPE.RECURRING,
-        }),
+        id: plan_id,
+        billing_type: BILLING_TYPE.RECURRING,
       },
     });
     plan_versions_service.findPublishedByPlanId.mockResolvedValue({

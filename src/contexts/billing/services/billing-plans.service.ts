@@ -10,19 +10,21 @@ import { envs } from "@/src/common/envs";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
-import {
-  PlanEffectConfig,
-  PrimitiveSubscriptionPlan,
-  SubscriptionPlan,
-} from "../types/subscription-plan";
+import { PlanEffectConfig } from "../types/subscription-plan";
 import { PlanNotFoundException } from "../exceptions/billing.exceptions";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
 import { StripeClient } from "../clients/stripe.client";
-import { BILLING_TYPE, ONE_TIME_PRODUCT_KIND, PLAN_TYPE } from "../types/billing.enums";
+import {
+  BILLING_TYPE,
+  ONE_TIME_PRODUCT_KIND,
+  PLAN_TYPE,
+  PLAN_VERSION_STATUS,
+} from "../types/billing.enums";
 import { SubscriptionEntity } from "../entities/subscription.entity";
 import { OneTimePurchaseEntity } from "../entities/one-time-purchase.entity";
 import { ProfessionalAccountEntity } from "../entities/professional-account.entity";
+import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 import { CreateSubscriptionCheckoutHttpDto } from "../api/user/create-subscription-checkout/create-subscription-checkout.http-dto";
 import { PlanVersionsService } from "./plan-versions.service";
 import { AssistantCreditPacksService } from "./assistant-credit-packs.service";
@@ -55,9 +57,6 @@ export interface CreatePlanPayload {
 
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;
 
-const serializePlan = (plan: SubscriptionPlan): PrimitiveSubscriptionPlan =>
-  plan.toPrimitives();
-
 const normalizeEffectConfig = (
   effect_config?: PlanEffectConfig | { type?: string; credits?: number },
 ): PlanEffectConfig => {
@@ -85,6 +84,18 @@ const normalizeEffectConfig = (
   return {};
 };
 
+const pickCurrentPublishedVersion = (plan: SubscriptionPlanEntity) => {
+  const published = (plan.versions ?? []).filter(
+    (version) => version.status === PLAN_VERSION_STATUS.PUBLISHED,
+  );
+  if (!published.length) {
+    return null;
+  }
+  return published.reduce((best, version) =>
+    version.version > best.version ? version : best,
+  );
+};
+
 @HexInjectable()
 export class BillingPlansService {
   constructor(
@@ -107,7 +118,7 @@ export class BillingPlansService {
     const effect_config = normalizeEffectConfig(payload.effect_config);
     const slug = slugify(payload.name) || `plan-${Date.now()}`;
 
-    const plan = SubscriptionPlan.create({
+    const created = await this.plan_repository.create({
       name: payload.name,
       slug,
       description: payload.description ?? null,
@@ -132,24 +143,19 @@ export class BillingPlansService {
       })),
     });
 
-    const created = await this.plan_repository.create(plan);
-    const plan_id = created.toPrimitives().id!;
-
-    await this.plan_versions_service.replaceDraftEntitlements(
-      plan_id,
+    await this.plan_versions_service.replaceEntitlements(
+      created.id,
       FREE_ENTITLEMENTS,
     );
-    await this.plan_versions_service.publish(plan_id);
 
-    return serializePlan(await this.findOneEntity(plan_id));
+    return this.findOneEntity(created.id);
   }
 
   async findAll(params: { page: number; limit: number; search?: string }) {
-    const result = await this.plan_repository.findAll(params);
-    return result.map(serializePlan);
+    return this.plan_repository.findAll(params);
   }
 
-  private async findOneEntity(id: string): Promise<SubscriptionPlan> {
+  private async findOneEntity(id: string): Promise<SubscriptionPlanEntity> {
     const plan = await this.plan_repository.findOne(id);
     if (!plan) {
       throw new NotFoundException(new PlanNotFoundException(id).message);
@@ -158,8 +164,7 @@ export class BillingPlansService {
   }
 
   async findOne(id: string) {
-    const plan = await this.findOneEntity(id);
-    return serializePlan(plan);
+    return this.findOneEntity(id);
   }
 
   async update(id: string, payload: UpdatePlanPayload) {
@@ -169,15 +174,15 @@ export class BillingPlansService {
       );
     }
 
-    const existing = await this.findOneEntity(id);
-    const current = existing.toPrimitives();
+    const current = await this.findOneEntity(id);
     const next_name = payload.name ?? current.name;
     const slug =
       payload.name && payload.name !== current.name
         ? slugify(payload.name) || current.slug || id
         : current.slug ?? (slugify(current.name) || id);
 
-    const updated = existing.applyUpdates({
+    return this.plan_repository.update({
+      id,
       name: next_name,
       slug,
       description:
@@ -187,13 +192,15 @@ export class BillingPlansService {
       audience:
         payload.audience !== undefined ? payload.audience : current.audience,
       billing_type: BILLING_TYPE.RECURRING,
+      type: current.type ?? PLAN_TYPE.STANDARD,
+      stripe_product_id: current.stripe_product_id,
       is_active: payload.is_active ?? current.is_active,
       is_featured: payload.is_featured ?? current.is_featured,
       sort_order: payload.sort_order ?? current.sort_order,
       effect_config:
         payload.effect_config !== undefined
           ? normalizeEffectConfig(payload.effect_config)
-          : current.effect_config,
+          : (current.effect_config as PlanEffectConfig),
       prices: payload.prices
         ? payload.prices.map((price) => ({
             interval: price.interval,
@@ -201,7 +208,15 @@ export class BillingPlansService {
             currency: price.currency ?? "eur",
             is_active: price.is_active ?? true,
           }))
-        : current.prices,
+        : current.prices?.map((price) => ({
+            id: price.id,
+            plan_id: price.plan_id,
+            interval: price.interval,
+            amount_cents: price.amount_cents,
+            currency: price.currency,
+            stripe_price_id: price.stripe_price_id,
+            is_active: price.is_active,
+          })),
       features: payload.features
         ? payload.features.map((feature, index) => ({
             label: feature.label,
@@ -209,11 +224,15 @@ export class BillingPlansService {
             included: feature.included ?? true,
             sort_order: feature.sort_order ?? index,
           }))
-        : current.features,
+        : current.features?.map((feature) => ({
+            id: feature.id,
+            plan_id: feature.plan_id,
+            label: feature.label,
+            description: feature.description,
+            included: feature.included,
+            sort_order: feature.sort_order,
+          })),
     });
-
-    const saved = await this.plan_repository.update(updated);
-    return serializePlan(saved);
   }
 
   async remove(id: string) {
@@ -235,12 +254,11 @@ export class BillingPlansService {
 
   async syncStripe(id: string) {
     const plan = await this.findOneEntity(id);
-    const p = plan.toPrimitives();
 
     const stripe_product_id = await this.stripe_client.createOrUpdateProduct(plan);
     const price_updates: Array<{ id: string; stripe_price_id: string }> = [];
 
-    for (const price of p.prices ?? []) {
+    for (const price of plan.prices ?? []) {
       if (!price.id) {
         continue;
       }
@@ -251,62 +269,56 @@ export class BillingPlansService {
         amount_cents: price.amount_cents,
         currency: price.currency,
         interval: price.interval,
-        billing_type: p.billing_type,
+        billing_type: plan.billing_type,
       });
 
       price_updates.push({ id: price.id, stripe_price_id });
     }
 
-    const repo = this.plan_repository as TypeOrmSubscriptionPlanRepository;
-    await repo.updateStripeIds(id, stripe_product_id, price_updates);
+    await this.plan_repository.updateStripeIds(id, stripe_product_id, price_updates);
 
-    return serializePlan(await this.findOneEntity(id));
+    return this.findOneEntity(id);
   }
 
   async findCatalog(billing_type?: string) {
     const plans = await this.plan_repository.findCatalog(billing_type);
 
-    return Promise.all(
-      plans.map(async (plan) => {
-        const p = plan.toPrimitives();
-        const published = p.id
-          ? await this.plan_versions_service.findPublishedByPlanId(p.id)
-          : null;
+    return plans.map((plan) => {
+      const published = pickCurrentPublishedVersion(plan);
 
-        return {
-          id: p.id,
-          name: p.name,
-          slug: p.slug ?? null,
-          description: p.description,
-          audience: p.audience ?? null,
-          billing_type: p.billing_type,
-          type: p.type ?? PLAN_TYPE.STANDARD,
-          is_featured: p.is_featured,
-          sort_order: p.sort_order,
-          effect_config: p.effect_config ?? {},
-          plan_version_id: published?.id ?? null,
-          prices: (p.prices ?? [])
-            .filter((price) => price.is_active)
-            .map((price) => ({
-              id: price.id,
-              interval: price.interval,
-              amount_cents: price.amount_cents,
-              currency: price.currency,
-            })),
-          features: (p.features ?? []).map((feature) => ({
-            id: feature.id,
-            label: feature.label,
-            description: feature.description ?? null,
-            included: feature.included,
+      return {
+        id: plan.id,
+        name: plan.name,
+        slug: plan.slug ?? null,
+        description: plan.description,
+        audience: plan.audience ?? null,
+        billing_type: plan.billing_type,
+        type: plan.type ?? PLAN_TYPE.STANDARD,
+        is_featured: plan.is_featured,
+        sort_order: plan.sort_order,
+        effect_config: plan.effect_config ?? {},
+        plan_version_id: published?.id ?? null,
+        prices: (plan.prices ?? [])
+          .filter((price) => price.is_active)
+          .map((price) => ({
+            id: price.id,
+            interval: price.interval,
+            amount_cents: price.amount_cents,
+            currency: price.currency,
           })),
-          entitlements: (published?.entitlements ?? []).map((item) => ({
-            feature: item.feature,
-            value_type: item.value_type,
-            value: item.value,
-          })),
-        };
-      }),
-    );
+        features: (plan.features ?? []).map((feature) => ({
+          id: feature.id,
+          label: feature.label,
+          description: feature.description ?? null,
+          included: feature.included,
+        })),
+        entitlements: (published?.entitlements ?? []).map((item) => ({
+          feature: item.feature,
+          value_type: item.value_type,
+          value: item.value,
+        })),
+      };
+    });
   }
 }
 
@@ -357,8 +369,7 @@ export class BillingCheckoutService {
       throw new BadRequestException("El precio no está sincronizado con Stripe");
     }
 
-    const plan = price.plan.toPrimitives();
-    if (plan.billing_type !== BILLING_TYPE.RECURRING) {
+    if (price.plan.billing_type !== BILLING_TYPE.RECURRING) {
       throw new BadRequestException("El plan no es de suscripción recurrente");
     }
 
@@ -611,8 +622,7 @@ export class BillingCheckoutService {
       throw new BadRequestException("El precio no está sincronizado con Stripe");
     }
 
-    const plan = price.plan.toPrimitives();
-    if (plan.billing_type !== BILLING_TYPE.ONE_TIME) {
+    if (price.plan.billing_type !== BILLING_TYPE.ONE_TIME) {
       throw new BadRequestException("El plan no es de pago único");
     }
 

@@ -8457,7 +8457,22 @@
               "response": []
             },
             {
-              "name": "guardar entitlements draft",
+              "name": "obtener entitlements plan",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/entitlements",
+                "description": "JWT + billing.manage. Versión published vigente con entitlements."
+              },
+              "response": []
+            },
+            {
+              "name": "guardar entitlements plan",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -8474,23 +8489,8 @@
                   "mode": "raw",
                   "raw": "{\n  \"entitlements\": [\n    {\"feature\": \"vehicles\", \"value_type\": \"limit\", \"value\": {\"limit\": 50}},\n    {\"feature\": \"photos_per_vehicle\", \"value_type\": \"limit\", \"value\": {\"limit\": 20}},\n    {\"feature\": \"video_upload\", \"value_type\": \"boolean\", \"value\": {\"bool\": true}}\n  ]\n}"
                 },
-                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/versions/draft/entitlements",
-                "description": "JWT + billing.manage. Crea/actualiza entitlements en versión draft."
-              },
-              "response": []
-            },
-            {
-              "name": "publicar plan draft",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{auth_token}}"
-                  }
-                ],
-                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/publish",
-                "description": "JWT + billing.manage. Publica la versión draft actual."
+                "url": "{{base_url}}/v1/billing/plans/{{subscription_plan_id}}/entitlements",
+                "description": "JWT + billing.manage. Reemplaza entitlements in-place en la versión published vigente (crea v1 si no existe)."
               },
               "response": []
             },
