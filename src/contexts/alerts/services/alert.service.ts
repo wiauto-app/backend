@@ -33,21 +33,21 @@ export class AlertService {
 
   async create(dto: CreateAlertDto): Promise<PrimitiveAlert> {
     const profile_id = dto.profile_id ?? null;
+    const profile = profile_id
+      ? await this.profile_repository.findOne(profile_id)
+      : null;
 
-    if (profile_id) {
-      const profile = await this.profile_repository.findOne(profile_id);
-      if (!profile) {
-        throw new ValidationException("Perfil de usuario no encontrado");
-      }
+    if (profile_id && !profile) {
+      throw new ValidationException("Perfil de usuario no encontrado");
     }
 
-    const email = dto.email?.trim();
+    const email = dto.email ?? profile?.user.email;
     if (!email) {
       throw new ValidationException("El correo es obligatorio para crear una alerta");
     }
 
-    const phone = dto.phone?.trim();
-    const phone_code = dto.phone_code?.trim();
+    const phone = dto.phone ?? profile?.phone ?? undefined;
+    const phone_code = dto.phone_code ?? profile?.phone_code ?? undefined;
     if (!phone || !phone_code) {
       throw new ValidationException(
         "El teléfono y el código de país son obligatorios para crear una alerta",
@@ -70,12 +70,13 @@ export class AlertService {
     }
 
     const alert = Alert.create({
-      name: dto.name?.trim() || "Búsqueda guardada",
+      name: dto.name ?? "Búsqueda guardada",
       profile_id,
       email,
       phone,
       phone_code,
       filters,
+      notification_channels: dto.notification_channels,
     });
 
     await this.alert_repository.save(alert);
@@ -122,15 +123,15 @@ export class AlertService {
     }
 
     const name =
-      dto.name?.trim() ||
+      dto.name ??
       buildDefaultAlertNameFromVehicleSnapshot(snapshot);
 
     return this.create({
       profile_id: dto.profile_id,
       name,
-      email: dto.email?.trim() || profile.user?.email?.trim() || "",
-      phone: dto.phone?.trim() || profile.phone?.trim() || "",
-      phone_code: dto.phone_code?.trim() || profile.phone_code?.trim() || "",
+      email: dto.email ?? profile.user.email,
+      phone: dto.phone ?? profile.phone ?? "",
+      phone_code: dto.phone_code ?? profile.phone_code ?? "",
       filters,
     });
   }
@@ -187,7 +188,8 @@ export class AlertService {
       dto.notify_price_drops !== undefined ||
       dto.notify_sold_removed !== undefined ||
       dto.notify_featured !== undefined ||
-      dto.notify_recently_updated !== undefined;
+      dto.notify_recently_updated !== undefined ||
+      dto.notification_channels !== undefined;
 
     if (dto.name === undefined && !has_filter_updates && !has_preference_updates) {
       throw new ValidationException("Debes enviar al menos un campo para actualizar");
@@ -204,6 +206,7 @@ export class AlertService {
       notify_sold_removed: dto.notify_sold_removed,
       notify_featured: dto.notify_featured,
       notify_recently_updated: dto.notify_recently_updated,
+      notification_channels: dto.notification_channels,
     });
 
     await this.alert_repository.update(updated);

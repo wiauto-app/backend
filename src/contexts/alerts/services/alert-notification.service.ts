@@ -266,14 +266,22 @@ export class AlertNotificationService {
       return;
     }
 
-    const preferences = await this.load_preferences(recipient.profile_id);
-    const preferences_primitive = preferences.toPrimitives();
+    const alert_channels = recipient.alert?.toPrimitives().notification_channels;
+    let channels = alert_channels ?? [];
+    let account_frequency: "instant" | "daily" | "weekly" = "instant";
 
-    if (!is_global_toggle_enabled(dto.event_type, preferences_primitive)) {
-      return;
+    if (!alert_channels) {
+      const preferences = await this.load_preferences(recipient.profile_id);
+      const preferences_primitive = preferences.toPrimitives();
+
+      if (!is_global_toggle_enabled(dto.event_type, preferences_primitive)) {
+        return;
+      }
+
+      channels = get_enabled_channels(preferences_primitive);
+      account_frequency = preferences_primitive.frequency;
     }
 
-    const channels = get_enabled_channels(preferences_primitive);
     if (channels.length === 0) {
       return;
     }
@@ -296,13 +304,17 @@ export class AlertNotificationService {
       event_type: dto.event_type,
       channel: "email",
       status: ALERT_NOTIFICATION_EVENT_STATUS.PENDING,
-      scheduled_for: compute_digest_scheduled_for(preferences_primitive.frequency),
+      // Saved-search alerts are always delivered immediately. Account-level
+      // frequency remains available only to notification categories without an alert.
+      scheduled_for: recipient.alert
+        ? null
+        : compute_digest_scheduled_for(account_frequency),
       payload: notification_payload,
     });
 
     await this.event_repository.save(event);
 
-    if (preferences_primitive.frequency !== "instant") {
+    if (!recipient.alert && account_frequency !== "instant") {
       return;
     }
 
@@ -313,6 +325,7 @@ export class AlertNotificationService {
       body,
       data: notification_payload,
       email_override: recipient.email,
+      channels_override: alert_channels,
     });
 
     await this.event_repository.update(event.markSent());

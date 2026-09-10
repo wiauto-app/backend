@@ -1,6 +1,10 @@
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
 import type { AlertFilters } from "./alert-filters";
+import {
+  DEFAULT_ALERT_NOTIFICATION_CHANNELS,
+  type AlertNotificationChannel,
+} from "./alert-notification-channel.enum";
 
 export interface PrimitiveAlert {
   id: string;
@@ -19,6 +23,7 @@ export interface PrimitiveAlert {
   notify_sold_removed: boolean;
   notify_featured: boolean;
   notify_recently_updated: boolean;
+  notification_channels: AlertNotificationChannel[];
   last_viewed_at: Date | null;
 }
 
@@ -39,6 +44,7 @@ export class Alert {
     notify_sold_removed?: boolean;
     notify_featured?: boolean;
     notify_recently_updated?: boolean;
+    notification_channels?: AlertNotificationChannel[];
     last_viewed_at?: Date | null;
   }): Alert {
     return new Alert({
@@ -58,6 +64,8 @@ export class Alert {
       notify_sold_removed: payload.notify_sold_removed ?? false,
       notify_featured: payload.notify_featured ?? false,
       notify_recently_updated: payload.notify_recently_updated ?? false,
+      notification_channels:
+        payload.notification_channels ?? DEFAULT_ALERT_NOTIFICATION_CHANNELS,
       last_viewed_at: payload.last_viewed_at ?? null,
     });
   }
@@ -72,6 +80,7 @@ export class Alert {
     notify_sold_removed?: boolean;
     notify_featured?: boolean;
     notify_recently_updated?: boolean;
+    notification_channels?: AlertNotificationChannel[];
     last_viewed_at?: Date | null;
   }): Alert {
     return new Alert({

@@ -1,6 +1,7 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 import { AlertFiltersHttpDto } from "../alert-filters.http-dto";
+import type { AlertNotificationChannel } from "../../../types/alert-notification-channel.enum";
 
 export class UpdateAlertHttpDto extends AlertFiltersHttpDto {
   @IsOptional()
@@ -31,4 +32,9 @@ export class UpdateAlertHttpDto extends AlertFiltersHttpDto {
   @IsOptional()
   @IsBoolean()
   notify_recently_updated?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(["email", "push", "sms", "in_app", "whatsapp"], { each: true })
+  notification_channels?: AlertNotificationChannel[];
 }

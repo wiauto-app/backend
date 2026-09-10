@@ -26,6 +26,7 @@ const entity_to_alert = (entity: AlertEntity): Alert =>
     notify_sold_removed: entity.notify_sold_removed,
     notify_featured: entity.notify_featured,
     notify_recently_updated: entity.notify_recently_updated,
+    notification_channels: entity.notification_channels,
     last_viewed_at: entity.last_viewed_at,
   });
 
@@ -57,6 +58,7 @@ export class TypeOrmAlertRepository {
         notify_sold_removed: primitive.notify_sold_removed,
         notify_featured: primitive.notify_featured,
         notify_recently_updated: primitive.notify_recently_updated,
+        notification_channels: primitive.notification_channels,
         last_viewed_at: primitive.last_viewed_at,
       }),
     );

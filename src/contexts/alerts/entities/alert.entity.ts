@@ -13,6 +13,7 @@ import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 
 import type { AlertFilters } from "../types/alert-filters";
 import type { PrimitiveAlert } from "../types/alert";
+import type { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
 
 @Entity({ name: "alerts" })
 export class AlertEntity implements PrimitiveAlert {
@@ -67,6 +68,10 @@ export class AlertEntity implements PrimitiveAlert {
 
   @Column({ default: false })
   notify_recently_updated: boolean;
+
+  /** Delivery methods are configured per saved search, never account-wide. */
+  @Column({ type: "jsonb", default: () => "'[\"email\",\"in_app\"]'" })
+  notification_channels: AlertNotificationChannel[];
 
   @Column({ type: "timestamp", nullable: true })
   last_viewed_at: Date | null;

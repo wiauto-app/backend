@@ -44,14 +44,9 @@ export class NotificationChannelDispatcher {
       return;
     }
 
-    const preferences = await this.load_preferences(input.profile_id);
-    const preferences_primitive = preferences.toPrimitives();
-
-    if (!is_category_toggle_enabled(input.category, preferences_primitive)) {
-      return;
-    }
-
-    const channels = get_enabled_channels(preferences_primitive);
+    const channels = input.channels_override
+      ? [...input.channels_override]
+      : await this.get_account_channels(input.profile_id, input.category);
     if (channels.length === 0) {
       return;
     }
@@ -115,5 +110,19 @@ export class NotificationChannelDispatcher {
     const defaults = AlertNotificationPreferences.createDefaults(profile_id);
     await this.preferences_repository.save(defaults);
     return defaults;
+  }
+
+  private async get_account_channels(
+    profile_id: string,
+    category: string,
+  ) {
+    const preferences = await this.load_preferences(profile_id);
+    const primitive = preferences.toPrimitives();
+
+    if (!is_category_toggle_enabled(category, primitive)) {
+      return [];
+    }
+
+    return get_enabled_channels(primitive);
   }
 }
