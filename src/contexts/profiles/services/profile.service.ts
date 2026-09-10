@@ -94,6 +94,8 @@ export class ProfileService {
     last_name?: string;
     avatar_url?: string;
     image_url?: string;
+    phone_code?: string;
+    phone?: string;
   }): Promise<ProfileResponse> {
     const email = await this.profile_user_repository.findEmailById(input.id);
     const accepted_invitation = email
@@ -109,6 +111,8 @@ export class ProfileService {
       last_name: input.last_name,
       avatar_url: input.avatar_url,
       image_url: input.image_url,
+      phone_code: input.phone_code,
+      phone: input.phone,
     });
 
     if (email) {

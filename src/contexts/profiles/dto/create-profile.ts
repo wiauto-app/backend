@@ -10,4 +10,12 @@ export class CreateProfileDto {
   @IsOptional()
   @IsString()
   last_name?: string;
+
+  @IsOptional()
+  @IsString()
+  phone_code?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
 }

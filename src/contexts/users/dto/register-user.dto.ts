@@ -14,4 +14,12 @@ export class RegisterUserDto {
   @IsOptional()
   @IsString()
   last_name?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone_code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 }

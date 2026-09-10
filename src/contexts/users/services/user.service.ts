@@ -64,6 +64,12 @@ export class UserService {
       throw new ConflictException("Ya existe un usuario registrado con ese email")
     }
 
+    const phone = registerUserDto.phone.replace(/\D/g, "");
+    const phone_exists = await this.profileRepository.findByPhone(phone);
+    if (phone_exists) {
+      throw new ConflictException("El teléfono ya está registrado");
+    }
+
     const hashedPassword = await hashPassword(registerUserDto.password)
 
     const createdUser = this.userRepository.create({
@@ -75,6 +81,8 @@ export class UserService {
       id: user.id,
       name: registerUserDto.name,
       last_name: registerUserDto.last_name,
+      phone_code: registerUserDto.phone_code,
+      phone,
     });
 
     void this.emailVerificationService

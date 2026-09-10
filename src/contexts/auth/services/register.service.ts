@@ -15,6 +15,8 @@ export class RegisterService {
       password: registerDto.password,
       name: registerDto.name,
       last_name: registerDto.last_name,
+      phone_code: registerDto.phone_code,
+      phone: registerDto.phone,
     });
   }
 }
