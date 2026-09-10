@@ -32,6 +32,7 @@ export class AlertService {
   ) {}
 
   async create(dto: CreateAlertDto): Promise<PrimitiveAlert> {
+    console.log("dto", dto);
     const profile_id = dto.profile_id ?? null;
     const profile = profile_id
       ? await this.profile_repository.findOne(profile_id)
