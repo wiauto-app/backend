@@ -178,6 +178,11 @@
       "description": "UUID de conversación del asistente (`GET /v1/assistant/conversations/:id`)."
     },
     {
+      "key": "assistant_message_id",
+      "value": "",
+      "description": "Id del UIMessage del asistente (varchar, no siempre UUID)."
+    },
+    {
       "key": "list_id",
       "value": "",
       "description": "UUID de lista de vehículos (`v1/vehicle-lists/:list_id`)."
@@ -217,6 +222,11 @@
     {
       "key": "featured_listing_offer_id",
       "value": ""
+    },
+    {
+      "key": "blocked_profile_id",
+      "value": "",
+      "description": "UUID del perfil bloqueado (`v1/blocks/:blocked_profile_id`)."
     }
   ],
   "item": [
@@ -416,6 +426,21 @@
             },
             "url": "{{base_url}}/auth/admin/verify-backup-code",
             "description": "Cookie challenge + código de respaldo `XXXX-XXXX`. Consume el código y emite sesión completa."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar cuenta",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/me",
+            "description": "JWT. Revoca Sign in with Apple (best-effort), cancela suscripciones, cierra todas las sesiones y elimina la cuenta."
           },
           "response": []
         },
@@ -824,6 +849,25 @@
               "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
             }
           ]
+        },
+        {
+          "name": "iniciar sesión apple en mobile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identity_token\": \"<apple_identity_token>\",\n  \"authorization_code\": \"<apple_authorization_code>\"\n}"
+            },
+            "url": "{{base_url}}/auth/apple/mobile",
+            "description": "`authorization_code` opcional; si viene, se intercambia por refresh_token de Apple y se guarda cifrado para revocar al eliminar la cuenta."
+          },
+          "response": []
         },
         {
           "name": "Inicializar 2fa",
@@ -7407,6 +7451,64 @@
       ]
     },
     {
+      "name": "blocks",
+      "item": [
+        {
+          "name": "bloquear usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blocked_profile_id\": \"{{blocked_profile_id}}\"\n}"
+            },
+            "url": "{{base_url}}/v1/blocks",
+            "description": "JWT. Bloquea un perfil. Rechaza auto-bloqueo."
+          },
+          "response": []
+        },
+        {
+          "name": "listar usuarios bloqueados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/blocks",
+            "description": "JWT. Lista los perfiles que el usuario autenticado ha bloqueado."
+          },
+          "response": []
+        },
+        {
+          "name": "desbloquear usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/blocks/{{blocked_profile_id}}",
+            "description": "JWT. Elimina el bloqueo hacia `blocked_profile_id`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "chat",
       "item": [
         {
@@ -8161,7 +8263,7 @@
                 "method": "GET",
                 "header": [],
                 "url": "{{base_url}}/v1/report-categories?target_type=profile&page=1&limit=10",
-                "description": "Público. Filtro opcional `target_type`: profile, dealership, vehicle."
+                "description": "Público. Filtro opcional `target_type`: profile, dealership, vehicle, chat_message, assistant_message."
               },
               "response": []
             },
@@ -8257,7 +8359,53 @@
                   "raw": "{\n  \"category_id\": \"{{report_category_id}}\",\n  \"title\": \"Perfil sospechoso\",\n  \"description\": \"Publica datos falsos de contacto.\",\n  \"file_url\": null,\n  \"target_type\": \"profile\",\n  \"target_id\": \"{{profile_id}}\"\n}"
                 },
                 "url": "{{base_url}}/v1/reports",
-                "description": "JWT. Valida categoría, objetivo existente y no auto-denuncia perfil."
+                "description": "JWT. Valida categoría, objetivo existente y no auto-denuncia. Para `assistant_message`, `target_id` es el UUID de la conversación y `target_assistant_message_id` el id del UIMessage."
+              },
+              "response": []
+            },
+            {
+              "name": "crear denuncia de mensaje de chat (usuario)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"category_id\": \"{{report_category_id}}\",\n  \"title\": \"Mensaje ofensivo\",\n  \"description\": \"El mensaje contiene insultos.\",\n  \"file_url\": null,\n  \"target_type\": \"chat_message\",\n  \"target_id\": \"{{chat_message_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/reports",
+                "description": "JWT. `target_id` = UUID del mensaje de chat. Debes ser participante y no el autor."
+              },
+              "response": []
+            },
+            {
+              "name": "crear denuncia de respuesta del asistente (usuario)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"category_id\": \"{{report_category_id}}\",\n  \"title\": \"Respuesta inadecuada\",\n  \"description\": \"El asistente generó contenido ofensivo.\",\n  \"file_url\": null,\n  \"target_type\": \"assistant_message\",\n  \"target_id\": \"{{assistant_conversation_id}}\",\n  \"target_assistant_message_id\": \"{{assistant_message_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/reports",
+                "description": "JWT. `target_id` = UUID de la conversación; `target_assistant_message_id` = id del UIMessage."
               },
               "response": []
             },

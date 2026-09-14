@@ -11,6 +11,6 @@ import { TwoFactorAuthService } from "./services/2fa.service";
   controllers: [TwoFactorAuthController],
   providers: [TwoFactorAuthService, CryptoService, BackupCodeService],
   imports: [forwardRef(() => UserModule), forwardRef(() => AuthModule)],
-  exports: [TwoFactorAuthService],
+  exports: [TwoFactorAuthService, CryptoService],
 })
 export class TwoFactorAuthModule { }

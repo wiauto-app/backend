@@ -48,7 +48,10 @@ export class TypeOrmChatRepository {
   async findByParticipantsIds(
     participants_ids: string[],
     pagination: PaginationFilter,
-    options?: { include_support_chats?: boolean },
+    options?: {
+      include_support_chats?: boolean;
+      excluded_profile_ids?: string[];
+    },
   ): Promise<PaginatedResult<Chat>> {
     const skip = (pagination.page - 1) * pagination.limit;
     const take = pagination.limit;
@@ -72,6 +75,24 @@ export class TypeOrmChatRepository {
       qb.where("chat.participants @> :participant", {
         participant: JSON.stringify(participants_ids),
       });
+    }
+
+    const viewer_id = participants_ids[0];
+    const excluded_profile_ids = options?.excluded_profile_ids ?? [];
+    if (viewer_id && excluded_profile_ids.length > 0) {
+      qb.andWhere(
+        `(chat.chat_type = :support_type_for_blocks OR NOT EXISTS (
+          SELECT 1
+          FROM jsonb_array_elements_text(chat.participants) AS other(id)
+          WHERE other.id <> :viewer_id
+          AND other.id IN (:...excluded_profile_ids)
+        ))`,
+        {
+          support_type_for_blocks: CHAT_TYPE.SUPPORT,
+          viewer_id,
+          excluded_profile_ids,
+        },
+      );
     }
 
     qb.skip(skip).take(take).orderBy(`chat.${order_by}`, order_direction);

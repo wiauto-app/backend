@@ -35,6 +35,12 @@ export class UserAuthProvider {
   @Column({ type: "varchar" })
   provider_id: string;
 
+  @Column({ type: "text", nullable: true })
+  refresh_token_encrypted: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  oauth_client_id: string | null;
+
   @CreateDateColumn()
   created_at: Date;
 }

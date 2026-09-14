@@ -41,6 +41,7 @@ import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboar
 import { NewsletterModule } from "../contexts/newsletter/newsletter.module";
 import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
 import { ProfileDevicesModule } from "../contexts/profile_devices/profile-devices.module";
+import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { ProfileDevicesModule } from "../contexts/profile_devices/profile-device
     NewsletterModule,
     StrapiWebhookModule,
     ProfileDevicesModule,
+    UserBlocksModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

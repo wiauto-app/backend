@@ -26,6 +26,7 @@ export class AdminCreateReportController {
       file_url: body.file_url,
       target_type: body.target_type,
       target_id: body.target_id,
+      target_assistant_message_id: body.target_assistant_message_id,
     });
   }
 }

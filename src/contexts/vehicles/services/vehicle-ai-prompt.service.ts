@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import { generateText, Output } from "ai";
 import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 
 import { mapDescriptionGenerationSettings } from "./description-generation-settings.mapper";
@@ -230,12 +231,12 @@ ${optional_lines}
     labels: ResolvedVehicleAiLabels,
     settings?: GenerationSettingsDto,
   ): Promise<string> {
-    const deepseek = createDeepSeek({
-      apiKey: envs.DEEPSEEK_API_KEY,
+    const openai = createOpenAI({
+      apiKey: envs.OPENAI_API_KEY,
     });
 
     const { text } = await generateText({
-      model: deepseek(envs.DEEPSEEK_MODEL),
+      model: openai(envs.OPENAI_MODEL),
       prompt: this.buildDescriptionPrompt(labels, settings),
     });
 

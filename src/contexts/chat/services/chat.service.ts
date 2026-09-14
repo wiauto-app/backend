@@ -15,6 +15,7 @@ import { FindChatsByParticipantDto } from "../dto/find-chats-by-participant.dto"
 import { GetChatUnreadTotalDto } from "../dto/get-chat-unread-total.dto";
 import { ChatAccessService } from "./chat-access.service";
 import { ChatReadModelService } from "./chat-read-model.service";
+import { UserBlocksService } from "@/src/contexts/user-blocks/services/user-blocks.service";
 
 @Injectable()
 export class ChatService {
@@ -23,6 +24,7 @@ export class ChatService {
     private readonly chat_participant_state_repository: TypeOrmChatParticipantStateRepository,
     private readonly chat_read_model_service: ChatReadModelService,
     private readonly chat_access_service: ChatAccessService,
+    private readonly user_blocks_service: UserBlocksService,
   ) {}
 
   async create(create_chat_dto: CreateChatDto): Promise<Chat> {
@@ -31,6 +33,9 @@ export class ChatService {
       Boolean(create_chat_dto.ticket_id);
 
     if (!is_support) {
+      await this.user_blocks_service.assertParticipantsNotBlocked(
+        create_chat_dto.participants,
+      );
       const chat_exists = await this.chat_repository.chatExists(
         create_chat_dto.participants,
         create_chat_dto.vehicle_id,
@@ -77,11 +82,15 @@ export class ChatService {
     const include_support_chats = await this.chat_access_service.isAdmin(
       find_chats_by_participant_dto.requesting_user_id,
     );
+    const excluded_profile_ids =
+      await this.user_blocks_service.findBlockedPairProfileIds(
+        find_chats_by_participant_dto.requesting_user_id,
+      );
 
     const chats = await this.chat_repository.findByParticipantsIds(
       find_chats_by_participant_dto.participants_ids,
       pagination_filter,
-      { include_support_chats },
+      { include_support_chats, excluded_profile_ids },
     );
     return this.chat_read_model_service.toChatList(
       chats,
@@ -96,8 +105,13 @@ export class ChatService {
   async getUnreadTotal(
     dto: GetChatUnreadTotalDto,
   ): Promise<{ total: number }> {
+    const excluded_profile_ids =
+      await this.user_blocks_service.findBlockedPairProfileIds(dto.user_id);
     const total =
-      await this.chat_participant_state_repository.getUnreadTotal(dto.user_id);
+      await this.chat_participant_state_repository.getUnreadTotal(
+        dto.user_id,
+        excluded_profile_ids,
+      );
     return { total };
   }
 }

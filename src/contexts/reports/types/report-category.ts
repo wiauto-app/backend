@@ -5,6 +5,8 @@ export enum ReportTargetType {
   PROFILE = "profile",
   DEALERSHIP = "dealership",
   VEHICLE = "vehicle",
+  CHAT_MESSAGE = "chat_message",
+  ASSISTANT_MESSAGE = "assistant_message",
 }
 
 export interface PrimitiveReportCategory {

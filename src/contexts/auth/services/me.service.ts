@@ -17,6 +17,7 @@ import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositori
 
 import { MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
+import { AppleTokenService } from "./apple-token.service";
 import { AuthService } from "./auth.service";
 import { EntitlementsService } from "../../billing/services/entitlements.service";
 
@@ -30,6 +31,7 @@ export class MeService {
     private readonly entitlementsService: EntitlementsService,
     private readonly userService: UserService,
     private readonly authService: AuthService,
+    private readonly appleTokenService: AppleTokenService,
     private readonly cacheManager: Cache,
     private readonly subscriptionRepository: TypeOrmSubscriptionRepository,
     private readonly stripeClient: StripeClient,
@@ -67,25 +69,39 @@ export class MeService {
     await this.cacheManager.del(`me:${user_id}`);
   }
 
-  async deleteAccount(user_id: string, session_id: string): Promise<{ message: string; data: null }> {
+  async deleteAccount(user_id: string, _session_id: string): Promise<{ message: string; data: null }> {
     const user = await this.userService.findOne(user_id);
 
+    await this.revokeAppleSignIn(user_id);
     await this.cancelActiveSubscriptionsForProfile(user.id);
     await this.deindexAndSoftDeleteVehiclesForProfile(user.id);
     await this.cacheManager.del(`me:${user_id}`);
 
-    await this.userService.remove(user_id);
-
     try {
-      await this.authService.logout(session_id);
+      await this.authService.logoutAllForUser(user_id);
     } catch {
-      // La cuenta ya se eliminó; limpiar sesión es best-effort.
+      // Cerrar sesiones es best-effort antes de borrar la cuenta.
     }
+
+    await this.userService.remove(user_id);
 
     return {
       message: "Cuenta eliminada correctamente",
       data: null,
     };
+  }
+
+  private async revokeAppleSignIn(user_id: string): Promise<void> {
+    try {
+      const appleIdentity =
+        await this.userAuthProviderService.findByUserAndProvider(user_id, "apple");
+      await this.appleTokenService.revokeStoredRefreshToken(appleIdentity);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo revocar Sign in with Apple para el usuario ${user_id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   private async cancelActiveSubscriptionsForProfile(profile_id: string): Promise<void> {

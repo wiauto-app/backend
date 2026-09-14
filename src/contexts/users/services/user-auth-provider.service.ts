@@ -13,6 +13,13 @@ export interface AuthIdentitySummary {
   has_password: boolean;
 }
 
+export interface StoreEncryptedRefreshTokenInput {
+  provider: OAuthProvider;
+  provider_id: string;
+  refresh_token_encrypted: string;
+  oauth_client_id: string;
+}
+
 @Injectable()
 export class UserAuthProviderService {
   constructor(
@@ -71,6 +78,39 @@ export class UserAuthProviderService {
       provider_id,
     });
     return this.userAuthProviderRepository.save(created);
+  }
+
+  async findByUserAndProvider(
+    user_id: string,
+    provider: OAuthProvider,
+  ): Promise<UserAuthProvider | null> {
+    return this.userAuthProviderRepository.findOne({
+      where: { user_id, provider },
+    });
+  }
+
+  async storeEncryptedRefreshToken(
+    input: StoreEncryptedRefreshTokenInput,
+  ): Promise<void> {
+    const identity = await this.userAuthProviderRepository.findOne({
+      where: {
+        provider: input.provider,
+        provider_id: input.provider_id,
+      },
+    });
+    if (!identity) {
+      return;
+    }
+
+    const updated = await this.userAuthProviderRepository.preload({
+      id: identity.id,
+      refresh_token_encrypted: input.refresh_token_encrypted,
+      oauth_client_id: input.oauth_client_id,
+    });
+    if (!updated) {
+      throw new NotFoundException("No se encontró la identidad OAuth");
+    }
+    await this.userAuthProviderRepository.save(updated);
   }
 
   async listProviders(userId: string): Promise<AuthProvider[]> {

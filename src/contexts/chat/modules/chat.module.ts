@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
+import { UserBlocksModule } from "@/src/contexts/user-blocks/user-blocks.module";
 import { FileModule } from "@/src/contexts/shared/file/file.module";
 import { TicketEntity } from "@/src/contexts/support/entities/ticket.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
@@ -54,6 +55,7 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
   ],
   imports: [
     ProfileModule,
+    forwardRef(() => UserBlocksModule),
     FileModule,
     forwardRef(() => AlertsModule),
     forwardRef(() => VehiclesModule),

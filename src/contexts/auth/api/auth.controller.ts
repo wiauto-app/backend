@@ -179,6 +179,13 @@ export class AuthController {
   async appleMobile(@Body() dto: AppleMobileDto, @Req() req: Request) {
     const profile = await this.appleTokenService.verifyIdentityToken(dto.identity_token);
     const data = await this.authService.signInWithOAuthProfile(profile, req);
+    if (dto.authorization_code) {
+      await this.appleTokenService.exchangeAndPersistRefreshToken({
+        authorization_code: dto.authorization_code,
+        identity_token: dto.identity_token,
+        provider_id: profile.provider_id,
+      });
+    }
     return data;
   }
 

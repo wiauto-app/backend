@@ -66,4 +66,8 @@ export class SessionService {
   async delete(id: string): Promise<void> {
     await this.session_repository.delete(id);
   }
+
+  async deleteAllByUserId(user_id: string): Promise<void> {
+    await this.session_repository.delete({ user_id });
+  }
 }

@@ -4,6 +4,7 @@ import { Repository } from "typeorm";
 import { ChatParticipantState } from "../types/chatParticipantState";
 import { ChatParticipantStateEntity } from "../entities/chat-participant-state.orm.entity";
 import { ChatEntity } from "../entities/chat.entity";
+import { CHAT_TYPE } from "../types/chat";
 
 export class TypeOrmChatParticipantStateRepository {
   constructor(
@@ -84,12 +85,32 @@ export class TypeOrmChatParticipantStateRepository {
     await this.save(state);
   }
 
-  async getUnreadTotal(user_id: string): Promise<number> {
-    const result = await this.state_repository
+  async getUnreadTotal(
+    user_id: string,
+    excluded_profile_ids: string[] = [],
+  ): Promise<number> {
+    const qb = this.state_repository
       .createQueryBuilder("state")
+      .innerJoin(ChatEntity, "chat", "chat.id = state.chat_id")
       .select("COALESCE(SUM(state.unread_count), 0)", "total")
-      .where("state.user_id = :user_id", { user_id })
-      .getRawOne<{ total: string }>();
+      .where("state.user_id = :user_id", { user_id });
+
+    if (excluded_profile_ids.length > 0) {
+      qb.andWhere(
+        `(chat.chat_type = :support_type_for_blocks OR NOT EXISTS (
+          SELECT 1
+          FROM jsonb_array_elements_text(chat.participants) AS other(id)
+          WHERE other.id <> :user_id
+          AND other.id IN (:...excluded_profile_ids)
+        ))`,
+        {
+          support_type_for_blocks: CHAT_TYPE.SUPPORT,
+          excluded_profile_ids,
+        },
+      );
+    }
+
+    const result = await qb.getRawOne<{ total: string }>();
     return Number(result?.total ?? 0);
   }
 

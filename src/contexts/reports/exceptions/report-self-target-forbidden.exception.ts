@@ -2,6 +2,6 @@ import { ValidationException } from "@/src/contexts/shared/exceptions/validation
 
 export class ReportSelfTargetForbiddenException extends ValidationException {
   constructor() {
-    super("No puedes denunciar tu propio perfil");
+    super("No puedes denunciar tu propio contenido");
   }
 }

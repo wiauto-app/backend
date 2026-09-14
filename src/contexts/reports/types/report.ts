@@ -24,6 +24,9 @@ export interface PrimitiveReport {
   target_profile_id: string | null;
   target_dealership_id: string | null;
   target_vehicle_id: string | null;
+  target_chat_message_id: string | null;
+  target_assistant_conversation_id: string | null;
+  target_assistant_message_id: string | null;
   admin_notes: string | null;
   created_at: Date;
   updated_at: Date;
@@ -40,6 +43,7 @@ export class Report {
     reporter_profile_id: string;
     target_type: ReportTargetType;
     target_id: string;
+    target_assistant_message_id?: string | null;
   }): Report {
     const target_profile_id =
       payload.target_type === ReportTargetType.PROFILE ? payload.target_id : null;
@@ -49,6 +53,18 @@ export class Report {
         : null;
     const target_vehicle_id =
       payload.target_type === ReportTargetType.VEHICLE ? payload.target_id : null;
+    const target_chat_message_id =
+      payload.target_type === ReportTargetType.CHAT_MESSAGE
+        ? payload.target_id
+        : null;
+    const target_assistant_conversation_id =
+      payload.target_type === ReportTargetType.ASSISTANT_MESSAGE
+        ? payload.target_id
+        : null;
+    const target_assistant_message_id =
+      payload.target_type === ReportTargetType.ASSISTANT_MESSAGE
+        ? (payload.target_assistant_message_id ?? null)
+        : null;
 
     return new Report({
       id: uuidv4(),
@@ -61,6 +77,9 @@ export class Report {
       target_profile_id,
       target_dealership_id,
       target_vehicle_id,
+      target_chat_message_id,
+      target_assistant_conversation_id,
+      target_assistant_message_id,
       status: ReportStatus.OPEN,
       admin_notes: null,
       created_at: new Date(),

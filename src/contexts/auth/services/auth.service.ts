@@ -123,6 +123,10 @@ export class AuthService {
     await this.sessionService.delete(session_id);
   }
 
+  async logoutAllForUser(user_id: string): Promise<void> {
+    await this.sessionService.deleteAllByUserId(user_id);
+  }
+
   async refreshToken(hashedToken: string): Promise<SignInResult> {
     const refreshToken = await this.refreshTokenService.findByTokenHash(hashedToken);
     const accessToken = this.createToken({

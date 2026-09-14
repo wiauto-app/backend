@@ -19,6 +19,7 @@ export interface ReportListItem {
   target_type: ReportTargetType;
   target_id: string;
   target_label: string;
+  target_assistant_message_id: string | null;
   reporter_profile_id: string;
   reporter_label: string;
   implicated_profile_id: string | null;

@@ -10,6 +10,7 @@ import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.e
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { User } from "@/src/contexts/users/entities/user.entity";
+import { UserBlocksService } from "@/src/contexts/user-blocks/services/user-blocks.service";
 
 import { ChatNotFoundException } from "../exceptions/chat-not-found.exception";
 import { ChatMessageNotFoundException } from "../exceptions/chat-message-not-found.exception";
@@ -38,6 +39,7 @@ export class ChatMessageService {
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly alert_processing_enqueue_service: AlertProcessingEnqueueService,
     private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
+    private readonly user_blocks_service: UserBlocksService,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
   ) {}
@@ -50,6 +52,12 @@ export class ChatMessageService {
     );
     if (!chat) {
       throw new ChatNotFoundException(create_chat_message_dto.chat_id);
+    }
+
+    if (chat.chat_type !== CHAT_TYPE.SUPPORT && !chat.ticket_id) {
+      await this.user_blocks_service.assertParticipantsNotBlocked(
+        chat.participants,
+      );
     }
 
     const chat_message = ChatMessage.create({

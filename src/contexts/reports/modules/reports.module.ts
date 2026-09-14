@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { AssistantConversationEntity } from "@/src/contexts/assistant/entities/assistant-conversation.entity";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
+import { ChatMessageEntity } from "@/src/contexts/chat/entities/chat-message.orm.entity";
 import { DealershipModule } from "@/src/contexts/dealership/dealership.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
@@ -21,7 +23,11 @@ import { ReportCategoriesModule } from "./report-categories.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReportEntity]),
+    TypeOrmModule.forFeature([
+      ReportEntity,
+      ChatMessageEntity,
+      AssistantConversationEntity,
+    ]),
     ReportCategoriesModule,
     AuthModule,
     ProfileModule,

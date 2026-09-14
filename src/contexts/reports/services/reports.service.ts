@@ -1,11 +1,17 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Repository } from "typeorm";
+
+import { AssistantConversationEntity } from "@/src/contexts/assistant/entities/assistant-conversation.entity";
+import { ChatMessageEntity } from "@/src/contexts/chat/entities/chat-message.orm.entity";
 import { TypeOrmDealershipRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 
 import { Report, ReportStatus } from "../types/report";
 import { ReportTargetType } from "../types/report-category";
+import { ReportAssistantMessageRequiredException } from "../exceptions/report-assistant-message-required.exception";
 import { ReportCategoryNotFoundException } from "../exceptions/report-category-not-found.exception";
 import { ReportCategoryTargetMismatchException } from "../exceptions/report-category-target-mismatch.exception";
 import { ReportForbiddenException } from "../exceptions/report-forbidden.exception";
@@ -28,6 +34,7 @@ export interface CreateReportInput {
   file_url?: string | null;
   target_type: ReportTargetType;
   target_id: string;
+  target_assistant_message_id?: string | null;
 }
 
 export interface AdminUpdateReportInput {
@@ -49,6 +56,10 @@ export class ReportsService {
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly dealership_repository: TypeOrmDealershipRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
+    @InjectRepository(ChatMessageEntity)
+    private readonly chat_message_repository: Repository<ChatMessageEntity>,
+    @InjectRepository(AssistantConversationEntity)
+    private readonly assistant_conversation_repository: Repository<AssistantConversationEntity>,
   ) {}
 
   async create(input: CreateReportInput): Promise<ReportListItem> {
@@ -63,7 +74,7 @@ export class ReportsService {
       throw new ReportCategoryTargetMismatchException();
     }
 
-    await this.validateTargetExists(input.target_type, input.target_id);
+    await this.validateTargetExists(input);
 
     if (
       input.target_type === ReportTargetType.PROFILE &&
@@ -80,6 +91,7 @@ export class ReportsService {
       reporter_profile_id: input.reporter_profile_id,
       target_type: input.target_type,
       target_id: input.target_id,
+      target_assistant_message_id: input.target_assistant_message_id,
     });
     await this.report_repository.save(report);
 
@@ -144,6 +156,18 @@ export class ReportsService {
         existing.target_type === ReportTargetType.VEHICLE
           ? existing.target_id
           : null,
+      target_chat_message_id:
+        existing.target_type === ReportTargetType.CHAT_MESSAGE
+          ? existing.target_id
+          : null,
+      target_assistant_conversation_id:
+        existing.target_type === ReportTargetType.ASSISTANT_MESSAGE
+          ? existing.target_id
+          : null,
+      target_assistant_message_id:
+        existing.target_type === ReportTargetType.ASSISTANT_MESSAGE
+          ? existing.target_assistant_message_id
+          : null,
       admin_notes: existing.admin_notes,
       created_at: existing.created_at,
       updated_at: existing.updated_at,
@@ -171,29 +195,66 @@ export class ReportsService {
     await this.report_repository.delete(report_id);
   }
 
-  private async validateTargetExists(
-    target_type: ReportTargetType,
-    target_id: string,
-  ): Promise<void> {
-    switch (target_type) {
+  private async validateTargetExists(input: CreateReportInput): Promise<void> {
+    switch (input.target_type) {
       case ReportTargetType.PROFILE: {
-        const profile = await this.profile_repository.findOne(target_id);
+        const profile = await this.profile_repository.findOne(input.target_id);
         if (!profile) {
-          throw new ReportTargetNotFoundException(target_type, target_id);
+          throw new ReportTargetNotFoundException(input.target_type, input.target_id);
         }
         return;
       }
       case ReportTargetType.DEALERSHIP: {
-        const dealership = await this.dealership_repository.findOne(target_id);
+        const dealership = await this.dealership_repository.findOne(input.target_id);
         if (!dealership) {
-          throw new ReportTargetNotFoundException(target_type, target_id);
+          throw new ReportTargetNotFoundException(input.target_type, input.target_id);
         }
         return;
       }
       case ReportTargetType.VEHICLE: {
-        const vehicle = await this.vehicle_repository.findOne(target_id);
+        const vehicle = await this.vehicle_repository.findOne(input.target_id);
         if (!vehicle) {
-          throw new ReportTargetNotFoundException(target_type, target_id);
+          throw new ReportTargetNotFoundException(input.target_type, input.target_id);
+        }
+        return;
+      }
+      case ReportTargetType.CHAT_MESSAGE: {
+        const message = await this.chat_message_repository.findOne({
+          where: { id: input.target_id, deleted_at: IsNull() },
+          relations: ["chat"],
+        });
+        if (!message?.chat) {
+          throw new ReportTargetNotFoundException(input.target_type, input.target_id);
+        }
+        if (message.sender_id === input.reporter_profile_id) {
+          throw new ReportSelfTargetForbiddenException();
+        }
+        if (!message.chat.participants.includes(input.reporter_profile_id)) {
+          throw new ReportForbiddenException();
+        }
+        return;
+      }
+      case ReportTargetType.ASSISTANT_MESSAGE: {
+        if (!input.target_assistant_message_id?.trim()) {
+          throw new ReportAssistantMessageRequiredException();
+        }
+        const conversation = await this.assistant_conversation_repository.findOne({
+          where: { id: input.target_id },
+        });
+        if (!conversation) {
+          throw new ReportTargetNotFoundException(input.target_type, input.target_id);
+        }
+        if (conversation.user_id !== input.reporter_profile_id) {
+          throw new ReportForbiddenException();
+        }
+        const has_message = conversation.messages.some(
+          (message) => message.id === input.target_assistant_message_id,
+        );
+        if (!has_message) {
+          throw new ReportTargetNotFoundException(
+            input.target_type,
+            input.target_assistant_message_id,
+          );
         }
         return;
       }

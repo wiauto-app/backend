@@ -29,6 +29,10 @@ const resolve_target_id = (row: ReportEntity): string => {
       return row.target_dealership_id ?? "";
     case ReportTargetType.VEHICLE:
       return row.target_vehicle_id ?? "";
+    case ReportTargetType.CHAT_MESSAGE:
+      return row.target_chat_message_id ?? "";
+    case ReportTargetType.ASSISTANT_MESSAGE:
+      return row.target_assistant_conversation_id ?? "";
   }
 };
 
@@ -47,6 +51,15 @@ const resolve_target_label = (row: ReportEntity): string => {
         model_name: row.target_vehicle.version.model?.name,
         version_name: row.target_vehicle.version.name,
       });
+    case ReportTargetType.CHAT_MESSAGE: {
+      const content = row.target_chat_message?.content?.trim() ?? "";
+      if (!content) {
+        return "Mensaje de chat";
+      }
+      return content.length > 80 ? `${content.slice(0, 77)}...` : content;
+    }
+    case ReportTargetType.ASSISTANT_MESSAGE:
+      return row.target_assistant_conversation?.title || "Respuesta del asistente";
   }
 };
 
@@ -61,6 +74,10 @@ const resolve_implicated_profile_id = (
       return row.target_vehicle?.profile?.id ?? null;
     case ReportTargetType.DEALERSHIP:
       return (raw.implicated_dealership_profile_id as string | undefined) ?? null;
+    case ReportTargetType.CHAT_MESSAGE:
+      return row.target_chat_message?.sender_id ?? null;
+    case ReportTargetType.ASSISTANT_MESSAGE:
+      return null;
   }
 };
 
@@ -75,6 +92,10 @@ const resolve_implicated_label = (
       return row.target_vehicle?.profile?.name ?? null;
     case ReportTargetType.DEALERSHIP:
       return (raw.implicated_dealership_profile_name as string | undefined) ?? null;
+    case ReportTargetType.CHAT_MESSAGE:
+      return row.target_chat_message?.sender_id ?? null;
+    case ReportTargetType.ASSISTANT_MESSAGE:
+      return null;
   }
 };
 
@@ -89,6 +110,9 @@ const resolve_implicated_is_suspended = (
       return row.target_vehicle?.profile?.user?.is_suspended ?? false;
     case ReportTargetType.DEALERSHIP:
       return Boolean(raw.implicated_dealership_profile_user_is_suspended);
+    case ReportTargetType.CHAT_MESSAGE:
+    case ReportTargetType.ASSISTANT_MESSAGE:
+      return false;
   }
 };
 
@@ -111,6 +135,7 @@ const entity_to_list_item = (
   target_type: row.target_type,
   target_id: resolve_target_id(row),
   target_label: resolve_target_label(row),
+  target_assistant_message_id: row.target_assistant_message_id,
   reporter_profile_id: row.reporter_profile_id,
   reporter_label: row.reporter_profile?.name ?? "",
   implicated_profile_id: resolve_implicated_profile_id(row, raw),
@@ -151,6 +176,11 @@ export class TypeOrmReportRepository {
       .leftJoinAndSelect("target_vehicle_version.model", "target_vehicle_model")
       .leftJoinAndSelect("target_vehicle.profile", "target_vehicle_profile")
       .leftJoinAndSelect("target_vehicle_profile.user", "target_vehicle_profile_user")
+      .leftJoinAndSelect("report.target_chat_message", "target_chat_message")
+      .leftJoinAndSelect(
+        "report.target_assistant_conversation",
+        "target_assistant_conversation",
+      )
       .leftJoin(
         DealershipMembersEntity,
         "implicated_dealership_member",
@@ -250,6 +280,9 @@ export class TypeOrmReportRepository {
         target_profile_id: primitive.target_profile_id,
         target_dealership_id: primitive.target_dealership_id,
         target_vehicle_id: primitive.target_vehicle_id,
+        target_chat_message_id: primitive.target_chat_message_id,
+        target_assistant_conversation_id: primitive.target_assistant_conversation_id,
+        target_assistant_message_id: primitive.target_assistant_message_id,
         admin_notes: primitive.admin_notes,
         created_at: primitive.created_at,
         updated_at: primitive.updated_at,
