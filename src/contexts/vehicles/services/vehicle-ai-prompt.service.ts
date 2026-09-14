@@ -208,6 +208,7 @@ ${optional_lines}
         schema: aiPriceRecommendationSchema,
       }),
       prompt: this.buildAiPriceFallbackPrompt(labels),
+      reasoning:"low"
     });
 
     return output;
@@ -220,6 +221,7 @@ ${optional_lines}
     const { text } = await generateText({
       model: this.model,
       prompt: this.buildPriceRecommendationPrompt(labels, stats),
+      reasoning:"low"
     });
 
     return text.trim();
@@ -232,6 +234,7 @@ ${optional_lines}
     const { text } = await generateText({
       model: this.model,
       prompt: this.buildDescriptionPrompt(labels, settings),
+      reasoning:"low"
     });
 
     return text.trim();
