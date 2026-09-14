@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import { generateText, Output } from "ai";
-import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -26,6 +25,13 @@ export interface AiPriceRecommendationResult {
 
 @Injectable()
 export class VehicleAiPromptService {
+  private readonly openai = createOpenAI({
+    apiKey: envs.OPENAI_API_KEY,
+  });
+
+  private get model() {
+    return this.openai(envs.OPENAI_MODEL);
+  }
   buildPriceRecommendationPrompt(
     labels: ResolvedVehicleAiLabels,
     stats: VehicleMarketStatsResult,
@@ -196,12 +202,8 @@ ${optional_lines}
   async generateAiPriceRecommendation(
     labels: ResolvedVehicleAiLabels,
   ): Promise<AiPriceRecommendationResult> {
-    const deepseek = createDeepSeek({
-      apiKey: envs.DEEPSEEK_API_KEY,
-    });
-
     const { output } = await generateText({
-      model: deepseek(envs.DEEPSEEK_MODEL),
+      model: this.model,
       output: Output.object({
         schema: aiPriceRecommendationSchema,
       }),
@@ -215,12 +217,8 @@ ${optional_lines}
     labels: ResolvedVehicleAiLabels,
     stats: VehicleMarketStatsResult,
   ): Promise<string> {
-    const deepseek = createDeepSeek({
-      apiKey: envs.DEEPSEEK_API_KEY,
-    });
-
     const { text } = await generateText({
-      model: deepseek(envs.DEEPSEEK_MODEL),
+      model: this.model,
       prompt: this.buildPriceRecommendationPrompt(labels, stats),
     });
 
@@ -231,12 +229,8 @@ ${optional_lines}
     labels: ResolvedVehicleAiLabels,
     settings?: GenerationSettingsDto,
   ): Promise<string> {
-    const openai = createOpenAI({
-      apiKey: envs.OPENAI_API_KEY,
-    });
-
     const { text } = await generateText({
-      model: openai(envs.OPENAI_MODEL),
+      model: this.model,
       prompt: this.buildDescriptionPrompt(labels, settings),
     });
 
