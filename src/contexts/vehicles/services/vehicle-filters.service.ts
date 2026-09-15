@@ -125,7 +125,6 @@ export class VehicleFiltersService {
     const resolved = await this.typeormActiveFilters.resolveResolved(
       find_active_filters_dto,
     );
-
     return {
       resolved,
       applied: mapActiveFiltersApplied(find_active_filters_dto),

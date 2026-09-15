@@ -16,7 +16,7 @@ import {
 
 const PUBLISHER_TYPE_MAP: Record<PublisherType, string> = {
   [PUBLISHER_TYPE.PARTICULAR]: "particulares",
-  [PUBLISHER_TYPE.DEALERSHIP]: "concesionarias",
+  [PUBLISHER_TYPE.DEALERSHIP]: "concesionarios",
 };
 
 const TRANSMISSION_TYPE_MAP: Record<TransmissionType, string> = {
