@@ -8,12 +8,16 @@ export type PublicListingOrderBy =
   | "mileage"
   | "views";
 
-const PUBLIC_LISTING_ORDER_FIELDS = new Set<PublicListingOrderBy>([
+export const PUBLIC_LISTING_ORDER_BY_VALUES = [
   "created_at",
   "price",
   "mileage",
   "views",
-]);
+] as const satisfies readonly PublicListingOrderBy[];
+
+const PUBLIC_LISTING_ORDER_FIELDS = new Set<PublicListingOrderBy>(
+  PUBLIC_LISTING_ORDER_BY_VALUES,
+);
 
 export const resolve_public_listing_order_by = (
   order_by?: string,

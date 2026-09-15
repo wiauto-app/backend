@@ -12,15 +12,32 @@ import {
   OptionalQueryStringArray,
 } from "@/src/contexts/vehicles/validators/filter.validator";
 import {
+  PUBLIC_LISTING_ORDER_BY_VALUES,
+  type PublicListingOrderBy,
+} from "@/src/contexts/vehicles/validators/vehicle-listing-order.utils";
+import {
   IsBoolean,
+  IsEnum,
   IsIn,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class FindAllVehiclesHttpDto extends PaginationHttpDto {
+  @IsOptional()
+  @IsIn([...PUBLIC_LISTING_ORDER_BY_VALUES])
+  override order_by: PublicListingOrderBy = "created_at";
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.toUpperCase() : value,
+  )
+  @IsEnum(["ASC", "DESC"])
+  override order_direction: "ASC" | "DESC" = "DESC";
+
   @IsOptional()
   @IsString()
   type_slug: string;

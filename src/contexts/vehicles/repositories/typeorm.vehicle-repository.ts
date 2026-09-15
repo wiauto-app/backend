@@ -878,22 +878,22 @@ export class TypeOrmVehicleRepository {
 
     applyFilters(qb, { ...filter, makes_slugs, models_slugs }, apply_filters_options);
 
+    const order_field = order_by ?? "created_at";
+    apply_public_listing_order(qb, order_field, order_direction);
+
     const count_qb = qb.clone();
     (
       count_qb as unknown as { expressionMap: { orderBys: unknown[] } }
     ).expressionMap.orderBys = [];
     count_qb.select("COUNT(DISTINCT vehicle.id)", "cnt");
+
+    qb.skip(skip).take(limit);
+
     const [count_row, rows] = await Promise.all([
       count_qb.getRawOne<{ cnt: string }>(),
       qb.getMany(),
     ]);
     const total_count = Number(count_row?.cnt ?? 0);
-
-    const order_field = order_by ?? "created_at";
-
-    apply_public_listing_order(qb, order_field, order_direction);
-
-    qb.skip(skip).take(limit);
     const vehicles = rows.map((row) => entity_to_list_item(row));
     return new PaginatedResult(vehicles, total_count, filter.page, filter.limit);
   }
