@@ -93,7 +93,7 @@ export class VehicleFiltersService {
       }),
       this.features_service.findAll({
         page: 1,
-        limit: 100,
+        limit: 200,
         order_by: "name",
         order_direction: "ASC",
         skip: 0,

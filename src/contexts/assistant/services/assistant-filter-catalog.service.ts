@@ -160,6 +160,7 @@ export class AssistantFilterCatalogService {
       id: item.id,
       slug: item.slug,
       name: item.name,
+      category: item.category,
     }));
   }
 

@@ -1,4 +1,3 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import {
   Body,
   Controller,
@@ -13,6 +12,7 @@ import {
 import { FeaturesService } from "../../services/features.service";
 import { V1_FEATURES } from "../route.constants";
 import { CreateFeatureHttpDto } from "./create-feature/create-feature.http-dto";
+import { FindFeaturesHttpDto } from "./find-features/find-features.dto";
 import { UpdateFeatureHttpDto } from "./update-feature/update-feature.dto";
 
 @Controller(V1_FEATURES)
@@ -30,7 +30,7 @@ export class FeaturesController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindFeaturesHttpDto) {
     return this.features_service.findAll(query);
   }
 

@@ -12,6 +12,9 @@ export class FeaturesEntity {
   @Column()
   slug: string;
 
+  @Column({ type: "varchar", length: 64 })
+  category: string;
+
   @CreateDateColumn()
   created_at: Date;
 

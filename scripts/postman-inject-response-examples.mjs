@@ -153,6 +153,7 @@ const feature_obj = {
   id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
   name: "Aire acondicionado",
   slug: "aire-acondicionado",
+  category: "confort",
   created_at: iso,
   updated_at: iso,
 };

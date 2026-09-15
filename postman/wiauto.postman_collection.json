@@ -4447,10 +4447,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Aire acondicionado\"\n}"
+                  "raw": "{\n  \"name\": \"Aire acondicionado\",\n  \"category\": \"confort\"\n}"
                 },
                 "url": "{{base_url}}/v1/features",
-                "description": "Respuesta incluye `slug` generado a partir de `name` (slugify: minúsculas, guiones)."
+                "description": "Body: `name` y `category` (slug de categoría). Respuesta incluye `slug` (slugify de `name`) y `category`."
               },
               "response": [
                 {
@@ -4466,9 +4466,9 @@
                     "url": "{{base_url}}/v1/features",
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"name\": \"Aire acondicionado\"\n}"
+                      "raw": "{\n  \"name\": \"Aire acondicionado\",\n  \"category\": \"confort\"\n}"
                     },
-                    "description": "Respuesta incluye `slug` generado a partir de `name` (slugify: minúsculas, guiones)."
+                    "description": "Body: `name` y `category` (slug de categoría). Respuesta incluye `slug` (slugify de `name`) y `category`."
                   },
                   "status": "Created",
                   "code": 201,
@@ -4479,7 +4479,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"name\": \"Aire acondicionado\",\n  \"slug\": \"aire-acondicionado\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\",\n  \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n}"
+                  "body": "{\n  \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"name\": \"Aire acondicionado\",\n  \"slug\": \"aire-acondicionado\",\n  \"category\": \"confort\",\n  \"created_at\": \"2026-04-29T14:30:00.000Z\",\n  \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n}"
                 }
               ]
             },
@@ -4488,7 +4488,7 @@
               "request": {
                 "method": "GET",
                 "header": [],
-                "url": "{{base_url}}/v1/features?page=1&limit=20"
+                "url": "{{base_url}}/v1/features?page=1&limit=200"
               },
               "response": [
                 {
@@ -4496,7 +4496,7 @@
                   "originalRequest": {
                     "method": "GET",
                     "header": [],
-                    "url": "{{base_url}}/v1/features?page=1&limit=20"
+                    "url": "{{base_url}}/v1/features?page=1&limit=200"
                   },
                   "status": "OK",
                   "code": 200,
@@ -4507,7 +4507,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"features\": [\n    {\n      \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n      \"name\": \"Aire acondicionado\",\n      \"slug\": \"aire-acondicionado\",\n      \"created_at\": \"2026-04-29T14:30:00.000Z\",\n      \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n    }\n  ]\n}"
+                  "body": "{\n  \"features\": [\n    {\n      \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n      \"name\": \"Aire acondicionado\",\n      \"slug\": \"aire-acondicionado\",\n      \"category\": \"confort\",\n      \"created_at\": \"2026-04-29T14:30:00.000Z\",\n      \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n    }\n  ]\n}"
                 }
               ]
             },
@@ -4535,7 +4535,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"feature\": {\n    \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"name\": \"Aire acondicionado\",\n    \"slug\": \"aire-acondicionado\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n}"
+                  "body": "{\n  \"feature\": {\n    \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"name\": \"Aire acondicionado\",\n    \"slug\": \"aire-acondicionado\",\n    \"category\": \"confort\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n}"
                 }
               ]
             },
@@ -4551,10 +4551,10 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"id\": \"{{feature_id}}\",\n  \"name\": \"Nombre actualizado\"\n}"
+                  "raw": "{\n  \"id\": \"{{feature_id}}\",\n  \"name\": \"Nombre actualizado\",\n  \"category\": \"confort\"\n}"
                 },
                 "url": "{{base_url}}/v1/features",
-                "description": "El id va en el body, no en la URL. Respuesta: `{ \"feature\": { \"id\", \"name\", \"slug\", ... } }`; el `slug` se recalcula al cambiar el nombre."
+                "description": "El id va en el body, no en la URL. Body: `name` y `category` opcional. Respuesta incluye `slug` (se recalcula al cambiar el nombre) y `category`."
               },
               "response": [
                 {
@@ -4570,9 +4570,9 @@
                     "url": "{{base_url}}/v1/features",
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"id\": \"{{feature_id}}\",\n  \"name\": \"Nombre actualizado\"\n}"
+                      "raw": "{\n  \"id\": \"{{feature_id}}\",\n  \"name\": \"Nombre actualizado\",\n  \"category\": \"confort\"\n}"
                     },
-                    "description": "El id va en el body, no en la URL. Respuesta: `{ \"feature\": { \"id\", \"name\", \"slug\", ... } }`; el `slug` se recalcula al cambiar el nombre."
+                    "description": "El id va en el body, no en la URL. Body: `name` y `category` opcional. Respuesta incluye `slug` (se recalcula al cambiar el nombre) y `category`."
                   },
                   "status": "OK",
                   "code": 200,
@@ -4583,7 +4583,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"feature\": {\n    \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"name\": \"Climatizador bizona\",\n    \"slug\": \"climatizador-bizona\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n}"
+                  "body": "{\n  \"feature\": {\n    \"id\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n    \"name\": \"Climatizador bizona\",\n    \"slug\": \"climatizador-bizona\",\n    \"category\": \"confort\",\n    \"created_at\": \"2026-04-29T14:30:00.000Z\",\n    \"updated_at\": \"2026-04-29T14:30:00.000Z\"\n  }\n}"
                 }
               ]
             },

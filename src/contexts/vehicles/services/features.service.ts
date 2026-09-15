@@ -4,29 +4,32 @@ import { Repository } from "typeorm";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 import { PrimitiveFeature } from "@/src/contexts/vehicles/types/features";
 import { FeatureNotFoundException } from "@/src/contexts/vehicles/exceptions/feature-not-found.exception";
 import { FeaturesEntity } from "@/src/contexts/vehicles/entities/features.entity";
+import { FindFeaturesHttpDto } from "@/src/contexts/vehicles/api/feature-v1/find-features/find-features.dto";
 
 const FEATURE_SORT_KEYS = new Set([
   "id",
   "name",
   "slug",
+  "category",
   "created_at",
   "updated_at",
 ]);
 
 export interface CreateFeatureInput {
   name: string;
+  category: string;
 }
 
 export interface UpdateFeatureInput {
   id: string;
   name: string;
+  category?: string;
 }
 
 @Injectable()
@@ -42,6 +45,7 @@ export class FeaturesService {
       id: uuidv4(),
       name,
       slug: slugify(name),
+      category: input.category,
     });
     const saved = await this.feature_repository.save(row);
     return this.toPrimitive(saved);
@@ -60,6 +64,7 @@ export class FeaturesService {
       id: input.id,
       name: next_name,
       slug: slugify(next_name),
+      category: input.category ?? existing.category,
     });
     if (!row) {
       throw new FeatureNotFoundException(input.id);
@@ -70,7 +75,7 @@ export class FeaturesService {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindFeaturesHttpDto,
   ): Promise<PaginatedResult<PrimitiveFeature>> {
     const filter = new CatalogPaginationFilter({ ...query });
     return runPaginatedTypeormFind({
@@ -107,6 +112,7 @@ export class FeaturesService {
       id: row.id,
       name: row.name,
       slug: row.slug,
+      category: row.category,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };
