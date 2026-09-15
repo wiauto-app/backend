@@ -24,7 +24,10 @@ const entity_to_list_item = (row: TicketEntity): TicketListItem => ({
   file_url: row.file_url,
   status: row.status,
   profile_id: row.profile_id,
-  profile_label: row.profile?.name ?? "",
+  profile_label:
+    row.profile?.name ?? row.guest_name ?? row.guest_email ?? "Invitado",
+  guest_name: row.guest_name,
+  guest_email: row.guest_email,
   chat_id: row.chat?.id ?? null,
   created_at: row.created_at,
   updated_at: row.updated_at,
@@ -53,7 +56,7 @@ export class TypeOrmTicketRepository {
       .where("ticket.id = :id", { id })
       .getOne();
 
-    if (!row || !row.category) {
+    if (!row) {
       return null;
     }
 
@@ -82,7 +85,7 @@ export class TypeOrmTicketRepository {
     }
     if (filter.query?.trim()) {
       qb.andWhere(
-        "(ticket.title ILIKE :query OR ticket.description ILIKE :query)",
+        "(ticket.title ILIKE :query OR ticket.description ILIKE :query OR ticket.guest_name ILIKE :query OR ticket.guest_email ILIKE :query)",
         { query: `%${filter.query.trim()}%` },
       );
     }
@@ -91,7 +94,7 @@ export class TypeOrmTicketRepository {
       filter.order_by !== undefined && TICKET_SORT_KEYS.has(filter.order_by)
         ? filter.order_by
         : "created_at";
-    const direction = filter.order_direction ?? "DESC";
+    const direction = filter.order_direction;
     qb.orderBy(`ticket.${order_column}`, direction);
 
     const page = filter.page;
@@ -99,9 +102,7 @@ export class TypeOrmTicketRepository {
     qb.skip((page - 1) * limit).take(limit);
 
     const [rows, total] = await qb.getManyAndCount();
-    const data = rows
-      .filter((row) => row.category)
-      .map((row) => entity_to_list_item(row));
+    const data = rows.map((row) => entity_to_list_item(row));
 
     return new PaginatedResult(data, total, page, limit);
   }
@@ -117,6 +118,8 @@ export class TypeOrmTicketRepository {
         status: primitive.status,
         category_id: primitive.category.id,
         profile_id: primitive.profile_id,
+        guest_name: primitive.guest_name,
+        guest_email: primitive.guest_email,
         created_at: primitive.created_at,
         updated_at: primitive.updated_at,
       }),
@@ -140,6 +143,8 @@ export class TypeOrmTicketRepository {
       status: primitive.status,
       category_id: primitive.category.id,
       profile_id: primitive.profile_id,
+      guest_name: primitive.guest_name,
+      guest_email: primitive.guest_email,
     });
     if (!row) {
       throw new TicketNotFoundException(primitive.id);

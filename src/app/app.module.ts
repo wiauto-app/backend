@@ -94,6 +94,11 @@ import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
           limit: envs.AI_SEARCH_FILTERS_THROTTLE_LIMIT,
         },
         {
+          name: "support-tickets",
+          ttl: envs.SUPPORT_TICKETS_THROTTLE_TTL_MS,
+          limit: envs.SUPPORT_TICKETS_THROTTLE_LIMIT,
+        },
+        {
           name: "vehicle-identification",
           ttl: envs.VEHICLE_IDENTIFICATION_THROTTLE_TTL_MS,
           limit: envs.VEHICLE_IDENTIFICATION_THROTTLE_LIMIT,

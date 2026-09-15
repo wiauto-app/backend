@@ -93,6 +93,9 @@ const envsSchema = z.object({
   AI_SEARCH_FILTERS_THROTTLE_LIMIT: z.coerce.number().default(10),
   AI_SEARCH_FILTERS_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
 
+  SUPPORT_TICKETS_THROTTLE_LIMIT: z.coerce.number().default(5),
+  SUPPORT_TICKETS_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
+
   APIVEHICULO_API_KEY: z.string(),
   APIVEHICULO_BASE_URL: z
     .string(),

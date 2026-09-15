@@ -14,8 +14,10 @@ export interface TicketListItem {
   description: string;
   file_url: string | null;
   status: TicketStatus;
-  profile_id: string;
+  profile_id: string | null;
   profile_label: string;
+  guest_name: string | null;
+  guest_email: string | null;
   chat_id: string | null;
   created_at: Date;
   updated_at: Date;

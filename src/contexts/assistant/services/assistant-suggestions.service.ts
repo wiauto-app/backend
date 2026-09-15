@@ -24,7 +24,7 @@ const FALLBACK_SUGGESTIONS: Record<AssistantPageRoute, AssistantSuggestion[]> = 
     { label: "Automático y eficiente", prompt: "Busca vehículos automáticos, eficientes y con pocos kilómetros." },
     { label: "Analizar un anuncio", prompt: "Ayúdame a analizar si un anuncio de vehículo es una buena opción." },
   ],
-  "/concesionarias": [
+  "/concesionarios": [
     { label: "Concesionarias cercanas", prompt: "Busca concesionarias cerca de mi ubicación." },
     { label: "Mejor valoradas", prompt: "Enséñame concesionarias con buenas valoraciones." },
     { label: "Con más vehículos", prompt: "Quiero encontrar concesionarias con un inventario amplio de vehículos." },

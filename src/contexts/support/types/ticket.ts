@@ -17,7 +17,9 @@ export interface PrimitiveTicket {
   file_url: string | null;
   category: PrimitiveTicketCategory;
   status: TicketStatus;
-  profile_id: string;
+  profile_id: string | null;
+  guest_name: string | null;
+  guest_email: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -30,7 +32,9 @@ export class Ticket {
     description: string;
     file_url?: string | null;
     category: PrimitiveTicketCategory;
-    profile_id: string;
+    profile_id: string | null;
+    guest_name?: string | null;
+    guest_email?: string | null;
   }): Ticket {
     return new Ticket({
       id: uuidv4(),
@@ -39,6 +43,8 @@ export class Ticket {
       file_url: payload.file_url ?? null,
       category: payload.category,
       profile_id: payload.profile_id,
+      guest_name: payload.guest_name ?? null,
+      guest_email: payload.guest_email ?? null,
       status: TicketStatus.OPEN,
       created_at: new Date(),
       updated_at: new Date(),

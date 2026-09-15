@@ -18,7 +18,7 @@ export type AssistantSuggestion = z.infer<typeof suggestionSchema>;
 const CONTEXT_INSTRUCTIONS: Record<AssistantPageContext, string> = {
   home: "explicar qué es WiAuto, cómo buscar o vender un vehículo y cómo usar la plataforma",
   vehicles: "ayudar a buscar, comparar y evaluar vehículos usando criterios concretos",
-  dealerships: "descubrir concesionarias por ubicación, valoración, inventario o especialidad",
+  dealerships: "descubrir concesionarios por ubicación, valoración, inventario o especialidad",
   news: "descubrir noticias destacadas, novedades del motor y temas útiles para compradores",
 };
 

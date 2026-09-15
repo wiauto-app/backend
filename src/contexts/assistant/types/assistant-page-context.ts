@@ -1,7 +1,7 @@
 export const ASSISTANT_PAGE_ROUTES = [
   "/",
   "/vehiculos",
-  "/concesionarias",
+  "/concesionarios",
   "/noticias",
 ] as const;
 
@@ -19,7 +19,7 @@ export type AssistantPageContext = (typeof ASSISTANT_PAGE_CONTEXTS)[number];
 const CONTEXT_BY_ROUTE: Record<AssistantPageRoute, AssistantPageContext> = {
   "/": "home",
   "/vehiculos": "vehicles",
-  "/concesionarias": "dealerships",
+  "/concesionarios": "dealerships",
   "/noticias": "news",
 };
 

@@ -1,4 +1,5 @@
 import { InjectRepository } from "@nestjs/typeorm";
+import { BadRequestException } from "@nestjs/common";
 import { Repository } from "typeorm";
 
 import { NotificationChannelDispatcher } from "@/src/contexts/alerts/services/notification-channel-dispatcher.service";
@@ -20,11 +21,13 @@ import { TypeOrmTicketRepository } from "../repositories/typeorm.ticket-reposito
 import { TicketCategoriesService } from "./ticket-categories.service";
 
 export interface CreateTicketInput {
-  profile_id: string;
+  profile_id: string | null;
   category_id: string;
   title: string;
   description: string;
   file_url?: string | null;
+  guest_name?: string;
+  guest_email?: string;
 }
 
 export interface UpdateTicketInput {
@@ -67,10 +70,10 @@ export interface DeleteTicketInput {
   profile_id: string;
 }
 
-const USER_ALLOWED_STATUS: TicketStatus[] = [
+const USER_ALLOWED_STATUS = new Set<TicketStatus>([
   TicketStatus.CLOSED,
   TicketStatus.CANCELLED,
-];
+]);
 
 @Injectable()
 export class TicketsService {
@@ -85,6 +88,15 @@ export class TicketsService {
   ) {}
 
   async create(input: CreateTicketInput): Promise<TicketListItem> {
+    const guest_name = input.guest_name?.trim() ?? null;
+    const guest_email = input.guest_email?.trim().toLowerCase() ?? null;
+
+    if (!input.profile_id && (!guest_name || !guest_email)) {
+      throw new BadRequestException(
+        "El nombre y el correo son obligatorios para enviar un ticket sin cuenta",
+      );
+    }
+
     const category = await this.ticket_categories_service.findById(
       input.category_id,
     );
@@ -95,54 +107,73 @@ export class TicketsService {
     const ticket = Ticket.create({
       title: input.title,
       description: input.description,
-      file_url: input.file_url,
+      file_url: input.profile_id ? input.file_url : null,
       category,
       profile_id: input.profile_id,
+      guest_name: input.profile_id ? null : guest_name,
+      guest_email: input.profile_id ? null : guest_email,
     });
     await this.ticket_repository.save(ticket);
 
     const ticket_id = ticket.toPrimitives().id;
 
-    const chat = await this.chat_service.create({
-      participants: [input.profile_id],
-      chat_type: CHAT_TYPE.SUPPORT,
-      vehicle_id: null,
-      ticket_id,
-    });
+    let chat_id: string | null = null;
+    if (input.profile_id) {
+      const chat = await this.chat_service.create({
+        participants: [input.profile_id],
+        chat_type: CHAT_TYPE.SUPPORT,
+        vehicle_id: null,
+        ticket_id,
+      });
+      chat_id = chat.id;
 
-    const initial_content = [
-      `Ticket: ${input.title}`,
-      "",
-      input.description,
-    ].join("\n");
+      const initial_content = [
+        `Ticket: ${input.title}`,
+        "",
+        input.description,
+      ].join("\n");
 
-    await this.chat_message_service.create({
-      chat_id: chat.id,
-      sender_id: input.profile_id,
-      content: initial_content,
-      type: CHAT_MESSAGE_TYPE.TEXT,
-    });
-
-    if (input.file_url) {
-      const is_image = this.isImageUrl(input.file_url);
       await this.chat_message_service.create({
         chat_id: chat.id,
         sender_id: input.profile_id,
-        content: input.file_url,
-        type: is_image ? CHAT_MESSAGE_TYPE.IMAGE : CHAT_MESSAGE_TYPE.FILE,
-        metadata: {
-          file_name: input.file_url.split("/").pop() ?? "adjunto",
-        },
+        content: initial_content,
+        type: CHAT_MESSAGE_TYPE.TEXT,
       });
+
+      if (input.file_url) {
+        const is_image = this.isImageUrl(input.file_url);
+        await this.chat_message_service.create({
+          chat_id: chat.id,
+          sender_id: input.profile_id,
+          content: input.file_url,
+          type: is_image ? CHAT_MESSAGE_TYPE.IMAGE : CHAT_MESSAGE_TYPE.FILE,
+          metadata: {
+            file_name: input.file_url.split("/").pop() ?? "adjunto",
+          },
+        });
+      }
     }
 
     await this.notifyAdminsTicketCreated({
       ticket_id,
       title: input.title,
       description: input.description,
-      chat_id: chat.id,
+      chat_id,
       profile_id: input.profile_id,
+      guest_name,
+      guest_email,
     });
+
+    if (!input.profile_id && guest_email) {
+      await this.notification_channel_dispatcher.notify({
+        profile_id: null,
+        email_override: guest_email,
+        category: "support_ticket",
+        title: "Hemos recibido tu ticket",
+        body: `Tu consulta «${input.title}» fue enviada correctamente. El equipo de soporte se pondrá en contacto contigo por correo.`,
+        data: { ticket_id },
+      });
+    }
 
     const created = await this.ticket_repository.findOne(ticket_id);
     if (!created) {
@@ -162,7 +193,7 @@ export class TicketsService {
 
     if (
       input.status !== undefined &&
-      !USER_ALLOWED_STATUS.includes(input.status)
+      !USER_ALLOWED_STATUS.has(input.status)
     ) {
       throw new TicketForbiddenException();
     }
@@ -186,6 +217,12 @@ export class TicketsService {
 
     if (existing.chat_id) {
       return existing;
+    }
+
+    if (!existing.profile_id) {
+      throw new BadRequestException(
+        "Los tickets enviados por invitados no tienen un chat asociado",
+      );
     }
 
     const chat = await this.chat_service.create({
@@ -293,6 +330,8 @@ export class TicketsService {
       file_url: existing.file_url,
       status: existing.status,
       profile_id: existing.profile_id,
+      guest_name: existing.guest_name,
+      guest_email: existing.guest_email,
       created_at: existing.created_at,
       updated_at: existing.updated_at,
       category,
@@ -316,6 +355,9 @@ export class TicketsService {
     if (input.status && input.status !== previous_status) {
       await this.notification_channel_dispatcher.notify({
         profile_id: existing.profile_id,
+        email_override: existing.profile_id
+          ? undefined
+          : (existing.guest_email ?? undefined),
         category: "support_ticket",
         title: "Actualización de tu ticket",
         body: `El estado de «${result.title}» pasó a ${result.status}.`,
@@ -334,8 +376,10 @@ export class TicketsService {
     ticket_id: string;
     title: string;
     description: string;
-    chat_id: string;
-    profile_id: string;
+    chat_id: string | null;
+    profile_id: string | null;
+    guest_name: string | null;
+    guest_email: string | null;
   }): Promise<void> {
     const admins = await this.user_repository.find({
       where: { is_admin: true },
@@ -358,6 +402,8 @@ export class TicketsService {
             ticket_id: payload.ticket_id,
             chat_id: payload.chat_id,
             profile_id: payload.profile_id,
+            guest_name: payload.guest_name,
+            guest_email: payload.guest_email,
           },
         }),
       ),

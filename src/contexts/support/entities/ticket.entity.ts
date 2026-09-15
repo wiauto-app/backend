@@ -39,8 +39,14 @@ export class TicketEntity {
   @Column()
   category_id: string;
 
-  @Column()
-  profile_id: string;
+  @Column({ type: "uuid", nullable: true })
+  profile_id: string | null;
+
+  @Column({ type: "varchar", length: 120, nullable: true })
+  guest_name: string | null;
+
+  @Column({ type: "varchar", length: 254, nullable: true })
+  guest_email: string | null;
 
   @CreateDateColumn()
   created_at: Date;
@@ -54,11 +60,10 @@ export class TicketEntity {
   @JoinColumn({ name: "category_id" })
   category: Relation<TicketCategoryEntity>;
 
-  @ManyToOne(() => ProfileEntity, { onDelete: "CASCADE" })
+  @ManyToOne(() => ProfileEntity, { nullable: true, onDelete: "CASCADE" })
   @JoinColumn({ name: "profile_id" })
-  profile: Relation<ProfileEntity>;
+  profile: Relation<ProfileEntity> | null;
 
   @OneToOne(() => ChatEntity, (chat) => chat.ticket)
   chat: Relation<ChatEntity> | null;
 }
-
