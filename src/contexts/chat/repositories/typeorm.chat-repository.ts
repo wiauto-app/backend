@@ -133,16 +133,25 @@ export class TypeOrmChatRepository {
     participants_ids: string[],
     vehicle_id: string | null,
   ): Promise<ChatEntity | null> {
-    return this.chat_repository
+    const query = this.chat_repository
       .createQueryBuilder("chat")
       .where("chat.participants @> :participants", {
         participants: JSON.stringify(participants_ids),
       })
-      .andWhere("chat.vehicle_id = :vehicle_id", { vehicle_id })
+      .andWhere("jsonb_array_length(chat.participants) = :participant_count", {
+        participant_count: participants_ids.length,
+      })
       .andWhere("chat.chat_type != :support_type", {
         support_type: CHAT_TYPE.SUPPORT,
-      })
-      .getOne();
+      });
+
+    if (vehicle_id === null) {
+      query.andWhere("chat.vehicle_id IS NULL");
+    } else {
+      query.andWhere("chat.vehicle_id = :vehicle_id", { vehicle_id });
+    }
+
+    return query.getOne();
   }
 
   async delete(id: string): Promise<void> {
