@@ -24,14 +24,8 @@ const REQUIRED_FIELDS = [
   "traction_id",
 ] as const;
 
-const DESCRIPTION_CACHE_TTL_MS = 60 * 60 * 24 * 1000;
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_TTL_MS = 60 * 60 * 1000;
-
-interface DescriptionRateBucket {
-  count: number;
-  started_at: number;
-}
+/** Tiempo mínimo entre generaciones de descripción por usuario. */
+export const DESCRIPTION_RATE_LIMIT_COOLDOWN_MS = 10_000;
 
 @Injectable()
 export class GenerateVehicleDescriptionService {
@@ -45,115 +39,83 @@ export class GenerateVehicleDescriptionService {
     dto: GenerateVehicleDescriptionDto,
     userId: string,
   ): Promise<GenerateVehicleDescriptionResult> {
-    const cacheKey = `vehicle-description:${userId}:${dto.version_id}`;
-    const cachedDescription =
-      await this.cache_manager.get<GenerateVehicleDescriptionResult | string>(
-        cacheKey,
-      );
+    await this.assertWithinRateLimit(userId);
 
-    if (cachedDescription) {
-      if (typeof cachedDescription === "string") {
-        return { description: cachedDescription };
-      }
-      return cachedDescription;
-    }
-
-    await this.assert_within_rate_limit(userId);
-
-    this.validate_required_fields(dto);
+    this.validateRequiredFields(dto);
 
     const labels = await this.context_resolver.resolve(dto);
     const description = await this.prompt_service.generateDescription(
       labels,
       dto.settings,
     );
-    const result: GenerateVehicleDescriptionResult = { description };
 
-    await this.cache_manager.set(cacheKey, result, DESCRIPTION_CACHE_TTL_MS);
-    await this.increment_rate_limit(userId);
+    await this.markRateLimit(userId);
 
-    return result;
+    return { description };
   }
 
-  private async assert_within_rate_limit(userId: string): Promise<void> {
-    const bucket = await this.get_rate_bucket(userId);
-    if (!bucket) {
+  private async assertWithinRateLimit(userId: string): Promise<void> {
+    const cacheKey = this.rateLimitKey(userId);
+    const raw = await this.cache_manager.get<unknown>(cacheKey);
+    const lastGeneratedAt = this.parseTimestamp(raw);
+
+    if (lastGeneratedAt == null) {
+      if (raw != null) {
+        await this.cache_manager.del(cacheKey);
+      }
       return;
     }
 
-    if (bucket.count >= RATE_LIMIT_MAX) {
-      const retry_after_seconds = Math.max(
-        1,
-        Math.ceil(
-          (RATE_LIMIT_TTL_MS - (Date.now() - bucket.started_at)) / 1000,
-        ),
-      );
-
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message:
-            "Has alcanzado el límite de 3 generaciones de descripción por hora. Inténtalo más tarde.",
-          retryAfter: retry_after_seconds,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-  }
-
-  private async increment_rate_limit(userId: string): Promise<void> {
-    const rateKey = this.rate_limit_key(userId);
-    const now = Date.now();
-    const bucket = await this.get_rate_bucket(userId);
-
-    if (!bucket) {
-      await this.cache_manager.set(
-        rateKey,
-        { count: 1, started_at: now } satisfies DescriptionRateBucket,
-        RATE_LIMIT_TTL_MS,
-      );
+    const elapsedMs = Date.now() - lastGeneratedAt;
+    if (elapsedMs >= DESCRIPTION_RATE_LIMIT_COOLDOWN_MS) {
+      await this.cache_manager.del(cacheKey);
       return;
     }
 
-    const remaining_ttl = Math.max(
+    const retryAfterSeconds = Math.max(
       1,
-      RATE_LIMIT_TTL_MS - (now - bucket.started_at),
+      Math.ceil((DESCRIPTION_RATE_LIMIT_COOLDOWN_MS - elapsedMs) / 1000),
     );
 
-    await this.cache_manager.set(
-      rateKey,
+    throw new HttpException(
       {
-        count: bucket.count + 1,
-        started_at: bucket.started_at,
-      } satisfies DescriptionRateBucket,
-      remaining_ttl,
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        message: `Debes esperar ${retryAfterSeconds} s antes de generar otra descripción.`,
+        retryAfter: retryAfterSeconds,
+      },
+      HttpStatus.TOO_MANY_REQUESTS,
     );
   }
 
-  private async get_rate_bucket(
-    userId: string,
-  ): Promise<DescriptionRateBucket | null> {
-    const rateKey = this.rate_limit_key(userId);
-    const bucket =
-      await this.cache_manager.get<DescriptionRateBucket>(rateKey);
-
-    if (!bucket) {
-      return null;
-    }
-
-    if (Date.now() - bucket.started_at >= RATE_LIMIT_TTL_MS) {
-      await this.cache_manager.del(rateKey);
-      return null;
-    }
-
-    return bucket;
+  private async markRateLimit(userId: string): Promise<void> {
+    await this.cache_manager.set(
+      this.rateLimitKey(userId),
+      Date.now(),
+      DESCRIPTION_RATE_LIMIT_COOLDOWN_MS,
+    );
   }
 
-  private rate_limit_key(userId: string): string {
-    return `vehicle-description-rate:${userId}`;
+  /** Clave nueva: evita entradas antiguas `{ count, started_at }` en Redis. */
+  private rateLimitKey(userId: string): string {
+    return `vehicle-description-cooldown-v2:${userId}`;
   }
 
-  private validate_required_fields(dto: GenerateVehicleDescriptionDto): void {
+  private parseTimestamp(raw: unknown): number | null {
+    if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+      return raw;
+    }
+
+    if (typeof raw === "string" && raw.trim()) {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private validateRequiredFields(dto: GenerateVehicleDescriptionDto): void {
     const missing = REQUIRED_FIELDS.filter((field) => {
       const value = dto[field];
       if (field === "mileage" || field === "power" || field === "version_id") {

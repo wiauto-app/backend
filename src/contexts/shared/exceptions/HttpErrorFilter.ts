@@ -3,51 +3,52 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-} from '@nestjs/common';
-import { Response } from 'express';
+} from "@nestjs/common";
+import { FastifyReply } from "fastify";
 
 @Catch(HttpException)
-export class HttpErrorFilter
-  implements ExceptionFilter
-{
-  catch(
-    exception: HttpException,
-    host: ArgumentsHost,
-  ) {
+export class HttpErrorFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
+    const response = ctx.getResponse<FastifyReply>();
+    const status = exception.getStatus();
+    const exceptionResponse = exception.getResponse();
 
-    const response =
-      ctx.getResponse<Response>();
+    let message = "Error";
+    let retryAfter: number | undefined;
 
-    const status =
-      exception.getStatus();
-
-    const exceptionResponse =
-      exception.getResponse();
-
-    let message = 'Error';
-
-    if (
-      typeof exceptionResponse === 'string'
-    ) {
+    if (typeof exceptionResponse === "string") {
       message = exceptionResponse;
     }
 
-    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-      const raw_message = (exceptionResponse as Record<string, unknown>)
-        .message;
-      if (Array.isArray(raw_message)) {
-        message = raw_message.map(String).join(', ');
-      } else if (typeof raw_message === 'string' && raw_message.trim()) {
-        message = raw_message;
+    if (typeof exceptionResponse === "object" && exceptionResponse !== null) {
+      const payload = exceptionResponse as Record<string, unknown>;
+      const rawMessage = payload.message;
+      if (Array.isArray(rawMessage)) {
+        message = rawMessage.map(String).join(", ");
+      } else if (typeof rawMessage === "string" && rawMessage.trim()) {
+        message = rawMessage;
+      }
+
+      if (
+        typeof payload.retryAfter === "number" &&
+        Number.isFinite(payload.retryAfter) &&
+        payload.retryAfter > 0
+      ) {
+        retryAfter = Math.ceil(payload.retryAfter);
       }
     }
 
-    response.status(status).json({
+    if (retryAfter != null) {
+      response.header("Retry-After", String(retryAfter));
+    }
+
+    response.status(status).send({
       ok: false,
       status,
       message,
       data: null,
+      ...(retryAfter != null ? { retryAfter } : {}),
     });
   }
 }
