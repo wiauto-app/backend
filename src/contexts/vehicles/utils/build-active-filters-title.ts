@@ -9,6 +9,10 @@ import {
   PublisherType,
   TransmissionType,
 } from "../types/vehicle";
+import {
+  PublicListingOrderBy,
+  resolve_public_listing_order_by,
+} from "../validators/vehicle-listing-order.utils";
 
 const PUBLISHER_TYPE_MAP: Record<PublisherType, string> = {
   [PUBLISHER_TYPE.PARTICULAR]: "particulares",
@@ -24,6 +28,31 @@ const CONDITION_MAP: Record<ConditionVehicle, string> = {
   [CONDITION_VEHICLE["0KM"]]: "0KM",
   [CONDITION_VEHICLE.NEW]: "nuevo",
   [CONDITION_VEHICLE.USED]: "usado",
+};
+
+type ListingOrderDirection = "ASC" | "DESC";
+
+const ORDER_LABELS: Record<
+  `${PublicListingOrderBy}:${ListingOrderDirection}`,
+  string
+> = {
+  "created_at:DESC": "más recientes",
+  "created_at:ASC": "más antiguos",
+  "price:ASC": "más baratos",
+  "price:DESC": "más caros",
+  "mileage:ASC": "menor kilometraje",
+  "mileage:DESC": "mayor kilometraje",
+  "views:DESC": "más vistos",
+  "views:ASC": "menos vistos",
+};
+
+const resolveOrderLabel = (
+  order_by?: string,
+  order_direction?: ListingOrderDirection,
+): string => {
+  const field = resolve_public_listing_order_by(order_by);
+  const direction = order_direction ?? "DESC";
+  return ORDER_LABELS[`${field}:${direction}`] || ORDER_LABELS["created_at:DESC"];
 };
 
 interface PushRangeOptions {
@@ -169,6 +198,9 @@ export const buildActiveFiltersTitle = (
       parts.push(`de ${capitalize(publisherLabels.join(", "))}`);
     }
   }
+
+  const orderLabel = resolveOrderLabel(dto.order_by, dto.order_direction);
+  parts.push(orderLabel);
 
   return parts.join(" ").trim();
 };
