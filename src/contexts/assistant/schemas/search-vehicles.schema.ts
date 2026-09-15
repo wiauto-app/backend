@@ -9,7 +9,7 @@ export const searchVehiclesInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Slug de TIPO de vehículo (carrocería/forma): p. ej. sedan, suv, familiar. NUNCA uses categorías aquí. Debe coincidir con vehicleTypes del catálogo.",
+      "Slug de TIPO de vehículo (clase): p. ej. coche, furgoneta, camion, autocaravana. Debe coincidir con vehicleTypes. NUNCA pongas SUV/berlina/pick-up aquí.",
     ),
   makes_slugs: z.array(z.string()).optional(),
   models_slugs: z.array(z.string()).optional(),
@@ -17,7 +17,7 @@ export const searchVehiclesInputSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      "Slugs de CATEGORÍA comercial del listing (p. ej. ofertas, km0). NO uses tipos de vehículo (sedan/suv) aquí. Debe coincidir con categories del catálogo.",
+      "Slugs de CATEGORÍA / carrocería: p. ej. suv-y-todoterrenos, pick-up, monovolumenes, berlinas. Debe coincidir con categories. NUNCA pongas coche/furgoneta aquí.",
     ),
   since_price: z.number().optional(),
   until_price: z.number().optional(),

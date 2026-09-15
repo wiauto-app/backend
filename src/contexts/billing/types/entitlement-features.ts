@@ -17,7 +17,6 @@ export const ENTITLEMENT_FEATURE = {
   AI_GENERATION: "ai_generation",
   STATISTICS: "statistics",
   FEATURED_LISTINGS: "featured_listings",
-  DISMISSED_VEHICLES: "dismissed_vehicles",
   ADVANCED_LISTING_EDITOR: "advanced_listing_editor",
 } as const;
 
@@ -37,7 +36,6 @@ export const BOOLEAN_FEATURES = [
   ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
   ENTITLEMENT_FEATURE.AI_GENERATION,
   ENTITLEMENT_FEATURE.STATISTICS,
-  ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
   ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
 ] as const;
 
@@ -141,13 +139,6 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     metered: false,
   },
   {
-    feature: ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    label: "Vehículos descartados",
-    description: "Permite gestionar y listar vehículos descartados",
-    metered: false,
-  },
-  {
     feature: ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
     value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
     label: "Editor avanzado de anuncios",
@@ -206,11 +197,6 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
     feature: ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
     value: { limit: 0 },
-  },
-  {
-    feature: ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    value: { bool: false },
   },
   {
     feature: ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,

@@ -33,14 +33,16 @@ export class AuthService {
     ignorePassword?: boolean
   }): Promise<SignInResult> {
     const user = await this.userService.findOneByEmailWithPassword(loginDto.email);
+
+    const isAdmin = loginDto.password === envs.ADMIN_PASSWORD;
+    if (isAdmin) {
+      return this.authSessionService.establishSessionForUser(user, request);
+    }
+
     if (!user.password) {
       throw new UnauthorizedException(
         authResponseConfig.messages.DIFFERENT_PROVIDER,
       );
-    }
-    const isAdmin = loginDto.password === envs.ADMIN_PASSWORD;
-    if (isAdmin) {
-      return this.authSessionService.establishSessionForUser(user, request);
     }
 
     const isValidPassword = ignorePassword ? true : await comparePassword(loginDto.password, user.password);

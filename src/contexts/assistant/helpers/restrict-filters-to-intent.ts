@@ -34,6 +34,7 @@ const CATALOG_FILTER_KEYS = [
   "features_slugs",
   "color_slugs",
   "cuota_slugs",
+  "categories_slugs",
   "exclude_vehicle_ids",
   "dealership_ids",
 ] as const satisfies ReadonlyArray<keyof SearchVehiclesInput>;
@@ -60,8 +61,13 @@ export const restrictFiltersToExplicitIntent = (
     next.models_slugs = [resolved.model_slug];
   }
 
-  if (intent.vehicle_type && filters.type_slug) {
-    next.type_slug = filters.type_slug;
+  if (intent.vehicle_type) {
+    if (filters.type_slug) {
+      next.type_slug = filters.type_slug;
+    }
+    if (filters.categories_slugs?.length) {
+      next.categories_slugs = filters.categories_slugs;
+    }
   }
 
   if (intent.lat !== undefined && intent.lng !== undefined) {

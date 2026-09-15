@@ -5461,7 +5461,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/dismissed-vehicles",
-                "description": "JWT (`JwtGuard`). Requiere entitlement `dismissed_vehicles`. Devuelve items con preview del vehículo."
+                "description": "JWT (`JwtGuard`). Disponible para cualquier usuario autenticado. Devuelve items con preview del vehículo."
               },
               "response": []
             }

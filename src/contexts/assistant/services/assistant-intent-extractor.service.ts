@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import { generateText, Output, UIMessage } from "ai";
-import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { extractLastUserMessage } from "../helpers/extract-last-user-message";
 import { AssistantIntent } from "../types/assistant-intent";
@@ -28,18 +28,20 @@ export class AssistantIntentExtractorService {
       return {};
     }
 
-    const deepseek = createDeepSeek({
-      apiKey: envs.DEEPSEEK_API_KEY,
+    const openai = createOpenAI({
+      apiKey: envs.OPENAI_API_KEY,
     });
 
     const { output } = await generateText({
-      model: deepseek(envs.DEEPSEEK_MODEL),
+      model: openai(envs.OPENAI_MODEL),
       output: Output.object({
         schema: assistantIntentSchema,
       }),
       prompt: this.intentPromptService.build(userMessage),
+      providerOptions: {
+        openai: { strictJsonSchema: false },
+      },
     });
-
     return output;
   }
 }

@@ -59,18 +59,18 @@ ${filtersJson}
 Usa SOLO slugs/ids de estas listas. No inventes valores.
 
 ### Tipos de vehículo → campo \`type_slug\` (UNO solo)
-Son la carrocería/forma del coche (sedán, SUV, familiar, etc.).
+Son la clase de vehículo (coche, furgoneta, camión, autocaravana, etc.).
 ${vehicleTypesJson}
 
 ### Categorías → campo \`categories_slugs\` (array)
-Son categorías comerciales del listing (ofertas, campañas, segmentos de marketplace). NUNCA pongas aquí un tipo de vehículo.
+Son carrocería / segmento del listing (SUV y todoterrenos, pick-up, monovolúmenes, berlinas, etc.).
 ${categoriesJson}
 
 ### Regla anti-confusión (prioridad alta)
-- Si el usuario dice "sedán", "SUV", "berlina", "familiar", "furgoneta", etc. → usa \`type_slug\` con el slug de **Tipos de vehículo**.
-- Si el usuario habla de una categoría comercial del listado → usa \`categories_slugs\` con slugs de **Categorías**.
-- PROHIBIDO poner un tipo (p. ej. sedan) en \`categories_slugs\`.
-- PROHIBIDO poner una categoría comercial en \`type_slug\`.
+- Si el usuario dice "SUV", "todoterreno", "sedán", "berlina", "familiar", "monovolumen", "pick-up", etc. → usa \`categories_slugs\` con slugs de **Categorías**.
+- Si el usuario dice "coche", "furgoneta", "camión", "autocaravana", etc. → usa \`type_slug\` con el slug de **Tipos de vehículo**.
+- PROHIBIDO poner una categoría/carrocería (p. ej. suv-y-todoterrenos) en \`type_slug\`.
+- PROHIBIDO poner un tipo (p. ej. coche) en \`categories_slugs\`.
 
 ### Otros filtros del catálogo
 ${otherCatalogJson}

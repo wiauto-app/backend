@@ -2,9 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { QueryFailedError, Repository } from "typeorm";
 
-import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
-import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
-
 import { VehicleEntity } from "../../entities/vehicle.entity";
 import { VehicleNotFoundException } from "../../exceptions/vehicle-not-found.exception";
 import type { VehicleListItemPreview } from "../../types/vehicle-list-detail";
@@ -14,7 +11,6 @@ import { VEHICLE_PRICE_STATUS } from "../../vehicle-prices/types/vehicle-price";
 import { DismissedVehicleEntity } from "../entities/dismissed-vehicle.entity";
 import { DismissedVehicleAlreadyExistsException } from "../exceptions/dismissed-vehicle-already-exists.exception";
 import { DismissedVehicleNotFoundException } from "../exceptions/dismissed-vehicle-not-found.exception";
-import { DismissedVehiclesEntitlementRequiredException } from "../exceptions/dismissed-vehicles-entitlement-required.exception";
 import type { DismissedVehicleListItem } from "../types/dismissed-vehicle-list-item";
 
 interface CreateDismissedVehicleInput {
@@ -95,7 +91,6 @@ export class DismissedVehiclesService {
     private readonly dismissedRepository: Repository<DismissedVehicleEntity>,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
-    private readonly entitlements_service: EntitlementsService,
   ) {}
 
   async create(
@@ -158,17 +153,7 @@ export class DismissedVehiclesService {
     return rows.map((row) => row.vehicle_id);
   }
 
-  async findAllForProfessional(
-    profileId: string,
-  ): Promise<DismissedVehicleListItem[]> {
-    const allowed = await this.entitlements_service.has(
-      profileId,
-      ENTITLEMENT_FEATURE.DISMISSED_VEHICLES,
-    );
-    if (!allowed) {
-      throw new DismissedVehiclesEntitlementRequiredException();
-    }
-
+  async findAll(profileId: string): Promise<DismissedVehicleListItem[]> {
     const rows = await this.dismissedRepository.find({
       where: { profile_id: profileId },
       relations: {

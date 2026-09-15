@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import { generateText, Output, UIMessage } from "ai";
-import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createOpenAI } from "@ai-sdk/openai";
 import { extractLastUserMessage } from "../helpers/extract-last-user-message";
 import { restrictFiltersToExplicitIntent } from "../helpers/restrict-filters-to-intent";
 import {
@@ -26,13 +26,12 @@ export class AssistantSearchFiltersBuilderService {
     resolved: AssistantResolvedEntities;
   }): Promise<SearchVehiclesInput> {
     const userMessage = extractLastUserMessage(params.messages);
-
-    const deepseek = createDeepSeek({
-      apiKey: envs.DEEPSEEK_API_KEY,
+    const openai = createOpenAI({
+      apiKey: envs.OPENAI_API_KEY,
     });
 
     const { output } = await generateText({
-      model: deepseek(envs.DEEPSEEK_MODEL),
+      model: openai(envs.OPENAI_MODEL),
       output: Output.object({
         schema: searchVehiclesInputSchema,
       }),
@@ -42,6 +41,9 @@ export class AssistantSearchFiltersBuilderService {
         intent: params.intent,
         resolved: params.resolved,
       }),
+      providerOptions: {
+        openai: { strictJsonSchema: false },
+      },
     });
 
     return restrictFiltersToExplicitIntent(

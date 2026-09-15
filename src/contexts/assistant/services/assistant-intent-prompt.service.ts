@@ -10,7 +10,7 @@ Cuando el usuario se refiere a una marca o modelo, asegúrate de que el nombre s
 ## Campos a extraer
 - \`make\`: nombre de marca tal como lo dice el usuario, pero si tiene alguna falta ortográfica, corrígela (ej. "Toyota", "BMW"). Solo si lo menciona explícitamente.
 - \`model\`: nombre de modelo tal como lo dice el usuario, pero si tiene alguna falta ortográfica, corrígela (ej. "Corolla", "Land Cruiser", "land cruisers"). Solo si lo menciona explícitamente.
-- \`vehicle_type\`: tipo de vehículo solo si el usuario lo dice explícitamente (ej. "SUV", "berlina", "furgoneta"). No lo deduzcas del modelo.
+- \`vehicle_type\`: tipo o carrocería solo si el usuario lo dice explícitamente (ej. "SUV", "berlina", "furgoneta", "coche"). No lo deduzcas del modelo.
 - \`lat\` / \`lng\`: coordenadas aproximadas si cita una ciudad, provincia o zona geográfica (ej. Barcelona ≈ lat 41.3874, lng 2.1686; Madrid ≈ lat 40.4168, lng -3.7038).
 
 ## Reglas estrictas

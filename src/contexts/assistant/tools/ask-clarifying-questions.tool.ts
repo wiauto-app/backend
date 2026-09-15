@@ -75,10 +75,10 @@ Motivo: ${reason ?? "perfil incompleto"}
 Foco: ${focus ?? "completar criterios de búsqueda"}
 
 ## Catálogo real de slugs (OBLIGATORIO en filter_patch)
-### Tipos de vehículo → \`type_slug\` (carrocería: sedán, SUV, etc.)
+### Tipos de vehículo → \`type_slug\` (clase: coche, furgoneta, camión…)
 ${JSON.stringify(toSlugNameList(catalog.vehicleTypes), null, 2)}
 
-### Categorías → \`categories_slugs\` (categorías comerciales; NUNCA tipos de vehículo)
+### Categorías → \`categories_slugs\` (carrocería/segmento: SUV, pick-up, monovolumen…)
 ${JSON.stringify(toSlugNameList(catalog.categories), null, 2)}
 
 ### Otros slugs válidos
@@ -104,8 +104,8 @@ ${JSON.stringify(
 Reglas:
 - Genera 2–4 preguntas cortas en español neutro. Cada pregunta 2–6 opciones con id y label claros.
 - Si una opción implica filtros, incluye filter_patch SOLO con slugs/ids del catálogo anterior.
-- "Sedán/SUV/berlina/familiar" → \`type_slug\`, NUNCA \`categories_slugs\`.
-- Categorías comerciales del listing → \`categories_slugs\`, NUNCA \`type_slug\`.
+- "SUV/todoterreno/sedán/berlina/familiar/monovolumen/pick-up" → \`categories_slugs\`, NUNCA \`type_slug\`.
+- "Coche/furgoneta/camión/autocaravana" → \`type_slug\`, NUNCA \`categories_slugs\`.
 - No preguntes lo que ya está resuelto en los filtros iniciales.
 - multi=true solo si el usuario puede elegir varias opciones a la vez.`,
       });

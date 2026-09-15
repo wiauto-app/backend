@@ -38,12 +38,15 @@ ${resolvedJson}
 ## Otros filtros del catálogo
 ${catalogJson}
 
-## Distinción crítica: tipo vs categoría
-- \`type_slug\`: TIPO de vehículo (carrocería) desde \`vehicleTypes\` del catálogo (sedán, SUV, familiar…). Un solo slug.
-- \`categories_slugs\`: CATEGORÍAS comerciales desde \`categories\` del catálogo. Nunca pongas un tipo de vehículo aquí.
-- Si el usuario menciona sedán/SUV/berlina/etc., usa \`type_slug\`, no \`categories_slugs\`.
+## Distinción crítica: tipo vs categoría (NO confundir)
+- \`type_slug\`: TIPO de vehículo desde \`vehicleTypes\` del catálogo (ej. coche, furgoneta, camion, autocaravana…). Un solo slug.
+- \`categories_slugs\`: CATEGORÍAS / carrocería desde \`categories\` del catálogo (ej. suv-y-todoterrenos, pick-up, monovolumenes, berlinas…).
+- Si el usuario menciona SUV, todoterreno, sedán, berlina, familiar, monovolumen, pick-up, etc. → usa \`categories_slugs\` con el slug de **Categorías**. NUNCA lo pongas en \`type_slug\`.
+- Si el usuario menciona coche, furgoneta, camión, autocaravana, etc. → usa \`type_slug\` con el slug de **Tipos de vehículo**.
+- PROHIBIDO poner un slug de categoría en \`type_slug\`.
+- PROHIBIDO poner un slug de tipo en \`categories_slugs\`.
 
-- Mapea presupuesto, combustible, tipo de vehículo, categoría comercial, transmisión, color, equipamiento, etiqueta DGT, servicios, cuotas, tracción y garantía **solo** si el usuario los menciona de forma explícita en el mensaje.
+- Mapea presupuesto, combustible, tipo de vehículo, categoría/carrocería, transmisión, color, equipamiento, etiqueta DGT, servicios, cuotas, tracción y garantía **solo** si el usuario los menciona de forma explícita en el mensaje.
 - Para etiquetas DGT usa \`dgt_label_ids\` con el campo \`id\` (UUID), no el slug.
 - No inventes slugs ni ids que no estén en el catálogo.
 - Si el usuario no menciona un filtro, **omítelo** por completo (no uses null ni valores por defecto).

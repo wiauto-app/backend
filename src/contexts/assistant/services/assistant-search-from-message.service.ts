@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { generateId, UIMessage } from "ai";
+import { normalizeTypeCategoryFilters } from "../helpers/normalize-type-category-filters";
 import { sanitizeAssistantIntent } from "../helpers/sanitize-assistant-intent";
 import { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
 import type { AssistantFilterCatalog } from "../types/assistant-filter-catalog";
@@ -50,12 +51,13 @@ export class AssistantSearchFromMessageService {
     const intent = sanitizeAssistantIntent(rawIntent, message);
     const resolved = await this.entityResolver.resolve(intent);
     const catalog = await this.filterCatalogService.getCatalog();
-    const filters = await this.searchFiltersBuilder.build({
+    const rawFilters = await this.searchFiltersBuilder.build({
       messages,
       catalog,
       intent,
       resolved,
     });
+    const filters = normalizeTypeCategoryFilters(rawFilters, catalog, intent);
     validateSearchVehiclesFilters(filters, catalog, resolved);
 
     return { filters, catalog, resolved };

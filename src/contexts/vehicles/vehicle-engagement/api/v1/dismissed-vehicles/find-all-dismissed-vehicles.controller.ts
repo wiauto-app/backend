@@ -15,6 +15,6 @@ export class FindAllDismissedVehiclesController {
 
   @Get()
   run(@GetUserId() profileId: string) {
-    return this.dismissedVehiclesService.findAllForProfessional(profileId);
+    return this.dismissedVehiclesService.findAll(profileId);
   }
 }
