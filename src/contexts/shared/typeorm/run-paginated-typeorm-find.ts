@@ -10,10 +10,13 @@ import { CatalogPaginationFilter } from "../types/catalog-pagination.filter";
 import { PaginatedResult } from "../types/paginated-result.vo";
 import { getPaginationProps } from "../dto/getPaginationProps";
 
-export async function runPaginatedTypeormFind<Entity extends ObjectLiteral, Domain>(params: {
+export async function runPaginatedTypeormFind<
+  Entity extends ObjectLiteral,
+  Domain = Entity,
+>(params: {
   repository: Repository<Entity>;
   filter: CatalogPaginationFilter;
-  map_row: (row: Entity) => Domain;
+  map_row?: (row: Entity) => Domain;
   allowed_sort_keys: Set<string>;
   default_sort_key: string;
   extra_filters?: FindOptionsWhere<Entity>;
@@ -47,5 +50,8 @@ export async function runPaginatedTypeormFind<Entity extends ObjectLiteral, Doma
     relations: relations ?? [],
     ...(extra_where ? { where: extra_where } : {}),
   });
-  return new PaginatedResult(rows.map((row) => map_row(row)), total, filter.page, filter.limit);
+  const items = map_row
+    ? rows.map((row) => map_row(row))
+    : (rows as unknown as Domain[]);
+  return new PaginatedResult(items, total, filter.page, filter.limit);
 }
