@@ -35,16 +35,6 @@ export abstract class FileStoragePort {
   ): Promise<string[]>;
   abstract deleteFiles(urls: string[]): Promise<void>;
   abstract downloadFile(storedPath: string): Promise<Buffer | null>;
-  /** Clave relativa bajo el directorio vehicles-videos. */
-  abstract downloadVideoFile(file_key: string): Promise<Buffer | null>;
-  /** Sube o reemplaza el objeto de vídeo bajo `file_key`. */
-  abstract replaceVideoObject(
-    file_key: string,
-    body: Buffer,
-    content_type: ContentType,
-  ): Promise<void>;
-  /** Borra un objeto de vídeo (p. ej. clave antigua al pasar a `.mp4`). */
-  abstract deleteVideoObject(file_key: string): Promise<void>;
   abstract generateSignedUrl(directory: string, fileKey: string, contentType: ContentType): Promise<string>;
   abstract generateReadSignedUrl(directory: string, fileKey: string): Promise<{ signed_url: string }>;
 }

@@ -12,11 +12,8 @@ ENV NODE_ENV=development \
 
 WORKDIR $DIR
 
-# ffmpeg vía apt (imagen node:22 = Debian, no usar apk; libc6-compat es solo Alpine).
 # glibc de Debian ya cubre binarios precompilados (SWC, etc.).
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
-  && rm -rf /var/lib/apt/lists/* \
-  && npm install -g pnpm@9.14.2
+RUN npm install -g pnpm@9.14.2
 
 COPY package.json pnpm-lock.yaml ./
 

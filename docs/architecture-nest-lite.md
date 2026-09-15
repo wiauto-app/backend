@@ -73,7 +73,7 @@ Completado el barrido estructural:
 
 Tokens `provide: …Port` que quedan a propósito para adapters externos:
 
-- `FileStoragePort`, `FileQueuePort`, `TempStoragePromotionPort`, `ImageStorageFinalizationPort`, `VideoProcessorPort` (R2/ffmpeg/colas).
+- `FileStoragePort`, `FileQueuePort`, `TempStoragePromotionPort`, `ImageStorageFinalizationPort` (R2/colas de imágenes).
 - `AlertPushNotificationPort`, `AlertSmsNotificationPort` (stubs).
 - `ActiveFiltersLookupPort`, `PublishedVehicleSnapshotPort`, `ReverseGeocodingPort` (vehicles).
 - `ChatParticipantLookupPort` (lookup de perfiles para chat).

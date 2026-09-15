@@ -5,17 +5,14 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { FileQueuePort } from "./ports/file-queue.port";
 import { FileStoragePort } from "./ports/file-storage.port";
 import { TempStoragePromotionPort } from "./ports/temp-storage-promotion.port";
-import { VideoProcessorPort } from "./ports/video-processor.port";
 import { FileQueueAdapter } from "./clients/file-queue.adapter";
-import { FfmpegAdapter } from "./clients/ffmpeg.adapter";
 import { R2StorageAdapter } from "./clients/r2-storage.adapter";
 import { R2ImageStorageFinalizationAdapter } from "./clients/r2-image-storage-finalization.adapter";
 import { FinalizeImageStoragePathService } from "./services/finalize-image-storage-path.service";
 import { ImageStorageFinalizationPort } from "./ports/image-storage-finalization.port";
 import { PromoteTempStoragePathsService } from "./services/promote-temp-storage-paths.service";
-import { UPLOAD_IMAGE_QUEUE, UPLOAD_VIDEO_QUEUE, PROCESS_VEHICLE_IMAGE_QUEUE } from "./media.constants";
+import { UPLOAD_IMAGE_QUEUE, PROCESS_VEHICLE_IMAGE_QUEUE } from "./media.constants";
 import { ImageProcessor } from "./processors/image.processor";
-import { VideoProcessor } from "./processors/video.processor";
 import { ProcessVehicleImageProcessor } from "./processors/process-vehicle-image.processor";
 import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/vehicle-images-persistence.module";
@@ -84,12 +81,6 @@ import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
     FileQueueAdapter,
     ImageProcessor,
     ProcessVehicleImageProcessor,
-    FfmpegAdapter,
-    {
-      provide: VideoProcessorPort,
-      useExisting: FfmpegAdapter,
-    },
-    VideoProcessor,
     {
       provide: FileQueuePort,
       useExisting: FileQueueAdapter,
@@ -101,7 +92,6 @@ import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
   ],
   imports: [
     BullModule.registerQueue({ name: UPLOAD_IMAGE_QUEUE }),
-    BullModule.registerQueue({ name: UPLOAD_VIDEO_QUEUE }),
     BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
     BullModule.registerQueue({ name: TEMP_UPLOAD_CLEANUP_QUEUE }),
     VehicleImagesPersistenceModule,

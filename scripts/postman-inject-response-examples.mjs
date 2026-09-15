@@ -417,7 +417,7 @@ function resolveResponses(method, pathKey, req) {
       makeExample("200 OK (ejemplo)", req, {
         body: {
           file_key: "videos/anuncio-123/original.webm",
-          file_key_en_storage: "videos/anuncio-123/original.mp4",
+          file_key_en_storage: "videos/anuncio-123/original.webm",
         },
       }),
 

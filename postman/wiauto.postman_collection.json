@@ -4398,7 +4398,7 @@
                   "raw": "{\n  \"file_key\": \"videos/ejemplo/clave.mp4\"\n}"
                 },
                 "url": "{{base_url}}/v1/confirm-video-upload",
-                "description": "JWT (`JwtGuard`). Tras PUT al presigned URL. Encola el job de FFmpeg; la respuesta devuelve `file_key_en_storage` (clave MP4 esperada)."
+                "description": "JWT (`JwtGuard`). Tras PUT al presigned URL. Confirma la subida directa; `file_key_en_storage` coincide con `file_key` (sin transcode)."
               },
               "response": [
                 {
@@ -4426,7 +4426,7 @@
                       "value": "application/json; charset=utf-8"
                     }
                   ],
-                  "body": "{\n  \"file_key\": \"videos/anuncio-123/original.webm\",\n  \"file_key_en_storage\": \"videos/anuncio-123/original.mp4\"\n}"
+                  "body": "{\n  \"file_key\": \"videos/anuncio-123/original.webm\",\n  \"file_key_en_storage\": \"videos/anuncio-123/original.webm\"\n}"
                 }
               ]
             }

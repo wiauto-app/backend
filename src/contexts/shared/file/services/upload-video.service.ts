@@ -5,7 +5,6 @@ import { ObjectStorageService } from "@/src/contexts/shared/object-storage/objec
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
 import { STORAGE_DIRECTORIES } from "../storage-directories";
-import { ConfirmVideoUploadService } from "./confirm-video-upload.service";
 
 export type UploadVideoMode = "presigned" | "buffer";
 
@@ -17,7 +16,6 @@ export interface UploadVideoOptions {
   mode: UploadVideoMode;
   contentType: string;
   expiresInSec?: number;
-  enqueueTranscode?: boolean;
   replaceExisting?: boolean;
   body?: Buffer;
 }
@@ -29,15 +27,11 @@ export interface UploadVideoPresignResult {
 
 export interface UploadVideoBufferResult {
   file_key: string;
-  file_key_en_storage?: string;
 }
 
 @Injectable()
 export class UploadVideoService {
-  constructor(
-    private readonly objectStorageService: ObjectStorageService,
-    private readonly confirmVideoUploadService: ConfirmVideoUploadService,
-  ) {}
+  constructor(private readonly objectStorageService: ObjectStorageService) {}
 
   async createUploadUrl(
     options: UploadVideoOptions,
@@ -90,16 +84,7 @@ export class UploadVideoService {
       options.contentType,
     );
 
-    const result: UploadVideoBufferResult = { file_key: fileKey };
-
-    if (options.enqueueTranscode) {
-      const confirm = await this.confirmVideoUploadService.execute({
-        file_key: fileKey,
-      });
-      result.file_key_en_storage = confirm.file_key_en_storage;
-    }
-
-    return result;
+    return { file_key: fileKey };
   }
 
   private resolveFileKey(options: UploadVideoOptions): string {

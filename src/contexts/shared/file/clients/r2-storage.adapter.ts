@@ -3,10 +3,7 @@ import { ObjectStorageService } from "@/src/contexts/shared/object-storage/objec
 import { firstValueFrom } from "rxjs";
 
 import { ContentType, FileStoragePort } from "../ports/file-storage.port";
-import {
-  resolveObjectKeyFromStored,
-  STORAGE_DIRECTORIES,
-} from "../storage-directories";
+import { resolveObjectKeyFromStored } from "../storage-directories";
 import { normalize_image_filename_for_storage } from "../utils/normalize-image-filename-for-storage";
 
 @Injectable()
@@ -55,7 +52,7 @@ export class R2StorageAdapter extends FileStoragePort {
   async generateSignedUrl(
     directory: string,
     fileKey: string,
-    contentType: string,
+    contentType: ContentType,
   ): Promise<string> {
     return await this.objectStorageService.generateUploadUrl(
       directory,
@@ -67,33 +64,6 @@ export class R2StorageAdapter extends FileStoragePort {
   async downloadFile(storedPath: string): Promise<Buffer | null> {
     return this.objectStorageService.getObjectBufferByKey(
       resolveObjectKeyFromStored(storedPath),
-    );
-  }
-
-  async downloadVideoFile(fileKey: string): Promise<Buffer | null> {
-    return this.objectStorageService.getObjectBuffer(
-      STORAGE_DIRECTORIES.VEHICLES_VIDEOS,
-      fileKey,
-    );
-  }
-
-  async replaceVideoObject(
-    fileKey: string,
-    body: Buffer,
-    contentType: ContentType,
-  ): Promise<void> {
-    await this.objectStorageService.putObjectToBucket(
-      STORAGE_DIRECTORIES.VEHICLES_VIDEOS,
-      fileKey,
-      body,
-      contentType,
-    );
-  }
-
-  async deleteVideoObject(fileKey: string): Promise<void> {
-    await this.objectStorageService.deleteObjectFromBucket(
-      STORAGE_DIRECTORIES.VEHICLES_VIDEOS,
-      fileKey,
     );
   }
 

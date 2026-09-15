@@ -2,7 +2,7 @@ export class ConfirmVideoUploadDto {
   file_key: string;
 }
 
-/** Respuesta: `file_key` es el de la subida; `file_key_en_storage` es la clave final (p. ej. `.mp4` tras el job). */
+/** Respuesta: la clave en storage es la misma del PUT (sin transcode). */
 export interface ConfirmVideoUploadResult {
   file_key: string;
   file_key_en_storage: string;
