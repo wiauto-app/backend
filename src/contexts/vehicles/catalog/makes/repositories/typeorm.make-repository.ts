@@ -1,7 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
-import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
+import { getPaginationProps } from "@/src/contexts/shared/dto/getPaginationProps";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -100,30 +100,44 @@ export class TypeormMakeRepository {
   }
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<Make>> {
-    const result = await runPaginatedTypeormFind({
-      repository: this.make_repository,
+    const { skip, take, order_column, direction } = getPaginationProps(
       filter,
-      map_row: (row) =>
-        Make.fromPrimitives({
-          id: row.id,
-          name: row.name,
-          slug: row.slug,
-          image_url: row.image_url ?? null,
-          created_at: row.created_at,
-        }),
-      allowed_sort_keys: MAKE_SORT_KEYS,
-      default_sort_key: "id",
-      search_column: "name",
-    });
+      "id",
+    );
+    const sort_key = MAKE_SORT_KEYS.has(order_column) ? order_column : "id";
+    const search = filter.search?.trim();
 
+    const query = this.make_repository
+      .createQueryBuilder("make")
+      .orderBy(`make.${sort_key}`, direction)
+      .skip(skip)
+      .take(take);
 
+    if (search) {
+      query.where(
+        `(make.name ILIKE :search
+          OR EXISTS (
+            SELECT 1 FROM model
+            WHERE model.make_id = make.id
+              AND model.name ILIKE :search
+          ))`,
+        { search: `%${search}%` },
+      );
+    }
 
-    return result.map((make) => {
-      const primitive_make = make.toPrimitives();
-      return Make.fromPrimitives({
-        ...primitive_make,
-      });
-    });
+    const [rows, total] = await query.getManyAndCount();
+
+    const items = rows.map((row) =>
+      Make.fromPrimitives({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        image_url: row.image_url ?? null,
+        created_at: row.created_at,
+      }),
+    );
+
+    return new PaginatedResult(items, total, filter.page, filter.limit);
   }
 
   async findOne(id: number): Promise<Make | null> {

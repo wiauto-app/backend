@@ -3,11 +3,14 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm";
 import { VersionEntity } from "../../versions/entities/version.entity";
+import { MakeEntity } from "../../makes/entities/make.entity";
 
 @Entity({ name: "model" })
 @Index("IDX_model_make_id", ["make_id"])
@@ -33,4 +36,8 @@ export class CatalogModelEntity {
 
   @OneToMany(() => VersionEntity, (version) => version.model)
   versions: Relation<VersionEntity[]>;
+
+  @ManyToOne(() => MakeEntity, (make) => make.models)
+  @JoinColumn({ name: "make_id" })
+  make: Relation<MakeEntity>;
 }

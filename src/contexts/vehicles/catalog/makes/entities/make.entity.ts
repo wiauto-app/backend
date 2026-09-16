@@ -8,6 +8,7 @@ import {
   Relation,
 } from "typeorm";
 import { VersionEntity } from "../../versions/entities/version.entity";
+import { CatalogModelEntity } from "../../models/entities/catalog-model.entity";
 
 @Entity({ name: "make" })
 @Index("UQ_make_section_1_id", ["section_1_id"], {
@@ -36,4 +37,7 @@ export class MakeEntity {
 
   @OneToMany(() => VersionEntity, (version) => version.make)
   versions: Relation<VersionEntity[]>;
+  
+  @OneToMany(() => CatalogModelEntity, (model) => model.make)
+  models: Relation<CatalogModelEntity[]>;
 }
