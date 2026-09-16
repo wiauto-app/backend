@@ -62,7 +62,6 @@ export class MakesService {
   }
 
   async findAll(query: PaginationDto): Promise<PaginatedResult<PrimitiveMake>> {
-    console.log("query", query);
     const filter = new CatalogPaginationFilter({ ...query });
     const page = await this.makes_repository.find_all(filter);
     return page.map((m) => m.toPrimitives());
