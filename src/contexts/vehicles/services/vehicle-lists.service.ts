@@ -4,6 +4,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { List, PrimitiveList, VehicleListSummary } from "../types/list";
 import { ListItem, PrimitiveListItem } from "../types/list-item";
 import { VehicleListForbiddenException } from "../exceptions/vehicle-list-forbidden.exception";
+import { VehicleListItemAlreadyExistsException } from "../exceptions/vehicle-list-item-already-exists.exception";
 import { VehicleListNotFoundException } from "../exceptions/vehicle-list-not-found.exception";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
 import {
@@ -178,6 +179,14 @@ export class VehicleListsService {
     const vehicle = await this.vehicle_repository.findOne(input.vehicle_id);
     if (!vehicle) {
       throw new VehicleNotFoundException(input.vehicle_id);
+    }
+
+    const alreadyExists = await this.vehicle_list_item_repository.exists(
+      input.list_id,
+      input.vehicle_id,
+    );
+    if (alreadyExists) {
+      throw new VehicleListItemAlreadyExistsException();
     }
 
     const item = ListItem.create({

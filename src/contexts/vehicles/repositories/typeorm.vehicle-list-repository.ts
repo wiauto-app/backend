@@ -57,8 +57,8 @@ const map_vehicle_preview = (vehicle: VehicleEntity) => {
     category: vehicle.category
       ? { id: vehicle.category.id, name: vehicle.category.name }
       : null,
-    publisher_id: vehicle.profile.id,
-    publisher_name: vehicle.profile.name,
+    publisher_id: vehicle.profile?.id ?? "",
+    publisher_name: vehicle.profile?.name ?? "",
     previous_price,
     price_change:
       previous_price === null ? null : price - previous_price,
@@ -151,9 +151,10 @@ export class TypeOrmVehicleListRepository {
       return null;
     }
 
+    // innerJoin: soft-deleted vehicles leave `vehicle` null with leftJoin and crash mapping
     const item_rows = await this.vehicle_list_item_repository
       .createQueryBuilder("item")
-      .leftJoinAndSelect("item.vehicle", "vehicle")
+      .innerJoinAndSelect("item.vehicle", "vehicle")
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.category", "category")
       .leftJoinAndSelect("vehicle.profile", "profile")
