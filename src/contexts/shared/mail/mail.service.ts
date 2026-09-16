@@ -306,6 +306,38 @@ export class MailService {
     }
   }
 
+  async sendInsuranceLeadNotificationEmail(payload: {
+    to: string;
+    lead: {
+      first_name: string;
+      last_name: string;
+      dni: string | null;
+      phone: string;
+      email: string;
+      license_plate: string | null;
+      make_name: string;
+      model_name: string;
+      version_name: string;
+    };
+    created_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderInsuranceLeadNotification(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nueva solicitud de seguro: ${payload.lead.make_name} ${payload.lead.model_name}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de solicitud de seguro a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendPlanLeadProposalEmail(payload: {
     to: string;
     lead_name: string;

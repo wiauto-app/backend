@@ -42,6 +42,7 @@ import { NewsletterModule } from "../contexts/newsletter/newsletter.module";
 import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
 import { ProfileDevicesModule } from "../contexts/profile_devices/profile-devices.module";
 import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
+import { GenericLeadsModule } from "../contexts/leads/leads.module";
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
     StrapiWebhookModule,
     ProfileDevicesModule,
     UserBlocksModule,
+    GenericLeadsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

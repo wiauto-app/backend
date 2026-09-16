@@ -69,6 +69,25 @@ export interface OutboundMailPlanLeadRequestNotificationJobData {
   created_at: string;
 }
 
+export const OUTBOUND_MAIL_JOB_INSURANCE_LEAD_NOTIFICATION =
+  "insurance_lead_notification";
+
+export interface OutboundMailInsuranceLeadNotificationJobData {
+  to: string;
+  lead: {
+    first_name: string;
+    last_name: string;
+    dni: string | null;
+    phone: string;
+    email: string;
+    license_plate: string | null;
+    make_name: string;
+    model_name: string;
+    version_name: string;
+  };
+  created_at: string;
+}
+
 export const OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL = "plan_lead_proposal";
 
 export interface OutboundMailPlanLeadProposalJobData {

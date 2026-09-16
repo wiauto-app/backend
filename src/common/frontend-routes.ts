@@ -5,7 +5,7 @@ import { envs } from "./envs";
  * CDN público; no depende del FRONTEND_URL local.
  */
 export const MAIL_BRAND_LOGO_URL =
-  "https://media.wiauto.es/wiauto-strapi/Group_1000002680_3c2f7d7cfb.avif";
+  "https://media.wiauto.es/wiauto-strapi/Group_1000002681_9d7c5628fc.avif";
 
 export const FRONTEND_ROUTES = {
   HOME: "/",
