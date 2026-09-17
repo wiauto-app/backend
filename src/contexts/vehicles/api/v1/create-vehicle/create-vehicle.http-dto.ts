@@ -17,8 +17,11 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Length,
+  Matches,
+  Max,
+  MaxLength,
   Min,
-  MinLength,
   ValidateIf,
   ValidateNested,
 } from "class-validator";
@@ -31,10 +34,14 @@ export type VehicleImageDto = VehicleImageHttpDto;
 export class CreateVehicleDto {
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   ref?: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsString()
+  @Length(17, 17)
+  @Matches(/^[A-HJ-NPR-Z0-9]{17}$/)
   vin_code?: string;
 
   @IsOptional()
@@ -50,11 +57,13 @@ export class CreateVehicleDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(9_999_999)
   price: number;
 
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(9_999_999)
   mileage: number;
 
   @IsNumber()
@@ -71,6 +80,7 @@ export class CreateVehicleDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   description?: string;
 
   @IsNumber()
@@ -79,10 +89,12 @@ export class CreateVehicleDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(4)
   phone_code: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(9)
   phone: string;
 
   @IsOptional()
@@ -111,39 +123,48 @@ export class CreateVehicleDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(1)
+  @Max(9999)
   power?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(20_000)
   displacement?: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
   @Min(0)
+  @Max(2000)
   autonomy?: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
   @Min(0)
+  @Max(500)
   battery_capacity?: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsNumber()
   @Min(0)
+  @Max(100)
   time_to_charge?: number;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsString()
-  @MinLength(5)
+  @Matches(/^\d{4}[A-Z]{3}$/)
   license_plate?: string;
 
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsNumber()
+  @Min(0)
+  @Max(9_999_999)
   finance_price?: number;
 
   @IsBoolean()

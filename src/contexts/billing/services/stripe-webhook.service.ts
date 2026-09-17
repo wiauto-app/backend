@@ -188,7 +188,7 @@ export class StripeWebhookService {
       customer_id,
       subscription,
       {
-        plan_version_id: subscription.metadata.plan_version_id ?? null,
+        plan_version_id: subscription.metadata.plan_version_id,
       },
     );
 
@@ -381,9 +381,9 @@ export class StripeWebhookService {
       return;
     }
 
-    const product_kind = payment_intent.metadata.product_kind ?? null;
-    const product_id = payment_intent.metadata.product_id ?? null;
-    const plan_id = payment_intent.metadata.plan_id ?? null;
+    const product_kind = payment_intent.metadata.product_kind;
+    const product_id = payment_intent.metadata.product_id;
+    const plan_id = payment_intent.metadata.plan_id;
 
     if (!product_id && !plan_id) {
       return;
@@ -556,7 +556,7 @@ export class StripeWebhookService {
       return;
     }
 
-    const effect_config = (plan.effect_config ?? {}) as {
+    const effect_config = (plan.effect_config) as {
       type?: string;
       credits?: number;
     };

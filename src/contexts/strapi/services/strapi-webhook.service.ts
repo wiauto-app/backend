@@ -21,7 +21,7 @@ export class StrapiWebhookService {
   ) {}
 
   assertWebhookSecret(header_secret: string | undefined): void {
-    const expected = envs.STRAPI_WEBHOOK_SECRET?.trim();
+    const expected = envs.STRAPI_WEBHOOK_SECRET.trim();
     if (!expected) {
       return;
     }
