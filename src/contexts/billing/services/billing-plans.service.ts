@@ -428,7 +428,7 @@ export class BillingCheckoutService {
       dealership_id,
       professional_account_id: professional_account.id,
       billing_address_collection: "required",
-      // tax_id_collection: { enabled: true },
+      tax_id_collection: { enabled: true },
       success_url: `${envs.FRONTEND_URL}/billing-plan/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${envs.FRONTEND_URL}/billing-plan?plan_price_id=${dto.plan_price_id}`,
     });
@@ -460,6 +460,8 @@ export class BillingCheckoutService {
       plan_price_id,
       plan_version_id: published.id,
       dealership_id,
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true },
     });
 
     return { checkout_url };

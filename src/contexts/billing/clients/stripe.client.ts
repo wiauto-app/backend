@@ -82,6 +82,7 @@ export class StripeClient {
       product: params.stripe_product_id,
       unit_amount: params.amount_cents,
       currency: params.currency.toLowerCase(),
+      tax_behavior: "exclusive",
       ...(recurring ? { recurring } : {}),
     });
 
@@ -148,9 +149,8 @@ export class StripeClient {
         envs.STRIPE_CANCEL_URL,
       ),
       allow_promotion_codes: true,
-      ...(params.billing_address_collection
-        ? { billing_address_collection: params.billing_address_collection }
-        : {}),
+      automatic_tax: { enabled: true },
+      billing_address_collection: params.billing_address_collection ?? "required",
       ...(params.tax_id_collection
         ? { tax_id_collection: params.tax_id_collection }
         : {}),
@@ -205,6 +205,8 @@ export class StripeClient {
       success_url: envs.STRIPE_SUCCESS_URL,
       cancel_url: envs.STRIPE_CANCEL_URL,
       allow_promotion_codes: true,
+      automatic_tax: { enabled: true },
+      billing_address_collection: "required",
       ...(params.customer_email ? { customer_email: params.customer_email } : {}),
       metadata: shared_metadata,
       subscription_data: {
@@ -332,6 +334,7 @@ export class StripeClient {
       product: params.stripe_product_id,
       unit_amount: params.amount_cents,
       currency,
+      tax_behavior: "exclusive",
     });
 
     return price.id;
@@ -365,6 +368,8 @@ export class StripeClient {
         envs.STRIPE_CANCEL_URL,
       ),
       allow_promotion_codes: true,
+      automatic_tax: { enabled: true },
+      billing_address_collection: "required",
       metadata: {
         profile_id: params.profile_id,
         ...(params.product_kind ? { product_kind: params.product_kind } : {}),
