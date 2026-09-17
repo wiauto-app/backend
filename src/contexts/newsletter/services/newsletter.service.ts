@@ -1,11 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
+import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
 import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { DEFAULT_NEWS_CATEGORY_SLUGS } from "../constants/default-news-category-slugs";
@@ -15,11 +17,14 @@ import { NewsletterSubscriptionEntity } from "../entities/newsletter-subscriptio
 
 @Injectable()
 export class NewsletterService {
+  private readonly logger = new Logger(NewsletterService.name);
+
   constructor(
     @InjectRepository(NewsletterSubscriptionEntity)
     private readonly newsletter_repository: Repository<NewsletterSubscriptionEntity>,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
+    private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
   async subscribe(
@@ -58,7 +63,20 @@ export class NewsletterService {
       channel_sms: false,
     });
 
-    return this.newsletter_repository.save(created);
+    const saved = await this.newsletter_repository.save(created);
+
+    try {
+      await this.outbound_mail_enqueue_service.enqueue_newsletter_subscribed({
+        to: email,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo encolar la confirmación de newsletter para ${email}`,
+        error as Error,
+      );
+    }
+
+    return saved;
   }
 
   async claimByEmail(email: string, profile_id: string): Promise<number> {
@@ -138,7 +156,7 @@ export class NewsletterService {
 
     if (patch.enabled_category_slugs !== undefined) {
       subscription.enabled_category_slugs = patch.enabled_category_slugs
-        .map((slug) => String(slug ?? "").trim().toLowerCase())
+        .map((slug) => String(slug).trim().toLowerCase())
         .filter((slug) => slug.length > 0);
     }
     if (patch.channel_email !== undefined) {
@@ -192,6 +210,6 @@ export class NewsletterService {
       select: { email: true },
       where: { id: profile_id },
     });
-    return user?.email?.trim().toLowerCase() ?? null;
+    return user?.email.trim().toLowerCase() ?? null;
   }
 }

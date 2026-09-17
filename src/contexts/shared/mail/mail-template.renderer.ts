@@ -121,6 +121,25 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderNewsletterSubscribed(payload: { email: string }): string {
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Hola,
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Confirmamos tu suscripción al newsletter de WiAuto con el correo <strong style="color:#111827;">${this.escapeHtml(payload.email)}</strong>. Te avisaremos de las novedades y noticias más relevantes.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Te has suscrito al newsletter de WiAuto.",
+      title: "Suscripción confirmada",
+      body,
+      cta_label: "Ir a WiAuto",
+      cta_href: getFrontendUrl("HOME"),
+      footer_note:
+        "Si no fuiste tú quien se suscribió, puedes ignorar este mensaje.",
+    });
+  }
+
   renderPasswordRecovery(recovery_link: string): string {
     const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
       Recibimos una solicitud para restablecer tu contraseña. Haz clic en el botón para continuar.

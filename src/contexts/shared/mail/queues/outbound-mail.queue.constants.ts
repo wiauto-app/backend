@@ -345,6 +345,12 @@ export interface OutboundMailAccountDeletedJobData {
   occurred_at: string;
 }
 
+export const OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED = "newsletter_subscribed";
+
+export interface OutboundMailNewsletterSubscribedJobData {
+  to: string;
+}
+
 export const OUTBOUND_MAIL_JOB_NEWS_ALERT = "news_alert";
 
 export interface OutboundMailNewsAlertJobData {

@@ -31,6 +31,7 @@ import {
   OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
   OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
   OUTBOUND_MAIL_JOB_NEWS_ALERT,
+  OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED,
   OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED,
   OUTBOUND_MAIL_JOB_VEHICLE_APPROVED,
   OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED,
@@ -69,6 +70,7 @@ import {
   OutboundMailPasswordChangedJobData,
   OutboundMailAccountDeletedJobData,
   OutboundMailNewsAlertJobData,
+  OutboundMailNewsletterSubscribedJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./queues/outbound-mail.queue.constants";
@@ -356,5 +358,14 @@ export class OutboundMailEnqueueService {
     data: OutboundMailNewsAlertJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_NEWS_ALERT, data);
+  }
+
+  async enqueue_newsletter_subscribed(
+    data: OutboundMailNewsletterSubscribedJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED,
+      data,
+    );
   }
 }

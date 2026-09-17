@@ -40,6 +40,13 @@ const envsSchema = z.object({
   /** URL absoluta del logo en correos; si vacío, usa `MAIL_BRAND_LOGO_URL` de frontend-routes */
   MAIL_BRAND_LOGO_URL: z.string().default(""),
 
+  /** newsletter@wiauto.es — transporte nombrado "newsletter" (en uso) */
+  MAIL_NEWSLETTER_EMAIL: z.string(),
+  /** alertas@wiauto.es — transporte nombrado "alerts" (aún sin uso) */
+  MAIL_ALERTS_EMAIL: z.string().default(""),
+  /** facturacion@wiauto.es — transporte nombrado "billing" (aún sin uso) */
+  MAIL_BILLING_EMAIL: z.string().default(""),
+
   /** Legado: ya no arma el link del mail; el cliente envía redirect_url */
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),
   PASSWORD_RESET_TOKEN_EXPIRES_IN: z.string().default("15m"),

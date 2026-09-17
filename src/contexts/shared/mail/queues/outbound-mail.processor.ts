@@ -33,6 +33,7 @@ import {
   OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
   OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
   OUTBOUND_MAIL_JOB_NEWS_ALERT,
+  OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED,
   OUTBOUND_MAIL_JOB_VEHICLE_ARCHIVED,
   OUTBOUND_MAIL_JOB_VEHICLE_APPROVED,
   OUTBOUND_MAIL_JOB_VEHICLE_DEACTIVATED,
@@ -71,6 +72,7 @@ import {
   OutboundMailPasswordChangedJobData,
   OutboundMailAccountDeletedJobData,
   OutboundMailNewsAlertJobData,
+  OutboundMailNewsletterSubscribedJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./outbound-mail.queue.constants";
@@ -361,6 +363,12 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_NEWS_ALERT) {
       const data = job.data as OutboundMailNewsAlertJobData;
       await this.mail_service.sendNewsAlertEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED) {
+      const data = job.data as OutboundMailNewsletterSubscribedJobData;
+      await this.mail_service.sendNewsletterSubscribedEmail(data);
       return;
     }
 

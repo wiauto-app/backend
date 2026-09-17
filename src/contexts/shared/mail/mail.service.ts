@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { MailerService } from "@nestjs-modules/mailer";
 
+import { envs } from "@/src/common/envs";
 import { getFrontendUrl } from "@/src/common/frontend-routes";
 import { MailTemplateRenderer } from "./mail-template.renderer";
 
@@ -31,6 +32,28 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error(`No se pudo enviar el correo de verificación a ${to}`, error as Error);
+      throw error;
+    }
+  }
+
+  async sendNewsletterSubscribedEmail(payload: { to: string }): Promise<void> {
+    const html = this.mail_template_renderer.renderNewsletterSubscribed({
+      email: payload.to,
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        from: `"WiAuto Newsletter" <${envs.MAIL_NEWSLETTER_EMAIL}>`,
+        subject: "Te has suscrito al newsletter de WiAuto",
+        html,
+        transporterName: "newsletter",
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la confirmación de newsletter a ${payload.to}`,
+        error as Error,
+      );
       throw error;
     }
   }
