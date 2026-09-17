@@ -151,6 +151,7 @@ export class StripeClient {
       allow_promotion_codes: true,
       automatic_tax: { enabled: true },
       billing_address_collection: params.billing_address_collection ?? "required",
+      customer_update: { address: "auto", name: "auto" },
       ...(params.tax_id_collection
         ? { tax_id_collection: params.tax_id_collection }
         : {}),
@@ -370,6 +371,7 @@ export class StripeClient {
       allow_promotion_codes: true,
       automatic_tax: { enabled: true },
       billing_address_collection: "required",
+      customer_update: { address: "auto" },
       metadata: {
         profile_id: params.profile_id,
         ...(params.product_kind ? { product_kind: params.product_kind } : {}),
