@@ -30,16 +30,24 @@ export class StripeClient {
 
   async createOrUpdateProduct(plan: SubscriptionPlanEntity): Promise<string> {
     if (plan.stripe_product_id) {
-      await this.stripe.products.update(plan.stripe_product_id, {
-        name: plan.name,
-        description: plan.description ?? undefined,
-        active: plan.is_active,
-        metadata: {
-          plan_id: plan.id,
-          billing_type: plan.billing_type,
-        },
-      });
-      return plan.stripe_product_id;
+      try {
+        await this.stripe.products.update(plan.stripe_product_id, {
+          name: plan.name,
+          description: plan.description ?? undefined,
+          active: plan.is_active,
+          metadata: {
+            plan_id: plan.id,
+            billing_type: plan.billing_type,
+          },
+        });
+        return plan.stripe_product_id;
+      } catch (error) {
+        if (!this.isResourceMissing(error)) {
+          throw error;
+        }
+        // El product_id guardado no existe en estas credenciales de Stripe
+        // (cuenta/entorno distinto) — se crea uno nuevo en su lugar.
+      }
     }
 
     const product = await this.stripe.products.create({
@@ -64,8 +72,16 @@ export class StripeClient {
     billing_type: string;
   }): Promise<string> {
     if (params.price_id) {
-      await this.stripe.prices.update(params.price_id, { active: true });
-      return params.price_id;
+      try {
+        await this.stripe.prices.update(params.price_id, { active: true });
+        return params.price_id;
+      } catch (error) {
+        if (!this.isResourceMissing(error)) {
+          throw error;
+        }
+        // El price_id guardado no existe en estas credenciales de Stripe
+        // (cuenta/entorno distinto) — se crea uno nuevo en su lugar.
+      }
     }
 
     const recurring =
@@ -290,11 +306,19 @@ export class StripeClient {
     };
 
     if (params.stripe_product_id) {
-      await this.stripe.products.update(
-        params.stripe_product_id,
-        product_payload,
-      );
-      return params.stripe_product_id;
+      try {
+        await this.stripe.products.update(
+          params.stripe_product_id,
+          product_payload,
+        );
+        return params.stripe_product_id;
+      } catch (error) {
+        if (!this.isResourceMissing(error)) {
+          throw error;
+        }
+        // El product_id guardado no existe en estas credenciales de Stripe
+        // (cuenta/entorno distinto) — se crea uno nuevo en su lugar.
+      }
     }
 
     const product = await this.stripe.products.create(product_payload);
@@ -389,6 +413,14 @@ export class StripeClient {
     }
 
     return session.url;
+  }
+
+  private isResourceMissing(error: unknown): boolean {
+    const stripe_error = error as { code?: string; statusCode?: number };
+    return (
+      stripe_error.code === "resource_missing" ||
+      stripe_error.statusCode === 404
+    );
   }
 
   private resolveCheckoutUrl(
