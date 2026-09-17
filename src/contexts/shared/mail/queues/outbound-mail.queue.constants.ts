@@ -88,6 +88,22 @@ export interface OutboundMailInsuranceLeadNotificationJobData {
   created_at: string;
 }
 
+export const OUTBOUND_MAIL_JOB_CONTACT_LEAD_NOTIFICATION =
+  "contact_lead_notification";
+
+export interface OutboundMailContactLeadNotificationJobData {
+  to: string;
+  lead: {
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email: string;
+    province_name: string | null;
+    message: string;
+  };
+  created_at: string;
+}
+
 export const OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL = "plan_lead_proposal";
 
 export interface OutboundMailPlanLeadProposalJobData {

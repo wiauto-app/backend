@@ -16,6 +16,7 @@ import {
   OUTBOUND_MAIL_JOB_NEW_MESSAGE_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PLAN_LEAD_REQUEST_NOTIFICATION,
   OUTBOUND_MAIL_JOB_INSURANCE_LEAD_NOTIFICATION,
+  OUTBOUND_MAIL_JOB_CONTACT_LEAD_NOTIFICATION,
   OUTBOUND_MAIL_JOB_PLAN_LEAD_PROPOSAL,
   OUTBOUND_MAIL_JOB_PASSWORD_RECOVERY,
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_WELCOME,
@@ -56,6 +57,7 @@ import {
   OutboundMailNewMessageNotificationJobData,
   OutboundMailPlanLeadRequestNotificationJobData,
   OutboundMailInsuranceLeadNotificationJobData,
+  OutboundMailContactLeadNotificationJobData,
   OutboundMailPlanLeadProposalJobData,
   OutboundMailPasswordRecoveryJobData,
   OutboundMailSellerVehicleJobData,
@@ -152,6 +154,16 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_INSURANCE_LEAD_NOTIFICATION) {
       const data = job.data as OutboundMailInsuranceLeadNotificationJobData;
       await this.mail_service.sendInsuranceLeadNotificationEmail({
+        to: data.to,
+        lead: data.lead,
+        created_at: data.created_at,
+      });
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_CONTACT_LEAD_NOTIFICATION) {
+      const data = job.data as OutboundMailContactLeadNotificationJobData;
+      await this.mail_service.sendContactLeadNotificationEmail({
         to: data.to,
         lead: data.lead,
         created_at: data.created_at,

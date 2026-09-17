@@ -15,9 +15,9 @@ export class CreateGenericLeadHttpDto {
   @MinLength(1)
   first_name!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  last_name!: string;
+  last_name?: string;
 
   @IsOptional()
   @IsString()

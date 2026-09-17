@@ -642,6 +642,58 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderContactLeadNotification(payload: {
+    lead: {
+      first_name: string;
+      last_name: string;
+      phone: string;
+      email: string;
+      province_name: string | null;
+      message: string;
+    };
+    created_at: string;
+  }): string {
+    const escaped_name = this.escapeHtml(
+      `${payload.lead.first_name} ${payload.lead.last_name}`.trim(),
+    );
+    const escaped_phone = this.escapeHtml(payload.lead.phone);
+    const escaped_email = this.escapeHtml(payload.lead.email);
+    const escaped_province = this.escapeHtml(payload.lead.province_name ?? "N/D");
+    const escaped_message = this.escapeHtml(payload.lead.message || "Sin mensaje");
+    const escaped_created_at = this.escapeHtml(
+      new Date(payload.created_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const row = (label: string, value: string, is_last = false) => `<tr>
+          <td style="padding:16px 20px;${is_last ? "" : "border-bottom:1px solid #e5e7eb;"}">
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">${label}</p>
+            <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${value}</p>
+          </td>
+        </tr>`;
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Recibiste un nuevo mensaje desde el formulario de contacto.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
+        ${row("Nombre", escaped_name)}
+        ${row("Teléfono", escaped_phone)}
+        ${row("Correo", escaped_email)}
+        ${row("Provincia", escaped_province)}
+        ${row("Mensaje", escaped_message)}
+        ${row("Fecha", escaped_created_at, true)}
+      </table>`;
+
+    return this.renderBase({
+      preheader: "Nuevo mensaje de contacto.",
+      title: "Nuevo mensaje de contacto",
+      body,
+      footer_note: "Contacta al interesado lo antes posible.",
+    });
+  }
+
   renderPlanLeadProposal(payload: {
     lead_name: string;
     plan_name: string;

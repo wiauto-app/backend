@@ -10,8 +10,10 @@ import { CreateGenericLeadHttpDto } from "../api/public/create-lead/create-lead.
 import { UpdateGenericLeadHttpDto } from "../api/admin/leads/update-lead.http-dto";
 import { GenericLeadEntity } from "../entities/lead.entity";
 import { InsuranceLeadNotificationService } from "./insurance-lead-notification.service";
+import { ContactLeadNotificationService } from "./contact-lead-notification.service";
 
 const INSURANCE_LEAD_TYPE = "seguros";
+const CONTACT_LEAD_TYPE = "contacto";
 
 @Injectable()
 export class GenericLeadsService {
@@ -19,13 +21,14 @@ export class GenericLeadsService {
     @InjectRepository(GenericLeadEntity)
     private readonly lead_repository: Repository<GenericLeadEntity>,
     private readonly insurance_lead_notification_service: InsuranceLeadNotificationService,
+    private readonly contact_lead_notification_service: ContactLeadNotificationService,
   ) {}
 
   async create(dto: CreateGenericLeadHttpDto): Promise<GenericLeadEntity> {
     const entity = this.lead_repository.create({
       type: dto.type,
       first_name: dto.first_name,
-      last_name: dto.last_name,
+      last_name: dto.last_name ?? "",
       dni: dto.dni ?? null,
       phone: dto.phone,
       email: dto.email,
@@ -36,6 +39,10 @@ export class GenericLeadsService {
 
     if (saved.type === INSURANCE_LEAD_TYPE) {
       void this.insurance_lead_notification_service.notify(saved);
+    }
+
+    if (saved.type === CONTACT_LEAD_TYPE) {
+      void this.contact_lead_notification_service.notify(saved);
     }
 
     return saved;

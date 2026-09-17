@@ -361,6 +361,35 @@ export class MailService {
     }
   }
 
+  async sendContactLeadNotificationEmail(payload: {
+    to: string;
+    lead: {
+      first_name: string;
+      last_name: string;
+      phone: string;
+      email: string;
+      province_name: string | null;
+      message: string;
+    };
+    created_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderContactLeadNotification(payload);
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nuevo mensaje de contacto: ${payload.lead.first_name} ${payload.lead.last_name}`.trim(),
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la notificación de contacto a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendPlanLeadProposalEmail(payload: {
     to: string;
     lead_name: string;
