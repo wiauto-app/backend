@@ -1,10 +1,8 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Cache } from "@nestjs/cache-manager";
 import { Repository } from "typeorm";
 
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
@@ -12,14 +10,14 @@ import { UserAuthProviderService } from "@/src/contexts/users/services/user-auth
 import { UserService } from "@/src/contexts/users/services/user.service";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { VehicleSearchIndexer } from "@/src/contexts/vehicles/search/indexing/vehicle-search-indexer.service";
-import { StripeClient } from "@/src/contexts/billing/clients/stripe.client";
-import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
+import { BillingSubscriptionProvisioningService } from "@/src/contexts/billing/services/billing-subscription-provisioning.service";
 
 import { MeResponseDto } from "../dto/me-response.dto";
 import { User } from "../../users/entities/user.entity";
 import { AppleTokenService } from "./apple-token.service";
 import { AuthService } from "./auth.service";
 import { EntitlementsService } from "../../billing/services/entitlements.service";
+import { MeSessionCacheService } from "./me-session-cache.service";
 
 @Injectable()
 export class MeService {
@@ -32,19 +30,19 @@ export class MeService {
     private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly appleTokenService: AppleTokenService,
-    private readonly cacheManager: Cache,
-    private readonly subscriptionRepository: TypeOrmSubscriptionRepository,
-    private readonly stripeClient: StripeClient,
+    private readonly meSessionCacheService: MeSessionCacheService,
+    private readonly billingSubscriptionProvisioningService: BillingSubscriptionProvisioningService,
     private readonly vehicleSearchIndexer: VehicleSearchIndexer,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepository: Repository<VehicleEntity>,
   ) {}
 
   async getMe(user: User, scope?: "session" | "2fa_challenge"): Promise<MeResponseDto> {
-    const cached = await this.cacheManager.get<MeResponseDto>(`me:${user.id}`);
+    const cached = await this.meSessionCacheService.get(user.id);
     if (cached) {
       return cached;
     }
+
     const [membership_detail, identity, billingSummary] = await Promise.all([
       user.profile.id
         ? this.dealershipMemberRepository.findMembershipDetailByProfileId(user.profile.id)
@@ -60,22 +58,23 @@ export class MeService {
       billing_summary: billingSummary,
     });
 
-    // 5 minutes (cache-manager TTL en milisegundos)
-    await this.cacheManager.set(`me:${user.id}`, me, 5 * 60 * 1000);
+    await this.meSessionCacheService.set(user.id, me);
     return me;
   }
 
   async invalidateMeCache(user_id: string): Promise<void> {
-    await this.cacheManager.del(`me:${user_id}`);
+    await this.meSessionCacheService.invalidate(user_id);
   }
 
   async deleteAccount(user_id: string, _session_id: string): Promise<{ message: string; data: null }> {
     const user = await this.userService.findOne(user_id);
 
     await this.revokeAppleSignIn(user_id);
-    await this.cancelActiveSubscriptionsForProfile(user.id);
+    await this.billingSubscriptionProvisioningService.cancelActiveSubscriptionsForProfile(
+      user.id,
+    );
     await this.deindexAndSoftDeleteVehiclesForProfile(user.id);
-    await this.cacheManager.del(`me:${user_id}`);
+    await this.meSessionCacheService.invalidate(user_id);
 
     try {
       await this.authService.logoutAllForUser(user_id);
@@ -101,36 +100,6 @@ export class MeService {
         `No se pudo revocar Sign in with Apple para el usuario ${user_id}`,
         error instanceof Error ? error.stack : String(error),
       );
-    }
-  }
-
-  private async cancelActiveSubscriptionsForProfile(profile_id: string): Promise<void> {
-    const subscriptions =
-      await this.subscriptionRepository.findCancellableByProfileId(profile_id);
-
-    for (const subscription of subscriptions) {
-      try {
-        await this.stripeClient.cancelSubscriptionImmediately(
-          subscription.stripe_subscription_id,
-        );
-      } catch (error) {
-        const stripe_error = error as { code?: string; statusCode?: number };
-        const already_gone =
-          stripe_error.code === "resource_missing" ||
-          stripe_error.statusCode === 404;
-
-        if (!already_gone) {
-          this.logger.error(
-            `No se pudo cancelar la suscripción Stripe ${subscription.stripe_subscription_id}`,
-            error instanceof Error ? error.stack : String(error),
-          );
-          throw new BadRequestException(
-            "No se pudo cancelar tu suscripción. Inténtalo de nuevo o contacta con soporte antes de eliminar la cuenta.",
-          );
-        }
-      }
-
-      await this.subscriptionRepository.markCanceled(subscription.id);
     }
   }
 

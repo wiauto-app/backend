@@ -2,6 +2,7 @@ import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthModule } from "../auth/auth.module";
+import { BillingModule } from "../billing/billing.module";
 import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 import { ProfileModule } from "../profiles/profile.module";
 import { UsersController } from "./api/v1/users.controller";
@@ -25,6 +26,7 @@ import { AdminSuspensionService } from "./services/admin-suspension.service";
     TypeOrmModule.forFeature([User, UserAuthProvider, VehicleEntity, SuspensionDurationType]),
     ProfileModule,
     forwardRef(() => AuthModule),
+    forwardRef(() => BillingModule),
   ],
   exports: [UserService, UserAuthProviderService, UserMailService, SuspensionService],
 })

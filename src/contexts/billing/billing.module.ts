@@ -2,6 +2,7 @@ import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AssistantModule } from "@/src/contexts/assistant/assistant.module";
+import { MeSessionCacheModule } from "@/src/contexts/auth/me-session-cache.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import { User } from "@/src/contexts/users/entities/user.entity";
@@ -86,6 +87,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
   imports: [
     forwardRef(() => AssistantModule),
     ProfileModule,
+    MeSessionCacheModule,
     TypeOrmModule.forFeature([
       SubscriptionPlanEntity,
       SubscriptionPlanPriceEntity,
@@ -176,6 +178,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     TypeOrmSubscriptionRepository,
     StripeClient,
     BillingNotificationMailService,
+    BillingSubscriptionProvisioningService,
   ],
 })
 export class BillingModule {}

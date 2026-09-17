@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -10,6 +9,7 @@ import { TypeOrmDealershipInvitationRepository } from "@/src/contexts/dealership
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
 import { NewsletterService } from "@/src/contexts/newsletter/services/newsletter.service";
+import { MeSessionCacheService } from "@/src/contexts/auth/services/me-session-cache.service";
 
 import {
   mapProfileToResponse,
@@ -22,8 +22,6 @@ import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/t
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { CreateProfileDto } from "../dto/create-profile";
 import { UpdateProfileDto } from "../dto/update-profile.dto";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Cache } from "@nestjs/cache-manager";
 import { UpdateMyProfileHttpDto } from "../api/auth-me/update-my-profile/update-my-profile.http-dto";
 import { ProfileEntity } from "../entities/profile.entity";
 
@@ -80,8 +78,7 @@ export class ProfileService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly alert_repository: TypeOrmAlertRepository,
     private readonly newsletter_service: NewsletterService,
-    @Inject(CACHE_MANAGER)
-    private readonly cache_manager: Cache,
+    private readonly me_session_cache_service: MeSessionCacheService,
   ) { }
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
@@ -246,7 +243,7 @@ export class ProfileService {
     if (!reloaded) {
       throw new ProfileNotFoundException(id);
     }
-    await this.cache_manager.del(`me:${id}`);
+    await this.me_session_cache_service.invalidateByProfileId(id);
     return mapProfileToResponse(reloaded);
   }
 

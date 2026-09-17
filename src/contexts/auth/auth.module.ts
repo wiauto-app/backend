@@ -21,6 +21,7 @@ import { JwtGuard } from "./guards/auth.guard";
 import { AdminGuard } from "./guards/admin.guard";
 import { OptionalJwtGuard } from "./guards/optional-jwt.guard";
 import { MeService } from "./services/me.service";
+import { MeSessionCacheModule } from "./me-session-cache.module";
 import { AccountSettingsService } from "./services/account-settings.service";
 import { MeController } from "./api/me.controller";
 import { PasswordRecoveryController } from "./api/password-recovery.controller";
@@ -99,6 +100,8 @@ import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
     forwardRef(() => TwoFactorAuthModule),
     DealershipInvitationModule,
 
+    MeSessionCacheModule,
+
     TypeOrmModule.forFeature([
       User,
       SessionEntity,
@@ -118,6 +121,7 @@ import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
     AuthService,
     AuthSecurityMailService,
     EmailVerificationService /*, AppleAuthGuard*/,
+    MeSessionCacheModule,
   ],
 })
 export class AuthModule { }

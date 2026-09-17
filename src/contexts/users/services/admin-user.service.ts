@@ -8,6 +8,7 @@ import { AuthSecurityMailService } from "../../auth/services/auth-security-mail.
 import { AdminUpdateUserDto } from "../dto/admin/update-user.dto";
 import { ProfileEntity } from "../../profiles/entities/profile.entity";
 import { hashPassword } from "../../auth/utils/passwordUtils";
+import { BillingSubscriptionProvisioningService } from "../../billing/services/billing-subscription-provisioning.service";
 
 @Injectable()
 export class AdminUserService {
@@ -15,6 +16,7 @@ export class AdminUserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly authSecurityMailService: AuthSecurityMailService,
+    private readonly billingSubscriptionProvisioningService: BillingSubscriptionProvisioningService,
   ) { }
 
   async create(createUserDto: AdminCreateUserDto): Promise<User> {
@@ -146,6 +148,10 @@ export class AdminUserService {
     if (!user) {
       throw new NotFoundException("Usuario no encontrado")
     }
+    await this.billingSubscriptionProvisioningService.cancelActiveSubscriptionsForProfile(
+      id,
+    );
+
     const email = user.email;
     await this.userRepository.delete(id)
     this.authSecurityMailService.enqueueAccountDeleted({ to: email });

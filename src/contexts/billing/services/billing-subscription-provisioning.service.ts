@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { Logger } from "@nestjs/common";
+import { BadRequestException, Logger } from "@nestjs/common";
 import Stripe from "stripe";
 
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
@@ -286,6 +286,36 @@ export class BillingSubscriptionProvisioningService {
 
   async revokePlanEntitlements(profile_id: string): Promise<void> {
     await this.clearDealershipPlan(profile_id);
+  }
+
+  async cancelActiveSubscriptionsForProfile(profile_id: string): Promise<void> {
+    const subscriptions =
+      await this.subscription_repository.findCancellableByProfileId(profile_id);
+
+    for (const subscription of subscriptions) {
+      try {
+        await this.stripe_client.cancelSubscriptionImmediately(
+          subscription.stripe_subscription_id,
+        );
+      } catch (error) {
+        const stripe_error = error as { code?: string; statusCode?: number };
+        const already_gone =
+          stripe_error.code === "resource_missing" ||
+          stripe_error.statusCode === 404;
+
+        if (!already_gone) {
+          this.logger.error(
+            `No se pudo cancelar la suscripción Stripe ${subscription.stripe_subscription_id}`,
+            error instanceof Error ? error.stack : String(error),
+          );
+          throw new BadRequestException(
+            "No se pudo cancelar la suscripción. Inténtalo de nuevo o contacta con soporte antes de eliminar la cuenta.",
+          );
+        }
+      }
+
+      await this.subscription_repository.markCanceled(subscription.id);
+    }
   }
 
   async syncSubscriptionRecord(

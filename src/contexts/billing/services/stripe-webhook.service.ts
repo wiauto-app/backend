@@ -5,6 +5,7 @@ import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
 import { AssistantQuotaService } from "@/src/contexts/assistant/services/assistant-quota.service";
+import { MeSessionCacheService } from "@/src/contexts/auth/services/me-session-cache.service";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { FEATURED_DURATION_MS } from "@/src/contexts/vehicles/utils/owner-vehicle-rules";
@@ -48,6 +49,7 @@ export class StripeWebhookService {
     private readonly offer_repository_entity: Repository<FeaturedListingOfferEntity>,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
     private readonly assistant_quota_service: AssistantQuotaService,
+    private readonly me_session_cache_service: MeSessionCacheService,
   ) {}
 
   async handle(payload: Buffer, signature: string | undefined): Promise<{ received: boolean }> {
@@ -104,7 +106,13 @@ export class StripeWebhookService {
 
   private async handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     if (session.mode === "subscription") {
-      await this.provisioning_service.provisionFromCheckoutSession(session);
+      const provisioned =
+        await this.provisioning_service.provisionFromCheckoutSession(session);
+      if (provisioned?.profile_id) {
+        await this.me_session_cache_service.invalidateByProfileId(
+          provisioned.profile_id,
+        );
+      }
       return;
     }
 
@@ -226,6 +234,8 @@ export class StripeWebhookService {
     if (cancel_scheduled_now) {
       await this.sendCancelScheduledEmail(profile_id, plan_id, subscription);
     }
+
+    await this.me_session_cache_service.invalidateByProfileId(profile_id);
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -254,6 +264,8 @@ export class StripeWebhookService {
         plan_name,
       });
     }
+
+    await this.me_session_cache_service.invalidateByProfileId(profile_id);
   }
 
   private async handleInvoicePaid(invoice: Stripe.Invoice) {
@@ -447,6 +459,8 @@ export class StripeWebhookService {
     if (payment_intent_id) {
       await this.purchase_repository.markEffectApplied(payment_intent_id);
     }
+
+    await this.me_session_cache_service.invalidateByProfileId(profile_id);
   }
 
   private async sendCancelScheduledEmail(
