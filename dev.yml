@@ -80,6 +80,8 @@ services:
     env_file: .env
     environment:
       - OPENSEARCH_URL=http://opensearch:9200
+      # El type-checker de `nest start --watch` necesita ~750 MB solo para arrancar y crece con cada rebuild.
+      - NODE_OPTIONS=--max-old-space-size=1024
     build:
       dockerfile: Dockerfile.dev
       context: .
@@ -90,6 +92,7 @@ services:
       - "9229:9229"
     volumes:
       - ./src:/app/src
+      - ./nest-cli.json:/app/nest-cli.json
       - ./package.json:/app/package.json
       - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
     networks:
@@ -98,7 +101,7 @@ services:
       resources:
         limits:
           cpus: "1"
-          memory: "768m"
+          memory: "2g"
         reservations:
           cpus: "0.25"
           memory: "256m"

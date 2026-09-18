@@ -15,6 +15,14 @@ WORKDIR $DIR
 # glibc de Debian ya cubre binarios precompilados (SWC, etc.).
 RUN npm install -g pnpm@9.14.2
 
+# Librerías del sistema que necesita el Chrome de Puppeteer (export PDF del dashboard).
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    fonts-liberation libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0 \
+    libdbus-1-3 libcups2 libxkbcommon0 libasound2 libgbm1 libxcomposite1 libxdamage1 \
+    libxfixes3 libxrandr2 \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package.json pnpm-lock.yaml ./
 
 RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc \

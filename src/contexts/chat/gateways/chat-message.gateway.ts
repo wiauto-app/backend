@@ -7,7 +7,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
-import { ExecutionContext, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { ExecutionContext, HttpException, UseGuards } from "@nestjs/common";
+import { WsException } from "@nestjs/websockets";
 import type { Server, Socket } from "socket.io";
 
 import { WsJwtGuard } from "@/src/contexts/auth/guards/ws-jwt.guard";
@@ -125,21 +126,26 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinChatPayload,
   ) {
-    const user_id = this.getUserIdFromClient(client);
-    const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    await this.chat_access_service.assertChatAccess(chat, user_id);
+    try {
+      const user_id = this.getUserIdFromClient(client);
+      const chat = await this.chat_service.findOne({ id: payload.chat_id });
+      await this.chat_access_service.assertChatAccess(chat, user_id);
 
-    await client.join(this.getChatRoom(payload.chat_id));
+      await client.join(this.getChatRoom(payload.chat_id));
 
-    const delivered = await this.chat_message_repository.markMessagesAsDeliveredForRecipient(
-      payload.chat_id,
-      user_id,
-    );
-    for (const message of delivered) {
-      this.emitMessageUpdated(this.serializeListItemFromMessage(message));
+      const delivered =
+        await this.chat_message_repository.markMessagesAsDeliveredForRecipient(
+          payload.chat_id,
+          user_id,
+        );
+      for (const message of delivered) {
+        this.emitMessageUpdated(this.serializeListItemFromMessage(message));
+      }
+
+      return { ok: true };
+    } catch (error) {
+      throw this.toWsException(error);
     }
-
-    return { ok: true };
   }
 
   @UseGuards(WsJwtGuard)
@@ -148,11 +154,15 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinChatPayload,
   ) {
-    const user_id = this.getUserIdFromClient(client);
-    const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    await this.chat_access_service.assertChatAccess(chat, user_id);
-    await client.leave(this.getChatRoom(payload.chat_id));
-    return { ok: true };
+    try {
+      const user_id = this.getUserIdFromClient(client);
+      const chat = await this.chat_service.findOne({ id: payload.chat_id });
+      await this.chat_access_service.assertChatAccess(chat, user_id);
+      await client.leave(this.getChatRoom(payload.chat_id));
+      return { ok: true };
+    } catch (error) {
+      throw this.toWsException(error);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -161,15 +171,21 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: TypingPayload,
   ) {
-    const user_id = this.getUserIdFromClient(client);
-    const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    await this.chat_access_service.assertChatAccess(chat, user_id);
+    try {
+      const user_id = this.getUserIdFromClient(client);
+      const chat = await this.chat_service.findOne({ id: payload.chat_id });
+      await this.chat_access_service.assertChatAccess(chat, user_id);
 
-    client.to(this.getChatRoom(payload.chat_id)).emit(CHAT_SOCKET_EVENTS.TYPING_START, {
-      chat_id: payload.chat_id,
-      user_id,
-    });
-    return { ok: true };
+      client
+        .to(this.getChatRoom(payload.chat_id))
+        .emit(CHAT_SOCKET_EVENTS.TYPING_START, {
+          chat_id: payload.chat_id,
+          user_id,
+        });
+      return { ok: true };
+    } catch (error) {
+      throw this.toWsException(error);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -178,15 +194,21 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: TypingPayload,
   ) {
-    const user_id = this.getUserIdFromClient(client);
-    const chat = await this.chat_service.findOne({ id: payload.chat_id });
-    await this.chat_access_service.assertChatAccess(chat, user_id);
+    try {
+      const user_id = this.getUserIdFromClient(client);
+      const chat = await this.chat_service.findOne({ id: payload.chat_id });
+      await this.chat_access_service.assertChatAccess(chat, user_id);
 
-    client.to(this.getChatRoom(payload.chat_id)).emit(CHAT_SOCKET_EVENTS.TYPING_STOP, {
-      chat_id: payload.chat_id,
-      user_id,
-    });
-    return { ok: true };
+      client
+        .to(this.getChatRoom(payload.chat_id))
+        .emit(CHAT_SOCKET_EVENTS.TYPING_STOP, {
+          chat_id: payload.chat_id,
+          user_id,
+        });
+      return { ok: true };
+    } catch (error) {
+      throw this.toWsException(error);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -195,20 +217,27 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: PresenceSubscribePayload,
   ) {
-    const subscriber_id = this.getUserIdFromClient(client);
-    const subscribers = this.presence_subscribers.get(subscriber_id) ?? new Set();
-    for (const user_id of payload.user_ids) {
-      subscribers.add(user_id);
+    try {
+      const subscriber_id = this.getUserIdFromClient(client);
+      const subscribers =
+        this.presence_subscribers.get(subscriber_id) ?? new Set();
+      for (const user_id of payload.user_ids) {
+        subscribers.add(user_id);
+      }
+      this.presence_subscribers.set(subscriber_id, subscribers);
+
+      const snapshot = payload.user_ids.map((user_id) => ({
+        user_id,
+        status: this.isUserOnline(user_id)
+          ? ("online" as const)
+          : ("offline" as const),
+        last_seen_at: this.isUserOnline(user_id) ? null : new Date(),
+      }));
+
+      return { users: snapshot };
+    } catch (error) {
+      throw this.toWsException(error);
     }
-    this.presence_subscribers.set(subscriber_id, subscribers);
-
-    const snapshot = payload.user_ids.map((user_id) => ({
-      user_id,
-      status: this.isUserOnline(user_id) ? ("online" as const) : ("offline" as const),
-      last_seen_at: this.isUserOnline(user_id) ? null : new Date(),
-    }));
-
-    return { users: snapshot };
   }
 
   async tryMarkDeliveredAndEmit(
@@ -321,9 +350,39 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
   private getUserIdFromClient(client: Socket): string {
     const user_id = this.tryGetUserIdFromClient(client);
     if (!user_id) {
-      throw new UnauthorizedException("Socket sin usuario autenticado.");
+      throw new WsException("Socket sin usuario autenticado.");
     }
     return user_id;
+  }
+
+  private toWsException(error: unknown): WsException {
+    if (error instanceof WsException) {
+      return error;
+    }
+
+    if (error instanceof HttpException) {
+      const response = error.getResponse();
+      if (typeof response === "string") {
+        return new WsException(response);
+      }
+      if (
+        typeof response === "object" &&
+        response !== null &&
+        "message" in response
+      ) {
+        const message = (response as { message?: string | string[] }).message;
+        return new WsException(
+          Array.isArray(message) ? message.join(", ") : (message ?? error.message),
+        );
+      }
+      return new WsException(error.message);
+    }
+
+    if (error instanceof Error) {
+      return new WsException(error.message);
+    }
+
+    return new WsException("Error inesperado en el socket de chat.");
   }
 
   private serializeListItemFromMessage(message: ChatMessage): ChatMessageListItem {

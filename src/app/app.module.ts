@@ -19,6 +19,7 @@ import { ImpressionsModule } from "../contexts/vehicles/modules/impressions.modu
 import { VehicleListsModule } from "../contexts/vehicles/modules/vehicle-lists.module";
 import { VehicleEngagementModule } from "../contexts/vehicles/vehicle-engagement/vehicle-engagement.module";
 import { MailModule } from "../contexts/shared/mail/mail.module";
+import { PdfExportModule } from "../contexts/shared/pdf-export/pdf-export.module";
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
@@ -62,6 +63,7 @@ import { GenericLeadsModule } from "../contexts/leads/leads.module";
     VehicleListsModule,
     VehicleEngagementModule,
     MailModule,
+    PdfExportModule,
     TwoFactorAuthModule,
     FileModule,
     DealershipModule,

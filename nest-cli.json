@@ -19,6 +19,10 @@
         "watchAssets": true
       },
       {
+        "include": "contexts/shared/pdf-export/templates/*",
+        "watchAssets": true
+      },
+      {
         "include": "../firebaseServiceAccountKey.json",
         "watchAssets": true
       }

@@ -83,6 +83,7 @@ import { DealershipModule } from "../dealership/dealership.module";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
 import { ChatModule } from "../chat/modules/chat.module";
 import { GetOwnerDashboardController } from "./api/v1/get-owner-dashboard/get-owner-dashboard.controller";
+import { ExportDashboardController } from "./api/v1/export-dashboard/export-dashboard.controller";
 import { TypeOrmOwnerDashboardRepository } from "./repositories/typeorm.owner-dashboard-repository";
 import { GetOwnerStatisticsController } from "./api/v1/get-owner-statistics/get-owner-statistics.controller";
 import { TypeOrmOwnerStatisticsRepository } from "./repositories/typeorm.owner-statistics-repository";
@@ -122,6 +123,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     FindOwnerVehiclesController,
     GetVehicleReportController,
     GetOwnerDashboardController,
+    ExportDashboardController,
     GetOwnerStatisticsController,
     FindVehicleByRefController,
     FindVehicleController,
