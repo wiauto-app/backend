@@ -14,6 +14,7 @@ import {
   BILLING_INVOICE_STATUS,
   ONE_TIME_PRODUCT_KIND,
   ONE_TIME_PURCHASE_STATUS,
+  SUBSCRIPTION_STATUS,
 } from "../types/billing.enums";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmStripeWebhookEventRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
@@ -22,7 +23,10 @@ import { TypeOrmBillingInvoiceRepository } from "@/src/contexts/billing/reposito
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
 import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
 import { BillingNotificationMailService } from "../services/billing-notification-mail.service";
-import { StripeClient } from "../clients/stripe.client";
+import {
+  PAYMENT_SHEET_CHECKOUT_SOURCE,
+  StripeClient,
+} from "../clients/stripe.client";
 import { BillingSubscriptionProvisioningService } from "./billing-subscription-provisioning.service";
 import { AssistantCreditPackEntity } from "../entities/assistant-credit-pack.entity";
 import { FeaturedListingOfferEntity } from "../entities/featured-listing-offer.entity";
@@ -209,6 +213,23 @@ export class StripeWebhookService {
       );
     }
 
+    // Native PaymentSheet subscriptions are created `incomplete` (or `trialing`
+    // when there is nothing to charge) and have no checkout.session.completed, so
+    // the welcome email is sent on their first transition to a live status.
+    // Checkout subscriptions are excluded: provisionFromCheckoutSession sends it.
+    const is_payment_sheet_subscription =
+      subscription.metadata.checkout_source === PAYMENT_SHEET_CHECKOUT_SOURCE;
+    const first_activation =
+      !previous || previous.status === SUBSCRIPTION_STATUS.INCOMPLETE;
+
+    if (
+      is_payment_sheet_subscription &&
+      first_activation &&
+      this.provisioning_service.isActiveSubscriptionStatus(subscription.status)
+    ) {
+      await this.sendSubscriptionWelcomeEmail(profile_id, plan_id);
+    }
+
     if (previous?.plan_id && previous.plan_id !== plan_id) {
       const profile = await this.billing_profile_repository.findById(profile_id);
       const previous_plan = await this.plan_repository.findOne(previous.plan_id);
@@ -244,6 +265,18 @@ export class StripeWebhookService {
     );
 
     if (!profile_id) {
+      return;
+    }
+
+    // An incomplete subscription that never got paid (abandoned PaymentSheet
+    // canceled on retry) was never active: nothing to revoke and no "ended" email.
+    const previous = await this.subscription_repository.findByStripeSubscriptionId(
+      subscription.id,
+    );
+    if (previous?.status === SUBSCRIPTION_STATUS.INCOMPLETE) {
+      this.logger.debug(
+        `Suscripción incompleta ${subscription.id} eliminada; se omite el aviso de fin`,
+      );
       return;
     }
 
@@ -361,6 +394,12 @@ export class StripeWebhookService {
       paid_at: null,
     });
 
+    // The first invoice of a PaymentSheet subscription failing is a declined card
+    // inside the sheet, which the user retries on the spot: no email, no portal.
+    if (invoice.billing_reason === "subscription_create") {
+      return;
+    }
+
     let plan_name: string | null = null;
     const subscription = await this.subscription_repository.findActiveByProfileId(profile.id);
 
@@ -461,6 +500,21 @@ export class StripeWebhookService {
     }
 
     await this.me_session_cache_service.invalidateByProfileId(profile_id);
+  }
+
+  private async sendSubscriptionWelcomeEmail(profile_id: string, plan_id: string) {
+    const profile = await this.billing_profile_repository.findById(profile_id);
+    const plan = await this.plan_repository.findOne(plan_id);
+
+    if (!profile || !plan) {
+      return;
+    }
+
+    await this.billing_notification_mail_service.enqueueSubscriptionWelcome({
+      to: profile.email,
+      plan_name: plan.name,
+      is_new_guest_user: false,
+    });
   }
 
   private async sendCancelScheduledEmail(

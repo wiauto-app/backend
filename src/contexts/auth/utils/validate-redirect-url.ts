@@ -20,7 +20,7 @@ const isUrlAllowedByBases = (url: string, bases: string[]): boolean => {
 export const resolveEmailVerificationRedirectUrl = (
   redirectUrl?: string,
 ): string => {
-  const candidate = (redirectUrl ?? envs.FRONTEND_REDIRECT_URL).trim();
+  const candidate = (redirectUrl ?? envs.FRONTEND_EMAIL_VERIFICATION_URL).trim();
 
   if (!candidate) {
     throw new UnauthorizedException(authResponseConfig.messages.AUTHENTICATION_ERROR);
@@ -48,7 +48,11 @@ export const resolvePasswordRecoveryRedirectUrl = (redirectUrl: string): string 
 };
 
 const isAllowedRedirectUrl = (url: string): boolean =>
-  isUrlAllowedByBases(url, [envs.FRONTEND_REDIRECT_URL, envs.FRONTEND_URL]);
+  isUrlAllowedByBases(url, [
+    envs.FRONTEND_REDIRECT_URL,
+    envs.FRONTEND_URL,
+    envs.FRONTEND_EMAIL_VERIFICATION_URL,
+  ]);
 
 const isAllowedPasswordRecoveryRedirectUrl = (url: string): boolean =>
   isUrlAllowedByBases(url, [envs.FRONTEND_URL, envs.DASHBOARD_URL]);

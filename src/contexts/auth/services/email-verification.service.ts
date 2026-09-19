@@ -17,6 +17,7 @@ import {
 } from "../queues/email-verification.queue.constants";
 import { authResponseConfig } from "../response.config";
 import { SignInResult } from "../types/auth.types";
+import { resolveEmailVerificationRedirectUrl } from "../utils/validate-redirect-url";
 import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthSessionService } from "./auth-session.service";
 
@@ -76,11 +77,8 @@ export class EmailVerificationService {
 
   async sendVerificationForUser(userId: string, email: string): Promise<void> {
     const backendUrl = envs.BACKEND_URL.trim();
-    const redirectUrl = envs.FRONTEND_REDIRECT_URL.trim();
-    if (!backendUrl || !redirectUrl) {
-      this.logger.warn(
-        "BACKEND_URL o FRONTEND_REDIRECT_URL vacíos: no se envía correo de verificación",
-      );
+    if (!backendUrl) {
+      this.logger.warn("BACKEND_URL vacío: no se envía correo de verificación");
       return;
     }
 
@@ -178,6 +176,7 @@ export class EmailVerificationService {
 
   private buildVerificationLink(token: string): string {
     const base = `${envs.BACKEND_URL.replace(/\/$/, "")}/auth/email-verification/confirm`;
-    return `${base}?token=${encodeURIComponent(token)}&redirectUrl=${encodeURIComponent(envs.FRONTEND_REDIRECT_URL)}`;
+    const redirectUrl = resolveEmailVerificationRedirectUrl();
+    return `${base}?token=${encodeURIComponent(token)}&redirectUrl=${encodeURIComponent(redirectUrl)}`;
   }
 }

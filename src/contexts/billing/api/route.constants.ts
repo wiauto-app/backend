@@ -13,6 +13,7 @@ export const V1_BILLING_CHECKOUT_ONE_TIME = `${V1_BILLING}/checkout/one-time`;
 export const V1_BILLING_PORTAL = `${V1_BILLING}/portal`;
 export const V1_BILLING_INVOICES = `${V1_BILLING}/invoices`;
 export const V1_BILLING_SUBSCRIPTIONS = `${V1_BILLING}/subscriptions`;
+export const V1_BILLING_SUBSCRIPTIONS_PAYMENT_SHEET = `${V1_BILLING_SUBSCRIPTIONS}/payment-sheet`;
 export const V1_BILLING_WEBHOOKS_STRIPE = `${V1_BILLING}/webhooks/stripe`;
 
 export const V1_PUBLIC = "v1/public";

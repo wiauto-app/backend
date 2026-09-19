@@ -116,6 +116,10 @@ describe("BillingCheckoutService.createSubscriptionCheckout", () => {
     save: vi.fn(),
   };
 
+  const subscription_repository = {
+    findCancellableByProfileId: vi.fn(),
+  };
+
   const createService = () =>
     new BillingCheckoutService(
       plan_repository as never,
@@ -126,6 +130,7 @@ describe("BillingCheckoutService.createSubscriptionCheckout", () => {
       {} as never,
       dealership_members_repository as never,
       professional_account_repository as never,
+      subscription_repository as never,
     );
 
   beforeEach(() => {

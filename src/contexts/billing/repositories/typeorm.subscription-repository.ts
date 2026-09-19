@@ -133,6 +133,7 @@ export class TypeOrmSubscriptionRepository {
 
     return {
       plan_id: row.plan_id,
+      status: row.status,
       cancel_at_period_end: row.cancel_at_period_end,
     };
   }

@@ -21,7 +21,11 @@ import { authResponseConfig } from "../response.config";
 import { EmailVerificationService } from "../services/email-verification.service";
 
 const ALLOWED_REDIRECT_URLS = (): string[] =>
-  [envs.FRONTEND_REDIRECT_URL, envs.FRONTEND_URL]
+  [
+    envs.FRONTEND_REDIRECT_URL,
+    envs.FRONTEND_URL,
+    envs.FRONTEND_EMAIL_VERIFICATION_URL,
+  ]
     .map((url) => url.trim())
     .filter(Boolean);
 

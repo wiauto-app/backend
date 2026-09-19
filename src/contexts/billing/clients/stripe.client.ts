@@ -1,15 +1,65 @@
+import { Logger } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import Stripe from "stripe";
 
 import { envs } from "@/src/common/envs";
-import { BILLING_TYPE, PRICE_INTERVAL } from "../types/billing.enums";
+import {
+  BILLING_TYPE,
+  PRICE_INTERVAL,
+  PROFESSIONAL_ACCOUNT_TYPE,
+  ProfessionalAccountType,
+} from "../types/billing.enums";
 import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 
 export const STRIPE_PREFERRED_LOCALES = ["es"] as const;
 export const STRIPE_CHECKOUT_LOCALE = "es";
+/** Value of `subscription.metadata.checkout_source` for native PaymentSheet subscriptions. */
+export const PAYMENT_SHEET_CHECKOUT_SOURCE = "payment_sheet";
+
+// VAT prefixes accepted by Stripe `eu_vat` (Greece uses EL, Northern Ireland XI).
+const EU_VAT_PREFIXES = new Set([
+  "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR",
+  "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO",
+  "SE", "SI", "SK", "XI",
+]);
+
+/**
+ * Maps the fiscal id typed by the user to a Stripe tax id type.
+ * - Value with an EU country prefix (e.g. ESB12345678) -> eu_vat.
+ * - Spanish company without prefix -> es_cif.
+ * - Anything else (e.g. a DNI/NIE of a self-employed person) is not attached to
+ *   the Stripe customer; it is still stored in professional_accounts.
+ */
+export const resolveStripeTaxId = (params: {
+  tax_id: string;
+  country: string;
+  account_type: ProfessionalAccountType;
+}): { type: "eu_vat" | "es_cif"; value: string } | null => {
+  const value = params.tax_id.replace(/[\s.-]/g, "").toUpperCase();
+  if (!value) {
+    return null;
+  }
+
+  if (
+    /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(value) &&
+    EU_VAT_PREFIXES.has(value.slice(0, 2))
+  ) {
+    return { type: "eu_vat", value };
+  }
+
+  if (
+    params.country === "ES" &&
+    params.account_type === PROFESSIONAL_ACCOUNT_TYPE.COMPANY
+  ) {
+    return { type: "es_cif", value };
+  }
+
+  return null;
+};
 
 @Injectable()
 export class StripeClient {
+  private readonly logger = new Logger(StripeClient.name);
   private readonly stripe: Stripe;
 
   constructor() {
@@ -176,6 +226,7 @@ export class StripeClient {
         metadata: {
           profile_id: params.profile_id,
           plan_id: params.plan_id,
+          plan_price_id: params.plan_price_id,
           plan_version_id: params.plan_version_id,
           ...(params.dealership_id
             ? { dealership_id: params.dealership_id }
@@ -195,6 +246,91 @@ export class StripeClient {
     }
 
     return session.url;
+  }
+
+  /**
+   * Native PaymentSheet flow: creates the subscription in `incomplete` state so
+   * the mobile SDK can confirm the first invoice (or the setup intent when the
+   * total is 0). Metadata lives on the SUBSCRIPTION because the webhook reads it
+   * from there. Promotion codes are not supported in v1.
+   */
+  async createSubscriptionForPaymentSheet(params: {
+    customer_id: string;
+    stripe_price_id: string;
+    profile_id: string;
+    plan_id: string;
+    plan_price_id: string;
+    plan_version_id: string;
+    professional_account_id: string;
+    dealership_id?: string;
+    idempotency_key: string;
+  }): Promise<Stripe.Subscription> {
+    return this.stripe.subscriptions.create(
+      {
+        customer: params.customer_id,
+        items: [{ price: params.stripe_price_id }],
+        payment_behavior: "default_incomplete",
+        payment_settings: {
+          save_default_payment_method: "on_subscription",
+          payment_method_types: ["card"],
+        },
+        automatic_tax: { enabled: true },
+        expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+        metadata: {
+          profile_id: params.profile_id,
+          plan_id: params.plan_id,
+          plan_price_id: params.plan_price_id,
+          plan_version_id: params.plan_version_id,
+          professional_account_id: params.professional_account_id,
+          // Lets the webhook tell PaymentSheet subscriptions apart from Checkout.
+          checkout_source: PAYMENT_SHEET_CHECKOUT_SOURCE,
+          ...(params.dealership_id
+            ? { dealership_id: params.dealership_id }
+            : {}),
+        },
+      },
+      { idempotencyKey: params.idempotency_key },
+    );
+  }
+
+  /** Incomplete subscriptions of a customer (Stripe auto-expires them after 23h). */
+  async listIncompleteSubscriptions(
+    customer_id: string,
+  ): Promise<Stripe.Subscription[]> {
+    const subscriptions = await this.stripe.subscriptions.list({
+      customer: customer_id,
+      status: "incomplete",
+      limit: 20,
+    });
+
+    return subscriptions.data;
+  }
+
+  async retrieveSubscriptionForPaymentSheet(
+    subscription_id: string,
+  ): Promise<Stripe.Subscription> {
+    return this.stripe.subscriptions.retrieve(subscription_id, {
+      expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+    });
+  }
+
+  /** Customer Session for the mobile Payment Element (saved payment methods). */
+  async createCustomerSession(params: { customer_id: string }): Promise<string> {
+    const session = await this.stripe.customerSessions.create({
+      customer: params.customer_id,
+      components: {
+        mobile_payment_element: {
+          enabled: true,
+          features: {
+            payment_method_save: "enabled",
+            payment_method_redisplay: "enabled",
+            payment_method_remove: "enabled",
+          },
+        },
+      },
+    });
+
+    return session.client_secret;
   }
 
   async createGuestSubscriptionCheckout(params: {
@@ -267,6 +403,87 @@ export class StripeClient {
     await this.stripe.customers.update(customer_id, {
       preferred_locales: [...STRIPE_PREFERRED_LOCALES],
     });
+  }
+
+  /**
+   * Syncs fiscal data to the Stripe customer for the native flow (no Checkout
+   * to collect it). The address update validates the tax location right away and
+   * throws `customer_tax_location_invalid` when Stripe Tax cannot resolve it.
+   * The tax id is best-effort: it never blocks the subscription.
+   */
+  async updateCustomerBillingProfile(
+    customer_id: string,
+    params: {
+      name: string;
+      phone: string;
+      address: {
+        line1: string;
+        line2?: string;
+        city: string;
+        state?: string;
+        postal_code: string;
+        country: string;
+      };
+      tax_id: string;
+      account_type: ProfessionalAccountType;
+    },
+  ): Promise<void> {
+    await this.stripe.customers.update(customer_id, {
+      name: params.name,
+      phone: params.phone,
+      address: {
+        line1: params.address.line1,
+        ...(params.address.line2 ? { line2: params.address.line2 } : {}),
+        city: params.address.city,
+        ...(params.address.state ? { state: params.address.state } : {}),
+        postal_code: params.address.postal_code,
+        country: params.address.country,
+      },
+      tax: { validate_location: "immediately" },
+    });
+
+    await this.attachCustomerTaxIdBestEffort(customer_id, {
+      tax_id: params.tax_id,
+      country: params.address.country,
+      account_type: params.account_type,
+    });
+  }
+
+  private async attachCustomerTaxIdBestEffort(
+    customer_id: string,
+    params: {
+      tax_id: string;
+      country: string;
+      account_type: ProfessionalAccountType;
+    },
+  ): Promise<void> {
+    const resolved = resolveStripeTaxId(params);
+    if (!resolved) {
+      return;
+    }
+
+    try {
+      const existing = await this.stripe.customers.listTaxIds(customer_id, {
+        limit: 100,
+      });
+      const already_attached = existing.data.some(
+        (tax_id) =>
+          tax_id.type === resolved.type &&
+          tax_id.value.toUpperCase() === resolved.value,
+      );
+      if (already_attached) {
+        return;
+      }
+
+      await this.stripe.customers.createTaxId(customer_id, resolved);
+    } catch (error) {
+      // tax_id_invalid (or any other failure) must not block the purchase; the
+      // value is still persisted locally in professional_accounts.
+      const stripe_error = error as { code?: string; message?: string };
+      this.logger.warn(
+        `No se pudo asociar el tax id al customer ${customer_id} (${stripe_error.code ?? "unknown"}): ${stripe_error.message ?? ""}`,
+      );
+    }
   }
 
   async updateSubscriptionMetadata(

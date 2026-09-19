@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   ConflictException,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import Stripe from "stripe";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
@@ -14,7 +16,11 @@ import { PlanEffectConfig } from "../types/subscription-plan";
 import { PlanNotFoundException } from "../exceptions/billing.exceptions";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionPlanRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-plan-repository";
-import { StripeClient } from "../clients/stripe.client";
+import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
+import {
+  PAYMENT_SHEET_CHECKOUT_SOURCE,
+  StripeClient,
+} from "../clients/stripe.client";
 import {
   BILLING_TYPE,
   ONE_TIME_PRODUCT_KIND,
@@ -26,10 +32,21 @@ import { OneTimePurchaseEntity } from "../entities/one-time-purchase.entity";
 import { ProfessionalAccountEntity } from "../entities/professional-account.entity";
 import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 import { CreateSubscriptionCheckoutHttpDto } from "../api/user/create-subscription-checkout/create-subscription-checkout.http-dto";
+import { CreateSubscriptionPaymentSheetHttpDto } from "../api/user/create-subscription-payment-sheet/create-subscription-payment-sheet.http-dto";
+import {
+  ProfessionalAccountInput,
+  SubscriptionPaymentSheetIntentType,
+  SubscriptionPaymentSheetResult,
+} from "../types/billing.types";
 import { PlanVersionsService } from "./plan-versions.service";
 import { AssistantCreditPacksService } from "./assistant-credit-packs.service";
 import { FeaturedListingOffersService } from "./featured-listing-offers.service";
 import { FREE_ENTITLEMENTS } from "../types/entitlement-features";
+
+/** Stripe expires `incomplete` subscriptions after 23h; past that they cannot be paid. */
+const INCOMPLETE_SUBSCRIPTION_TTL_SECONDS = 23 * 60 * 60;
+/** Window in which repeated taps collapse into the same Stripe idempotent request. */
+const PAYMENT_SHEET_IDEMPOTENCY_WINDOW_MS = 60_000;
 
 export interface CreatePlanPayload {
   name: string;
@@ -324,6 +341,8 @@ export class BillingPlansService {
 
 @HexInjectable()
 export class BillingCheckoutService {
+  private readonly logger = new Logger(BillingCheckoutService.name);
+
   constructor(
     private readonly plan_repository: TypeOrmSubscriptionPlanRepository,
     private readonly billing_profile_repository: TypeOrmBillingProfileRepository,
@@ -335,6 +354,7 @@ export class BillingCheckoutService {
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
     @InjectRepository(ProfessionalAccountEntity)
     private readonly professional_account_repository: Repository<ProfessionalAccountEntity>,
+    private readonly subscription_repository: TypeOrmSubscriptionRepository,
   ) {}
 
   private async resolveCustomer(profile_id: string) {
@@ -436,6 +456,303 @@ export class BillingCheckoutService {
     return { checkout_url };
   }
 
+  /**
+   * Native PaymentSheet flow (mobile). Creates the Stripe subscription in
+   * `incomplete` state and returns the secrets the SDK needs to confirm it.
+   * It does NOT write the local subscription row: the webhook is the source of
+   * truth and the client polls GET /v1/billing/me afterwards.
+   * Promotion codes are not supported in v1.
+   */
+  async createSubscriptionPaymentSheet(
+    profile_id: string,
+    dto: CreateSubscriptionPaymentSheetHttpDto,
+  ): Promise<SubscriptionPaymentSheetResult> {
+    const price = await this.resolveRecurringPrice(dto.plan_price_id);
+    const published = await this.plan_versions_service.findPublishedByPlanId(
+      price.plan_id,
+    );
+    if (!published) {
+      throw new BadRequestException(
+        "El plan no tiene una versión publicada de entitlements",
+      );
+    }
+
+    // Plan changes on a live subscription go through the customer portal, not
+    // through a second subscription.
+    const live_subscriptions =
+      await this.subscription_repository.findCancellableByProfileId(profile_id);
+    if (live_subscriptions.length > 0) {
+      throw new ConflictException(
+        "Ya tienes una suscripción activa; gestiona el cambio de plan desde tu suscripción",
+      );
+    }
+
+    const professional_account = await this.upsertProfessionalAccount(
+      profile_id,
+      dto,
+    );
+    const dealership_id = await this.resolveDealershipId(profile_id);
+    const customer_id = await this.resolveCustomer(profile_id);
+
+    try {
+      await this.stripe_client.updateCustomerBillingProfile(customer_id, {
+        name: dto.legal_name,
+        phone: `${dto.phone_code} ${dto.phone}`.trim(),
+        address: {
+          line1: dto.billing_address.line1,
+          line2: dto.billing_address.line2,
+          city: dto.billing_address.city,
+          state: dto.billing_address.state,
+          postal_code: dto.billing_address.postal_code,
+          country: dto.billing_address.country,
+        },
+        tax_id: dto.tax_id,
+        account_type: dto.account_type,
+      });
+    } catch (error) {
+      throw this.mapPaymentSheetStripeError(error);
+    }
+
+    await this.linkProfessionalAccountToCustomer(
+      professional_account,
+      customer_id,
+    );
+
+    const subscription = await this.resolvePaymentSheetSubscription({
+      profile_id,
+      customer_id,
+      stripe_price_id: price.stripe_price_id!,
+      plan_id: price.plan_id,
+      plan_price_id: dto.plan_price_id,
+      plan_version_id: published.id,
+      professional_account_id: professional_account.id,
+      dealership_id,
+    });
+
+    const { intent_type, client_secret } =
+      this.extractPaymentSheetIntent(subscription);
+    const customer_session_client_secret =
+      await this.stripe_client.createCustomerSession({ customer_id });
+
+    return {
+      intent_type,
+      client_secret,
+      customer_session_client_secret,
+      customer_id,
+      subscription_id: subscription.id,
+    };
+  }
+
+  /**
+   * Reuses a still-payable incomplete PaymentSheet subscription of the same
+   * price (retry after the user dismissed the sheet) and cancels the rest, so a
+   * customer never accumulates several pending subscriptions.
+   */
+  private async resolvePaymentSheetSubscription(params: {
+    profile_id: string;
+    customer_id: string;
+    stripe_price_id: string;
+    plan_id: string;
+    plan_price_id: string;
+    plan_version_id: string;
+    professional_account_id: string;
+    dealership_id?: string;
+  }): Promise<Stripe.Subscription> {
+    const incomplete = (
+      await this.stripe_client.listIncompleteSubscriptions(params.customer_id)
+    ).filter(
+      // Ignore incomplete subscriptions not created by this flow (e.g. Checkout).
+      (item) => item.metadata?.checkout_source === PAYMENT_SHEET_CHECKOUT_SOURCE,
+    );
+
+    const now_seconds = Math.floor(Date.now() / 1000);
+    const canceled_ids: string[] = [];
+    let reusable: Stripe.Subscription | null = null;
+
+    for (const candidate of incomplete) {
+      if (
+        !reusable &&
+        this.isFreshSubscriptionForPrice(
+          candidate,
+          params.stripe_price_id,
+          now_seconds,
+        )
+      ) {
+        const detailed =
+          await this.stripe_client.retrieveSubscriptionForPaymentSheet(
+            candidate.id,
+          );
+        if (this.hasPayableIntent(detailed)) {
+          reusable = detailed;
+          continue;
+        }
+      }
+
+      await this.cancelStaleIncompleteSubscription(candidate.id);
+      canceled_ids.push(candidate.id);
+    }
+
+    if (reusable) {
+      return reusable;
+    }
+
+    try {
+      return await this.stripe_client.createSubscriptionForPaymentSheet({
+        customer_id: params.customer_id,
+        stripe_price_id: params.stripe_price_id,
+        profile_id: params.profile_id,
+        plan_id: params.plan_id,
+        plan_price_id: params.plan_price_id,
+        plan_version_id: params.plan_version_id,
+        professional_account_id: params.professional_account_id,
+        dealership_id: params.dealership_id,
+        idempotency_key: this.buildPaymentSheetIdempotencyKey(
+          params.profile_id,
+          params.plan_price_id,
+          canceled_ids,
+        ),
+      });
+    } catch (error) {
+      throw this.mapPaymentSheetStripeError(error);
+    }
+  }
+
+  /**
+   * Stripe replays the cached response for an idempotency key during 24h, even if
+   * that subscription was canceled or expired meanwhile. So the key is scoped to
+   * a short time window (collapses double taps) and includes the ids of the
+   * subscriptions canceled in this request (a legitimate retry after a cancel
+   * always gets a fresh key).
+   */
+  private buildPaymentSheetIdempotencyKey(
+    profile_id: string,
+    plan_price_id: string,
+    canceled_ids: string[],
+  ): string {
+    const window = Math.floor(Date.now() / PAYMENT_SHEET_IDEMPOTENCY_WINDOW_MS);
+    const canceled_suffix = canceled_ids.length
+      ? `:after:${canceled_ids.join(",")}`
+      : "";
+
+    return `sub-ps:${profile_id}:${plan_price_id}:${window}${canceled_suffix}`;
+  }
+
+  private isFreshSubscriptionForPrice(
+    subscription: Stripe.Subscription,
+    stripe_price_id: string,
+    now_seconds: number,
+  ): boolean {
+    const price = subscription.items.data[0]?.price;
+    const price_id = typeof price === "string" ? price : price?.id;
+
+    return (
+      price_id === stripe_price_id &&
+      now_seconds - subscription.created < INCOMPLETE_SUBSCRIPTION_TTL_SECONDS
+    );
+  }
+
+  /** True when the (expanded) subscription still has an intent the SDK can confirm. */
+  private hasPayableIntent(subscription: Stripe.Subscription): boolean {
+    const invoice = subscription.latest_invoice;
+    if (
+      invoice &&
+      typeof invoice !== "string" &&
+      invoice.status === "open" &&
+      invoice.confirmation_secret?.client_secret
+    ) {
+      return true;
+    }
+
+    const setup_intent = subscription.pending_setup_intent;
+    return Boolean(
+      setup_intent &&
+        typeof setup_intent !== "string" &&
+        setup_intent.client_secret &&
+        setup_intent.status !== "succeeded" &&
+        setup_intent.status !== "canceled",
+    );
+  }
+
+  private extractPaymentSheetIntent(subscription: Stripe.Subscription): {
+    intent_type: SubscriptionPaymentSheetIntentType;
+    client_secret: string | null;
+  } {
+    const invoice = subscription.latest_invoice;
+    const payment_secret =
+      invoice && typeof invoice !== "string"
+        ? invoice.confirmation_secret?.client_secret
+        : undefined;
+    if (payment_secret) {
+      return { intent_type: "payment", client_secret: payment_secret };
+    }
+
+    const setup_intent = subscription.pending_setup_intent;
+    const setup_secret =
+      setup_intent && typeof setup_intent !== "string"
+        ? setup_intent.client_secret
+        : undefined;
+    if (setup_secret) {
+      // Total is 0 (trial / 100% discount): only the payment method is saved.
+      return { intent_type: "setup", client_secret: setup_secret };
+    }
+
+    return { intent_type: "none", client_secret: null };
+  }
+
+  private async cancelStaleIncompleteSubscription(
+    subscription_id: string,
+  ): Promise<void> {
+    try {
+      await this.stripe_client.cancelSubscriptionImmediately(subscription_id);
+    } catch (error) {
+      if (!this.isStripeErrorCode(error, "resource_missing")) {
+        throw error;
+      }
+      this.logger.warn(
+        `Suscripción incompleta ${subscription_id} ya no existe en Stripe`,
+      );
+    }
+  }
+
+  private async linkProfessionalAccountToCustomer(
+    account: ProfessionalAccountEntity,
+    stripe_customer_id: string,
+  ): Promise<void> {
+    if (account.stripe_customer_id === stripe_customer_id) {
+      return;
+    }
+
+    const preloaded = await this.professional_account_repository.preload({
+      id: account.id,
+      stripe_customer_id,
+    });
+
+    if (preloaded) {
+      await this.professional_account_repository.save(preloaded);
+    }
+  }
+
+  /** Translates known Stripe errors into user-facing HTTP errors; others pass through. */
+  private mapPaymentSheetStripeError(error: unknown): unknown {
+    if (this.isStripeErrorCode(error, "customer_tax_location_invalid")) {
+      return new BadRequestException(
+        "No pudimos validar tu dirección de facturación. Revisa los datos e inténtalo de nuevo",
+      );
+    }
+
+    if (this.isStripeErrorCode(error, "idempotency_key_in_use")) {
+      return new ConflictException(
+        "Estamos procesando tu solicitud; inténtalo de nuevo en unos segundos",
+      );
+    }
+
+    return error;
+  }
+
+  private isStripeErrorCode(error: unknown, code: string): boolean {
+    return (error as { code?: string } | null)?.code === code;
+  }
+
   private async createLegacySubscriptionCheckout(
     profile_id: string,
     plan_price_id: string,
@@ -469,7 +786,7 @@ export class BillingCheckoutService {
 
   private async upsertProfessionalAccount(
     profile_id: string,
-    dto: CreateSubscriptionCheckoutHttpDto,
+    dto: ProfessionalAccountInput,
   ): Promise<ProfessionalAccountEntity> {
     const existing = await this.professional_account_repository.findOne({
       where: { profile_id },

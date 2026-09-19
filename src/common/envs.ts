@@ -11,7 +11,7 @@ const envsSchema = z.object({
   /** Alineado con cookie access (15 min) en authCookieConfig */
   ACCESS_TOKEN_EXPIRES_IN: z.string().default("60m"),
   
-  /** Callback Next (ej. http://localhost:3000/api/auth/callback) — OAuth y verificación de email */
+  /** Callback Next (ej. http://localhost:3000/api/auth/callback) — OAuth */
   FRONTEND_REDIRECT_URL: z.string().default(""),
 
   GOOGLE_CLIENT_ID: z.string().default(""),
@@ -51,7 +51,10 @@ const envsSchema = z.object({
   FRONTEND_PASSWORD_RESET_URL: z.string().default(""),
   PASSWORD_RESET_TOKEN_EXPIRES_IN: z.string().default("15m"),
 
-  /** Override opcional del endpoint GET confirm; por defecto BACKEND_URL/auth/email-verification/confirm */
+  /**
+   * Redirect post-confirmación de email (Universal/App Links + web).
+   * Vacío → se deriva a `{FRONTEND_URL}/auth/email-callback` en `envs`.
+   */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string().default(""),
   FRONTEND_URL: z.string(),
   /** Origen del dashboard admin (allowlist de redirect_url en password recovery) */
@@ -141,6 +144,9 @@ const parsed_envs = envsSchema.parse(process.env);
 
 export const envs = {
   ...parsed_envs,
+  FRONTEND_EMAIL_VERIFICATION_URL:
+    process.env.FRONTEND_EMAIL_VERIFICATION_URL?.trim() ||
+    `${parsed_envs.FRONTEND_URL.replace(/\/$/, "")}/auth/email-callback`,
   STRIPE_SUCCESS_URL:
     process.env.STRIPE_SUCCESS_URL?.trim() ??
     `${parsed_envs.FRONTEND_URL}/usuario/monetizacion?checkout=success`,

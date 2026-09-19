@@ -45,6 +45,7 @@ import { FindPublicPlansCatalogController } from "./api/public/find-public-plans
 import { CreateBillingPortalController } from "./api/user/create-billing-portal/create-billing-portal.controller";
 import { CreateOneTimeCheckoutController } from "./api/user/create-one-time-checkout/create-one-time-checkout.controller";
 import { CreateSubscriptionCheckoutController } from "./api/user/create-subscription-checkout/create-subscription-checkout.controller";
+import { CreateSubscriptionPaymentSheetController } from "./api/user/create-subscription-payment-sheet/create-subscription-payment-sheet.controller";
 import { FindBillingCatalogController } from "./api/user/find-billing-catalog/find-billing-catalog.controller";
 import { FindBillingInvoicesController } from "./api/user/find-billing-invoices/find-billing-invoices.controller";
 import { GetBillingMeController } from "./api/user/get-billing-me/get-billing-me.controller";
@@ -138,6 +139,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     PlanAccessGrantsAdminController,
     GetBillingMeController,
     CreateSubscriptionCheckoutController,
+    CreateSubscriptionPaymentSheetController,
     CreateOneTimeCheckoutController,
     CreateBillingPortalController,
     FindBillingInvoicesController,
