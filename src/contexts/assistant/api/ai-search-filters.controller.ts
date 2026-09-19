@@ -6,7 +6,7 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { SkipThrottle, Throttle, ThrottlerGuard } from "@nestjs/throttler";
 
 import { envs } from "@/src/common/envs";
 import { V1_SEARCH_AI_FILTERS } from "@/src/contexts/vehicles/api/route.constants";
@@ -15,6 +15,11 @@ import { AiSearchFiltersHttpDto } from "./ai-search-filters.http-dto";
 
 @Controller(V1_SEARCH_AI_FILTERS)
 @UseGuards(ThrottlerGuard)
+@SkipThrottle({
+  "vehicle-ai": true,
+  "support-tickets": true,
+  "vehicle-identification": true,
+})
 @Throttle({
   "ai-search-filters": {
     limit: envs.AI_SEARCH_FILTERS_THROTTLE_LIMIT,

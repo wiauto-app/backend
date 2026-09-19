@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -7,6 +8,7 @@ import type { UIMessage } from "ai";
 import { Repository } from "typeorm";
 import { AssistantConversationEntity } from "../entities/assistant-conversation.entity";
 import { buildConversationTitle } from "../helpers/build-conversation-title";
+import { stripNulBytes } from "../helpers/strip-nul-bytes";
 
 export interface AssistantConversationListItem  {
   id: string;
@@ -16,6 +18,8 @@ export interface AssistantConversationListItem  {
 
 @Injectable()
 export class AssistantConversationService {
+  private readonly logger = new Logger(AssistantConversationService.name);
+
   constructor(
     @InjectRepository(AssistantConversationEntity)
     private readonly conversationRepository: Repository<AssistantConversationEntity>,
@@ -81,24 +85,41 @@ export class AssistantConversationService {
     userId: string,
     conversationId: string,
     messages: UIMessage[],
-  ): Promise<AssistantConversationEntity> {
+  ): Promise<AssistantConversationEntity | undefined> {
     const existing = await this.findByIdForUser(userId, conversationId);
-    const title =
+
+    // Postgres rejects NUL bytes (\u0000) inside text/jsonb columns, and a
+    // chat message can legitimately contain one (e.g. pasted binary-ish
+    // text). Strip them from everything we're about to persist.
+    const sanitizedMessages = stripNulBytes(messages);
+    const title = stripNulBytes(
       existing.title === "Nueva conversación"
-        ? buildConversationTitle(messages)
-        : existing.title;
+        ? buildConversationTitle(sanitizedMessages)
+        : existing.title,
+    );
 
-    const conversation = await this.conversationRepository.preload({
-      id: conversationId,
-      messages,
-      title,
-    });
+    try {
+      const conversation = await this.conversationRepository.preload({
+        id: conversationId,
+        messages: sanitizedMessages,
+        title,
+      });
 
-    if (!conversation) {
-      throw new NotFoundException("Conversación no encontrada");
+      if (!conversation) {
+        throw new NotFoundException("Conversación no encontrada");
+      }
+
+      return await this.conversationRepository.save(conversation);
+    } catch (error) {
+      // A persistence failure here must never crash the process: the user
+      // already received the streamed answer, so losing the persisted copy
+      // of this one turn is an acceptable degraded outcome.
+      this.logger.error(
+        `No se pudo guardar la conversación ${conversationId}`,
+        error as Error,
+      );
+      return undefined;
     }
-
-    return this.conversationRepository.save(conversation);
   }
 
   async resolveConversationId(

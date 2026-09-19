@@ -12,6 +12,9 @@ services:
 
     restart: unless-stopped
 
+    # Chromium (Puppeteer PDF) necesita más /dev/shm que el default de Docker (64MB).
+    shm_size: "256mb"
+
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
 

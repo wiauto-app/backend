@@ -4,6 +4,7 @@ import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import * as nunjucks from "nunjucks";
 import * as puppeteer from "puppeteer";
 
+import { envs } from "@/src/common/envs";
 import type { OwnerDashboard } from "@/src/contexts/vehicles/types/owner-dashboard";
 
 import { buildDashboardPdfView } from "./dashboard-pdf.view-model";
@@ -167,7 +168,15 @@ export class PdfExportService implements OnModuleDestroy {
       this.browserPromise = puppeteer
         .launch({
           headless: true,
-          args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+          ...(envs.PUPPETEER_EXECUTABLE_PATH
+            ? { executablePath: envs.PUPPETEER_EXECUTABLE_PATH }
+            : {}),
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+          ],
         })
         .then((browser) => {
           browser.on("disconnected", () => {

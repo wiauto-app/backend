@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import {
   convertToModelMessages,
@@ -12,6 +12,8 @@ import {
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import type { Response } from "express";
 import { extractLastUserMessage } from "../helpers/extract-last-user-message";
+import { extractPreviousSearchFilters } from "../helpers/extract-previous-search-filters";
+import { stripToolPartsForLlm } from "../helpers/strip-tool-parts-for-llm";
 import type { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
 import type { AssistantChatMode } from "../types/assistant-chat-mode";
 import { AssistantSearchExecutorService } from "./assistant-search-executor.service";
@@ -38,6 +40,8 @@ interface StreamChatOptions {
 
 @Injectable()
 export class AssistantChatService {
+  private readonly logger = new Logger(AssistantChatService.name);
+
   constructor(
     private readonly systemPromptService: AssistantSystemPromptService,
     private readonly buySystemPromptService: AssistantBuySystemPromptService,
@@ -118,11 +122,21 @@ export class AssistantChatService {
     const stream = createUIMessageStream({
       originalMessages: messages,
       onEnd: async ({ messages: updatedMessages }) => {
-        await this.conversationService.saveMessages(
-          userId,
-          resolvedConversationId,
-          updatedMessages,
-        );
+        try {
+          await this.conversationService.saveMessages(
+            userId,
+            resolvedConversationId,
+            updatedMessages,
+          );
+        } catch (error) {
+          // saveMessages already swallows persistence failures internally;
+          // this catch is a last-resort guard so a rejection here can never
+          // escape uncaught and crash the process.
+          this.logger.error(
+            `Fallo inesperado al guardar la conversación ${resolvedConversationId}`,
+            error as Error,
+          );
+        }
       },
       execute: async ({ writer }) => {
         const result = streamText({
@@ -169,11 +183,21 @@ export class AssistantChatService {
     const stream = createUIMessageStream({
       originalMessages: messages,
       onEnd: async ({ messages: updatedMessages }) => {
-        await this.conversationService.saveMessages(
-          userId,
-          resolvedConversationId,
-          updatedMessages,
-        );
+        try {
+          await this.conversationService.saveMessages(
+            userId,
+            resolvedConversationId,
+            updatedMessages,
+          );
+        } catch (error) {
+          // saveMessages already swallows persistence failures internally;
+          // this catch is a last-resort guard so a rejection here can never
+          // escape uncaught and crash the process.
+          this.logger.error(
+            `Fallo inesperado al guardar la conversación ${resolvedConversationId}`,
+            error as Error,
+          );
+        }
       },
       execute: async ({ writer }) => {
         const result = streamText({
@@ -216,9 +240,11 @@ export class AssistantChatService {
     response: Response;
   }): Promise<void> {
     const userMessage = extractLastUserMessage(messages);
+    const previousFilters = extractPreviousSearchFilters(messages);
     const { filters, catalog, resolved } =
       await this.searchFromMessageService.resolveFromMessage({
         message: userMessage,
+        previousFilters,
       });
     const searchResult = await this.searchExecutor.execute(
       filters,
@@ -233,11 +259,21 @@ export class AssistantChatService {
     const stream = createUIMessageStream({
       originalMessages: messages,
       onEnd: async ({ messages: updatedMessages }) => {
-        await this.conversationService.saveMessages(
-          userId,
-          resolvedConversationId,
-          updatedMessages,
-        );
+        try {
+          await this.conversationService.saveMessages(
+            userId,
+            resolvedConversationId,
+            updatedMessages,
+          );
+        } catch (error) {
+          // saveMessages already swallows persistence failures internally;
+          // this catch is a last-resort guard so a rejection here can never
+          // escape uncaught and crash the process.
+          this.logger.error(
+            `Fallo inesperado al guardar la conversación ${resolvedConversationId}`,
+            error as Error,
+          );
+        }
       },
       execute: async ({ writer }) => {
         const toolCallId = generateId();
@@ -259,10 +295,17 @@ export class AssistantChatService {
           output: searchResult,
         });
 
+        // This call has no `tools` option: the searchVehicles "tool call"
+        // above is faked by this deterministic pipeline, not native SDK
+        // tool-calling. Sending raw tool-*-available parts from prior turns
+        // as history makes DeepSeek imitate that tool-call format as
+        // literal output text (see stripToolPartsForLlm). Only the payload
+        // sent to the model is transformed; `saveMessages` still persists
+        // the original `messages` with their full parts.
         const summary = streamText({
           model: deepseek(envs.DEEPSEEK_MODEL),
           system: this.systemPromptService.build(searchResult),
-          messages: await convertToModelMessages(messages),
+          messages: await convertToModelMessages(stripToolPartsForLlm(messages)),
         });
 
         writer.merge(

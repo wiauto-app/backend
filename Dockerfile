@@ -29,6 +29,8 @@ CMD ["sh", "-c", "pnpm install && node --run dev"]
 FROM base AS build
 
 ENV CI=true
+# Chrome lo aporta Chromium del sistema en el stage production; no bajar el binario de Puppeteer.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 RUN apk update && apk add --no-cache dumb-init=1.2.5-r3 && npm install -g pnpm@9.14.2
 
@@ -49,8 +51,20 @@ FROM base AS production
 
 ENV NODE_ENV=production
 ENV USER=node
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-COPY --from=build /usr/bin/dumb-init /usr/bin/dumb-init
+# Chromium + deps para Puppeteer (export PDF). dumb-init como PID 1.
+RUN apk add --no-cache \
+    dumb-init=1.2.5-r3 \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto
+
 COPY --from=build $DIR/package.json .
 COPY --from=build $DIR/pnpm-lock.yaml .
 COPY --from=build $DIR/node_modules node_modules
