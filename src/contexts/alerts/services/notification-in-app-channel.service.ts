@@ -11,13 +11,15 @@ export class NotificationInAppChannelService {
     private readonly notification_gateway: NotificationGateway,
   ) {}
 
-  async send(input: NotifyInput): Promise<void> {
+  /** Devuelve el id de la notificación creada (o `null` si no aplica). */
+  async send(input: NotifyInput): Promise<string | null> {
     if (!input.profile_id) {
-      return;
+      return null;
     }
 
     const notification =
       await this.notification_repository.createFromNotifyInput(input);
     this.notification_gateway.emitNew(notification);
+    return notification.id;
   }
 }

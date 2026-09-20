@@ -1,7 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { InjectRepository } from "@nestjs/typeorm";
-import { IsNull, Repository } from "typeorm";
+import { In, IsNull, Not, Repository } from "typeorm";
 
 import { NotificationEntity } from "../entities/notification.entity";
 import type { NotifyInput } from "../types/notify-input";
@@ -109,6 +109,21 @@ export class TypeOrmNotificationRepository {
 
     const saved = await this.notification_repository.save(preloaded);
     return entity_to_primitive(saved);
+  }
+
+  async countUnreadExcludingCategories(
+    profile_id: string,
+    excluded_categories: readonly string[],
+  ): Promise<number> {
+    return this.notification_repository.count({
+      where: {
+        profile_id,
+        read_at: IsNull(),
+        ...(excluded_categories.length > 0
+          ? { category: Not(In([...excluded_categories])) }
+          : {}),
+      },
+    });
   }
 
   async markAllAsRead(profile_id: string): Promise<{ updated: number }> {

@@ -274,6 +274,24 @@ export class ChatMessageGateway implements OnGatewayConnection, OnGatewayDisconn
     return delivered;
   }
 
+  /**
+   * ¿El usuario tiene este chat abierto? La sala `chat:<id>` solo la unen las pantallas de
+   * conversación (`join_chat`), así que estar en la sala equivale a tener el chat enfocado.
+   * La presencia vive en memoria de esta instancia: con varias réplicas hace falta un
+   * adapter (redis) para que `fetchSockets` vea todas.
+   */
+  async isUserInChatRoom(chat_id: string, user_id: string): Promise<boolean> {
+    try {
+      const sockets = await this.server.in(this.getChatRoom(chat_id)).fetchSockets();
+      return sockets.some(
+        (remote_socket) =>
+          (remote_socket.data as { user_id?: string }).user_id === user_id,
+      );
+    } catch {
+      return false;
+    }
+  }
+
   emitMessageCreated(message: ChatMessageListItem): void {
     this.server
       .to(this.getChatRoom(message.chat_id))

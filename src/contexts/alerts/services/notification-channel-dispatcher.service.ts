@@ -10,7 +10,7 @@ import {
 } from "./alert-notification-rules";
 import { NotificationEmailChannelService } from "./notification-email-channel.service";
 import { NotificationInAppChannelService } from "./notification-in-app-channel.service";
-import { NotificationPushChannelStubService } from "./notification-push-channel-stub.service";
+import { NotificationPushChannelService } from "./notification-push-channel.service";
 import { NotificationSmsChannelStubService } from "./notification-sms-channel-stub.service";
 import { NotificationWhatsappChannelService } from "./notification-whatsapp-channel.service";
 
@@ -21,7 +21,7 @@ export class NotificationChannelDispatcher {
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly email_channel: NotificationEmailChannelService,
     private readonly in_app_channel: NotificationInAppChannelService,
-    private readonly push_channel: NotificationPushChannelStubService,
+    private readonly push_channel: NotificationPushChannelService,
     private readonly sms_channel: NotificationSmsChannelStubService,
     private readonly whatsapp_channel: NotificationWhatsappChannelService,
   ) {}
@@ -44,9 +44,13 @@ export class NotificationChannelDispatcher {
       return;
     }
 
-    const channels = input.channels_override
+    const selected_channels = input.channels_override
       ? [...input.channels_override]
       : await this.get_account_channels(input.profile_id, input.category);
+    const excluded_channels = new Set(input.exclude_channels ?? []);
+    const channels = selected_channels.filter(
+      (channel) => !excluded_channels.has(channel),
+    );
     if (channels.length === 0) {
       return;
     }
@@ -54,6 +58,19 @@ export class NotificationChannelDispatcher {
     const email =
       input.email_override ??
       (await this.profile_user_repository.findEmailById(input.profile_id));
+
+    const errors: unknown[] = [];
+
+    // El in-app va primero: su id viaja en el `data` del push para que la app pueda
+    // marcar la notificación como leída.
+    let notification_id: string | null = null;
+    if (channels.includes("in_app")) {
+      try {
+        notification_id = await this.in_app_channel.send(input);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
 
     const sends: Promise<void>[] = [];
 
@@ -75,15 +92,11 @@ export class NotificationChannelDispatcher {
         continue;
       }
 
-      if (channel === "in_app") {
-        sends.push(this.in_app_channel.send(input));
+      // El canal push nunca lanza: un fallo de FCM/Expo no debe afectar a los demás canales.
+      if (channel === "push") {
+        sends.push(this.push_channel.send(input, { notification_id }));
         continue;
       }
-
-      // if (channel === "push") {
-      //   sends.push(this.push_channel.send(input));
-      //   continue;
-      // }
 
       if (channel === "sms") {
         sends.push(this.sms_channel.send(input));
@@ -95,7 +108,16 @@ export class NotificationChannelDispatcher {
       }
     }
 
-    await Promise.all(sends);
+    const settled = await Promise.allSettled(sends);
+    for (const result of settled) {
+      if (result.status === "rejected") {
+        errors.push(result.reason);
+      }
+    }
+
+    if (errors.length > 0) {
+      throw errors[0];
+    }
   }
 
   private async load_preferences(

@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { Queue } from "bullmq";
 
 import type { AlertEventType } from "../types/alert-event-type.enum";
+import type { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
 import {
   ALERT_DIGEST_JOB_DAILY,
   ALERT_DIGEST_JOB_WEEKLY,
@@ -35,12 +36,14 @@ export class AlertProcessingEnqueueService {
     event_type: AlertEventType;
     profile_id?: string;
     metadata?: Record<string, unknown>;
+    exclude_channels?: readonly AlertNotificationChannel[];
   }): Promise<void> {
     const payload: AlertProcessingVehicleEventJobData = {
       vehicle_id: data.vehicle_id,
       event_type: data.event_type,
       profile_id: data.profile_id,
       metadata: data.metadata,
+      exclude_channels: data.exclude_channels,
     };
 
     await this.alert_processing_queue.add(

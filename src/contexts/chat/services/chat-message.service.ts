@@ -7,11 +7,17 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/alert-processing-enqueue.service";
 import { NotificationChannelDispatcher } from "@/src/contexts/alerts/services/notification-channel-dispatcher.service";
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
+import {
+  ALERT_NOTIFICATION_CHANNEL,
+  type AlertNotificationChannel,
+} from "@/src/contexts/alerts/types/alert-notification-channel.enum";
+import { PUSH_TYPE } from "@/src/contexts/alerts/types/push-message";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { UserBlocksService } from "@/src/contexts/user-blocks/services/user-blocks.service";
 
+import { ChatMessageGateway } from "../gateways/chat-message.gateway";
 import { ChatNotFoundException } from "../exceptions/chat-not-found.exception";
 import { ChatMessageNotFoundException } from "../exceptions/chat-message-not-found.exception";
 import { CHAT_TYPE, Chat } from "../types/chat";
@@ -40,6 +46,7 @@ export class ChatMessageService {
     private readonly alert_processing_enqueue_service: AlertProcessingEnqueueService,
     private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
     private readonly user_blocks_service: UserBlocksService,
+    private readonly chat_message_gateway: ChatMessageGateway,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
   ) {}
@@ -230,6 +237,7 @@ export class ChatMessageService {
           message_excerpt,
           publisher_type: vehicle.publisher_type,
         },
+        exclude_channels: await this.resolvePushExclusion(chat.id, participant_id),
       });
     }
   }
@@ -271,16 +279,33 @@ export class ChatMessageService {
     }
 
     await Promise.all(
-      [...recipient_ids].map((profile_id) =>
+      [...recipient_ids].map(async (profile_id) =>
         this.notification_channel_dispatcher.notify({
           profile_id,
           category: "new_message",
           title,
           body,
           data,
+          push_type: PUSH_TYPE.SUPPORT_MESSAGE,
+          exclude_channels: await this.resolvePushExclusion(chat.id, profile_id),
         }),
       ),
     );
+  }
+
+  /**
+   * Si el destinatario ya tiene el chat abierto (está en la sala del socket) el mensaje le
+   * llega en vivo: se omite el push para no duplicarlo.
+   */
+  private async resolvePushExclusion(
+    chat_id: string,
+    recipient_id: string,
+  ): Promise<readonly AlertNotificationChannel[] | undefined> {
+    const in_room = await this.chat_message_gateway.isUserInChatRoom(
+      chat_id,
+      recipient_id,
+    );
+    return in_room ? [ALERT_NOTIFICATION_CHANNEL.PUSH] : undefined;
   }
 
   private async buildSenderExcerpt(

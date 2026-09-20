@@ -42,6 +42,7 @@ export class AlertProcessingProcessor extends WorkerHost {
         event_type: data.event_type as (typeof ALERT_EVENT_TYPE)[keyof typeof ALERT_EVENT_TYPE],
         profile_id: data.profile_id,
         metadata: data.metadata,
+        exclude_channels: data.exclude_channels,
       });
       return;
     }

@@ -36,6 +36,10 @@ import {
 import { compute_digest_scheduled_for } from "./compute-digest-scheduled-for";
 import { NotificationChannelDispatcher } from "./notification-channel-dispatcher.service";
 
+const is_chat_event_type = (event_type: ProcessAlertEventDto["event_type"]): boolean =>
+  event_type === ALERT_EVENT_TYPE.NEW_MESSAGE ||
+  event_type === ALERT_EVENT_TYPE.SELLER_REPLY;
+
 interface Recipient {
   profile_id: string | null;
   email: string;
@@ -315,6 +319,20 @@ export class AlertNotificationService {
     await this.event_repository.save(event);
 
     if (!recipient.alert && account_frequency !== "instant") {
+      // Los mensajes de chat no esperan al digest: el push sale al instante y el resto de
+      // canales (email) siguen el flujo de digest sin cambios.
+      if (is_chat_event_type(dto.event_type) && channels.includes("push")) {
+        await this.notification_channel_dispatcher.notify({
+          profile_id: recipient.profile_id,
+          category: dto.event_type,
+          title,
+          body,
+          data: notification_payload,
+          email_override: recipient.email,
+          channels_override: ["push"],
+          exclude_channels: dto.exclude_channels,
+        });
+      }
       return;
     }
 
@@ -326,6 +344,7 @@ export class AlertNotificationService {
       data: notification_payload,
       email_override: recipient.email,
       channels_override: alert_channels,
+      exclude_channels: dto.exclude_channels,
     });
 
     await this.event_repository.update(event.markSent());

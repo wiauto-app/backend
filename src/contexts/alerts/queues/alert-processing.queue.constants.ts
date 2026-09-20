@@ -1,3 +1,5 @@
+import type { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
+
 export const ALERT_PROCESSING_QUEUE = "alert-processing";
 
 export const ALERT_PROCESSING_JOB_VEHICLE_PUBLISHED = "vehicle_published";
@@ -12,6 +14,7 @@ export interface AlertProcessingVehicleEventJobData {
   event_type: string;
   profile_id?: string;
   metadata?: Record<string, unknown>;
+  exclude_channels?: readonly AlertNotificationChannel[];
 }
 
 export const ALERT_DIGEST_QUEUE = "alert-digest";

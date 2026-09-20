@@ -132,6 +132,18 @@ const envsSchema = z.object({
   FIREBASE_CLIENT_EMAIL: z.string(),
   FIREBASE_PRIVATE_KEY: z.string(),
 
+  /** Interruptor maestro del push. Apagado por defecto: nada sale hasta activarlo. */
+  PUSH_NOTIFICATIONS_ENABLED: z.stringbool().default(false),
+  /** CSV de user ids que pueden recibir push (rollout). Vacío = sin restricción. */
+  PUSH_ALLOWED_USER_IDS: z
+    .string()
+    .default("")
+    .transform((val) => val.split(",").map((s) => s.trim()).filter(Boolean)),
+  /** Solo registra en logs, no envía. Por defecto activo salvo NODE_ENV=production. */
+  PUSH_DRY_RUN: z.stringbool().optional(),
+  /** Días sin señal de vida para borrar un dispositivo. 0 = limpieza desactivada. */
+  PUSH_DEVICE_STALE_DAYS: z.coerce.number().int().min(0).default(0),
+
   ADMIN_ALERTS_EMAILS: z
     .string()
     .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean)),
@@ -144,8 +156,10 @@ const parsed_envs = envsSchema.parse(process.env);
 
 export const envs = {
   ...parsed_envs,
+  PUSH_DRY_RUN:
+    parsed_envs.PUSH_DRY_RUN ?? process.env.NODE_ENV !== "production",
   FRONTEND_EMAIL_VERIFICATION_URL:
-    process.env.FRONTEND_EMAIL_VERIFICATION_URL?.trim() ||
+    process.env.FRONTEND_EMAIL_VERIFICATION_URL?.trim() ??
     `${parsed_envs.FRONTEND_URL.replace(/\/$/, "")}/auth/email-callback`,
   STRIPE_SUCCESS_URL:
     process.env.STRIPE_SUCCESS_URL?.trim() ??
