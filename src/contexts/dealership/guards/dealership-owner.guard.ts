@@ -31,7 +31,7 @@ export class DealershipOwnerGuard implements CanActivate {
       return true;
     }
 
-    const dealership_id = request.params.id;
+    const dealership_id = request.params.id as string;
     const owner =
       await this.dealership_member_repository.findOwnerMemberByDealershipId(
         dealership_id,
