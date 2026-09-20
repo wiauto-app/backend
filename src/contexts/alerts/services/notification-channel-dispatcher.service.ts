@@ -13,6 +13,7 @@ import { NotificationInAppChannelService } from "./notification-in-app-channel.s
 import { NotificationPushChannelService } from "./notification-push-channel.service";
 import { NotificationSmsChannelStubService } from "./notification-sms-channel-stub.service";
 import { NotificationWhatsappChannelService } from "./notification-whatsapp-channel.service";
+import { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
 
 @Injectable()
 export class NotificationChannelDispatcher {

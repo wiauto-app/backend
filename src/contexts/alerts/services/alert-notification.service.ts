@@ -65,7 +65,8 @@ export class AlertNotificationService {
       ? await this.published_vehicle_snapshot_port.buildForVehicleId(dto.vehicle_id)
       : null;
 
-    if (dto.vehicle_id && !snapshot) {
+    // Los eventos de chat no dependen del snapshot del vehículo (solo lo enriquecen).
+    if (dto.vehicle_id && !snapshot && !is_chat_event_type(dto.event_type)) {
       return;
     }
 

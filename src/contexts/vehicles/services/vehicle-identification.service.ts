@@ -84,7 +84,6 @@ export class VehicleIdentificationService {
   async lookup(
     dto: LookupVehicleIdentificationDto,
   ): Promise<ApiVehicleResponse> {
-    console.log(dto)
     const plate =
       typeof dto.plate === "string" ? dto.plate.trim() : undefined;
     const vin = typeof dto.vin === "string" ? dto.vin.trim() : undefined;
@@ -96,13 +95,11 @@ export class VehicleIdentificationService {
         "Debes enviar exactamente uno de plate o vin",
       );
     }
-    console.log(has_plate, has_vin)
     const api_data = await this.api_vehiculo_client.lookup({
       plate: has_plate ? plate : undefined,
       vin: has_vin ? vin : undefined,
       // country: dto.country?.trim() ?? "ES",
     });
-    console.log(api_data)
     // const api_data = {
     //   "error": null,
     //   "plate": "1941GFX",

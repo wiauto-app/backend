@@ -48,7 +48,7 @@ export class NotificationPushChannelService {
     private readonly expo_client: ExpoPushClient,
     private readonly badge_service: PushBadgeService,
     private readonly maintenance_enqueue_service: PushMaintenanceEnqueueService,
-  ) {}
+  ) { }
 
   async send(
     input: NotifyInput,
@@ -58,8 +58,7 @@ export class NotificationPushChannelService {
       await this.deliver(input, options);
     } catch (error) {
       this.logger.error(
-        `push.failed user=${input.profile_id ?? "-"} category=${input.category} error=${
-          error instanceof Error ? error.message : String(error)
+        `push.failed user=${input.profile_id ?? "-"} category=${input.category} error=${error instanceof Error ? error.message : String(error)
         }`,
       );
     }
@@ -73,10 +72,11 @@ export class NotificationPushChannelService {
       return;
     }
 
-    const allowed = this.config.allowed_user_ids;
-    if (allowed.length > 0 && !allowed.includes(input.profile_id)) {
-      return;
-    }
+    // const allowed = this.config.allowed_user_ids;
+    // if (allowed.length > 0 && !allowed.includes(input.profile_id)) {
+    //   return;
+    // }
+    // console.log("allowed", allowed);
 
     const message = build_push_message(input, {
       notification_id: options.notification_id,
@@ -92,18 +92,9 @@ export class NotificationPushChannelService {
       return;
     }
 
-    if (this.config.dry_run) {
-      for (const device of devices) {
-        this.logger.log(
-          `push.dry-run user=${message.user_id} device=${device.id} type=${message.type} provider=${device.tokenType}`,
-        );
-      }
-      return;
-    }
 
     const fcm_devices = devices.filter((d) => d.tokenType === PushTokenType.FCM);
     const expo_devices = devices.filter((d) => d.tokenType === PushTokenType.EXPO);
-
     const results: PushDeliveryResult[] = [];
     if (fcm_devices.length > 0) {
       results.push(...(await this.send_fcm(fcm_devices, message)));
@@ -122,7 +113,6 @@ export class NotificationPushChannelService {
     const outcomes = await this.fcm_client.send_each(
       devices.map((device) => ({ token: device.token, message })),
     );
-
     return devices.map((device, index) => {
       const outcome = outcomes[index];
       const status = classify_outcome(

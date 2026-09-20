@@ -49,7 +49,7 @@ export class ChatMessageService {
     private readonly chat_message_gateway: ChatMessageGateway,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(
     create_chat_message_dto: CreateChatMessageDto,
@@ -74,7 +74,6 @@ export class ChatMessageService {
       type: create_chat_message_dto.type,
       metadata: create_chat_message_dto.metadata,
     });
-
     await this.chat_message_repository.save(chat_message);
     await this.chat_participant_state_repository.incrementUnreadForOthers(
       chat.id,
@@ -191,22 +190,18 @@ export class ChatMessageService {
     sender_id: string,
     content: string,
   ): Promise<void> {
-    if (chat.ticket_id || chat.chat_type === CHAT_TYPE.SUPPORT) {
+    if (chat.ticket_id ?? chat.chat_type === CHAT_TYPE.SUPPORT) {
       await this.notifySupportChatMessage(chat, sender_id, content);
       return;
     }
 
-    if (!chat.vehicle_id) {
-      return;
-    }
-
-    const vehicle = await this.vehicle_repository.findOne(chat.vehicle_id);
-    if (!vehicle?.profile_id) {
-      return;
-    }
-
-    const owner_profile_id = vehicle.profile_id;
-    const sender_is_owner = sender_id === owner_profile_id;
+    // El vehículo es contexto opcional: enriquece el evento y define "vendedor",
+    // pero un chat sin vehículo (o con vehículo borrado) notifica igual.
+    const vehicle = chat.vehicle_id
+      ? await this.vehicle_repository.findOne(chat.vehicle_id)
+      : null;
+    const sender_is_owner =
+      vehicle?.profile_id != null && sender_id === vehicle.profile_id;
     const { sender_name, message_excerpt } = await this.buildSenderExcerpt(
       sender_id,
       content,
@@ -219,23 +214,17 @@ export class ChatMessageService {
 
       const event_type = sender_is_owner
         ? ALERT_EVENT_TYPE.SELLER_REPLY
-        : participant_id === owner_profile_id
-          ? ALERT_EVENT_TYPE.NEW_MESSAGE
-          : null;
-
-      if (!event_type) {
-        continue;
-      }
+        : ALERT_EVENT_TYPE.NEW_MESSAGE;
 
       await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-        vehicle_id: chat.vehicle_id,
+        vehicle_id: vehicle && chat.vehicle_id ? chat.vehicle_id : undefined,
         event_type,
         profile_id: participant_id,
         metadata: {
           chat_id: chat.id,
           sender_name,
           message_excerpt,
-          publisher_type: vehicle.publisher_type,
+          ...(vehicle ? { publisher_type: vehicle.publisher_type } : {}),
         },
         exclude_channels: await this.resolvePushExclusion(chat.id, participant_id),
       });
@@ -315,9 +304,9 @@ export class ChatMessageService {
     const sender_profile = await this.profile_repository.findOne(sender_id);
     const sender_name = sender_profile
       ? [sender_profile.name, sender_profile.last_name]
-          .filter(Boolean)
-          .join(" ")
-          .trim() || "Alguien"
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "Alguien"
       : "Alguien";
     const message_excerpt =
       content.trim().length > 160

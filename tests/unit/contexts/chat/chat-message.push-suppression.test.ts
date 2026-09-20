@@ -121,6 +121,41 @@ describe("ChatMessageService: supresión de push si el chat está abierto", () =
     expect(call.metadata.chat_id).toBe(chat.id);
   });
 
+  it("chat sin vehículo: notifica igual a los demás participantes sin vehicle_id", async () => {
+    const { enqueue, alert_processing_enqueue_service } = buildService([]);
+    const chat = Chat.create({
+      participants: ["user-a", "user-b", "user-c"],
+      chat_type: CHAT_TYPE.GROUP,
+      vehicle_id: null,
+    });
+
+    await enqueue(chat, "user-a", "Hola");
+
+    const calls = alert_processing_enqueue_service.enqueue_vehicle_event.mock.calls.map(
+      ([input]) => input as Record<string, unknown>,
+    );
+    expect(calls.map((c) => c.profile_id)).toEqual(["user-b", "user-c"]);
+    for (const input of calls) {
+      expect(input.event_type).toBe("new_message");
+      expect(input.vehicle_id).toBeUndefined();
+      expect(input.metadata).not.toHaveProperty("publisher_type");
+    }
+  });
+
+  it("chat con vehículo: si responde el dueño el evento es seller_reply", async () => {
+    const { enqueue, alert_processing_enqueue_service } = buildService([]);
+
+    await enqueue(vehicleChat(), "seller-1", "Sigue disponible");
+
+    expect(alert_processing_enqueue_service.enqueue_vehicle_event).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: "seller_reply",
+        profile_id: "buyer-1",
+        vehicle_id: "veh-1",
+      }),
+    );
+  });
+
   it("soporte: marca push_type support_message y excluye push solo a quien tiene el chat abierto", async () => {
     const { enqueue, notification_channel_dispatcher } = buildService(["admin-1"]);
 

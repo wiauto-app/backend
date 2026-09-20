@@ -67,7 +67,6 @@ export class ExpoPushClient {
       }
       outcomes.push(...tickets.map((ticket) => this.map_ticket(ticket)));
     }
-
     return outcomes;
   }
 
