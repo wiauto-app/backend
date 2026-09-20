@@ -174,12 +174,12 @@ export class DealershipService {
           .replace(/^\/+/, "")
           .replace(`${directory}/`, ""),
       );
+    await this.dealership_repository.delete(remove_dealership_dto.id);
+
     await this.remove_image_service.execute({
       paths: formated_images,
       bucket_name: directory,
     });
-
-    await this.dealership_repository.delete(remove_dealership_dto.id);
   }
 
   private async buildUniqueSlug(

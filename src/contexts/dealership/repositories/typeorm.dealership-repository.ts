@@ -6,6 +6,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { getSkip } from "@/src/contexts/shared/getSkip";
 
 import { Dealership, PrimitiveDealership } from "../types/dealership";
+import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { DealershipsFilter } from "../types/dealerships.filter";
 import { DealershipAdminList } from "../types/dealership-admin-list";
 import { DealershipEntity } from "../entities/dealership.entity";
@@ -284,7 +285,20 @@ export class TypeOrmDealershipRepository {
     await this.dealership_entity_repository.save(preloaded);
   }
 
+  /**
+   * `vehicles.dealership_id` no tiene `ON DELETE`, así que los anuncios se
+   * desvinculan del concesionario (siguen publicados) antes de borrarlo.
+   */
   async delete(id: string): Promise<void> {
-    await this.dealership_entity_repository.delete(id);
+    await this.dealership_entity_repository.manager.transaction(
+      async (manager) => {
+        await manager.update(
+          VehicleEntity,
+          { dealership_id: id },
+          { dealership_id: null },
+        );
+        await manager.delete(DealershipEntity, id);
+      },
+    );
   }
 }

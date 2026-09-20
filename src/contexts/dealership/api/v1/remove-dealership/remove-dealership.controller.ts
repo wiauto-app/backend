@@ -1,5 +1,14 @@
-import { Controller, Delete, HttpCode, HttpStatus, Param } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  Param,
+  UseGuards,
+} from "@nestjs/common";
 
+import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
+import { DealershipOwnerGuard } from "../../../guards/dealership-owner.guard";
 import { DealershipService } from "../../../services/dealership.service";
 import { V1_DEALERSHIPS } from "../../route.constants";
 
@@ -11,6 +20,7 @@ export class RemoveDealershipController {
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtGuard, DealershipOwnerGuard)
   run(@Param() params: FindDealershipHttpDto) {
     return this.dealership_service.remove({ id: params.id });
   }
