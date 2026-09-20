@@ -44,6 +44,7 @@ export interface CreateSubscriptionPlanData {
   stripe_product_id?: string | null;
   is_active: boolean;
   is_featured: boolean;
+  is_visible: boolean;
   sort_order: number;
   effect_config?: PlanEffectConfig;
   prices?: PlanPriceInput[];

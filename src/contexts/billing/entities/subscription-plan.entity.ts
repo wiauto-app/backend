@@ -68,6 +68,10 @@ export class SubscriptionPlanEntity {
   @Column({ name: "is_featured", default: false })
   is_featured!: boolean;
 
+  /** Si es false, el plan no aparece en el catálogo web/app. */
+  @Column({ name: "is_visible", default: true })
+  is_visible!: boolean;
+
   @Column({ name: "sort_order", default: 0 })
   sort_order!: number;
 

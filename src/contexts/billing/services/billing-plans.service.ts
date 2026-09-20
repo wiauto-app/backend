@@ -56,6 +56,7 @@ export interface CreatePlanPayload {
   billing_type?: string;
   is_active?: boolean;
   is_featured?: boolean;
+  is_visible?: boolean;
   sort_order?: number;
   prices?: Array<{
     interval: string;
@@ -144,6 +145,7 @@ export class BillingPlansService {
       type: PLAN_TYPE.STANDARD,
       is_active: payload.is_active ?? true,
       is_featured: payload.is_featured ?? false,
+      is_visible: payload.is_visible ?? true,
       sort_order: payload.sort_order ?? 0,
       effect_config,
       prices: payload.prices?.map((price) => ({
@@ -213,6 +215,7 @@ export class BillingPlansService {
       stripe_product_id: current.stripe_product_id,
       is_active: payload.is_active ?? current.is_active,
       is_featured: payload.is_featured ?? current.is_featured,
+      is_visible: payload.is_visible ?? current.is_visible,
       sort_order: payload.sort_order ?? current.sort_order,
       effect_config:
         payload.effect_config !== undefined

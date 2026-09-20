@@ -53,6 +53,10 @@ export class UpdateSubscriptionPlanHttpDto {
   is_featured?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  is_visible?: boolean;
+
+  @IsOptional()
   @IsInt()
   sort_order?: number;
 

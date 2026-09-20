@@ -37,6 +37,7 @@ export class TypeOrmSubscriptionPlanRepository {
       stripe_product_id: data.stripe_product_id ?? null,
       is_active: data.is_active,
       is_featured: data.is_featured,
+      is_visible: data.is_visible,
       sort_order: data.sort_order,
       effect_config: (data.effect_config ?? {}) as Record<string, unknown>,
     });
@@ -63,6 +64,7 @@ export class TypeOrmSubscriptionPlanRepository {
       stripe_product_id: data.stripe_product_id ?? null,
       is_active: data.is_active,
       is_featured: data.is_featured,
+      is_visible: data.is_visible,
       sort_order: data.sort_order,
       effect_config: (data.effect_config ?? {}) as Record<string, unknown>,
     });
@@ -131,6 +133,7 @@ export class TypeOrmSubscriptionPlanRepository {
       )
       .leftJoinAndSelect("versions.entitlements", "entitlements")
       .where("plan.is_active = :is_active", { is_active: true })
+      .andWhere("plan.is_visible = :is_visible", { is_visible: true })
       .orderBy("plan.sort_order", "ASC")
       .addOrderBy("plan.name", "ASC");
 
