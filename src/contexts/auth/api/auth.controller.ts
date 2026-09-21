@@ -151,6 +151,7 @@ export class AuthController {
 
   @Post("google/mobile")
   async googleMobile(@Body() dto: GoogleMobileDto, @Req() req: Request) {
+    console.log("GOOGLE MOBILE", dto);
     const profile = await this.googleTokenService.verifyIdToken(dto);
     const data = await this.authService.signInWithOAuthProfile(profile, req);
     return data;
