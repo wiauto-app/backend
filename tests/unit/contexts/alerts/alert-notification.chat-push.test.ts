@@ -117,6 +117,8 @@ describe("AlertNotificationService: push de chat", () => {
       expect.objectContaining({
         category: "seller_reply",
         channels_override: ["push"],
+        title: "Nuevo mensaje de Ana",
+        body: "Hola",
       }),
     );
   });

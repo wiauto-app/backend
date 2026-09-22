@@ -24,7 +24,9 @@ import { CHAT_TYPE, Chat } from "../types/chat";
 import {
   CHAT_MESSAGE_TYPE,
   ChatMessage,
+  type ChatMessageType,
 } from "../types/chatMessage";
+import { ChatMessageMetadata } from "../types/chatMessageMetadata";
 import { TypeOrmChatMessageRepository } from "@/src/contexts/chat/repositories/typeorm.chat-message-repository";
 import { TypeOrmChatParticipantStateRepository } from "@/src/contexts/chat/repositories/typeorm.chat-participant-state-repository";
 import { TypeOrmChatRepository } from "@/src/contexts/chat/repositories/typeorm.chat-repository";
@@ -84,6 +86,8 @@ export class ChatMessageService {
       chat,
       create_chat_message_dto.sender_id,
       create_chat_message_dto.content,
+      create_chat_message_dto.type,
+      create_chat_message_dto.metadata ?? null,
     );
 
     return chat_message;
@@ -189,9 +193,11 @@ export class ChatMessageService {
     chat: Chat,
     sender_id: string,
     content: string,
+    type: ChatMessageType = CHAT_MESSAGE_TYPE.TEXT,
+    metadata: ChatMessageMetadata | null = null,
   ): Promise<void> {
     if (chat.ticket_id ?? chat.chat_type === CHAT_TYPE.SUPPORT) {
-      await this.notifySupportChatMessage(chat, sender_id, content);
+      await this.notifySupportChatMessage(chat, sender_id, content, type, metadata);
       return;
     }
 
@@ -205,6 +211,8 @@ export class ChatMessageService {
     const { sender_name, message_excerpt } = await this.buildSenderExcerpt(
       sender_id,
       content,
+      type,
+      metadata,
     );
 
     for (const participant_id of chat.participants) {
@@ -235,10 +243,14 @@ export class ChatMessageService {
     chat: Chat,
     sender_id: string,
     content: string,
+    type: ChatMessageType,
+    metadata: ChatMessageMetadata | null,
   ): Promise<void> {
     const { sender_name, message_excerpt } = await this.buildSenderExcerpt(
       sender_id,
       content,
+      type,
+      metadata,
     );
     const title = "Nuevo mensaje de soporte";
     const body = `${sender_name}: ${message_excerpt || "Nuevo mensaje"}`;
@@ -300,6 +312,8 @@ export class ChatMessageService {
   private async buildSenderExcerpt(
     sender_id: string,
     content: string,
+    type: ChatMessageType,
+    metadata: ChatMessageMetadata | null,
   ): Promise<{ sender_name: string; message_excerpt: string }> {
     const sender_profile = await this.profile_repository.findOne(sender_id);
     const sender_name = sender_profile
@@ -308,10 +322,46 @@ export class ChatMessageService {
         .join(" ")
         .trim() || "Alguien"
       : "Alguien";
-    const message_excerpt =
-      content.trim().length > 160
-        ? `${content.trim().slice(0, 157)}...`
-        : content.trim();
-    return { sender_name, message_excerpt };
+
+    return {
+      sender_name,
+      message_excerpt: this.buildMessageExcerpt(type, content, metadata),
+    };
+  }
+
+  /** Attachments store a file path in `content`; notifications describe the kind instead. */
+  private buildMessageExcerpt(
+    type: ChatMessageType,
+    content: string,
+    metadata: ChatMessageMetadata | null,
+  ): string {
+    const attachment_label = this.attachmentNotificationLabel(type);
+
+    if (attachment_label) {
+      const caption = metadata?.caption?.trim();
+      if (!caption) {
+        return attachment_label;
+      }
+
+      const clipped_caption =
+        caption.length > 120 ? `${caption.slice(0, 117)}...` : caption;
+      return `${attachment_label}: ${clipped_caption}`;
+    }
+
+    const trimmed = content.trim();
+    return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
+  }
+
+  private attachmentNotificationLabel(type: ChatMessageType): string | null {
+    if (type === CHAT_MESSAGE_TYPE.IMAGE) {
+      return "Te ha enviado una foto";
+    }
+    if (type === CHAT_MESSAGE_TYPE.AUDIO) {
+      return "Te ha enviado un audio";
+    }
+    if (type === CHAT_MESSAGE_TYPE.FILE) {
+      return "Te ha enviado un archivo";
+    }
+    return null;
   }
 }

@@ -391,7 +391,10 @@ export class AlertNotificationService {
       };
     }
 
-    if (event_type === ALERT_EVENT_TYPE.NEW_MESSAGE) {
+    if (
+      event_type === ALERT_EVENT_TYPE.NEW_MESSAGE ||
+      event_type === ALERT_EVENT_TYPE.SELLER_REPLY
+    ) {
       const sender_name =
         typeof payload.sender_name === "string" && payload.sender_name.trim()
           ? payload.sender_name
@@ -404,13 +407,6 @@ export class AlertNotificationService {
       return {
         title: `Nuevo mensaje de ${sender_name}`,
         body: excerpt,
-      };
-    }
-
-    if (event_type === ALERT_EVENT_TYPE.SELLER_REPLY) {
-      return {
-        title: "Respuesta del vendedor",
-        body: "El vendedor respondió a tu mensaje",
       };
     }
 

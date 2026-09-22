@@ -48,12 +48,24 @@ const buildService = (users_in_room: string[]) => {
     user_repository as never,
   );
 
-  const enqueue = (chat: Chat, sender_id: string, content: string) =>
+  const enqueue = (
+    chat: Chat,
+    sender_id: string,
+    content: string,
+    type: "text" | "image" | "audio" | "file" = "text",
+    metadata: { caption?: string; file_name?: string } | null = null,
+  ) =>
     (
       service as unknown as {
-        enqueueMessageAlerts: (c: Chat, s: string, t: string) => Promise<void>;
+        enqueueMessageAlerts: (
+          c: Chat,
+          s: string,
+          content: string,
+          type: string,
+          metadata: { caption?: string; file_name?: string } | null,
+        ) => Promise<void>;
       }
-    ).enqueueMessageAlerts(chat, sender_id, content);
+    ).enqueueMessageAlerts(chat, sender_id, content, type, metadata);
 
   return {
     enqueue,
@@ -140,6 +152,27 @@ describe("ChatMessageService: supresión de push si el chat está abierto", () =
       expect(input.vehicle_id).toBeUndefined();
       expect(input.metadata).not.toHaveProperty("publisher_type");
     }
+  });
+
+  it("un adjunto notifica el tipo, no el nombre del archivo", async () => {
+    const { enqueue, alert_processing_enqueue_service } = buildService([]);
+
+    await enqueue(
+      vehicleChat(),
+      "buyer-1",
+      "chat-attachments/foto-coche.jpg",
+      "image",
+      { file_name: "foto-coche.jpg", caption: "Mira este" },
+    );
+
+    expect(alert_processing_enqueue_service.enqueue_vehicle_event).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          sender_name: "Ana Pérez",
+          message_excerpt: "Te ha enviado una foto: Mira este",
+        }),
+      }),
+    );
   });
 
   it("chat con vehículo: si responde el dueño el evento es seller_reply", async () => {

@@ -105,7 +105,10 @@ export class AlertEmailNotificationService extends AlertNotificationDispatcher {
       return "El anuncio ya no está disponible";
     }
 
-    if (payload.event_type === "new_message") {
+    if (
+      payload.event_type === "new_message" ||
+      payload.event_type === "seller_reply"
+    ) {
       const sender =
         typeof payload.payload.sender_name === "string"
           ? payload.payload.sender_name
@@ -118,10 +121,6 @@ export class AlertEmailNotificationService extends AlertNotificationDispatcher {
         return `${sender}: ${excerpt}`;
       }
       return "Tienes un nuevo mensaje";
-    }
-
-    if (payload.event_type === "seller_reply") {
-      return "El vendedor respondió a tu mensaje";
     }
 
     if (typeof payload.payload.vehicle_title === "string") {
