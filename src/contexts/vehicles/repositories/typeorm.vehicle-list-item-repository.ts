@@ -177,8 +177,10 @@ export class TypeOrmVehicleListItemRepository {
       return new Map();
     }
 
+    // innerJoin applies VehicleEntity.deleted_at IS NULL, same as the item listing.
     const rows = await this.vehicle_list_item_repository
       .createQueryBuilder("item")
+      .innerJoin("item.vehicle", "vehicle")
       .select("item.list_id", "list_id")
       .addSelect("COUNT(item.id)", "item_count")
       .where({ list_id: In(listIds) })

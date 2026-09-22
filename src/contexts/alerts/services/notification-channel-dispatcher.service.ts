@@ -13,7 +13,10 @@ import { NotificationInAppChannelService } from "./notification-in-app-channel.s
 import { NotificationPushChannelService } from "./notification-push-channel.service";
 import { NotificationSmsChannelStubService } from "./notification-sms-channel-stub.service";
 import { NotificationWhatsappChannelService } from "./notification-whatsapp-channel.service";
-import { AlertNotificationChannel } from "../types/alert-notification-channel.enum";
+import {
+  AlertNotificationChannel,
+  ENABLED_ALERT_NOTIFICATION_CHANNELS,
+} from "../types/alert-notification-channel.enum";
 
 @Injectable()
 export class NotificationChannelDispatcher {
@@ -50,7 +53,9 @@ export class NotificationChannelDispatcher {
       : await this.get_account_channels(input.profile_id, input.category);
     const excluded_channels = new Set(input.exclude_channels ?? []);
     const channels = selected_channels.filter(
-      (channel) => !excluded_channels.has(channel),
+      (channel) =>
+        !excluded_channels.has(channel) &&
+        ENABLED_ALERT_NOTIFICATION_CHANNELS.includes(channel),
     );
     if (channels.length === 0) {
       return;

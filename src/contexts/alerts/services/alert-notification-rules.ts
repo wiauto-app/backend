@@ -84,14 +84,8 @@ export const get_enabled_channels = (
   if (preferences.channel_push) {
     channels.push("push");
   }
-  if (preferences.channel_sms) {
-    channels.push("sms");
-  }
   if (preferences.channel_in_app) {
     channels.push("in_app");
-  }
-  if (preferences.channel_whatsapp) {
-    channels.push("whatsapp");
   }
   return channels;
 };

@@ -70,7 +70,7 @@ export class AlertEntity implements PrimitiveAlert {
   notify_recently_updated: boolean;
 
   /** Delivery methods are configured per saved search, never account-wide. */
-  @Column({ type: "jsonb", default: () => "'[\"email\",\"in_app\"]'" })
+  @Column({ type: "jsonb", default: () => "'[\"email\",\"push\",\"in_app\"]'" })
   notification_channels: AlertNotificationChannel[];
 
   @Column({ type: "timestamp", nullable: true })

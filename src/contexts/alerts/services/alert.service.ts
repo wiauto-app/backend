@@ -20,6 +20,7 @@ import {
   buildAlertFiltersFromVehicleSnapshot,
   buildDefaultAlertNameFromVehicleSnapshot,
 } from "./build-alert-filters-from-vehicle-snapshot";
+import { keepEnabledAlertChannels } from "../types/alert-notification-channel.enum";
 import { mapToAlertFilters } from "./map-alert-filters";
 
 @Injectable()
@@ -76,7 +77,9 @@ export class AlertService {
       phone,
       phone_code,
       filters,
-      notification_channels: dto.notification_channels,
+      notification_channels: dto.notification_channels
+        ? keepEnabledAlertChannels(dto.notification_channels)
+        : undefined,
     });
 
     await this.alert_repository.save(alert);
@@ -206,7 +209,10 @@ export class AlertService {
       notify_sold_removed: dto.notify_sold_removed,
       notify_featured: dto.notify_featured,
       notify_recently_updated: dto.notify_recently_updated,
-      notification_channels: dto.notification_channels,
+      notification_channels:
+        dto.notification_channels === undefined
+          ? undefined
+          : keepEnabledAlertChannels(dto.notification_channels),
     });
 
     await this.alert_repository.update(updated);
