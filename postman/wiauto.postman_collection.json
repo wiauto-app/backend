@@ -4056,6 +4056,21 @@
               "response": []
             },
             {
+              "name": "mis anuncios — canjear cupón destacar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/feature/redeem",
+                "description": "JWT + `VehicleOwnerGuard`. Canjea el cupón de destacado más antiguo (FIFO) del perfil en este anuncio. No consume el cupo `featured_listings` del plan. Requiere anuncio activo y no destacado + cupón disponible. Respuesta: `{ is_featured, featured_expires_at, featured_boost_weight, can_feature, credit_id, duration_days }`."
+              },
+              "response": []
+            },
+            {
               "name": "mis anuncios — programar",
               "request": {
                 "method": "PATCH",
@@ -9043,7 +9058,7 @@
                   "raw": "{\n  \"pack_id\": \"{{assistant_credit_pack_id}}\"\n}"
                 },
                 "url": "{{base_url}}/v1/billing/checkout/one-time",
-                "description": "Pago único. Exactamente uno de: pack_id, offer_id (+ metadata.vehicle_id) o plan_price_id legacy."
+                "description": "Pago único. Exactamente uno de: pack_id, offer_id (metadata.vehicle_id opcional) o plan_price_id legacy. Sin vehicle_id, el webhook crea un cupón canjeable."
               },
               "response": []
             },
@@ -9066,7 +9081,30 @@
                   "raw": "{\n  \"offer_id\": \"{{featured_listing_offer_id}}\",\n  \"metadata\": {\"vehicle_id\": \"{{vehicle_id}}\"}\n}"
                 },
                 "url": "{{base_url}}/v1/billing/checkout/one-time",
-                "description": "Destacar anuncio: offer_id + metadata.vehicle_id."
+                "description": "Destacar anuncio concreto: offer_id + metadata.vehicle_id. El webhook aplica el destacado a ese vehículo."
+              },
+              "response": []
+            },
+            {
+              "name": "checkout one-time featured coupon",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"offer_id\": \"{{featured_listing_offer_id}}\"\n}"
+                },
+                "url": "{{base_url}}/v1/billing/checkout/one-time",
+                "description": "Comprar cupón de destacado: offer_id sin metadata.vehicle_id. El webhook crea un cupón canjeable (`featured_listing_credits`)."
               },
               "response": []
             },

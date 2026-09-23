@@ -935,13 +935,8 @@ export class BillingCheckoutService {
         );
       }
 
-      const vehicle_id = params.metadata?.vehicle_id;
-      if (!vehicle_id) {
-        throw new BadRequestException(
-          "Debes indicar vehicle_id en metadata para destacar un anuncio",
-        );
-      }
-
+      // vehicle_id opcional: con él se destaca ese anuncio al pagar;
+      // sin él el webhook crea un cupón canjeable.
       const checkout_url = await this.stripe_client.createOneTimeCheckout({
         customer_id,
         stripe_price_id: offer.stripe_price_id,

@@ -32,6 +32,7 @@ import { SubscriptionEntity } from "../entities/subscription.entity";
 import { PlanAccessGrantEntity } from "../entities/plan-access-grant.entity";
 import { PlanAccessGrantUsageEntity } from "../entities/plan-access-grant-usage.entity";
 import { PlanAccessGrantsService } from "./plan-access-grants.service";
+import { FeaturedListingCreditsService } from "./featured-listing-credits.service";
 
 @Injectable()
 export class EntitlementsService {
@@ -39,6 +40,7 @@ export class EntitlementsService {
     private readonly billing_profile_repository: TypeOrmBillingProfileRepository,
     private readonly subscription_repository: TypeOrmSubscriptionRepository,
     private readonly plan_access_grants_service: PlanAccessGrantsService,
+    private readonly featured_listing_credits_service: FeaturedListingCreditsService,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     @InjectRepository(DealershipMembersEntity)
     private readonly dealership_members_repository: Repository<DealershipMembersEntity>,
@@ -424,6 +426,9 @@ export class EntitlementsService {
           }
         : null;
 
+    const available_featured_credits =
+      await this.featured_listing_credits_service.countAvailable(profile_id);
+
     return {
       subscription: subscription
         ? {
@@ -450,6 +455,7 @@ export class EntitlementsService {
       plan_id: entitlements.plan_id,
       plan_name: entitlements.plan_name,
       stripe_customer_id: profile?.stripe_customer_id ?? null,
+      available_featured_credits,
     };
   }
 

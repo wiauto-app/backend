@@ -30,6 +30,7 @@ import {
 import { BillingSubscriptionProvisioningService } from "./billing-subscription-provisioning.service";
 import { AssistantCreditPackEntity } from "../entities/assistant-credit-pack.entity";
 import { FeaturedListingOfferEntity } from "../entities/featured-listing-offer.entity";
+import { FeaturedListingCreditsService } from "./featured-listing-credits.service";
 
 @HexInjectable()
 export class StripeWebhookService {
@@ -53,6 +54,7 @@ export class StripeWebhookService {
     private readonly offer_repository_entity: Repository<FeaturedListingOfferEntity>,
     private readonly vehicle_search_indexer: VehicleSearchIndexer,
     private readonly assistant_quota_service: AssistantQuotaService,
+    private readonly featured_listing_credits_service: FeaturedListingCreditsService,
     private readonly me_session_cache_service: MeSessionCacheService,
   ) {}
 
@@ -137,6 +139,7 @@ export class StripeWebhookService {
         product_kind: session.metadata?.product_kind ?? null,
         product_id: session.metadata?.product_id ?? null,
         payment_intent_id,
+        stripe_checkout_session_id: session.id,
         metadata: session.metadata ?? {},
       });
     }
@@ -456,6 +459,7 @@ export class StripeWebhookService {
     product_kind?: string | null;
     product_id?: string | null;
     payment_intent_id: string | null;
+    stripe_checkout_session_id?: string | null;
     metadata: Record<string, unknown>;
   }) {
     const {
@@ -464,6 +468,7 @@ export class StripeWebhookService {
       product_kind,
       product_id,
       payment_intent_id,
+      stripe_checkout_session_id,
       metadata,
     } = params;
 
@@ -492,6 +497,7 @@ export class StripeWebhookService {
       plan_id: plan_id ?? null,
       product_kind: product_kind ?? null,
       product_id: product_id ?? null,
+      stripe_checkout_session_id: stripe_checkout_session_id ?? null,
       metadata,
     });
 
@@ -566,9 +572,17 @@ export class StripeWebhookService {
     plan_id?: string | null;
     product_kind?: string | null;
     product_id?: string | null;
+    stripe_checkout_session_id?: string | null;
     metadata: Record<string, unknown>;
   }) {
-    const { profile_id, plan_id, product_kind, product_id, metadata } = params;
+    const {
+      profile_id,
+      plan_id,
+      product_kind,
+      product_id,
+      stripe_checkout_session_id,
+      metadata,
+    } = params;
 
     if (
       product_kind === ONE_TIME_PRODUCT_KIND.ASSISTANT_CREDIT_PACK &&
@@ -610,6 +624,8 @@ export class StripeWebhookService {
         metadata,
         duration_days: offer.duration_days,
         boost_weight: offer.boost_weight,
+        offer_id: offer.id,
+        stripe_checkout_session_id: stripe_checkout_session_id ?? null,
       });
       return;
     }
@@ -649,6 +665,8 @@ export class StripeWebhookService {
         metadata,
         duration_days: Math.round(FEATURED_DURATION_MS / (24 * 60 * 60 * 1000)),
         boost_weight: 50,
+        offer_id: null,
+        stripe_checkout_session_id: stripe_checkout_session_id ?? null,
       });
     }
   }
@@ -658,9 +676,20 @@ export class StripeWebhookService {
     metadata: Record<string, unknown>;
     duration_days: number;
     boost_weight: number;
+    offer_id?: string | null;
+    stripe_checkout_session_id?: string | null;
   }) {
     const vehicle_id = params.metadata.vehicle_id;
-    if (typeof vehicle_id !== "string" || !vehicle_id) {
+    const has_vehicle_id = typeof vehicle_id === "string" && vehicle_id.length > 0;
+
+    if (!has_vehicle_id) {
+      await this.featured_listing_credits_service.addCredit({
+        profile_id: params.profile_id,
+        offer_id: params.offer_id ?? null,
+        duration_days: params.duration_days,
+        boost_weight: params.boost_weight,
+        stripe_checkout_session_id: params.stripe_checkout_session_id ?? null,
+      });
       return;
     }
 

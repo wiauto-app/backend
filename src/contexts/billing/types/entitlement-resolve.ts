@@ -97,6 +97,8 @@ export interface BillingMeSummary {
   plan_id: string | null;
   plan_name: string | null;
   stripe_customer_id: string | null;
+  /** Cupones de destacado comprados y aún no canjeados */
+  available_featured_credits: number;
 }
 
 export interface PlanCatalogEntitlement {

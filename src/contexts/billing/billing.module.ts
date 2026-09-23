@@ -66,11 +66,13 @@ import { SubscriptionEntitlementOverrideEntity } from "./entities/subscription-e
 import { SubscriptionUsageEntity } from "./entities/subscription-usage.entity";
 import { AssistantCreditPackEntity } from "./entities/assistant-credit-pack.entity";
 import { FeaturedListingOfferEntity } from "./entities/featured-listing-offer.entity";
+import { FeaturedListingCreditEntity } from "./entities/featured-listing-credit.entity";
 import { PlanLeadRequestNotificationMailService } from "./services/plan-lead-request-notification-mail.service";
 import { BillingNotificationMailService } from "./services/billing-notification-mail.service";
 import { DiscountCouponsService } from "./services/discount-coupons.service";
 import { AssistantCreditPacksService } from "./services/assistant-credit-packs.service";
 import { FeaturedListingOffersService } from "./services/featured-listing-offers.service";
+import { FeaturedListingCreditsService } from "./services/featured-listing-credits.service";
 import { StripeClient } from "./clients/stripe.client";
 import { SubscriptionGuard } from "./guards/subscription.guard";
 import { EntitlementGuard } from "./guards/entitlement.guard";
@@ -104,6 +106,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
       DiscountCouponEntity,
       AssistantCreditPackEntity,
       FeaturedListingOfferEntity,
+      FeaturedListingCreditEntity,
       ProfileEntity,
       User,
       VehicleEntity,
@@ -155,6 +158,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     DiscountCouponsService,
     AssistantCreditPacksService,
     FeaturedListingOffersService,
+    FeaturedListingCreditsService,
     PlanLeadRequestsService,
     PlanContactLeadsService,
     PlanAccessGrantsService,
@@ -174,6 +178,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
   ],
   exports: [
     EntitlementsService,
+    FeaturedListingCreditsService,
     SubscriptionGuard,
     EntitlementGuard,
     TypeOrmSubscriptionPlanRepository,
