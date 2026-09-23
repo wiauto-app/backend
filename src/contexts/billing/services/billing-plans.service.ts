@@ -360,6 +360,14 @@ export class BillingCheckoutService {
     private readonly subscription_repository: TypeOrmSubscriptionRepository,
   ) {}
 
+  private isStripeResourceMissing(error: unknown): boolean {
+    const stripe_error = error as { code?: string; statusCode?: number };
+    return (
+      stripe_error.code === "resource_missing" ||
+      stripe_error.statusCode === 404
+    );
+  }
+
   private async resolveCustomer(profile_id: string) {
     const profile = await this.billing_profile_repository.findById(profile_id);
     if (!profile) {
@@ -367,10 +375,20 @@ export class BillingCheckoutService {
     }
 
     if (profile.stripe_customer_id) {
-      await this.stripe_client.updateCustomerPreferredLocales(
-        profile.stripe_customer_id,
-      );
-      return profile.stripe_customer_id;
+      try {
+        await this.stripe_client.updateCustomerPreferredLocales(
+          profile.stripe_customer_id,
+        );
+        return profile.stripe_customer_id;
+      } catch (error) {
+        if (!this.isStripeResourceMissing(error)) {
+          throw error;
+        }
+
+        this.logger.warn(
+          `Customer Stripe ${profile.stripe_customer_id} no existe en esta cuenta; se recreará para el perfil ${profile_id}`,
+        );
+      }
     }
 
     const customer_id = await this.stripe_client.createCustomer({
@@ -963,14 +981,9 @@ export class BillingCheckoutService {
   }
 
   async createPortalSession(profile_id: string) {
-    const profile = await this.billing_profile_repository.findById(profile_id);
-    if (!profile?.stripe_customer_id) {
-      throw new BadRequestException("No tienes un cliente de Stripe asociado");
-    }
-
-    const portal_url = await this.stripe_client.createPortalSession(
-      profile.stripe_customer_id,
-    );
+    const customer_id = await this.resolveCustomer(profile_id);
+    const portal_url =
+      await this.stripe_client.createPortalSession(customer_id);
 
     return { portal_url };
   }
