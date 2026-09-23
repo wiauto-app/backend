@@ -592,11 +592,13 @@ export class MailTemplateRenderer {
       make_name: string;
       model_name: string;
       version_name: string;
+      vehicle_type_name: string;
+      observations: string | null;
     };
     created_at: string;
   }): string {
     const escaped_name = this.escapeHtml(
-      `${payload.lead.first_name} ${payload.lead.last_name}`,
+      `${payload.lead.first_name} ${payload.lead.last_name}`.trim(),
     );
     const escaped_dni = this.escapeHtml(payload.lead.dni ?? "N/D");
     const escaped_phone = this.escapeHtml(payload.lead.phone);
@@ -604,8 +606,16 @@ export class MailTemplateRenderer {
     const escaped_license_plate = this.escapeHtml(
       payload.lead.license_plate ?? "N/D",
     );
+    const escaped_vehicle_type = this.escapeHtml(
+      payload.lead.vehicle_type_name,
+    );
     const escaped_vehicle = this.escapeHtml(
       `${payload.lead.make_name} ${payload.lead.model_name} ${payload.lead.version_name}`.trim(),
+    );
+    const escaped_observations = this.escapeHtml(
+      payload.lead.observations?.trim()
+        ? payload.lead.observations
+        : "N/D",
     );
     const escaped_created_at = this.escapeHtml(
       new Date(payload.created_at).toLocaleString("es-ES", {
@@ -629,8 +639,10 @@ export class MailTemplateRenderer {
         ${row("DNI", escaped_dni)}
         ${row("Teléfono", escaped_phone)}
         ${row("Correo", escaped_email)}
+        ${row("Tipo de vehículo", escaped_vehicle_type)}
         ${row("Matrícula", escaped_license_plate)}
         ${row("Vehículo", escaped_vehicle)}
+        ${row("Observaciones", escaped_observations)}
         ${row("Fecha", escaped_created_at, true)}
       </table>`;
 

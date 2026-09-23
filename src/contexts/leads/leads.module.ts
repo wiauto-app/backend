@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { CatalogModule } from "@/src/contexts/vehicles/catalog/catalog.module";
+import { VehicleTypesModule } from "@/src/contexts/vehicles/modules/vehicle-types.module";
 
 import { GenericLeadEntity } from "./entities/lead.entity";
 import { GenericLeadsService } from "./services/leads.service";
@@ -11,7 +12,11 @@ import { CreateGenericLeadController } from "./api/public/create-lead/create-lea
 import { GenericLeadsAdminController } from "./api/admin/leads/leads-admin.controller";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GenericLeadEntity]), CatalogModule],
+  imports: [
+    TypeOrmModule.forFeature([GenericLeadEntity]),
+    CatalogModule,
+    VehicleTypesModule,
+  ],
   controllers: [CreateGenericLeadController, GenericLeadsAdminController],
   providers: [
     GenericLeadsService,

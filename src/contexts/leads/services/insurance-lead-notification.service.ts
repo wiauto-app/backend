@@ -6,6 +6,7 @@ import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-
 import { MakesService } from "@/src/contexts/vehicles/catalog/makes/services/makes.service";
 import { CatalogModelsService } from "@/src/contexts/vehicles/catalog/models/services/catalog-models.service";
 import { CatalogVersionsService } from "@/src/contexts/vehicles/catalog/versions/services/catalog-versions.service";
+import { VehicleTypesService } from "@/src/contexts/vehicles/services/vehicle-types.service";
 
 import { GenericLeadEntity } from "../entities/lead.entity";
 
@@ -19,19 +20,27 @@ export class InsuranceLeadNotificationService {
     private readonly makes_service: MakesService,
     private readonly catalog_models_service: CatalogModelsService,
     private readonly catalog_versions_service: CatalogVersionsService,
+    private readonly vehicle_types_service: VehicleTypesService,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
   async notify(lead: GenericLeadEntity): Promise<void> {
-    const [make_name, model_name, version_name] = await Promise.all([
-      this.resolve_make_name(lead.extra_data.catalog_make_id),
-      this.resolve_model_name(lead.extra_data.catalog_model_id),
-      this.resolve_version_name(lead.extra_data.version_id),
-    ]);
+    const [make_name, model_name, version_name, vehicle_type_name] =
+      await Promise.all([
+        this.resolve_make_name(lead.extra_data.catalog_make_id),
+        this.resolve_model_name(lead.extra_data.catalog_model_id),
+        this.resolve_version_name(lead.extra_data.version_id),
+        this.resolve_vehicle_type_name(lead.extra_data.vehicle_type_id),
+      ]);
 
     const license_plate =
       typeof lead.extra_data.license_plate === "string"
         ? lead.extra_data.license_plate
+        : null;
+
+    const observations =
+      typeof lead.extra_data.observations === "string"
+        ? lead.extra_data.observations
         : null;
 
     const payload = {
@@ -45,6 +54,8 @@ export class InsuranceLeadNotificationService {
         make_name,
         model_name,
         version_name,
+        vehicle_type_name,
+        observations,
       },
       created_at: lead.created_at.toISOString(),
     };
@@ -103,6 +114,21 @@ export class InsuranceLeadNotificationService {
     try {
       const { version } = await this.catalog_versions_service.findOne(id);
       return version.name;
+    } catch {
+      return NOT_AVAILABLE;
+    }
+  }
+
+  private async resolve_vehicle_type_name(raw_id: unknown): Promise<string> {
+    if (typeof raw_id !== "string" || !raw_id.trim()) {
+      return NOT_AVAILABLE;
+    }
+
+    try {
+      const { vehicleType } = await this.vehicle_types_service.findOne(
+        raw_id.trim(),
+      );
+      return vehicleType.name;
     } catch {
       return NOT_AVAILABLE;
     }

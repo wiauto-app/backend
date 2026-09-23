@@ -84,6 +84,8 @@ export interface OutboundMailInsuranceLeadNotificationJobData {
     make_name: string;
     model_name: string;
     version_name: string;
+    vehicle_type_name: string;
+    observations: string | null;
   };
   created_at: string;
 }

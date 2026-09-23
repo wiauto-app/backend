@@ -341,15 +341,24 @@ export class MailService {
       make_name: string;
       model_name: string;
       version_name: string;
+      vehicle_type_name: string;
+      observations: string | null;
     };
     created_at: string;
   }): Promise<void> {
     const html = this.mail_template_renderer.renderInsuranceLeadNotification(payload);
 
+    const vehicle_label =
+      payload.lead.make_name !== "N/D"
+        ? `${payload.lead.make_name} ${payload.lead.model_name}`
+        : payload.lead.vehicle_type_name !== "N/D"
+          ? payload.lead.vehicle_type_name
+          : "solicitud";
+
     try {
       await this.mailerService.sendMail({
         to: payload.to,
-        subject: `Nueva solicitud de seguro: ${payload.lead.make_name} ${payload.lead.model_name}`,
+        subject: `Nueva solicitud de seguro: ${vehicle_label}`,
         html,
       });
     } catch (error) {
