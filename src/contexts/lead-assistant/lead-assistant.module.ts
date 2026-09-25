@@ -7,7 +7,10 @@ import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { ChatModule } from "@/src/contexts/chat/modules/chat.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
+import { LeadsModule } from "@/src/contexts/vehicles/modules/leads.module";
 import { SubscriptionEntity } from "@/src/contexts/billing/entities/subscription.entity";
+import { LeadEntity } from "@/src/contexts/vehicles/entities/lead.entity";
+import { MailModule } from "@/src/contexts/shared/mail/mail.module";
 
 import { GetLeadAssistantSettingsController } from "./api/get-lead-assistant-settings/get-lead-assistant-settings.controller";
 import { PatchLeadAssistantSettingsController } from "./api/patch-lead-assistant-settings/patch-lead-assistant-settings.controller";
@@ -20,6 +23,7 @@ import { LeadAssistantReplyGenerationService } from "./services/lead-assistant-r
 import { LeadAssistantReplyJobService } from "./services/lead-assistant-reply-job.service";
 import { LeadAssistantSettingsService } from "./services/lead-assistant-settings.service";
 import { LeadAssistantChatHookService } from "./services/lead-assistant-chat-hook.service";
+import { LeadAssistantLeadHookService } from "./services/lead-assistant-lead-hook.service";
 import { ProfileEntity } from "../profiles/entities/profile.entity";
 
 @Module({
@@ -29,12 +33,15 @@ import { ProfileEntity } from "../profiles/entities/profile.entity";
       LeadAssistantQuotaNoticeEntity,
       SubscriptionEntity,
       ProfileEntity,
+      LeadEntity,
     ]),
     BullModule.registerQueue({ name: LEAD_ASSISTANT_REPLY_QUEUE }),
+    MailModule,
     forwardRef(() => BillingModule),
     ProfileModule,
     forwardRef(() => ChatModule),
     forwardRef(() => VehiclesModule),
+    forwardRef(() => LeadsModule),
     forwardRef(() => AlertsModule),
   ],
   controllers: [
@@ -48,11 +55,13 @@ import { ProfileEntity } from "../profiles/entities/profile.entity";
     LeadAssistantReplyEnqueueService,
     LeadAssistantReplyProcessor,
     LeadAssistantChatHookService,
+    LeadAssistantLeadHookService,
   ],
   exports: [
     LeadAssistantReplyEnqueueService,
     LeadAssistantSettingsService,
     LeadAssistantChatHookService,
+    LeadAssistantLeadHookService,
   ],
 })
 export class LeadAssistantModule {}

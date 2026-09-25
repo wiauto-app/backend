@@ -1,6 +1,8 @@
 import { Type } from "class-transformer";
 import { IsDateString, IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
 
+import { LEAD_TIERS } from "../../../types/lead-scoring";
+
 export class FindSellerLeadsHttpDto {
   @IsOptional()
   @IsDateString()
@@ -13,6 +15,14 @@ export class FindSellerLeadsHttpDto {
   @IsOptional()
   @IsIn(["asc", "desc"])
   sort?: "asc" | "desc" = "desc";
+
+  @IsOptional()
+  @IsIn(["date", "score"])
+  sort_by?: "date" | "score";
+
+  @IsOptional()
+  @IsIn([...LEAD_TIERS])
+  tier?: (typeof LEAD_TIERS)[number];
 
   @IsOptional()
   @Type(() => Number)

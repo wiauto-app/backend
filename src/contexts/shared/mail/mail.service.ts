@@ -938,6 +938,37 @@ export class MailService {
     }
   }
 
+  async sendLeadAssistantReplyEmail(payload: {
+    to: string;
+    reply_to: string;
+    reply_text: string;
+    vehicle_title: string;
+    signup_url: string;
+    vehicle_id: string;
+  }): Promise<void> {
+    const html = `
+      <p>Hola,</p>
+      <p>${payload.reply_text}</p>
+      <p><strong>${payload.vehicle_title}</strong></p>
+      <p><a href="${payload.signup_url}">Crea tu cuenta para seguir la conversación</a></p>
+    `;
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        replyTo: payload.reply_to,
+        subject: `Respuesta sobre ${payload.vehicle_title}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar la respuesta del asistente de leads a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendDealershipInvitationEmail(payload: {
     to: string;
     invitation_link: string;

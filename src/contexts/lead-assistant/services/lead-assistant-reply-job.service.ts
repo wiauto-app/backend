@@ -21,10 +21,22 @@ import { CHAT_MESSAGE_TYPE } from "@/src/contexts/chat/types/chatMessage";
 import { CHAT_AI_ASSISTANT_AUTHOR } from "@/src/contexts/chat/types/chatMessageMetadata";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
+import { LeadEntity } from "@/src/contexts/vehicles/entities/lead.entity";
+import { TypeOrmLeadRepository } from "@/src/contexts/vehicles/repositories/typeorm.lead-repository";
+import {
+  LEAD_AI_REPLY_CHANNEL,
+  LEAD_TYPE,
+} from "@/src/contexts/vehicles/types/lead";
+import { LeadScoringService } from "@/src/contexts/vehicles/services/lead-scoring.service";
+import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
+import { formatVehicleDisplayName } from "@/src/contexts/vehicles/utils/format-vehicle-display-name";
 
 import { LeadAssistantQuotaNoticeEntity } from "../entities/lead-assistant-quota-notice.entity";
 import { LeadAssistantSettingsEntity } from "../entities/lead-assistant-settings.entity";
-import type { LeadAssistantReplyJobData } from "../queues/lead-assistant-reply.queue.constants";
+import {
+  LEAD_ASSISTANT_REPLY_CHANNEL,
+  type LeadAssistantReplyJobData,
+} from "../queues/lead-assistant-reply.queue.constants";
 import { mergeLeadAssistantSettings } from "../constants/lead-assistant-settings.defaults";
 import { LeadAssistantReplyGenerationService } from "./lead-assistant-reply-generation.service";
 
@@ -50,9 +62,31 @@ export class LeadAssistantReplyJobService {
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly reply_generation_service: LeadAssistantReplyGenerationService,
     private readonly notification_dispatcher: NotificationChannelDispatcher,
+    @InjectRepository(LeadEntity)
+    private readonly lead_entity_repository: Repository<LeadEntity>,
+    private readonly lead_repository: TypeOrmLeadRepository,
+    private readonly lead_scoring_service: LeadScoringService,
+    private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
   ) {}
 
   async process(data: LeadAssistantReplyJobData): Promise<void> {
+    if (data.channel === LEAD_ASSISTANT_REPLY_CHANNEL.EMAIL) {
+      await this.processEmail(data);
+      return;
+    }
+    await this.processChat(data);
+  }
+
+  private async processChat(data: LeadAssistantReplyJobData): Promise<void> {
+    if (!data.chat_id || !data.trigger_message_id || !data.buyer_id) {
+      return;
+    }
+
+    const lead = await this.lead_repository.findEntityById(data.lead_id);
+    if (!lead || lead.type === LEAD_TYPE.CALL_ME || lead.ai_replied_at) {
+      return;
+    }
+
     const chat = await this.chat_repository.findOne(data.chat_id);
     if (!chat?.vehicle_id) {
       return;
@@ -205,7 +239,97 @@ export class LeadAssistantReplyJobService {
           vehicle_id: data.vehicle_id,
         },
       });
+      await this.lead_scoring_service.markAiHot(data.lead_id);
     }
+
+    await this.markLeadReplied(data.lead_id, LEAD_AI_REPLY_CHANNEL.CHAT);
+  }
+
+  private async processEmail(data: LeadAssistantReplyJobData): Promise<void> {
+    const lead = await this.lead_repository.findEntityById(data.lead_id);
+    if (!lead || lead.type === LEAD_TYPE.CALL_ME || lead.ai_replied_at) {
+      return;
+    }
+    if (!lead.email?.trim()) {
+      return;
+    }
+
+    const seller_profile = await this.profile_repository.findOne(data.seller_id);
+    const is_seller_admin = seller_profile?.user.is_admin === true;
+    const settings_row = await this.settings_repository.findOne({
+      where: { profile_id: data.seller_id },
+    });
+    if (!is_seller_admin && !settings_row?.enabled) {
+      return;
+    }
+    const settings = mergeLeadAssistantSettings(data.seller_id, settings_row);
+
+    const resolved = await this.entitlements_service.resolve(data.seller_id);
+    const leads_check = await this.entitlements_service.checkUsage(
+      data.seller_id,
+      ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS as string,
+    );
+    if (!resolved.is_unlimited && !leads_check.allowed) {
+      return;
+    }
+
+    const vehicle = await this.vehicle_repository.findOne(data.vehicle_id);
+    if (!vehicle) {
+      return;
+    }
+
+    const buyer_message = lead.message?.trim() ?? "";
+    const generated = await this.reply_generation_service.generate({
+      vehicle,
+      settings,
+      buyer_message,
+      recent_messages: buyer_message,
+    });
+
+    const vehicle_title = formatVehicleDisplayName({
+      make_name: vehicle.version_summary.make_name,
+      model_name: vehicle.version_summary.model_name,
+      version_name: vehicle.version_summary.version_name,
+    });
+
+    const seller_email = seller_profile?.user.email ?? vehicle.email;
+    await this.outbound_mail_enqueue_service.enqueue_lead_assistant_reply({
+      to: lead.email.trim(),
+      reply_to: seller_email,
+      reply_text: generated.reply_text,
+      vehicle_title,
+      signup_url: getFrontendPath("/auth/registro"),
+      vehicle_id: vehicle.id,
+    });
+
+    if (!resolved.is_unlimited) {
+      await this.entitlements_service.incrementMeteredUsage(
+        data.seller_id,
+        ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS as string,
+        1,
+      );
+    }
+
+    if (generated.is_hot_lead) {
+      await this.lead_scoring_service.markAiHot(data.lead_id);
+    }
+
+    await this.markLeadReplied(data.lead_id, LEAD_AI_REPLY_CHANNEL.EMAIL);
+  }
+
+  private async markLeadReplied(
+    lead_id: string,
+    channel: (typeof LEAD_AI_REPLY_CHANNEL)[keyof typeof LEAD_AI_REPLY_CHANNEL],
+  ): Promise<void> {
+    const row = await this.lead_entity_repository.preload({
+      id: lead_id,
+      ai_replied_at: new Date(),
+      ai_reply_channel: channel,
+    });
+    if (!row) {
+      return;
+    }
+    await this.lead_entity_repository.save(row);
   }
 
   private async deliverMessage(
@@ -250,7 +374,7 @@ export class LeadAssistantReplyJobService {
     data: LeadAssistantReplyJobData,
     subscription_id: string | null,
   ): Promise<void> {
-    if (!settings.notify_on_quota_exhausted || !subscription_id) {
+    if (!settings.notify_on_quota_exhausted || !subscription_id || !data.chat_id) {
       return;
     }
 

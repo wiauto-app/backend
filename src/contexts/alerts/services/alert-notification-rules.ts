@@ -70,6 +70,9 @@ export const is_category_toggle_enabled = (
     case "seller_reply":
       return preferences.notify_seller_replies;
     default:
+      if (category.startsWith("proactive_")) {
+        return true;
+      }
       return true;
   }
 };

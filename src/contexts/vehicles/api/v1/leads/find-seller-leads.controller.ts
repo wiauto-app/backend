@@ -22,6 +22,8 @@ export class FindSellerLeadsController {
       from: query.from,
       to: query.to,
       sort: query.sort ?? "desc",
+      sort_by: query.sort_by,
+      tier: query.tier,
       page: query.page,
       limit: query.limit,
     });

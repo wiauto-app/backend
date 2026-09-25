@@ -268,6 +268,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     CategoriesModule,
     CatalogModule,
     VehiclePermissionsService,
+    VehicleInsightsService,
   ],
 })
 export class VehiclesModule { }

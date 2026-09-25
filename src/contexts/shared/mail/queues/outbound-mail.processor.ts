@@ -75,6 +75,8 @@ import {
   OutboundMailAccountDeletedJobData,
   OutboundMailNewsAlertJobData,
   OutboundMailNewsletterSubscribedJobData,
+  OUTBOUND_MAIL_JOB_LEAD_ASSISTANT_REPLY,
+  OutboundMailLeadAssistantReplyJobData,
   OutboundMailSubscriptionWelcomeJobData,
   OutboundMailVehicleStatusChangedJobData,
 } from "./outbound-mail.queue.constants";
@@ -381,6 +383,12 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_NEWSLETTER_SUBSCRIBED) {
       const data = job.data as OutboundMailNewsletterSubscribedJobData;
       await this.mail_service.sendNewsletterSubscribedEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_LEAD_ASSISTANT_REPLY) {
+      const data = job.data as OutboundMailLeadAssistantReplyJobData;
+      await this.mail_service.sendLeadAssistantReplyEmail(data);
       return;
     }
 

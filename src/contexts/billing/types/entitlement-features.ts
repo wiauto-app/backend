@@ -19,6 +19,8 @@ export const ENTITLEMENT_FEATURE = {
   LISTING_INSIGHTS: "listing_insights",
   AI_REPLIES_PER_CONVERSATION: "ai_replies_per_conversation",
   AI_LEAD_CONVERSATIONS: "ai_lead_conversations",
+  LEAD_SCORING: "lead_scoring",
+  PROACTIVE_ALERTS: "proactive_alerts",
 } as const;
 
 export type EntitlementFeature =
@@ -39,6 +41,8 @@ export const BOOLEAN_FEATURES = [
   ENTITLEMENT_FEATURE.AI_GENERATION,
   ENTITLEMENT_FEATURE.STATISTICS,
   ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
+  ENTITLEMENT_FEATURE.LEAD_SCORING,
+  ENTITLEMENT_FEATURE.PROACTIVE_ALERTS,
 ] as const;
 
 export const METERED_FEATURES = [
@@ -157,6 +161,20 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     description: "Chats distintos en los que la IA puede intervenir por periodo",
     metered: true,
   },
+  {
+    feature: ENTITLEMENT_FEATURE.LEAD_SCORING,
+    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
+    label: "Calificación de leads",
+    description: "Clasifica los contactos por nivel de interés y muestra sus señales",
+    metered: false,
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.PROACTIVE_ALERTS,
+    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
+    label: "Alertas proactivas",
+    description: "Avisos automáticos con recomendaciones sobre tus anuncios y contactos",
+    metered: false,
+  },
 ];
 
 export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
@@ -214,6 +232,16 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
     feature: ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
     value: { limit: 0 },
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.LEAD_SCORING,
+    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
+    value: { bool: false },
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.PROACTIVE_ALERTS,
+    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
+    value: { bool: false },
   },
 ];
 

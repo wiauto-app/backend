@@ -15,6 +15,7 @@ export const PUSH_TYPE = {
   RECENTLY_UPDATED: "recently_updated",
   FAVORITE_CHANGE: "favorite_change",
   LEAD: "lead",
+  SELLER_INSIGHT: "seller_insight",
 } as const;
 
 export type PushType = (typeof PUSH_TYPE)[keyof typeof PUSH_TYPE];

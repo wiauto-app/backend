@@ -378,3 +378,14 @@ export interface OutboundMailNewsAlertJobData {
   news_url: string;
   category_name: string;
 }
+
+export const OUTBOUND_MAIL_JOB_LEAD_ASSISTANT_REPLY = "lead_assistant_reply";
+
+export interface OutboundMailLeadAssistantReplyJobData {
+  to: string;
+  reply_to: string;
+  reply_text: string;
+  vehicle_title: string;
+  signup_url: string;
+  vehicle_id: string;
+}

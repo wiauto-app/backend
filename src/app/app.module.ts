@@ -45,6 +45,7 @@ import { ProfileDevicesModule } from "../contexts/profile_devices/profile-device
 import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
 import { GenericLeadsModule } from "../contexts/leads/leads.module";
 import { LeadAssistantModule } from "../contexts/lead-assistant/lead-assistant.module";
+import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-alerts.module";
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { LeadAssistantModule } from "../contexts/lead-assistant/lead-assistant.m
     UserBlocksModule,
     GenericLeadsModule,
     LeadAssistantModule,
+    ProactiveAlertsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

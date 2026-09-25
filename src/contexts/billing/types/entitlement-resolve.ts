@@ -161,6 +161,8 @@ export const buildUnlimitedEntitlementsMap = (): Record<string, EffectiveEntitle
     ENTITLEMENT_FEATURE.AI_GENERATION,
     ENTITLEMENT_FEATURE.STATISTICS,
     ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
+    ENTITLEMENT_FEATURE.LEAD_SCORING,
+    ENTITLEMENT_FEATURE.PROACTIVE_ALERTS,
   ];
 
   const map: Record<string, EffectiveEntitlement> = {};

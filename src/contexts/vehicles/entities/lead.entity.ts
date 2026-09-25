@@ -12,12 +12,19 @@ import {
 
 import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
-import { LEAD_TYPE, LeadType, PrimitiveLead } from "../types/lead";
+import {
+  LEAD_TYPE,
+  LeadAiReplyChannel,
+  LeadType,
+  PrimitiveLead,
+} from "../types/lead";
+import { LEAD_TIER, LeadScoreSignal, LeadTier } from "../types/lead-scoring";
 import { VehicleEntity } from "./vehicle.entity";
 
 @Entity({ name: "leads" })
 @Index("IDX_leads_seller_profile_id", ["seller_profile_id"])
 @Index("IDX_leads_dealership_id", ["dealership_id"])
+@Index("IDX_leads_chat_id", ["chat_id"])
 export class LeadEntity implements PrimitiveLead {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -59,6 +66,27 @@ export class LeadEntity implements PrimitiveLead {
 
   @Column({ type: "uuid", nullable: true })
   dealership_id: string | null;
+
+  @Column({ type: "uuid", nullable: true })
+  chat_id: string | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  ai_replied_at: Date | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true })
+  ai_reply_channel: LeadAiReplyChannel | null;
+
+  @Column({ type: "int", default: 0 })
+  score: number;
+
+  @Column({ type: "varchar", length: 8, default: LEAD_TIER.COLD })
+  tier: LeadTier;
+
+  @Column({ type: "jsonb", default: () => "'[]'" })
+  score_signals: LeadScoreSignal[];
+
+  @Column({ type: "timestamptz", nullable: true })
+  scored_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

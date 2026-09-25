@@ -1,6 +1,5 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
-import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { NotificationChannelDispatcher } from "@/src/contexts/alerts/services/notification-channel-dispatcher.service";
 import { ChatMessageService } from "@/src/contexts/chat/services/chat-message.service";
 import { ChatService } from "@/src/contexts/chat/services/chat.service";
@@ -21,9 +20,18 @@ import {
   humanizeSlug,
 } from "@/src/contexts/shared/mail/mail-template.format";
 import {
-  SellerLeadListItem,
   TypeOrmLeadRepository,
 } from "../repositories/typeorm.lead-repository";
+import { LEAD_SORT_BY, type LeadTier } from "../types/lead-scoring";
+import {
+  toSellerLeadsListResponse,
+  type SellerLeadsListResponse,
+} from "../types/seller-leads-list-response";
+import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
+import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
+import { getBooleanFromEntitlement } from "@/src/contexts/billing/types/entitlement-resolve";
+import { LeadScoringService } from "./lead-scoring.service";
+import { LeadAssistantLeadHookService } from "@/src/contexts/lead-assistant/services/lead-assistant-lead-hook.service";
 import type { VehicleDetail } from "../types/vehicle-detail";
 
 export interface CreateLeadInput {
@@ -50,6 +58,8 @@ export interface FindSellerLeadsInput {
   from?: string;
   to?: string;
   sort: "asc" | "desc";
+  sort_by?: "date" | "score";
+  tier?: LeadTier;
   page?: number;
   limit?: number;
 }
@@ -65,11 +75,14 @@ export class LeadsService {
     private readonly chat_repository: TypeOrmChatRepository,
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
+    private readonly entitlements_service: EntitlementsService,
+    private readonly lead_scoring_service: LeadScoringService,
+    private readonly lead_assistant_lead_hook_service: LeadAssistantLeadHookService,
   ) {}
 
   async findForSeller(
     input: FindSellerLeadsInput,
-  ): Promise<PaginatedResult<SellerLeadListItem>> {
+  ): Promise<SellerLeadsListResponse> {
     const page = input.page && input.page > 0 ? input.page : 1;
     const limit =
       input.limit && input.limit > 0 ? Math.min(input.limit, 100) : 20;
@@ -78,15 +91,46 @@ export class LeadsService {
       input.viewer_profile_id,
     );
 
-    return this.lead_repository.findForSellerScope({
+    const resolved = await this.entitlements_service.resolve(
+      input.viewer_profile_id,
+    );
+    const has_scoring =
+      resolved.is_unlimited ||
+      getBooleanFromEntitlement(
+        resolved.features[ENTITLEMENT_FEATURE.LEAD_SCORING],
+      );
+
+    const scope_base = {
       viewer_profile_id: input.viewer_profile_id,
       viewer_dealership_id,
       from: input.from ? this.parseRangeStart(input.from) : undefined,
       to: input.to ? this.parseRangeEnd(input.to) : undefined,
-      sort: input.sort,
-      page,
-      limit,
-    });
+    };
+
+    const paginated = await this.lead_repository.findForSellerScope(
+      {
+        ...scope_base,
+        sort: input.sort,
+        sort_by:
+          has_scoring && input.sort_by === LEAD_SORT_BY.SCORE
+            ? LEAD_SORT_BY.SCORE
+            : LEAD_SORT_BY.DATE,
+        tier: has_scoring ? input.tier : undefined,
+        page,
+        limit,
+      },
+      has_scoring,
+    );
+
+    const tier_counts = has_scoring
+      ? await this.lead_repository.countTierForSellerScope(scope_base)
+      : null;
+
+    return toSellerLeadsListResponse(
+      paginated,
+      tier_counts,
+      !has_scoring,
+    );
   }
 
   async createContact(
@@ -117,6 +161,15 @@ export class LeadsService {
     const seller_profile_id = vehicle.profile_id;
     const dealership_id = await this.resolveDealershipId(seller_profile_id);
 
+    const chat = buyer_profile_id
+      ? await this.findOrCreateVehicleChat(
+          seller_profile_id,
+          buyer_profile_id,
+          input.vehicle_id,
+        )
+      : null;
+    const chat_id = chat?.id ?? null;
+
     const lead = Lead.create({
       vehicle_id: input.vehicle_id,
       type: LEAD_TYPE.CONTACT,
@@ -128,6 +181,7 @@ export class LeadsService {
       profile_id: buyer_profile_id,
       seller_profile_id,
       dealership_id,
+      chat_id,
     });
 
     await this.lead_repository.save(lead);
@@ -147,24 +201,20 @@ export class LeadsService {
       vehicle,
     });
 
-    let chat_id: string | null = null;
-
-    if (buyer_profile_id) {
-      const chat = await this.findOrCreateVehicleChat(
-        seller_profile_id,
-        buyer_profile_id,
-        input.vehicle_id,
-      );
-
+    if (chat && buyer_profile_id) {
       await this.chat_message_service.create({
         chat_id: chat.id,
         sender_id: buyer_profile_id,
         content: input.message.trim(),
         type: CHAT_MESSAGE_TYPE.TEXT,
       });
-
-      chat_id = chat.id;
     }
+
+    if (!buyer_profile_id) {
+      await this.lead_assistant_lead_hook_service.handleGuestLead(lead_primitive);
+    }
+
+    await this.lead_scoring_service.recalculateForLeadId(lead_primitive.id);
 
     return { lead: lead_primitive, chat_id };
   }
