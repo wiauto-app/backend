@@ -8,7 +8,7 @@ export class LeadAssistantSettings1791100000000 implements MigrationInterface {
       CREATE TABLE "lead_assistant_settings" (
         "profile_id" uuid NOT NULL,
         "enabled" boolean NOT NULL DEFAULT false,
-        "context_note" character varying(100) NOT NULL DEFAULT '',
+        "context_note" character varying(500) NOT NULL DEFAULT '',
         "objective" character varying(32) NOT NULL DEFAULT 'anyone',
         "persuasion" character varying(32) NOT NULL DEFAULT 'balanced',
         "extension" character varying(32) NOT NULL DEFAULT 'medium',
