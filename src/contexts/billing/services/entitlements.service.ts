@@ -271,11 +271,10 @@ export class EntitlementsService {
       return;
     }
 
-    if (
-      !getBooleanFromEntitlement(
-        resolved.features[ENTITLEMENT_FEATURE.VIDEO_UPLOAD],
-      )
-    ) {
+    const videosLimit = getLimitFromEntitlement(
+      resolved.features[ENTITLEMENT_FEATURE.VIDEOS_PER_VEHICLE],
+    );
+    if (videosLimit === 0) {
       throw new ForbiddenException(
         "Tu cuenta no incluye vídeos en los anuncios.",
       );
@@ -360,7 +359,10 @@ export class EntitlementsService {
     period_start: Date,
     period_end: Date,
   ): Promise<void> {
-    const metered_features = [ENTITLEMENT_FEATURE.AI_REQUESTS];
+    const metered_features = [
+      ENTITLEMENT_FEATURE.AI_REQUESTS,
+      ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
+    ];
     for (const feature of metered_features) {
       const existing = await this.usage_repository.findOne({
         where: {

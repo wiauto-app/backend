@@ -123,6 +123,20 @@ export class VehicleEntity {
   })
   status_change_message?: string | null;
 
+  /** Último cambio de estado (owner o admin). Base para métricas de venta. */
+  @Column({
+    type: "timestamptz",
+    nullable: true,
+  })
+  status_changed_at?: Date | null;
+
+  /** Momento en que el anuncio pasó a `sold`. */
+  @Column({
+    type: "timestamptz",
+    nullable: true,
+  })
+  sold_at?: Date | null;
+
   @Column({
     type: "text",
     nullable: true,

@@ -78,7 +78,8 @@ export class VehicleUpdateGuard implements CanActivate {
     const maxVehicles = entitlements.vehicles.limit;
     const maxImages = entitlements.photos_per_vehicle.limit;
     const maxVideos = entitlements.videos_per_vehicle.limit;
-    const canUploadVideos = entitlements.video_upload.value;
+    const canUploadVideos =
+      maxVideos == null || (typeof maxVideos === "number" && maxVideos > 0);
 
     if (maxVehicles && vehicleSlotsUsed >= maxVehicles) {
       throw new ForbiddenException(
@@ -100,12 +101,6 @@ export class VehicleUpdateGuard implements CanActivate {
       );
     }
 
-    if (!maxVideos && maxVideos !== 0) {
-      throw new ForbiddenException(
-        "No tienes permitido subir vídeos",
-      );
-    }
-
     const videosCount = body.videos?.length ?? 0;
 
     if (!canUploadVideos && videosCount > 0) {
@@ -114,7 +109,7 @@ export class VehicleUpdateGuard implements CanActivate {
       );
     }
 
-    if (videosCount > maxVideos) {
+    if (maxVideos != null && videosCount > maxVideos) {
       throw new ForbiddenException(
         "Tienes más vídeos que las permitidas",
       );

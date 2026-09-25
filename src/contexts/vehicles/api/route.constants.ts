@@ -7,6 +7,7 @@ export const V1_OWNER_STATISTICS = "statistics";
 
 export const V1_VEHICLES = "v1/vehicles";
 export const V1_VEHICLES_MINE = "mine";
+export const V1_VEHICLES_INSIGHTS = "insights";
 export const V1_VEHICLES_IMPRESSIONS = "impressions";
 export const V1_VEHICLES_AI = "ai";
 export const V1_VEHICLES_AI_RECOMMEND_PRICE = "recommend-price";

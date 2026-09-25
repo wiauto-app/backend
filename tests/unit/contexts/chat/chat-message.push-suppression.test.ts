@@ -45,6 +45,7 @@ const buildService = (users_in_room: string[]) => {
     notification_channel_dispatcher as never,
     {} as never,
     chat_message_gateway as never,
+    { handleBuyerTextMessage: vi.fn().mockResolvedValue(undefined) } as never,
     user_repository as never,
   );
 

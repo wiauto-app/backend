@@ -36,6 +36,7 @@ import { FindChatMessageDto } from "../dto/find-chat-message.dto";
 import { FindMessagesByChatDto } from "../dto/find-messages-by-chat.dto";
 import { MarkChatMessagesReadDto } from "../dto/mark-chat-messages-read.dto";
 import { UpdateChatMessageDto } from "../dto/update-chat-message.dto";
+import { LeadAssistantChatHookService } from "@/src/contexts/lead-assistant/services/lead-assistant-chat-hook.service";
 
 @Injectable()
 export class ChatMessageService {
@@ -49,6 +50,7 @@ export class ChatMessageService {
     private readonly notification_channel_dispatcher: NotificationChannelDispatcher,
     private readonly user_blocks_service: UserBlocksService,
     private readonly chat_message_gateway: ChatMessageGateway,
+    private readonly lead_assistant_chat_hook_service: LeadAssistantChatHookService,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
   ) { }
@@ -88,6 +90,12 @@ export class ChatMessageService {
       create_chat_message_dto.content,
       create_chat_message_dto.type,
       create_chat_message_dto.metadata ?? null,
+    );
+
+    await this.lead_assistant_chat_hook_service.handleBuyerTextMessage(
+      chat,
+      chat_message,
+      create_chat_message_dto.sender_id,
     );
 
     return chat_message;

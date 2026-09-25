@@ -314,6 +314,32 @@ export class StripeClient {
     });
   }
 
+  /**
+   * Native PaymentSheet flow for one-time products. Metadata lives on the
+   * PAYMENT INTENT because `payment_intent.succeeded` reads it from there.
+   * No automatic tax: `amount_cents` is charged as-is.
+   */
+  async createOneTimePaymentIntent(params: {
+    amount_cents: number;
+    currency: string;
+    customer_id: string;
+    description: string;
+    metadata: Record<string, string>;
+    idempotency_key: string;
+  }): Promise<Stripe.PaymentIntent> {
+    return this.stripe.paymentIntents.create(
+      {
+        amount: params.amount_cents,
+        currency: params.currency,
+        customer: params.customer_id,
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+        description: params.description,
+        metadata: params.metadata,
+      },
+      { idempotencyKey: params.idempotency_key },
+    );
+  }
+
   /** Customer Session for the mobile Payment Element (saved payment methods). */
   async createCustomerSession(params: { customer_id: string }): Promise<string> {
     const session = await this.stripe.customerSessions.create({

@@ -154,12 +154,13 @@ export const buildUnlimitedEntitlementsMap = (): Record<string, EffectiveEntitle
     ENTITLEMENT_FEATURE.AI_REQUESTS,
     ENTITLEMENT_FEATURE.USERS,
     ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
+    ENTITLEMENT_FEATURE.AI_REPLIES_PER_CONVERSATION,
+    ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
   ];
   const booleans: EntitlementFeature[] = [
-    ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
     ENTITLEMENT_FEATURE.AI_GENERATION,
     ENTITLEMENT_FEATURE.STATISTICS,
-    ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
+    ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
   ];
 
   const map: Record<string, EffectiveEntitlement> = {};
@@ -229,7 +230,7 @@ export const toLegacyQuotas = (
     max_listings: vehicles ?? Number.MAX_SAFE_INTEGER,
     max_photos: photos ?? Number.MAX_SAFE_INTEGER,
     allow_videos: getBooleanFromEntitlement(
-      features[ENTITLEMENT_FEATURE.VIDEO_UPLOAD],
+      features[ENTITLEMENT_FEATURE.VIDEOS_PER_VEHICLE],
     ),
   };
 };

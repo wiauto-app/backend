@@ -1,16 +1,23 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { isUUID } from "class-validator";
 import Stripe from "stripe";
 import { Repository } from "typeorm";
 
 import { envs } from "@/src/common/envs";
 import { Injectable as HexInjectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
+import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
+import {
+  canFeatureVehicle,
+  isFeaturedActive,
+} from "@/src/contexts/vehicles/utils/owner-vehicle-rules";
 import { slugify } from "@/src/contexts/shared/slugify-string/slugify";
 import { PlanEffectConfig } from "../types/subscription-plan";
 import { PlanNotFoundException } from "../exceptions/billing.exceptions";
@@ -33,7 +40,9 @@ import { ProfessionalAccountEntity } from "../entities/professional-account.enti
 import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
 import { CreateSubscriptionCheckoutHttpDto } from "../api/user/create-subscription-checkout/create-subscription-checkout.http-dto";
 import { CreateSubscriptionPaymentSheetHttpDto } from "../api/user/create-subscription-payment-sheet/create-subscription-payment-sheet.http-dto";
+import { CreateFeaturedListingPaymentSheetHttpDto } from "../api/user/create-featured-listing-payment-sheet/create-featured-listing-payment-sheet.http-dto";
 import {
+  FeaturedListingPaymentSheetResult,
   ProfessionalAccountInput,
   SubscriptionPaymentSheetIntentType,
   SubscriptionPaymentSheetResult,
@@ -358,6 +367,8 @@ export class BillingCheckoutService {
     @InjectRepository(ProfessionalAccountEntity)
     private readonly professional_account_repository: Repository<ProfessionalAccountEntity>,
     private readonly subscription_repository: TypeOrmSubscriptionRepository,
+    @InjectRepository(VehicleEntity)
+    private readonly vehicle_repository: Repository<VehicleEntity>,
   ) {}
 
   private isStripeResourceMissing(error: unknown): boolean {
@@ -562,6 +573,128 @@ export class BillingCheckoutService {
       customer_id,
       subscription_id: subscription.id,
     };
+  }
+
+  /**
+   * Native PaymentSheet flow (mobile) for a featured listing offer. Creates a
+   * PaymentIntent whose metadata matches what `payment_intent.succeeded`
+   * fulfills (`StripeWebhookService.handlePaymentIntentSucceeded`): with
+   * `vehicle_id` it features that listing, without it it grants a credit.
+   * No local row is written here; the webhook is the source of truth.
+   */
+  async createFeaturedListingPaymentSheet(
+    profile_id: string,
+    dto: CreateFeaturedListingPaymentSheetHttpDto,
+  ): Promise<FeaturedListingPaymentSheetResult> {
+    const offer = await this.featured_listing_offers_service.findOne(
+      dto.offer_id,
+    );
+    if (!offer.is_active) {
+      throw new BadRequestException("La oferta no está activa");
+    }
+    if (!(offer.amount_cents > 0) || !offer.currency) {
+      throw new BadRequestException("La oferta no tiene un precio válido");
+    }
+
+    if (dto.vehicle_id) {
+      await this.assertVehicleCanBeFeatured(profile_id, dto.vehicle_id);
+    }
+
+    const customer_id = await this.resolveCustomer(profile_id);
+    const currency = offer.currency.toLowerCase();
+
+    const metadata: Record<string, string> = {
+      profile_id,
+      product_kind: ONE_TIME_PRODUCT_KIND.FEATURED_LISTING_OFFER,
+      product_id: offer.id,
+      checkout_source: PAYMENT_SHEET_CHECKOUT_SOURCE,
+      ...(dto.vehicle_id ? { vehicle_id: dto.vehicle_id } : {}),
+    };
+
+    let payment_intent: Stripe.PaymentIntent;
+    try {
+      payment_intent = await this.stripe_client.createOneTimePaymentIntent({
+        amount_cents: offer.amount_cents,
+        currency,
+        customer_id,
+        description: `Destacado ${offer.duration_days} días`,
+        metadata,
+        idempotency_key: this.buildFeaturedPaymentSheetIdempotencyKey(
+          profile_id,
+          offer.id,
+          dto.vehicle_id,
+        ),
+      });
+    } catch (error) {
+      throw this.mapPaymentSheetStripeError(error);
+    }
+
+    if (!payment_intent.client_secret) {
+      throw new Error("Stripe no devolvió client_secret del PaymentIntent");
+    }
+
+    const customer_session_client_secret =
+      await this.stripe_client.createCustomerSession({ customer_id });
+
+    return {
+      intent_type: "payment",
+      client_secret: payment_intent.client_secret,
+      customer_session_client_secret,
+      customer_id,
+      payment_intent_id: payment_intent.id,
+      amount_cents: payment_intent.amount,
+      currency: payment_intent.currency,
+    };
+  }
+
+  /**
+   * Same guard as the owner feature/redeem flows: only the owner can feature a
+   * listing, and only while it is active and not already featured.
+   */
+  private async assertVehicleCanBeFeatured(
+    profile_id: string,
+    vehicle_id: string,
+  ): Promise<void> {
+    const vehicle = await this.vehicle_repository.findOne({
+      where: { id: vehicle_id },
+      select: {
+        id: true,
+        profile_id: true,
+        status: true,
+        is_featured: true,
+        featured_expires_at: true,
+      },
+    });
+    if (!vehicle) {
+      throw new NotFoundException("Anuncio no encontrado");
+    }
+    if (vehicle.profile_id !== profile_id) {
+      throw new ForbiddenException("No puedes destacar un anuncio que no es tuyo");
+    }
+
+    const is_featured_active = isFeaturedActive({
+      is_featured: vehicle.is_featured ?? false,
+      featured_expires_at: vehicle.featured_expires_at ?? null,
+    });
+    if (is_featured_active) {
+      throw new ConflictException("El anuncio ya está destacado");
+    }
+    if (!canFeatureVehicle({ status: vehicle.status, is_featured_active })) {
+      throw new ConflictException("El anuncio debe estar activo para destacarlo");
+    }
+  }
+
+  /**
+   * Same bucketed strategy as subscriptions: double taps inside the window get
+   * the same PaymentIntent; a later retry gets a fresh one.
+   */
+  private buildFeaturedPaymentSheetIdempotencyKey(
+    profile_id: string,
+    offer_id: string,
+    vehicle_id: string | undefined,
+  ): string {
+    const window = Math.floor(Date.now() / PAYMENT_SHEET_IDEMPOTENCY_WINDOW_MS);
+    return `featured-ps:${profile_id}:${offer_id}:${vehicle_id ?? "credit"}:${window}`;
   }
 
   /**
@@ -933,6 +1066,15 @@ export class BillingCheckoutService {
         throw new BadRequestException(
           "La oferta no está sincronizada con Stripe",
         );
+      }
+
+      // metadata es libre en el DTO: validar vehicle_id antes de consultar.
+      const vehicle_id = params.metadata?.vehicle_id;
+      if (vehicle_id !== undefined && vehicle_id !== "") {
+        if (typeof vehicle_id !== "string" || !isUUID(vehicle_id)) {
+          throw new BadRequestException("vehicle_id no es válido");
+        }
+        await this.assertVehicleCanBeFeatured(profile_id, vehicle_id);
       }
 
       // vehicle_id opcional: con él se destaca ese anuncio al pagar;

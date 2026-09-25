@@ -21,8 +21,15 @@ describe("StripeWebhookService PaymentSheet", () => {
     createPortalSession: vi.fn(),
     updateSubscriptionMetadata: vi.fn(),
   };
-  const webhook_event_repository = { exists: vi.fn(), save: vi.fn() };
-  const subscription_repository = { findByStripeSubscriptionId: vi.fn() };
+  const webhook_event_repository = {
+    claim: vi.fn(),
+    markProcessed: vi.fn(),
+    markFailed: vi.fn(),
+  };
+  const subscription_repository = {
+    findByStripeSubscriptionId: vi.fn(),
+    findActiveByProfileId: vi.fn(),
+  };
   const billing_profile_repository = {
     findById: vi.fn(),
     findByStripeCustomerId: vi.fn(),
@@ -56,11 +63,12 @@ describe("StripeWebhookService PaymentSheet", () => {
       {} as never,
       provisioning_service as never,
       mail_service as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
+      {} as never, // vehicle_repository
+      {} as never, // pack_repository_entity
+      {} as never, // offer_repository_entity
+      {} as never, // vehicle_search_indexer
+      {} as never, // assistant_quota_service
+      {} as never, // featured_listing_credits_service
       me_session_cache_service as never,
     );
 
@@ -91,7 +99,10 @@ describe("StripeWebhookService PaymentSheet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    webhook_event_repository.exists.mockResolvedValue(false);
+    webhook_event_repository.claim.mockResolvedValue({
+      outcome: "claimed",
+      attempts: 1,
+    });
     provisioning_service.resolveProfileIdFromSubscription.mockResolvedValue(
       profile_id,
     );
@@ -258,9 +269,9 @@ describe("StripeWebhookService PaymentSheet", () => {
     });
 
     it("sigue avisando en fallos de renovación (subscription_cycle)", async () => {
-      subscription_repository.findActiveByProfileId = vi
-        .fn()
-        .mockResolvedValue({ plan_name: "Pro" });
+      subscription_repository.findActiveByProfileId.mockResolvedValue({
+        plan_name: "Pro",
+      });
       stripe_client.createPortalSession.mockResolvedValue("https://portal");
 
       await dispatch("invoice.payment_failed", buildInvoice("subscription_cycle"));

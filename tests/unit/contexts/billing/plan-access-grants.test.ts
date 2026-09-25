@@ -37,6 +37,9 @@ const createService = () => {
       plan: { name: "Profesional" },
     }),
   };
+  const featured_listing_credits_service = {
+    countAvailable: vi.fn().mockResolvedValue(0),
+  };
   const vehicle_repository = {
     count_active_by_profile_id: vi.fn().mockResolvedValue(2),
     count_active_by_profile_ids: vi.fn().mockResolvedValue(2),
@@ -61,14 +64,15 @@ const createService = () => {
     billing_profile_repository as never,
     subscription_repository as never,
     plan_access_grants_service as never,
+    featured_listing_credits_service as never,
     vehicle_repository as never,
     dealership_members_repository as never,
     subscription_entity_repository as never,
     plan_entitlement_repository as never,
-    {} as never,
-    {} as never,
-    {} as never,
-    {} as never,
+    {} as never, // override_repository
+    {} as never, // usage_repository
+    {} as never, // grant_usage_repository
+    {} as never, // grant_repository
   );
 };
 

@@ -284,3 +284,74 @@ describe("vehicle update flow", () => {
     });
   });
 });
+
+describe("owner vehicle status update", () => {
+  const createOwnerStatusService = (current_status = STATUS_VEHICLE.ACTIVE) => {
+    const vehicle_repository = {
+      findById: vi
+        .fn()
+        .mockResolvedValue({ id: vehicle_id, status: current_status }),
+    };
+    const vehicle_orm_repository = {
+      update: vi.fn().mockResolvedValue({ affected: 1 }),
+    };
+    const vehicle_search_indexer = {
+      syncVehicle: vi.fn().mockResolvedValue(undefined),
+    };
+    const alert_processing_enqueue_service = {
+      enqueue_vehicle_event: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new VehicleService(
+      vehicle_repository as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      vehicle_search_indexer as never,
+      {} as never,
+      alert_processing_enqueue_service as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      vehicle_orm_repository as never,
+      {} as never,
+      {} as never,
+    );
+
+    return { service, vehicle_orm_repository, vehicle_search_indexer };
+  };
+
+  it.each([
+    [STATUS_VEHICLE.PENDING, STATUS_VEHICLE.ACTIVE],
+    [STATUS_VEHICLE.ACTIVE, STATUS_VEHICLE.INACTIVE],
+    [STATUS_VEHICLE.ACTIVE, STATUS_VEHICLE.SOLD],
+  ])(
+    "persists, indexes and returns the requested status (%s -> %s)",
+    async (current_status, next_status) => {
+      const { service, vehicle_orm_repository, vehicle_search_indexer } =
+        createOwnerStatusService(current_status);
+
+      const result = await service.updateOwnerStatus({
+        vehicle_id,
+        status: next_status,
+      });
+
+      expect(vehicle_orm_repository.update).toHaveBeenCalledWith(
+        vehicle_id,
+        expect.objectContaining({ status: next_status }),
+      );
+      expect(vehicle_search_indexer.syncVehicle).toHaveBeenCalledWith(
+        vehicle_id,
+        next_status,
+      );
+      expect(result).toEqual({ status: next_status });
+    },
+  );
+});

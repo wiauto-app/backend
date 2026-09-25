@@ -246,7 +246,6 @@
             "url": "{{base_url}}/auth/me",
             "description": "`AuthGuard` (JWT)."
           },
-      
           "response": [
             {
               "name": "200 OK — perfil (ejemplo)",
@@ -334,7 +333,6 @@
             "url": "{{base_url}}/auth/refresh",
             "description": "`AuthGuard` (JWT)."
           },
-      
           "response": [
             {
               "name": "200 OK — token (ejemplo)",
@@ -1231,8 +1229,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/auth/email-verification/confirm?token=<token_del_link>&redirectUrl=http://localhost:3000/api/auth/callback",
-                  "host": ["{{base_url}}"],
-                  "path": ["auth", "email-verification", "confirm"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email-verification",
+                    "confirm"
+                  ],
                   "query": [
                     {
                       "key": "token",
@@ -1388,6 +1392,51 @@
                   "body": "{\n  \"message\": \"Contraseña actualizada correctamente.\"\n}"
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "lead-assistant",
+          "item": [
+            {
+              "name": "GET v1/lead-assistant/settings",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/v1/lead-assistant/settings",
+                "description": "JWT. Ajustes del asistente de leads por perfil."
+              }
+            },
+            {
+              "name": "PATCH v1/lead-assistant/settings",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"enabled\": true,\n  \"context_note\": \"\",\n  \"reply_delay_seconds\": 30,\n  \"notify_on_reply\": true,\n  \"notify_on_quota_exhausted\": true,\n  \"notify_on_hot_lead\": true\n}"
+                },
+                "url": "{{base_url}}/v1/lead-assistant/settings",
+                "description": "JWT. Ajustes del asistente de leads por perfil."
+              }
             }
           ]
         }
@@ -3547,8 +3596,15 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/vehicles/{{vehicle_id}}/similar?page=1&limit=4",
-                  "host": ["{{base_url}}"],
-                  "path": ["v1", "vehicles", "{{vehicle_id}}", "similar"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "vehicles",
+                    "{{vehicle_id}}",
+                    "similar"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -6393,8 +6449,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/admin/dashboard?startDate=2026-06-29&endDate=2026-07-28",
-              "host": ["{{base_url}}"],
-              "path": ["v1", "admin", "dashboard"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "admin",
+                "dashboard"
+              ],
               "query": [
                 {
                   "key": "startDate",
@@ -6602,8 +6664,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/makes?page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "makes"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "makes"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -6646,8 +6714,15 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/makes/search?search=toy&page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "makes", "search"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "makes",
+                        "search"
+                      ],
                       "query": [
                         {
                           "key": "search",
@@ -6760,8 +6835,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/models?page=1&limit=10&make_id={{catalog_make_id}}",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "models"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "models"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -6809,8 +6890,15 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/models/search?make_id={{catalog_make_id}}&search=cor&page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "models", "search"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "models",
+                        "search"
+                      ],
                       "query": [
                         {
                           "key": "make_id",
@@ -6926,8 +7014,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/body-types?page=1&limit=10&model_id={{catalog_model_id}}",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "body-types"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "body-types"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -7038,8 +7132,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/fuel-types?page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "fuel-types"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "fuel-types"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -7145,8 +7245,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/years?page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "years"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "years"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -7264,8 +7370,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/versions?page=1&limit=10",
-                      "host": ["{{base_url}}"],
-                      "path": ["v1", "catalog", "versions"],
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "catalog",
+                        "versions"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -7377,8 +7489,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/municipalities?page=1&limit=100&province_slug=madrid",
-                  "host": ["{{base_url}}"],
-                  "path": ["v1", "municipalities"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "municipalities"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -7426,8 +7543,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/provinces?page=1&limit=100",
-                  "host": ["{{base_url}}"],
-                  "path": ["v1", "provinces"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "provinces"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -7524,6 +7646,49 @@
       ]
     },
     {
+      "name": "lead-assistant",
+      "item": [
+        {
+          "name": "obtener ajustes asistente de leads",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/lead-assistant/settings",
+            "description": "JWT. Devuelve ajustes del asistente de leads del perfil autenticado y límites del plan (`ai_replies_per_conversation`, `ai_lead_conversations`)."
+          },
+          "response": []
+        },
+        {
+          "name": "actualizar ajustes asistente de leads",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/lead-assistant/settings",
+            "description": "JWT. Actualiza ajustes parciales. Requiere cupos en el plan para activar `enabled: true`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"context_note\": \"Negociable con reserva\",\n  \"objective\": \"anyone\",\n  \"persuasion\": \"balanced\",\n  \"extension\": \"medium\",\n  \"tone\": \"professional\",\n  \"reply_delay_seconds\": 30,\n  \"notify_on_reply\": true,\n  \"notify_on_quota_exhausted\": true,\n  \"notify_on_hot_lead\": true\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "chat",
       "item": [
         {
@@ -7561,8 +7726,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/chats?page=1&limit=10&order_direction=ASC",
-              "host": ["{{base_url}}"],
-              "path": ["v1", "chats"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "chats"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -7624,8 +7794,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/chats/{{chat_id}}/messages?page=1&limit=20&order_direction=DESC",
-              "host": ["{{base_url}}"],
-              "path": ["v1", "chats", "{{chat_id}}", "messages"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "chats",
+                "{{chat_id}}",
+                "messages"
+              ],
               "query": [
                 {
                   "key": "page",

@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -19,6 +20,10 @@ import {
 import { SubscriptionPlanEntity } from "./subscription-plan.entity";
 
 @Entity({ name: "one_time_purchases" })
+@Index("UQ_one_time_purchases_payment_intent", ["stripe_payment_intent_id"], {
+  unique: true,
+  where: '"stripe_payment_intent_id" IS NOT NULL',
+})
 export class OneTimePurchaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;

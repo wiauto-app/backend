@@ -18,6 +18,10 @@ import { ChatMessageMetadata } from "@/src/contexts/chat/types/chatMessageMetada
 class ChatMessageMetadataHttpDto implements ChatMessageMetadata {
   @IsOptional()
   @IsString()
+  author?: ChatMessageMetadata["author"];
+
+  @IsOptional()
+  @IsString()
   file_name?: string;
 
   @IsOptional()

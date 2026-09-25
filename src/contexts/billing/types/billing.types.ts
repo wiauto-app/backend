@@ -69,6 +69,21 @@ export interface SubscriptionPaymentSheetResult {
   subscription_id: string;
 }
 
+/**
+ * Native PaymentSheet for a one-time featured listing purchase. Always a
+ * PaymentIntent (`intent_type: "payment"`); the webhook
+ * (`payment_intent.succeeded`) is the source of truth for fulfillment.
+ */
+export interface FeaturedListingPaymentSheetResult {
+  intent_type: "payment";
+  client_secret: string;
+  customer_session_client_secret: string;
+  customer_id: string;
+  payment_intent_id: string;
+  amount_cents: number;
+  currency: string;
+}
+
 export type {
   BillingMeSummary,
   ResolvedEntitlements,

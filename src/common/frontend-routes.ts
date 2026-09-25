@@ -20,7 +20,6 @@ export const FRONTEND_ROUTES = {
   VEHICLES: "/vehiculos",
   VEHICLE_DETAIL: "/vehiculo",
   EDIT_VEHICLE: "/editar-vehiculo",
-  EDIT_VEHICLE_PROFESSIONAL: "/usuario/editar-vehiculo-profesional",
   CREATE_VEHICLE: "/publicar",
   SELL_VEHICLE: "/vender-vehiculo",
   MY_LISTINGS: "/usuario/mis-anuncios",
@@ -46,16 +45,8 @@ export const getFrontendPath = (path: string): string => {
 export const getVehicleDetailUrl = (vehicle_id: string): string =>
   getFrontendPath(`${FRONTEND_ROUTES.VEHICLE_DETAIL}/${vehicle_id}`);
 
-export const getVehicleEditUrl = (
-  vehicle_id: string,
-  publisher_type: string,
-): string => {
-  const base =
-    publisher_type === "dealership"
-      ? FRONTEND_ROUTES.EDIT_VEHICLE_PROFESSIONAL
-      : FRONTEND_ROUTES.EDIT_VEHICLE;
-  return getFrontendPath(`${base}/${vehicle_id}`);
-};
+export const getVehicleEditUrl = (vehicle_id: string): string =>
+  getFrontendPath(`${FRONTEND_ROUTES.EDIT_VEHICLE}/${vehicle_id}`);
 
 export const getMyListingsUrl = (): string =>
   getFrontendUrl("MY_LISTINGS");

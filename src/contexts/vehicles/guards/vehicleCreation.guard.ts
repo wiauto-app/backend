@@ -43,7 +43,8 @@ export class VehicleCreationGuard implements CanActivate {
     const maxVehicles = entitlements.vehicles.limit;
     const maxImages = entitlements.photos_per_vehicle.limit;
     const maxVideos = entitlements.videos_per_vehicle.limit;
-    const canUploadVideos = entitlements.video_upload.value;
+    const canUploadVideos =
+      maxVideos == null || (typeof maxVideos === "number" && maxVideos > 0);
 
     if (maxVehicles && vehicleSlotsUsed >= maxVehicles) {
       throw new ForbiddenException("Has alcanzado el límite de vehículos");
@@ -58,16 +59,17 @@ export class VehicleCreationGuard implements CanActivate {
       throw new ForbiddenException("Tienes más imágenes que las permitidas");
     }
 
-    if (!maxVideos && maxVideos !== 0) {
-      throw new ForbiddenException("No tienes permitido subir vídeos");
-    }
     const videosCount = body.videos?.length;
 
     if (!canUploadVideos && videosCount && videosCount > 0) {
-      return false;
+      throw new ForbiddenException("No tienes permitido subir vídeos");
     }
 
-    if (videosCount && videosCount > maxVideos) {
+    if (
+      maxVideos != null &&
+      videosCount &&
+      videosCount > maxVideos
+    ) {
       throw new ForbiddenException("Tienes más vídeos que las permitidas");
     }
 

@@ -70,7 +70,7 @@ export const buildMailVehicleCard = (
     transmission_label,
     location_label,
     detail_url: getVehicleDetailUrl(input.id),
-    edit_url: getVehicleEditUrl(input.id, input.publisher_type),
+    edit_url: getVehicleEditUrl(input.id),
   };
 };
 

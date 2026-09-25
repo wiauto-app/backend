@@ -1,4 +1,8 @@
-import { Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Logger,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import Stripe from "stripe";
 import { Repository } from "typeorm";
@@ -17,7 +21,10 @@ import {
   SUBSCRIPTION_STATUS,
 } from "../types/billing.enums";
 import { TypeOrmBillingProfileRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
-import { TypeOrmStripeWebhookEventRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
+import {
+  STRIPE_WEBHOOK_CLAIM_OUTCOME,
+  TypeOrmStripeWebhookEventRepository,
+} from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmOneTimePurchaseRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmBillingInvoiceRepository } from "@/src/contexts/billing/repositories/typeorm.billing-support-repositories";
 import { TypeOrmSubscriptionRepository } from "@/src/contexts/billing/repositories/typeorm.subscription-repository";
@@ -31,6 +38,20 @@ import { BillingSubscriptionProvisioningService } from "./billing-subscription-p
 import { AssistantCreditPackEntity } from "../entities/assistant-credit-pack.entity";
 import { FeaturedListingOfferEntity } from "../entities/featured-listing-offer.entity";
 import { FeaturedListingCreditsService } from "./featured-listing-credits.service";
+
+/**
+ * A `processing` claim older than this is considered abandoned (process crash
+ * or timeout) and may be re-claimed. Stripe gives up on a delivery after ~20s,
+ * so a healthy handler is always far below this threshold.
+ */
+export const STRIPE_WEBHOOK_STALE_CLAIM_MS = 10 * 60 * 1000;
+
+// Duck-typed on StripeError.type on purpose: keeps `stripe` a type-only import
+// here (StripeClient owns the SDK instance).
+const isStripeSignatureVerificationError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  (error as { type?: unknown }).type === "StripeSignatureVerificationError";
 
 @HexInjectable()
 export class StripeWebhookService {
@@ -58,19 +79,74 @@ export class StripeWebhookService {
     private readonly me_session_cache_service: MeSessionCacheService,
   ) {}
 
+  /**
+   * An event is only recorded as `processed` after its handler succeeds. Any
+   * handler error marks it `failed` and propagates (HTTP 500) so Stripe
+   * redelivers it; the redelivery re-claims the failed row and runs again.
+   * Every fulfillment path must therefore be idempotent on retry.
+   */
   async handle(payload: Buffer, signature: string | undefined): Promise<{ received: boolean }> {
     if (!signature) {
-      throw new Error("Falta cabecera stripe-signature");
+      throw new BadRequestException("Falta cabecera stripe-signature");
     }
 
-    const event = this.stripe_client.constructWebhookEvent(payload, signature);
+    const event = this.constructEvent(payload, signature);
 
-    if (await this.webhook_event_repository.exists(event.id)) {
+    const claim = await this.webhook_event_repository.claim(
+      event.id,
+      event.type,
+      STRIPE_WEBHOOK_STALE_CLAIM_MS,
+    );
+
+    if (claim.outcome === STRIPE_WEBHOOK_CLAIM_OUTCOME.ALREADY_PROCESSED) {
       return { received: true };
     }
 
-    await this.webhook_event_repository.save(event.id, event.type);
+    if (claim.outcome === STRIPE_WEBHOOK_CLAIM_OUTCOME.IN_PROGRESS) {
+      // Another delivery is handling it right now. Non-2xx makes Stripe retry
+      // later: if that worker fails or crashes the event is not lost.
+      throw new ConflictException(
+        `Evento Stripe ${event.id} en procesamiento`,
+      );
+    }
 
+    try {
+      await this.dispatch(event);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Fallo procesando evento Stripe ${event.id} (${event.type}), intento ${claim.attempts}: ${message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      try {
+        await this.webhook_event_repository.markFailed(event.id, message);
+      } catch (mark_error) {
+        // Stays `processing` and is reclaimed once stale.
+        this.logger.error(
+          `No se pudo marcar como fallido el evento Stripe ${event.id}`,
+          mark_error instanceof Error ? mark_error.stack : String(mark_error),
+        );
+      }
+      throw error;
+    }
+
+    await this.webhook_event_repository.markProcessed(event.id);
+
+    return { received: true };
+  }
+
+  private constructEvent(payload: Buffer, signature: string): Stripe.Event {
+    try {
+      return this.stripe_client.constructWebhookEvent(payload, signature);
+    } catch (error) {
+      if (isStripeSignatureVerificationError(error)) {
+        throw new BadRequestException("Firma de webhook Stripe inválida");
+      }
+      throw error;
+    }
+  }
+
+  private async dispatch(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case "checkout.session.completed": {
         await this.handleCheckoutCompleted(event.data.object);
@@ -106,8 +182,6 @@ export class StripeWebhookService {
         break;
       }
     }
-
-    return { received: true };
   }
 
   private async handleCheckoutCompleted(session: Stripe.Checkout.Session) {
@@ -472,25 +546,61 @@ export class StripeWebhookService {
       metadata,
     } = params;
 
-    if (payment_intent_id) {
-      const existing = await this.purchase_repository.findByStripePaymentIntentId(
-        payment_intent_id,
-      );
-
-      if (existing?.metadata.effect_applied === true) {
-        return;
-      }
-    }
-
-    await this.purchase_repository.create({
+    const purchase = {
       profile_id,
       plan_id: plan_id ?? null,
       product_kind: product_kind ?? null,
       product_id: product_id ?? null,
-      stripe_payment_intent_id: payment_intent_id,
       status: ONE_TIME_PURCHASE_STATUS.COMPLETED,
       metadata,
-    });
+    };
+
+    let purchase_id_without_payment_intent: string | null = null;
+
+    if (payment_intent_id) {
+      // The unique index on stripe_payment_intent_id makes the claim atomic.
+      // A lost claim only re-applies when the previous attempt did not finish
+      // (effect_applied missing), so a failed fulfillment can still be retried.
+      const claimed = await this.purchase_repository.claim({
+        ...purchase,
+        stripe_payment_intent_id: payment_intent_id,
+      });
+
+      if (!claimed) {
+        const existing =
+          await this.purchase_repository.findByStripePaymentIntentId(
+            payment_intent_id,
+          );
+        if (existing?.metadata.effect_applied === true) {
+          return;
+        }
+      }
+    } else if (stripe_checkout_session_id) {
+      // No PaymentIntent (e.g. 100% discounted Checkout): key the purchase by
+      // session id so a retried webhook neither duplicates the row nor
+      // re-applies the effect. The event claim already serializes deliveries
+      // of this event, so a non-atomic lookup is enough here.
+      const existing =
+        await this.purchase_repository.findByStripeCheckoutSessionId(
+          stripe_checkout_session_id,
+        );
+      if (existing?.metadata.effect_applied === true) {
+        return;
+      }
+
+      purchase_id_without_payment_intent =
+        existing?.id ??
+        (await this.purchase_repository.create({
+          ...purchase,
+          metadata: { ...metadata, stripe_checkout_session_id },
+          stripe_payment_intent_id: null,
+        }));
+    } else {
+      await this.purchase_repository.create({
+        ...purchase,
+        stripe_payment_intent_id: null,
+      });
+    }
 
     await this.applyOneTimeEffect({
       profile_id,
@@ -503,6 +613,10 @@ export class StripeWebhookService {
 
     if (payment_intent_id) {
       await this.purchase_repository.markEffectApplied(payment_intent_id);
+    } else if (purchase_id_without_payment_intent) {
+      await this.purchase_repository.markEffectAppliedById(
+        purchase_id_without_payment_intent,
+      );
     }
 
     await this.me_session_cache_service.invalidateByProfileId(profile_id);

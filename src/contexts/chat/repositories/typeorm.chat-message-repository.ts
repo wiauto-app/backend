@@ -8,6 +8,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { Chat } from "../types/chat";
 import {
   CHAT_MESSAGE_STATUS,
+  CHAT_MESSAGE_TYPE,
   ChatMessage,
 } from "../types/chatMessage";
 import { ChatMessageEntity } from "../entities/chat-message.orm.entity";
@@ -161,6 +162,61 @@ export class TypeOrmChatMessageRepository {
     }
 
     return updated;
+  }
+
+  async countAiAssistantMessagesInChat(chat_id: string): Promise<number> {
+    return this.chat_message_repository
+      .createQueryBuilder("message")
+      .where("message.chat_id = :chat_id", { chat_id })
+      .andWhere("message.deleted_at IS NULL")
+      .andWhere("message.metadata ->> 'author' = :author", {
+        author: "ai_assistant",
+      })
+      .getCount();
+  }
+
+  async hasSenderMessageAfter(
+    chat_id: string,
+    sender_ids: string[],
+    after: Date,
+  ): Promise<boolean> {
+    if (sender_ids.length === 0) {
+      return false;
+    }
+
+    const count = await this.chat_message_repository
+      .createQueryBuilder("message")
+      .where("message.chat_id = :chat_id", { chat_id })
+      .andWhere("message.deleted_at IS NULL")
+      .andWhere("message.sender_id IN (:...sender_ids)", { sender_ids })
+      .andWhere("message.created_at > :after", { after })
+      .getCount();
+
+    return count > 0;
+  }
+
+  async findRecentTextExcerpts(chat_id: string, limit: number): Promise<string> {
+    const rows = await this.chat_message_repository
+      .createQueryBuilder("message")
+      .where("message.chat_id = :chat_id", { chat_id })
+      .andWhere("message.deleted_at IS NULL")
+      .andWhere("message.type = :type", { type: CHAT_MESSAGE_TYPE.TEXT })
+      .orderBy("message.created_at", "DESC")
+      .take(limit)
+      .getMany();
+
+    return rows
+      .reverse()
+      .map((row) => {
+        const prefix =
+          row.metadata?.author === "ai_assistant" ? "[Asistente]" : "[Chat]";
+        const text =
+          row.content.length > 160
+            ? `${row.content.slice(0, 157)}...`
+            : row.content;
+        return `${prefix}: ${text}`;
+      })
+      .join("\n");
   }
 
   async markMessagesAsDeliveredForRecipient(

@@ -42,6 +42,7 @@ import { FindSimilarVehiclesController } from "./api/v1/find-similar-vehicles/fi
 import { RemoveVehicleController } from "./api/v1/remove-vehicle/remove-vehicle.controller";
 import { FindOwnerVehiclesController } from "./api/v1/find-owner-vehicles/find-owner-vehicles.controller";
 import { GetVehicleReportController } from "./api/v1/get-vehicle-report/get-vehicle-report.controller";
+import { GetVehicleInsightsController } from "./api/v1/get-vehicle-insights/get-vehicle-insights.controller";
 import { DuplicateVehicleController } from "./api/v1/duplicate-vehicle/duplicate-vehicle.controller";
 import { FeatureVehicleController } from "./api/v1/feature-vehicle/feature-vehicle.controller";
 import { RedeemFeaturedCreditController } from "./api/v1/redeem-featured-credit/redeem-featured-credit.controller";
@@ -94,6 +95,8 @@ import { GenerateVehicleDescriptionController } from "./api/v1/vehicle-ai/genera
 import { RecommendVehiclePriceService } from "./services/recommend-vehicle-price.service";
 import { GenerateVehicleDescriptionService } from "./services/generate-vehicle-description.service";
 import { VehicleMarketStatsService } from "./services/vehicle-market-stats.service";
+import { VehicleInsightsService } from "./services/vehicle-insights.service";
+import { TypeOrmVehicleInsightsRepository } from "./repositories/typeorm.vehicle-insights-repository";
 import { VehicleAiPromptService } from "./services/vehicle-ai-prompt.service";
 import { VehicleAiContextResolverService } from "./services/vehicle-ai-context-resolver.service";
 import { VehicleIdentificationController } from "./api/vehicle-identification.controller";
@@ -123,6 +126,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     CreateVehicleController,
     FindOwnerVehiclesController,
     GetVehicleReportController,
+    GetVehicleInsightsController,
     GetOwnerDashboardController,
     ExportDashboardController,
     GetOwnerStatisticsController,
@@ -171,6 +175,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     RecommendVehiclePriceService,
     GenerateVehicleDescriptionService,
     VehicleMarketStatsService,
+    VehicleInsightsService,
     VehicleAiPromptService,
     VehicleAiContextResolverService,
     VehicleIdentificationService,
@@ -181,6 +186,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     TypeOrmVehicleAnalyticsRepository,
     TypeOrmOwnerDashboardRepository,
     TypeOrmOwnerStatisticsRepository,
+    TypeOrmVehicleInsightsRepository,
     TypeOrmActiveFilters,
     VehiclePermissionsService,
     VehicleSpecsService,

@@ -38,6 +38,7 @@ import { DeleteChatMessageController } from "../api/v1/chat-messages/delete-chat
 import { FindChatMessageController } from "../api/v1/chat-messages/find-chat-message/find-chat-message.controller";
 import { UpdateChatMessageController } from "../api/v1/chat-messages/update-chat-message/update-chat-message.controller";
 import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
+import { LeadAssistantModule } from "@/src/contexts/lead-assistant/lead-assistant.module";
 
 @Module({
   controllers: [
@@ -59,6 +60,7 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
     FileModule,
     forwardRef(() => AlertsModule),
     forwardRef(() => VehiclesModule),
+    forwardRef(() => LeadAssistantModule),
     TypeOrmModule.forFeature([
       ChatEntity,
       ChatMessageEntity,
@@ -89,8 +91,11 @@ import { WsJwtGuard } from "../../auth/guards/ws-jwt.guard";
   exports: [
     TypeOrmChatRepository,
     TypeOrmChatMessageRepository,
+    TypeOrmChatParticipantStateRepository,
     ChatService,
     ChatMessageService,
+    ChatMessageReadModelService,
+    ChatMessageGateway,
     ChatAccessService,
   ],
 })

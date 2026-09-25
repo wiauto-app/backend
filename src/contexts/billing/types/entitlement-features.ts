@@ -13,11 +13,12 @@ export const ENTITLEMENT_FEATURE = {
   VIDEOS_PER_VEHICLE: "videos_per_vehicle",
   AI_REQUESTS: "ai_requests",
   USERS: "users",
-  VIDEO_UPLOAD: "video_upload",
   AI_GENERATION: "ai_generation",
   STATISTICS: "statistics",
   FEATURED_LISTINGS: "featured_listings",
-  ADVANCED_LISTING_EDITOR: "advanced_listing_editor",
+  LISTING_INSIGHTS: "listing_insights",
+  AI_REPLIES_PER_CONVERSATION: "ai_replies_per_conversation",
+  AI_LEAD_CONVERSATIONS: "ai_lead_conversations",
 } as const;
 
 export type EntitlementFeature =
@@ -30,16 +31,20 @@ export const LIMIT_FEATURES = [
   ENTITLEMENT_FEATURE.AI_REQUESTS,
   ENTITLEMENT_FEATURE.USERS,
   ENTITLEMENT_FEATURE.FEATURED_LISTINGS,
+  ENTITLEMENT_FEATURE.AI_REPLIES_PER_CONVERSATION,
+  ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
 ] as const;
 
 export const BOOLEAN_FEATURES = [
-  ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
   ENTITLEMENT_FEATURE.AI_GENERATION,
   ENTITLEMENT_FEATURE.STATISTICS,
-  ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
+  ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
 ] as const;
 
-export const METERED_FEATURES = [ENTITLEMENT_FEATURE.AI_REQUESTS] as const;
+export const METERED_FEATURES = [
+  ENTITLEMENT_FEATURE.AI_REQUESTS,
+  ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
+] as const;
 
 export type MeteredFeature = (typeof METERED_FEATURES)[number];
 
@@ -93,7 +98,7 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     feature: ENTITLEMENT_FEATURE.VIDEOS_PER_VEHICLE,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
     label: "Vídeos por vehículo",
-    description: "Número máximo de vídeos por anuncio",
+    description: "Número máximo de vídeos por anuncio (0 = no permite subir)",
     metered: false,
   },
   {
@@ -108,13 +113,6 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
     label: "Usuarios",
     description: "Miembros del concesionario",
-    metered: false,
-  },
-  {
-    feature: ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    label: "Subida de vídeos",
-    description: "Permite subir vídeos a los anuncios",
     metered: false,
   },
   {
@@ -139,20 +137,29 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     metered: false,
   },
   {
-    feature: ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
+    feature: ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
     value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    label: "Editor avanzado de anuncios",
-    description: "Acceso a la edición completa de anuncios",
+    label: "Diagnóstico de anuncios",
+    description: "Precio, salud del anuncio y embudo de conversión",
     metered: false,
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.AI_REPLIES_PER_CONVERSATION,
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    label: "Respuestas IA por conversación",
+    description: "Mensajes que la IA puede enviar en un mismo chat (0 = no incluido)",
+    metered: false,
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    label: "Conversaciones con asistente de leads",
+    description: "Chats distintos en los que la IA puede intervenir por periodo",
+    metered: true,
   },
 ];
 
 export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
-  // {
-  //   feature: ENTITLEMENT_FEATURE.VEHICLES,
-  //   value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
-  //   value: { limit: 2 },
-  // },
   {
     feature: ENTITLEMENT_FEATURE.VEHICLES,
     value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
@@ -179,11 +186,6 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
     value: { limit: 1 },
   },
   {
-    feature: ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
-    value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
-    value: { bool: false },
-  },
-  {
     feature: ENTITLEMENT_FEATURE.AI_GENERATION,
     value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
     value: { bool: false },
@@ -199,9 +201,19 @@ export const FREE_ENTITLEMENTS: EntitlementDefinition[] = [
     value: { limit: 0 },
   },
   {
-    feature: ENTITLEMENT_FEATURE.ADVANCED_LISTING_EDITOR,
+    feature: ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
     value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
     value: { bool: false },
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.AI_REPLIES_PER_CONVERSATION,
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    value: { limit: 0 },
+  },
+  {
+    feature: ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS,
+    value_type: ENTITLEMENT_VALUE_TYPE.LIMIT,
+    value: { limit: 0 },
   },
 ];
 

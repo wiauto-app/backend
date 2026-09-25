@@ -167,10 +167,7 @@ export class BillingNotificationMailService {
         "es-ES",
         { dateStyle: "long" },
       ),
-      vehicle_edit_url: getVehicleEditUrl(
-        payload.vehicle_id,
-        payload.publisher_type ?? "particular",
-      ),
+      vehicle_edit_url: getVehicleEditUrl(payload.vehicle_id),
     });
   }
 
@@ -189,7 +186,7 @@ export class BillingNotificationMailService {
     await this.outbound_mail_enqueue_service.enqueue_featured_expired({
       to: profile.email,
       vehicle_title: payload.vehicle_title,
-      vehicle_edit_url: getVehicleEditUrl(payload.vehicle_id, "particular"),
+      vehicle_edit_url: getVehicleEditUrl(payload.vehicle_id),
     });
   }
 }

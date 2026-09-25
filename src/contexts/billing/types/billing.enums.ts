@@ -44,6 +44,15 @@ export const ONE_TIME_PURCHASE_STATUS = {
 export type OneTimePurchaseStatus =
   (typeof ONE_TIME_PURCHASE_STATUS)[keyof typeof ONE_TIME_PURCHASE_STATUS];
 
+export const STRIPE_WEBHOOK_EVENT_STATUS = {
+  PROCESSING: "processing",
+  PROCESSED: "processed",
+  FAILED: "failed",
+} as const;
+
+export type StripeWebhookEventStatus =
+  (typeof STRIPE_WEBHOOK_EVENT_STATUS)[keyof typeof STRIPE_WEBHOOK_EVENT_STATUS];
+
 export const ONE_TIME_PRODUCT_KIND = {
   ASSISTANT_CREDIT_PACK: "assistant_credit_pack",
   FEATURED_LISTING_OFFER: "featured_listing_offer",

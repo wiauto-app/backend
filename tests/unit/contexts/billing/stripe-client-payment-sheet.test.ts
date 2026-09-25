@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const stripeMocks = vi.hoisted(() => ({
   customersUpdate: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock("stripe", () => ({
 
 import {
   resolveStripeTaxId,
-  StripeClient,
+  type StripeClient as StripeClientType,
 } from "@/src/contexts/billing/clients/stripe.client";
 import { PROFESSIONAL_ACCOUNT_TYPE } from "@/src/contexts/billing/types/billing.enums";
 
@@ -104,7 +104,17 @@ describe("resolveStripeTaxId", () => {
 });
 
 describe("StripeClient PaymentSheet", () => {
-  let client: StripeClient;
+  let StripeClient: typeof StripeClientType;
+  let client: StripeClientType;
+
+  // Unit tests run with isolate: false: another file may have already cached
+  // stripe.client with ITS own `stripe` mock. Re-import so this file's mock wins.
+  beforeAll(async () => {
+    vi.resetModules();
+    ({ StripeClient } = await import(
+      "@/src/contexts/billing/clients/stripe.client"
+    ));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

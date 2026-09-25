@@ -33,6 +33,17 @@ export interface VehicleMarketStatsResult {
   confidence: VehicleMarketConfidence;
 }
 
+/** Campos del contexto que usa el cálculo de comparables. */
+export type VehicleMarketStatsContext = Pick<
+  VehicleAiContextDto,
+  "version_id" | "condition" | "mileage" | "transmission_type" | "lat" | "lng"
+>;
+
+export interface VehicleMarketStatsOptions {
+  /** Anuncios a excluir de los comparables (p.ej. el propio anuncio). */
+  exclude_vehicle_ids?: string[];
+}
+
 interface ResolvedVehicleCatalog {
   make_slug: string;
   model_slug: string;
@@ -59,7 +70,10 @@ export class VehicleMarketStatsService {
     private readonly catalog_fuel_types_service: CatalogFuelTypesService,
   ) {}
 
-  async compute(context: VehicleAiContextDto): Promise<VehicleMarketStatsResult | null> {
+  async compute(
+    context: VehicleMarketStatsContext,
+    options?: VehicleMarketStatsOptions,
+  ): Promise<VehicleMarketStatsResult | null> {
     const catalog = await this.resolve_catalog(context.version_id);
     const reference: SimilarVehicleReference = {
       mileage: context.mileage,
@@ -69,10 +83,13 @@ export class VehicleMarketStatsService {
       transmission_type: context.transmission_type,
     };
 
+    const exclude_vehicle_ids = options?.exclude_vehicle_ids ?? [];
+
     const tier1_prices = await this.fetch_prices({
       reference,
       catalog,
       tier: 1,
+      exclude_vehicle_ids,
     });
 
     if (tier1_prices.length >= 3) {
@@ -83,6 +100,7 @@ export class VehicleMarketStatsService {
       reference,
       catalog,
       tier: 2,
+      exclude_vehicle_ids,
     });
 
     if (tier2_prices.length < 3) {
@@ -120,6 +138,7 @@ export class VehicleMarketStatsService {
     reference: SimilarVehicleReference;
     catalog: ResolvedVehicleCatalog;
     tier: VehicleMarketStatsTier;
+    exclude_vehicle_ids: string[];
   }): Promise<number[]> {
     const filter = this.build_tier_filter(input);
     const result = await this.vehicle_repository.findAll(filter);
@@ -130,8 +149,9 @@ export class VehicleMarketStatsService {
     reference: SimilarVehicleReference;
     catalog: ResolvedVehicleCatalog;
     tier: VehicleMarketStatsTier;
+    exclude_vehicle_ids: string[];
   }): VehicleFilter {
-    const { reference, catalog, tier } = input;
+    const { reference, catalog, tier, exclude_vehicle_ids } = input;
     const year_delta =
       tier === 1 ? TIER1_YEAR_DELTA : TIER2_YEAR_DELTA;
     const mileage_delta = Math.round(
@@ -146,6 +166,7 @@ export class VehicleMarketStatsService {
       status: STATUS_VEHICLE.ACTIVE,
       condition: reference.condition,
       makes_slugs: [catalog.make_slug],
+      ...(exclude_vehicle_ids.length > 0 ? { exclude_vehicle_ids } : {}),
     };
 
     if (tier === 1) {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const stripeMocks = vi.hoisted(() => ({
   customersCreate: vi.fn(),
@@ -22,10 +22,20 @@ vi.mock("stripe", () => ({
   },
 }));
 
-import { StripeClient } from "@/src/contexts/billing/clients/stripe.client";
+import type { StripeClient as StripeClientType } from "@/src/contexts/billing/clients/stripe.client";
 
 describe("StripeClient locales", () => {
-  let client: StripeClient;
+  let StripeClient: typeof StripeClientType;
+  let client: StripeClientType;
+
+  // Unit tests run with isolate: false: another file may have already cached
+  // stripe.client with ITS own `stripe` mock. Re-import so this file's mock wins.
+  beforeAll(async () => {
+    vi.resetModules();
+    ({ StripeClient } = await import(
+      "@/src/contexts/billing/clients/stripe.client"
+    ));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

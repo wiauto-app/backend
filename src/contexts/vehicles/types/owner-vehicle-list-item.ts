@@ -1,4 +1,5 @@
 import type { StatusVehicle, TransmissionType } from "./vehicle";
+import type { OwnerListingHealthSummary } from "./vehicle-insights";
 
 export interface OwnerVehicleStatTrend {
   current: number;
@@ -35,6 +36,8 @@ export interface OwnerVehicleListItem {
     phone_clicks: OwnerVehicleStatTrend;
     whatsapp_clicks: OwnerVehicleStatTrend;
   };
+  /** Resumen de calidad (precio solo si hay stats de mercado en cache). */
+  health?: OwnerListingHealthSummary;
   created_at: Date;
   updated_at: Date;
 }

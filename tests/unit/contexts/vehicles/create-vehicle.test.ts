@@ -23,6 +23,7 @@ import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { VehiclePriceEntity } from "@/src/contexts/vehicles/vehicle-prices/entities/vehicle-price.entity";
 import {
   CONDITION_VEHICLE,
+  STATUS_VEHICLE,
   TRANSMISSION_TYPE,
 } from "@/src/contexts/vehicles/types/vehicle";
 
@@ -179,6 +180,56 @@ describe("CreateVehicleService", () => {
     expect(saved_targets).toContain(VehiclePriceEntity);
     expect(result.vehicle.id).toBe("vehicle-id");
     expect(result.vehicle.profile_id).toBe("profile-id");
+  });
+
+  it("syncs the search index with the persisted active status", async () => {
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => payload),
+      save: vi.fn(async (target, payload) =>
+        target === VehicleEntity
+          ? {
+              ...payload,
+              id: "vehicle-id",
+              ref: null,
+              created_at: new Date("2026-08-16T00:00:00Z"),
+              updated_at: new Date("2026-08-16T00:00:00Z"),
+            }
+          : payload,
+      ),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async callback => callback(manager)),
+    };
+    const search_indexer = { syncVehicle: vi.fn().mockResolvedValue(null) };
+    const service = new CreateVehicleService(
+      data_source as never,
+      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+      { resolve: vi.fn().mockResolvedValue(null) } as never,
+      { execute: vi.fn() } as never,
+      search_indexer as never,
+      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
+      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
+      { findOne: vi.fn().mockResolvedValue(null) } as never,
+      { enqueue_vehicle_published: vi.fn() } as never,
+    );
+
+    const result = await service.create(validDto(), "profile-id");
+
+    expect(result.vehicle.status).toBe(STATUS_VEHICLE.ACTIVE);
+    expect(search_indexer.syncVehicle).toHaveBeenCalledWith(
+      "vehicle-id",
+      STATUS_VEHICLE.ACTIVE,
+    );
+    expect(search_indexer.syncVehicle).not.toHaveBeenCalledWith(
+      "vehicle-id",
+      STATUS_VEHICLE.PENDING,
+    );
   });
 
   it("persists trimmed optional ref on create", async () => {

@@ -77,6 +77,8 @@ import { TypeOrmVehicleImagesRepository } from "@/src/contexts/vehicles/vehicle-
 import { SetVehiclePriceService } from "../vehicle-prices/services/set-vehicle-price.service";
 import { BillingNotificationMailService } from "@/src/contexts/billing/services/billing-notification-mail.service";
 import { EntitlementsService } from "@/src/contexts/billing/services/entitlements.service";
+import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
+import { getBooleanFromEntitlement } from "@/src/contexts/billing/types/entitlement-resolve";
 import { FeaturedListingCreditsService } from "@/src/contexts/billing/services/featured-listing-credits.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
@@ -86,6 +88,7 @@ import { VehicleEntity } from "../entities/vehicle.entity";
 import { validateVehicleCreationRules } from "./validate-vehicle-creation-rules";
 import { PromoteTempStoragePathsService } from "../../shared/file/services/promote-temp-storage-paths.service";
 import { VideosEntity } from "../entities/videos.entity";
+import { VehicleInsightsService } from "./vehicle-insights.service";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -115,6 +118,21 @@ interface ResolvedVehicleCatalog {
   fuel_type_slug: string;
 }
 
+/** Timestamps de captura de venta: `status_changed_at` en todo cambio, `sold_at` al pasar a sold. */
+const buildStatusChangeTimestamps = (
+  previous_status: StatusVehicle | undefined,
+  new_status: StatusVehicle,
+  now: Date,
+): { status_changed_at?: Date; sold_at?: Date } => {
+  if (previous_status === new_status) {
+    return {};
+  }
+  return {
+    status_changed_at: now,
+    ...(new_status === STATUS_VEHICLE.SOLD ? { sold_at: now } : {}),
+  };
+};
+
 @Injectable()
 export class VehicleService {
   constructor(
@@ -143,6 +161,7 @@ export class VehicleService {
     private readonly promote_temp_storage_paths_service: PromoteTempStoragePathsService,
     private readonly entitlements_service: EntitlementsService,
     private readonly featured_listing_credits_service: FeaturedListingCreditsService,
+    private readonly vehicle_insights_service: VehicleInsightsService,
   ) { }
 
   private async resolvePublisherContext(
@@ -436,7 +455,27 @@ export class VehicleService {
       order_direction: dto.order_direction,
     });
 
-    return this.vehicle_repository.findAllByProfileId(filter);
+    const result = await this.vehicle_repository.findAllByProfileId(filter);
+    const entitlements = await this.entitlements_service.resolve(dto.profile_id);
+    const include_health =
+      entitlements.is_unlimited ||
+      getBooleanFromEntitlement(
+        entitlements.features[ENTITLEMENT_FEATURE.LISTING_INSIGHTS],
+      );
+
+    if (!include_health) {
+      return result;
+    }
+
+    const health_by_id =
+      await this.vehicle_insights_service.buildOwnerHealthSummaries(
+        result.data.map((item) => item.id),
+      );
+
+    return result.map((item) => {
+      const health = health_by_id.get(item.id);
+      return health ? { ...item, health } : item;
+    });
   }
 
   async getVehicleReport(dto: GetVehicleReportDto): Promise<VehicleReport> {
@@ -677,17 +716,17 @@ export class VehicleService {
     }
 
     const vehicle = existing;
-    await this.vehicleRepository.update(vehicle.id, { status: dto.status });
+    await this.vehicleRepository.update(vehicle.id, {
+      status: dto.status,
+      ...buildStatusChangeTimestamps(existing.status, dto.status, new Date()),
+    });
     await this.alert_processing_enqueue_service.enqueue_vehicle_event({
       vehicle_id: dto.vehicle_id,
       event_type: ALERT_EVENT_TYPE.NEW_LISTING,
     });
-    await this.vehicle_search_indexer.syncVehicle(
-      dto.vehicle_id,
-      STATUS_VEHICLE.ACTIVE,
-    );
+    await this.vehicle_search_indexer.syncVehicle(dto.vehicle_id, dto.status);
 
-    return { status: STATUS_VEHICLE.ACTIVE };
+    return { status: dto.status };
   }
 
   async processScheduledPublish(): Promise<{ processed: number }> {
@@ -867,6 +906,10 @@ export class VehicleService {
     );
 
     await this.vehicle_repository.update(updated);
+    await this.vehicleRepository.update(
+      dto.vehicle_id,
+      buildStatusChangeTimestamps(previous_status, new_status, new Date()),
+    );
 
     const publisher_email = existing.profile_id
       ? await this.profile_user_repository.findEmailById(existing.profile_id)

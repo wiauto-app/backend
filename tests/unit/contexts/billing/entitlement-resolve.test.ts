@@ -25,7 +25,7 @@ describe("entitlement merge precedence", () => {
         value: limitValue(50),
       },
       {
-        feature: ENTITLEMENT_FEATURE.VIDEO_UPLOAD,
+        feature: ENTITLEMENT_FEATURE.LISTING_INSIGHTS,
         value_type: ENTITLEMENT_VALUE_TYPE.BOOLEAN,
         value: booleanValue(true),
       },
@@ -56,7 +56,7 @@ describe("entitlement merge precedence", () => {
       effective[ENTITLEMENT_FEATURE.VEHICLES]?.source,
     ).toBe("override");
     expect(
-      getBooleanFromEntitlement(effective[ENTITLEMENT_FEATURE.VIDEO_UPLOAD]),
+      getBooleanFromEntitlement(effective[ENTITLEMENT_FEATURE.LISTING_INSIGHTS]),
     ).toBe(true);
     expect(
       getLimitFromEntitlement(effective[ENTITLEMENT_FEATURE.PHOTOS_PER_VEHICLE]),
@@ -87,6 +87,23 @@ describe("entitlement merge precedence", () => {
     expect(quotas.max_listings).toBe(2);
     expect(quotas.max_photos).toBe(10);
     expect(quotas.allow_videos).toBe(false);
+  });
+
+  it("treats listing_insights as off on free", () => {
+    const features = buildFreeEntitlementsMap();
+    expect(
+      getBooleanFromEntitlement(features[ENTITLEMENT_FEATURE.LISTING_INSIGHTS]),
+    ).toBe(false);
+    expect(
+      getLimitFromEntitlement(
+        features[ENTITLEMENT_FEATURE.AI_REPLIES_PER_CONVERSATION],
+      ),
+    ).toBe(0);
+    expect(
+      getLimitFromEntitlement(
+        features[ENTITLEMENT_FEATURE.AI_LEAD_CONVERSATIONS],
+      ),
+    ).toBe(0);
   });
 
   it("treats featured_listings as a free limit of 0", () => {
