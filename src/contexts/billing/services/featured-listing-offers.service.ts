@@ -28,6 +28,7 @@ export class FeaturedListingOffersService {
     const saved = await this.offer_repository.save({
       title: dto.title,
       description: dto.description ?? null,
+      features: dto.features ?? [],
       duration_days: dto.duration_days,
       boost_weight: dto.boost_weight,
       amount_cents: dto.amount_cents,

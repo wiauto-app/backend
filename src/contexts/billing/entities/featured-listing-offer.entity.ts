@@ -17,6 +17,9 @@ export class FeaturedListingOfferEntity {
   @Column({ type: "text", nullable: true })
   description!: string | null;
 
+  @Column({ type: "text", array: true, default: () => "'{}'" })
+  features!: string[];
+
   @Column({ name: "duration_days", type: "int" })
   duration_days!: number;
 
