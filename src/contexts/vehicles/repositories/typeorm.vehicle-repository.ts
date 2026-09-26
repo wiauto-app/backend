@@ -757,6 +757,7 @@ export class TypeOrmVehicleRepository {
       where: { id },
       relations: {
         ...vehicle_catalog_relations,
+        profile: { user: true },
         vehicle_prices: true,
         version: {
           make: true,
