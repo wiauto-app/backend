@@ -184,7 +184,7 @@ export class CreateVehicleService {
       vehicle = await this.data_source.transaction(async manager => {
         const relations = await this.loadAndValidateRelations(manager, dto);
         const entity = manager.create(VehicleEntity, {
-          ref: dto.ref?.trim() ?? null,
+          ref: dto.ref?.trim() || null,
           vin_code: dto.vin_code?.trim() ?? "",
           profile_id: publisher_profile_id,
           dealership_id: membership?.dealership_id ?? null,

@@ -128,9 +128,17 @@ const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   fuel_name: entity.version.fuel_type.name,
 });
 
+const resolve_listing_is_premium = (entity: VehicleEntity): boolean => {
+  if (entity.dealership_id != null) {
+    return true;
+  }
+  return entity.profile.user.is_admin;
+};
+
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
+    is_premium: resolve_listing_is_premium(entity),
     ref: entity.ref,
     price: get_active_price(entity),
     mileage: entity.mileage,
@@ -835,6 +843,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("profile.user", "profile_user")
       .leftJoinAndSelect("vehicle.version", "version")
       .leftJoinAndSelect("version.fuel_type", "fuel_type")
       .leftJoinAndSelect("version.make", "version_make")
@@ -1043,6 +1052,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("vehicle.traction", "traction")
       .leftJoinAndSelect("vehicle.images", "images")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("profile.user", "profile_user")
       .leftJoinAndSelect("vehicle.version", "version")
       .leftJoinAndSelect("version.make", "version_make")
       .leftJoinAndSelect("version.fuel_type", "version_fuel_type")

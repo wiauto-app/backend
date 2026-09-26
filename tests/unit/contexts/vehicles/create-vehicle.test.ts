@@ -37,7 +37,7 @@ const validDto = (): CreateVehicleDto =>
     description: "Vehículo en buen estado",
     version_id: 1,
     phone_code: "+593",
-    phone: "0999999999",
+    phone: "999999999",
     email: "seller@example.com",
     transmission_type: TRANSMISSION_TYPE.AUTOMATIC,
     traction_id: "56aa4e9f-19cc-49aa-bb01-50a23c410f46",
@@ -45,6 +45,48 @@ const validDto = (): CreateVehicleDto =>
     show_first_cuota: false,
     by_brand_warranty: false,
   });
+
+interface CreateVehicleServiceTestDeps {
+  data_source?: object;
+  promote_media?: object;
+  search_indexer?: object;
+  expiry_scheduler?: object;
+  mail_enqueue?: object;
+  image_queue?: object;
+  temp_upload?: object;
+}
+
+const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
+  new CreateVehicleService(
+    deps.data_source as never,
+    { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+    { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
+    { resolve: vi.fn().mockResolvedValue(null) } as never,
+    (deps.promote_media ?? {
+      execute: vi.fn().mockResolvedValue({ pathnames: [] }),
+      rollback: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    (deps.search_indexer ?? {
+      syncVehicle: vi.fn().mockResolvedValue(null),
+      deleteVehicle: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    (deps.expiry_scheduler ?? {
+      scheduleForVehicle: vi.fn().mockResolvedValue(null),
+      cancelForVehicle: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    { findEmailById: vi.fn().mockResolvedValue(null) } as never,
+    { findOne: vi.fn().mockResolvedValue(null) } as never,
+    (deps.mail_enqueue ?? {
+      enqueue_vehicle_published: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    (deps.image_queue ?? {
+      addBulk: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    (deps.temp_upload ?? {
+      validateAndGetTempUpload: vi.fn(),
+      markAsConsumed: vi.fn(),
+    }) as never,
+  );
 
 describe("CreateVehicleDto", () => {
   it("accepts the canonical create contract", async () => {
@@ -160,26 +202,15 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn(async callback => callback(manager)),
     };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      { execute: vi.fn() } as never,
-      { syncVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
-      { findOne: vi.fn().mockResolvedValue(null) } as never,
-      { enqueue_vehicle_published: vi.fn() } as never,
-    );
+    const service = buildCreateVehicleService({ data_source });
 
     const result = await service.create(validDto(), "profile-id");
 
     expect(data_source.transaction).toHaveBeenCalledOnce();
     expect(saved_targets).toContain(VehicleEntity);
     expect(saved_targets).toContain(VehiclePriceEntity);
-    expect(result.vehicle.id).toBe("vehicle-id");
-    expect(result.vehicle.profile_id).toBe("profile-id");
+    expect(result.id).toBe("vehicle-id");
+    expect(result.profile_id).toBe("profile-id");
   });
 
   it("syncs the search index with the persisted active status", async () => {
@@ -206,22 +237,14 @@ describe("CreateVehicleService", () => {
       transaction: vi.fn(async callback => callback(manager)),
     };
     const search_indexer = { syncVehicle: vi.fn().mockResolvedValue(null) };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      { execute: vi.fn() } as never,
-      search_indexer as never,
-      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
-      { findOne: vi.fn().mockResolvedValue(null) } as never,
-      { enqueue_vehicle_published: vi.fn() } as never,
-    );
+    const service = buildCreateVehicleService({
+      data_source,
+      search_indexer,
+    });
 
     const result = await service.create(validDto(), "profile-id");
 
-    expect(result.vehicle.status).toBe(STATUS_VEHICLE.ACTIVE);
+    expect(result.status).toBe(STATUS_VEHICLE.ACTIVE);
     expect(search_indexer.syncVehicle).toHaveBeenCalledWith(
       "vehicle-id",
       STATUS_VEHICLE.ACTIVE,
@@ -262,30 +285,14 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn(async callback => callback(manager)),
     };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      { execute: vi.fn() } as never,
-      { syncVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
-      { findOne: vi.fn().mockResolvedValue(null) } as never,
-      { enqueue_vehicle_published: vi.fn() } as never,
-      { addBulk: vi.fn() } as never,
-      {
-        validateAndGetTempUpload: vi.fn(),
-        markAsConsumed: vi.fn(),
-      } as never,
-    );
+    const service = buildCreateVehicleService({ data_source });
     const dto = validDto();
     dto.ref = "  REF-99  ";
 
     const result = await service.create(dto, "profile-id");
 
     expect(created_payloads[0]?.ref).toBe("REF-99");
-    expect(result.vehicle.ref).toBe("REF-99");
+    expect(result.ref).toBe("REF-99");
   });
 
   it("stores null ref when omitted or blank", async () => {
@@ -318,23 +325,7 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn(async callback => callback(manager)),
     };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      { execute: vi.fn() } as never,
-      { syncVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { scheduleForVehicle: vi.fn().mockResolvedValue(null) } as never,
-      { findEmailById: vi.fn().mockResolvedValue(null) } as never,
-      { findOne: vi.fn().mockResolvedValue(null) } as never,
-      { enqueue_vehicle_published: vi.fn() } as never,
-      { addBulk: vi.fn() } as never,
-      {
-        validateAndGetTempUpload: vi.fn(),
-        markAsConsumed: vi.fn(),
-      } as never,
-    );
+    const service = buildCreateVehicleService({ data_source });
     const dto = validDto();
     dto.ref = "   ";
 
@@ -357,24 +348,10 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn().mockRejectedValue(transaction_error),
     };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      promote_media as never,
-      {
-        syncVehicle: vi.fn(),
-        deleteVehicle: vi.fn(),
-      } as never,
-      {
-        scheduleForVehicle: vi.fn(),
-        cancelForVehicle: vi.fn(),
-      } as never,
-      { findEmailById: vi.fn() } as never,
-      { findOne: vi.fn() } as never,
-      { enqueue_vehicle_published: vi.fn() } as never,
-    );
+    const service = buildCreateVehicleService({
+      data_source,
+      promote_media,
+    });
     const dto = validDto();
     dto.images = [
       {
@@ -431,18 +408,13 @@ describe("CreateVehicleService", () => {
       cancelForVehicle: vi.fn().mockResolvedValue(),
     };
     const mail_enqueue = { enqueue_vehicle_published: vi.fn() };
-    const service = new CreateVehicleService(
-      data_source as never,
-      { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
-      { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
-      { resolve: vi.fn().mockResolvedValue(null) } as never,
-      promote_media as never,
-      search_indexer as never,
-      expiry_scheduler as never,
-      { findEmailById: vi.fn() } as never,
-      { findOne: vi.fn() } as never,
-      mail_enqueue as never,
-    );
+    const service = buildCreateVehicleService({
+      data_source,
+      promote_media,
+      search_indexer,
+      expiry_scheduler,
+      mail_enqueue,
+    });
     const dto = validDto();
     dto.images = [
       {

@@ -36,6 +36,7 @@ export interface VehicleListItemPublisher {
  */
 export interface VehicleListItem {
   id: string;
+  is_premium: boolean;
   is_featured: boolean;
   ref: string | null;
   price: number;

@@ -120,6 +120,7 @@ import { VehicleSitemapService } from "./api/v1/vehicle-sitemap/vehicle-sitemap.
 import { VehicleSitemapListController } from "./api/v1/vehicle-sitemap-list/vehicle-sitemap-list.controller";
 import { VehicleSitemapListService } from "./api/v1/vehicle-sitemap-list/vehicle-sitemap-list.service";
 import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.service";
+import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive-alerts.module";
 
 @Module({
   controllers: [
@@ -251,6 +252,7 @@ import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.ser
     DealershipInvitationModule,
     forwardRef(() => ChatModule),
     forwardRef(() => AlertsModule),
+    forwardRef(() => ProactiveAlertsModule),
     VehicleEngagementModule,
     VehicleSearchModule],
   exports: [

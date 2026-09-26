@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, NotFoundException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
@@ -89,6 +89,7 @@ import { validateVehicleCreationRules } from "./validate-vehicle-creation-rules"
 import { PromoteTempStoragePathsService } from "../../shared/file/services/promote-temp-storage-paths.service";
 import { VideosEntity } from "../entities/videos.entity";
 import { VehicleInsightsService } from "./vehicle-insights.service";
+import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/services/proactive-alert-event.service";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -162,6 +163,8 @@ export class VehicleService {
     private readonly entitlements_service: EntitlementsService,
     private readonly featured_listing_credits_service: FeaturedListingCreditsService,
     private readonly vehicle_insights_service: VehicleInsightsService,
+    @Inject(forwardRef(() => ProactiveAlertEventService))
+    private readonly proactive_alert_event_service: ProactiveAlertEventService,
   ) { }
 
   private async resolvePublisherContext(
@@ -235,7 +238,17 @@ export class VehicleService {
       ...find_all_vehicles_dto,
       exclude_vehicle_ids,
     });
-    return this.vehicle_repository.findAll(filter);
+    const result = await this.vehicle_repository.findAll(filter);
+
+    if (profile_id && find_all_vehicles_dto.models_slugs.length > 0) {
+      void this.proactive_alert_event_service.notifyPremiumSellersFromListingPage({
+        viewer_profile_id: profile_id,
+        models_slugs: find_all_vehicles_dto.models_slugs,
+        listing_items: result.data,
+      });
+    }
+
+    return result;
   }
 
   async update(update_vehicle_dto: UpdateVehicleDto) {

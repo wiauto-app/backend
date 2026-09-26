@@ -166,6 +166,7 @@ describe("VehicleListsService.findAll", () => {
 describe("TypeOrmVehicleListItemRepository.findAllByListId", () => {
   it("aplica skip/take, conserva el orden y devuelve total en una página vacía", async () => {
     const queryBuilder = {
+      innerJoinAndSelect: vi.fn(),
       leftJoinAndSelect: vi.fn(),
       where: vi.fn(),
       orderBy: vi.fn(),
@@ -173,6 +174,7 @@ describe("TypeOrmVehicleListItemRepository.findAllByListId", () => {
       take: vi.fn(),
       getManyAndCount: vi.fn().mockResolvedValue([[], 12]),
     };
+    queryBuilder.innerJoinAndSelect.mockReturnValue(queryBuilder);
     queryBuilder.leftJoinAndSelect.mockReturnValue(queryBuilder);
     queryBuilder.where.mockReturnValue(queryBuilder);
     queryBuilder.orderBy.mockReturnValue(queryBuilder);

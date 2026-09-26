@@ -15,7 +15,6 @@ import { TypeOrmVehicleListItemRepository } from "@/src/contexts/vehicles/reposi
 import { VehicleListItemEntity } from "@/src/contexts/vehicles/entities/vehicle-list-item.entity";
 import { VehicleListEntity } from "@/src/contexts/vehicles/entities/vehicle-list.entity";
 import { VehicleEngagementModule } from "@/src/contexts/vehicles/vehicle-engagement/vehicle-engagement.module";
-
 import { MailModule } from "@/src/contexts/shared/mail/mail.module";
 
 import { AlertService } from "./services/alert.service";

@@ -1,4 +1,10 @@
+import { Logger } from "@nestjs/common";
+
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import {
+  formatVehicleDisplayName,
+  type VehicleDisplayNameParts,
+} from "@/src/contexts/vehicles/utils/format-vehicle-display-name";
 
 import { PROACTIVE_ALERT_TYPE } from "../constants/proactive-alert-types";
 import { ProactiveAlertEnqueueService } from "../queues/proactive-alerts-enqueue.service";
@@ -12,23 +18,69 @@ import { LEAD_TIER } from "@/src/contexts/vehicles/types/lead-scoring";
 
 const HOT_LEAD_DELAY_MS = 2 * 60 * 60 * 1000;
 
+export interface PremiumListingNotifyItem {
+  id: string;
+  is_premium: boolean;
+  publisher: { id: string };
+  version_summary: VehicleDisplayNameParts;
+}
+
 @Injectable()
 export class ProactiveAlertEventService {
+  private readonly logger = new Logger(ProactiveAlertEventService.name);
+
   constructor(
     private readonly dispatch_service: ProactiveAlertDispatchService,
     private readonly enqueue_service: ProactiveAlertEnqueueService,
     private readonly lead_repository: TypeOrmLeadRepository,
   ) {}
 
+  async notifyPremiumSellersFromListingPage(params: {
+    viewer_profile_id: string;
+    models_slugs: string[];
+    listing_items: PremiumListingNotifyItem[];
+  }): Promise<void> {
+    try {
+      if (params.models_slugs.length === 0) {
+        return;
+      }
+
+      for (const item of params.listing_items) {
+        if (!item.is_premium) {
+          continue;
+        }
+
+        const seller_profile_id = item.publisher.id;
+        if (seller_profile_id === params.viewer_profile_id) {
+          continue;
+        }
+
+        const vehicle_title = formatVehicleDisplayName(item.version_summary);
+        await this.onMatchingBuyerSearch({
+          seller_profile_id,
+          vehicle_id: item.id,
+          vehicle_title,
+        });
+      }
+    } catch (error: unknown) {
+      this.logger.error(
+        "notifyPremiumSellersFromListingPage falló",
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
   async onMatchingBuyerSearch(params: {
     seller_profile_id: string;
     vehicle_id: string;
     vehicle_title: string;
   }): Promise<void> {
+    console.log("onMatchingBuyerSearch", params);
     const payload = evaluateMatchingBuyerSearch({
       vehicle_id: params.vehicle_id,
       vehicle_title: params.vehicle_title,
     });
+    console.log("payload", payload);
     const day_key = new Date().toISOString().slice(0, 10);
     await this.dispatch_service.tryDispatch({
       profile_id: params.seller_profile_id,
