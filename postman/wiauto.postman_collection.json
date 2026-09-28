@@ -849,6 +849,25 @@
           ]
         },
         {
+          "name": "iniciar sesión google one tap (web)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"<google_id_token>\",\n  \"nonce\": \"<raw_nonce_from_client>\"\n}"
+            },
+            "url": "{{base_url}}/auth/google/one-tap",
+            "description": "Verifica el ID token de Google One Tap (web) con nonce SHA-256 y establece cookies de sesión de plataforma."
+          },
+          "response": []
+        },
+        {
           "name": "iniciar sesión apple en mobile",
           "request": {
             "method": "POST",
@@ -1229,14 +1248,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/auth/email-verification/confirm?token=<token_del_link>&redirectUrl=http://localhost:3000/api/auth/callback",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "auth",
-                    "email-verification",
-                    "confirm"
-                  ],
+                  "host": ["{{base_url}}"],
+                  "path": ["auth", "email-verification", "confirm"],
                   "query": [
                     {
                       "key": "token",
@@ -3596,15 +3609,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/vehicles/{{vehicle_id}}/similar?page=1&limit=4",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "vehicles",
-                    "{{vehicle_id}}",
-                    "similar"
-                  ],
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "vehicles", "{{vehicle_id}}", "similar"],
                   "query": [
                     {
                       "key": "page",
@@ -6449,14 +6455,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/admin/dashboard?startDate=2026-06-29&endDate=2026-07-28",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "admin",
-                "dashboard"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["v1", "admin", "dashboard"],
               "query": [
                 {
                   "key": "startDate",
@@ -6664,14 +6664,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/makes?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "makes"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "makes"],
                       "query": [
                         {
                           "key": "page",
@@ -6714,15 +6708,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/makes/search?search=toy&page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "makes",
-                        "search"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "makes", "search"],
                       "query": [
                         {
                           "key": "search",
@@ -6835,14 +6822,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/models?page=1&limit=10&make_id={{catalog_make_id}}",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "models"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "models"],
                       "query": [
                         {
                           "key": "page",
@@ -6890,15 +6871,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/models/search?make_id={{catalog_make_id}}&search=cor&page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "models",
-                        "search"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "models", "search"],
                       "query": [
                         {
                           "key": "make_id",
@@ -7014,14 +6988,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/body-types?page=1&limit=10&model_id={{catalog_model_id}}",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "body-types"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "body-types"],
                       "query": [
                         {
                           "key": "page",
@@ -7132,14 +7100,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/fuel-types?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "fuel-types"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "fuel-types"],
                       "query": [
                         {
                           "key": "page",
@@ -7245,14 +7207,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/years?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "years"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "years"],
                       "query": [
                         {
                           "key": "page",
@@ -7370,14 +7326,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{base_url}}/v1/catalog/versions?page=1&limit=10",
-                      "host": [
-                        "{{base_url}}"
-                      ],
-                      "path": [
-                        "v1",
-                        "catalog",
-                        "versions"
-                      ],
+                      "host": ["{{base_url}}"],
+                      "path": ["v1", "catalog", "versions"],
                       "query": [
                         {
                           "key": "page",
@@ -7489,13 +7439,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/municipalities?page=1&limit=100&province_slug=madrid",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "municipalities"
-                  ],
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "municipalities"],
                   "query": [
                     {
                       "key": "page",
@@ -7543,13 +7488,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/v1/provinces?page=1&limit=100",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "provinces"
-                  ],
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "provinces"],
                   "query": [
                     {
                       "key": "page",
@@ -7726,13 +7666,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/chats?page=1&limit=10&order_direction=ASC",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "chats"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chats"],
               "query": [
                 {
                   "key": "page",
@@ -7794,15 +7729,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/v1/chats/{{chat_id}}/messages?page=1&limit=20&order_direction=DESC",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "chats",
-                "{{chat_id}}",
-                "messages"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chats", "{{chat_id}}", "messages"],
               "query": [
                 {
                   "key": "page",

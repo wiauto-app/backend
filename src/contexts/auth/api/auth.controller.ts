@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { LoginDto } from "../dto/login.dto";
 import { GoogleMobileDto } from "../dto/google-mobile.dto";
+import { GoogleOneTapHttpDto } from "../dto/google-one-tap.http-dto";
 import { GoogleAuthGuard } from "../guards/google-auth.guard";
 import { GoogleTokenService } from "../services/google-token.service";
 import { OAuthProfile } from "../strategies/google.strategy";
@@ -151,10 +152,21 @@ export class AuthController {
 
   @Post("google/mobile")
   async googleMobile(@Body() dto: GoogleMobileDto, @Req() req: Request) {
-    console.log("GOOGLE MOBILE", dto);
     const profile = await this.googleTokenService.verifyIdToken(dto);
     const data = await this.authService.signInWithOAuthProfile(profile, req);
     return data;
+  }
+
+  @Post("google/one-tap")
+  async googleOneTap(
+    @Body() dto: GoogleOneTapHttpDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const profile = await this.googleTokenService.verifyWebIdToken(dto);
+    const result = await this.authService.signInWithOAuthProfile(profile, req);
+    this.setPlatformSessionCookies(res, result);
+    return result;
   }
 
   // ---- Apple (deshabilitado hasta tener credenciales) ----
