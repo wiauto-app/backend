@@ -547,6 +547,7 @@ export class VehicleEntity {
   // PROFILE
   // ===========================================================================
 
+  @Index("IDX_vehicles_profile_id", ["profile_id"])
   @Column({
     type: "uuid",
     nullable: true,

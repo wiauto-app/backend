@@ -51,6 +51,7 @@ export interface VehicleFilterOptions extends PaginationDto {
   status?: StatusVehicle;
   exclude_vehicle_ids?: string[];
   dealership_ids?: string[];
+  profile_ids?: string[];
 }
 
 export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilterOptions, "page" | "limit" | "query" | "order_by" | "order_direction"> {
@@ -94,6 +95,7 @@ export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilte
   status?: StatusVehicle;
   exclude_vehicle_ids?: string[];
   dealership_ids?: string[];
+  profile_ids?: string[];
 
   constructor(options: VehicleFilterOptions) {
     const {

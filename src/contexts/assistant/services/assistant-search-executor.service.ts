@@ -181,6 +181,7 @@ export class AssistantSearchExecutorService {
       cuota_slugs: filters.cuota_slugs ?? [],
       exclude_vehicle_ids: filters.exclude_vehicle_ids ?? [],
       dealership_ids: filters.dealership_ids ?? [],
+      profile_ids: [],
     } as FindAllVehiclesUseCaseDto);
 
     return {

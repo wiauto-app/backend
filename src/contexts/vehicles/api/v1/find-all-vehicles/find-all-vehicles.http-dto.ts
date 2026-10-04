@@ -22,6 +22,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
 } from "class-validator";
 import { Transform } from "class-transformer";
@@ -162,6 +163,10 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
 
   @OptionalQueryStringArray()
   dealership_ids: string[] = [];
+
+  @OptionalQueryStringArray()
+  @IsUUID("4", { each: true })
+  profile_ids: string[] = [];
 
   @IsOptional()
   @IsIn(Object.values(CONDITION_VEHICLE))

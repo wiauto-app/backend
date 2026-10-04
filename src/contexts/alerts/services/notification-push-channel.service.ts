@@ -72,11 +72,10 @@ export class NotificationPushChannelService {
       return;
     }
 
-    // const allowed = this.config.allowed_user_ids;
-    // if (allowed.length > 0 && !allowed.includes(input.profile_id)) {
-    //   return;
-    // }
-    // console.log("allowed", allowed);
+    const allowed = this.config.allowed_user_ids;
+    if (allowed.length > 0 && !allowed.includes(input.profile_id)) {
+      return;
+    }
 
     const message = build_push_message(input, {
       notification_id: options.notification_id,
@@ -92,6 +91,14 @@ export class NotificationPushChannelService {
       return;
     }
 
+    if (this.config.dry_run) {
+      for (const device of devices) {
+        this.logger.log(
+          `push.dry-run user=${message.user_id} device=${device.id} type=${message.type} provider=${device.tokenType}`,
+        );
+      }
+      return;
+    }
 
     const fcm_devices = devices.filter((d) => d.tokenType === PushTokenType.FCM);
     const expo_devices = devices.filter((d) => d.tokenType === PushTokenType.EXPO);

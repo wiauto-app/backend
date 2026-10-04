@@ -382,6 +382,12 @@ export const applyFilters = (
       { dealership_ids: filters.dealership_ids },
     );
   }
+
+  if (has_non_empty_string_array(filters.profile_ids)) {
+    qb.andWhere("vehicle.profile_id IN (:...profile_ids)", {
+      profile_ids: filters.profile_ids,
+    });
+  }
   if (has_non_empty_string(filters.query)) {
     qb.leftJoin("make", "search_make", "search_make.id = catalog_ver.make_id")
       .leftJoin("model", "search_model", "search_model.id = catalog_ver.model_id")

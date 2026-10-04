@@ -2907,7 +2907,7 @@
                       "key": "order_by",
                       "value": "created_at",
                       "disabled": true,
-                      "description": "id|price|mileage|title|condition|created_at|updated_at"
+                      "description": "created_at|price|mileage|views"
                     },
                     {
                       "key": "order_direction",
@@ -2921,12 +2921,17 @@
                       "disabled": true
                     },
                     {
-                      "key": "make_slug",
+                      "key": "makes_slugs",
                       "value": "",
                       "disabled": true
                     },
                     {
-                      "key": "model_slug",
+                      "key": "models_slugs",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "categories_slugs",
                       "value": "",
                       "disabled": true
                     },
@@ -3120,6 +3125,30 @@
                       "key": "cuota_slugs",
                       "value": "",
                       "disabled": true
+                    },
+                    {
+                      "key": "exclude_vehicle_ids",
+                      "value": "",
+                      "disabled": true,
+                      "description": "UUID de vehículo a excluir; repetir la clave para varios"
+                    },
+                    {
+                      "key": "dealership_ids",
+                      "value": "",
+                      "disabled": true,
+                      "description": "UUID de concesionario; anuncios de sus miembros. Repetir la clave para varios"
+                    },
+                    {
+                      "key": "profile_ids",
+                      "value": "",
+                      "disabled": true,
+                      "description": "UUID de perfil del anunciante (campo profile_id del detalle del vehículo). Repetir la clave para varios"
+                    },
+                    {
+                      "key": "condition",
+                      "value": "used",
+                      "disabled": true,
+                      "description": "new|used|0KM"
                     }
                   ]
                 },
