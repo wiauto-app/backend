@@ -10,7 +10,7 @@ import { Request } from "express";
 
 @Controller(V1_VEHICLES)
 export class FindAllVehiclesController {
-  constructor(private readonly vehicle_service: VehicleService) {}
+  constructor(private readonly vehicle_service: VehicleService) { }
 
   @Get()
   @UseGuards(OptionalJwtGuard)
@@ -19,6 +19,6 @@ export class FindAllVehiclesController {
     @GetOptionalUserId() profile_id?: string,
     @Req() req?: Request,
   ) {
-    return this.vehicle_service.findAll(findAllVehiclesHttpDto, profile_id,req?.url);
+    return this.vehicle_service.findAll(findAllVehiclesHttpDto, profile_id, req?.url);
   }
 }

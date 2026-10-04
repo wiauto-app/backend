@@ -139,6 +139,10 @@ const buildStatusChangeTimestamps = (
 @Injectable()
 export class VehicleService {
   private readonly cache_ttl = 10 * 60 * 1000; // 10 minutes
+  private readonly findAllInFlight = new Map<
+    string,
+    Promise<PaginatedResult<VehicleListItemDto>>
+  >();
   constructor(
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly attach_vehicle_images_from_temp_service: AttachVehicleImagesFromTempService,
@@ -224,14 +228,37 @@ export class VehicleService {
     profile_id?: string,
     url?: string,
   ): Promise<PaginatedResult<VehicleListItemDto>> {
+    if (!url) {
+      return this.loadVehicles(find_all_vehicles_dto, profile_id);
+    }
 
     const cache_key = `find-all-vehicles:${url}:${profile_id}`;
-    if (url) {
-      const cached_result = await this.cache_manager.get(cache_key);
-      if (cached_result) {
-        return cached_result as PaginatedResult<VehicleListItemDto>;
-      }
+    const cached_result =
+      await this.cache_manager.get<PaginatedResult<VehicleListItemDto>>(cache_key);
+    if (cached_result) {
+      return cached_result;
     }
+
+    const pendingResult = this.findAllInFlight.get(cache_key);
+    if (pendingResult) {
+      return pendingResult;
+    }
+
+    const loadPromise = this.loadVehicles(find_all_vehicles_dto, profile_id)
+      .then(async (result) => {
+        await this.cache_manager.set(cache_key, result, this.cache_ttl);
+        return result;
+      })
+      .finally(() => this.findAllInFlight.delete(cache_key));
+
+    this.findAllInFlight.set(cache_key, loadPromise);
+    return loadPromise;
+  }
+
+  private async loadVehicles(
+    find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
+    profile_id?: string,
+  ): Promise<PaginatedResult<VehicleListItemDto>> {
     const exclude_vehicle_ids = [
       ...find_all_vehicles_dto.exclude_vehicle_ids,
     ];
@@ -260,9 +287,6 @@ export class VehicleService {
         models_slugs: find_all_vehicles_dto.models_slugs,
         listing_items: result.data,
       });
-    }
-    if (url) {
-      await this.cache_manager.set(cache_key, result, this.cache_ttl);
     }
     return result;
   }
