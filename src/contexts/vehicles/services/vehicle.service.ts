@@ -90,6 +90,8 @@ import { PromoteTempStoragePathsService } from "../../shared/file/services/promo
 import { VideosEntity } from "../entities/videos.entity";
 import { VehicleInsightsService } from "./vehicle-insights.service";
 import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/services/proactive-alert-event.service";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -136,6 +138,7 @@ const buildStatusChangeTimestamps = (
 
 @Injectable()
 export class VehicleService {
+  private readonly cache_ttl = 10 * 60 * 1000; // 10 minutes
   constructor(
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly attach_vehicle_images_from_temp_service: AttachVehicleImagesFromTempService,
@@ -165,6 +168,8 @@ export class VehicleService {
     private readonly vehicle_insights_service: VehicleInsightsService,
     @Inject(forwardRef(() => ProactiveAlertEventService))
     private readonly proactive_alert_event_service: ProactiveAlertEventService,
+    @Inject(CACHE_MANAGER)
+    private readonly cache_manager: Cache,
   ) { }
 
   private async resolvePublisherContext(
@@ -217,7 +222,16 @@ export class VehicleService {
   async findAll(
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
     profile_id?: string,
+    url?: string,
   ): Promise<PaginatedResult<VehicleListItemDto>> {
+
+    const cache_key = `find-all-vehicles:${url}:${profile_id}`;
+    if (url) {
+      const cached_result = await this.cache_manager.get(cache_key);
+      if (cached_result) {
+        return cached_result as PaginatedResult<VehicleListItemDto>;
+      }
+    }
     const exclude_vehicle_ids = [
       ...find_all_vehicles_dto.exclude_vehicle_ids,
     ];
@@ -247,7 +261,9 @@ export class VehicleService {
         listing_items: result.data,
       });
     }
-
+    if (url) {
+      await this.cache_manager.set(cache_key, result, this.cache_ttl);
+    }
     return result;
   }
 
