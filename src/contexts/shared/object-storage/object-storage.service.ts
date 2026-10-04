@@ -325,12 +325,6 @@ export class ObjectStorageService {
     const objectKey =
       this.normalizeStoredObjectKey(urlOrPath);
 
-    console.log("deleteFileByUrl:", {
-      input: urlOrPath,
-      bucket: this.bucketName,
-      objectKey,
-    });
-
     return from(
       this.deleteObjectByKey(objectKey),
     ).pipe(

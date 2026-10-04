@@ -32,7 +32,6 @@ export class CleanupAbandonedTempUploadsService {
       r2Errors: 0,
     };
 
-    this.logger.log("Iniciando limpieza de temporary_uploads abandonados");
 
     // Buscar candidatos: status IN (pending_upload, uploaded) AND expires_at < now
     const candidates = await this.tempUploadRepo.find({
@@ -45,10 +44,6 @@ export class CleanupAbandonedTempUploadsService {
 
     stats.candidatesFound = candidates.length;
 
-    if (candidates.length === 0) {
-      this.logger.log("No hay temporary_uploads abandonados para limpiar");
-      return stats;
-    }
 
     this.logger.log(
       `Encontrados ${candidates.length} temporary_uploads abandonados`,

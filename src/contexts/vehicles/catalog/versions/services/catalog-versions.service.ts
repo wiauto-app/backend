@@ -64,7 +64,6 @@ export class CatalogVersionsService {
   async findAll(
     dto: FindAllVersionsHttpDto,
   ): Promise<PaginatedResult<VersionEntity>> {
-    console.log("dto", dto);
     const filter = new CatalogPaginationFilter({ ...dto });
     return this.repository.findAll(filter);
   }

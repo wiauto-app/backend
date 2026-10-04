@@ -20,7 +20,6 @@ export class TempUploadCleanupProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     if (job.name === TEMP_UPLOAD_CLEANUP_JOB_TICK) {
-      this.logger.debug("Ejecutando job de limpieza de temporary_uploads");
 
       try {
         const stats = await this.cleanupService.execute();

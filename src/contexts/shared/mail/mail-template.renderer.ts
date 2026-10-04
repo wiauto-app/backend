@@ -319,14 +319,14 @@ export class MailTemplateRenderer {
     const callback_row =
       is_call_me && payload.lead.callback_scheduled_at
         ? this.buildInfoRow(
-            "Fecha preferida de llamada",
-            this.escapeHtml(
-              new Date(`${payload.lead.callback_scheduled_at}T00:00:00`).toLocaleDateString(
-                "es-ES",
-                { dateStyle: "long" },
-              ),
+          "Fecha preferida de llamada",
+          this.escapeHtml(
+            new Date(`${payload.lead.callback_scheduled_at}T00:00:00`).toLocaleDateString(
+              "es-ES",
+              { dateStyle: "long" },
             ),
-          )
+          ),
+        )
         : "";
 
     const message_row =
@@ -679,12 +679,14 @@ export class MailTemplateRenderer {
       }),
     );
 
-    const row = (label: string, value: string, is_last = false) => `<tr>
+    const row = (label: string, value: string, is_last = false) => {
+      return `<tr>
           <td style="padding:16px 20px;${is_last ? "" : "border-bottom:1px solid #e5e7eb;"}">
             <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#6b7280;">${label}</p>
             <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;color:#111827;">${value}</p>
           </td>
-        </tr>`;
+        </tr>`
+    };
 
     const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
         Recibiste un nuevo mensaje desde el formulario de contacto.
@@ -940,9 +942,9 @@ export class MailTemplateRenderer {
       body,
       ...(payload.portal_url
         ? {
-            cta_label: "Gestionar suscripción",
-            cta_href: payload.portal_url,
-          }
+          cta_label: "Gestionar suscripción",
+          cta_href: payload.portal_url,
+        }
         : {}),
       footer_note: "Si no reconoces este cambio, revisa tu portal de facturación.",
     });
@@ -1169,7 +1171,7 @@ export class MailTemplateRenderer {
   renderAlertDigest(payload: {
     frequency: "daily" | "weekly";
     events_count: number;
-    events: Array<{ event_type: string; title: string; summary: string }>;
+    events: { event_type: string; title: string; summary: string }[];
   }): string {
     const items = payload.events
       .map(
@@ -1205,12 +1207,11 @@ export class MailTemplateRenderer {
       <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
         Categoría: <strong>${this.escapeHtml(payload.category_name)}</strong>
       </p>
-      ${
-        summary
-          ? `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+      ${summary
+        ? `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
         ${this.escapeHtml(summary)}
       </p>`
-          : ""
+        : ""
       }`;
 
     return this.renderBase({
@@ -1383,24 +1384,41 @@ export class MailTemplateRenderer {
   private buildStatusIntro(theme: MailStatusThemeKey, vehicle_title: string): string {
     const title = `<strong style="color:#111827;">${this.escapeHtml(vehicle_title)}</strong>`;
     switch (theme) {
-      case "published":
+      case "published": {
         return `Tu anuncio ${title} se publicó correctamente y está pendiente de revisión.`;
+      }
       case "approved":
-        return `¡Buenas noticias! Tu anuncio ${title} fue aprobado y ya es visible para compradores.`;
+        {
+          return `¡Buenas noticias! Tu anuncio ${title} fue aprobado y ya es visible para compradores.`;
+        }
       case "rejected":
-        return `Tu anuncio ${title} fue rechazado. Revisa el motivo y edítalo para volver a publicarlo.`;
+        {
+          return `Tu anuncio ${title} fue rechazado. Revisa el motivo y edítalo para volver a publicarlo.`;
+        }
       case "deactivated":
-        return `Tu anuncio ${title} quedó desactivado y ya no es visible en el listado.`;
+        {
+          return `Tu anuncio ${title} quedó desactivado y ya no es visible en el listado.`;
+        }
       case "sold":
-        return `Marcado como vendido: ${title}. ¡Enhorabuena por la venta!`;
+        {
+          return `Marcado como vendido: ${title}. ¡Enhorabuena por la venta!`;
+        }
       case "archived":
-        return `Tu anuncio ${title} fue archivado.`;
+        {
+          return `Tu anuncio ${title} fue archivado.`;
+        }
       case "expiry_soon":
-        return `Tu anuncio ${title} caduca en breve. Renúevalo para seguir recibiendo contactos.`;
+        {
+          return `Tu anuncio ${title} caduca en breve. Renúevalo para seguir recibiendo contactos.`;
+        }
       case "expired":
-        return `Tu anuncio ${title} ha caducado y dejó de estar activo.`;
+        {
+          return `Tu anuncio ${title} ha caducado y dejó de estar activo.`;
+        }
       default:
-        return `Actualización sobre tu anuncio ${title}.`;
+        {
+          return `Actualización sobre tu anuncio ${title}.`;
+        }
     }
   }
 
@@ -1442,15 +1460,15 @@ export class MailTemplateRenderer {
 
   private buildVehicleCardHtml(vehicle: MailVehicleCardPayload): string {
     const price_label =
-      vehicle.price !== null && vehicle.price !== undefined
+      vehicle.price !== null
         ? formatCurrencyEur(vehicle.price)
         : "Precio a consultar";
     const year_label =
-      vehicle.year !== null && vehicle.year !== undefined
+      vehicle.year !== null
         ? String(vehicle.year)
         : "—";
     const mileage_label =
-      vehicle.mileage !== null && vehicle.mileage !== undefined
+      vehicle.mileage !== null
         ? formatMileage(vehicle.mileage)
         : "—";
 
@@ -1518,13 +1536,7 @@ export class MailTemplateRenderer {
       return `<img src="${image_url}" alt="Imagen del vehículo" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;" />`;
     }
 
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#e5e7eb;">
-      <tr>
-        <td align="center" style="padding:48px 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#6b7280;">
-          Sin imagen
-        </td>
-      </tr>
-    </table>`;
+    return ``;
   }
 
   private render(template_name: string, variables: Record<string, string>): string {
