@@ -14,6 +14,11 @@ import {
 import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { TypeOrmVehicleListItemRepository } from "../repositories/typeorm.vehicle-list-item-repository";
 import { TypeOrmVehicleListRepository } from "../repositories/typeorm.vehicle-list-repository";
+import { VehicleListFavoritesCacheService } from "./vehicle-list-favorites-cache.service";
+import type {
+  VehicleListFavoriteMembership,
+  VehicleListFavoritesSnapshot,
+} from "../types/vehicle-list-favorites-snapshot";
 
 export interface CreateVehicleListInput {
   profile_id: string;
@@ -60,7 +65,52 @@ export class VehicleListsService {
     private readonly vehicle_list_repository: TypeOrmVehicleListRepository,
     private readonly vehicle_list_item_repository: TypeOrmVehicleListItemRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
+    private readonly vehicle_list_favorites_cache_service: VehicleListFavoritesCacheService,
   ) {}
+
+  private async invalidateFavoritesCache(profile_id: string): Promise<void> {
+    await this.vehicle_list_favorites_cache_service.invalidate(profile_id);
+  }
+
+  private buildMemberships(
+    pairs: Array<{ list_id: string; vehicle_id: string }>,
+  ): VehicleListFavoriteMembership[] {
+    const by_vehicle = new Map<string, string[]>();
+
+    for (const pair of pairs) {
+      const list_ids = by_vehicle.get(pair.vehicle_id) ?? [];
+      list_ids.push(pair.list_id);
+      by_vehicle.set(pair.vehicle_id, list_ids);
+    }
+
+    return [...by_vehicle.entries()].map(([vehicle_id, list_ids]) => ({
+      vehicle_id,
+      list_ids,
+    }));
+  }
+
+  async getFavoritesSnapshot(
+    profile_id: string,
+  ): Promise<VehicleListFavoritesSnapshot> {
+    const cached =
+      await this.vehicle_list_favorites_cache_service.get(profile_id);
+    if (cached) {
+      return cached;
+    }
+
+    const lists = await this.findAll(profile_id);
+    const pairs =
+      await this.vehicle_list_item_repository.findListVehiclePairsByProfileId(
+        profile_id,
+      );
+    const snapshot: VehicleListFavoritesSnapshot = {
+      lists,
+      memberships: this.buildMemberships(pairs),
+    };
+
+    await this.vehicle_list_favorites_cache_service.set(profile_id, snapshot);
+    return snapshot;
+  }
 
   async ensureDefault(profile_id: string): Promise<void> {
     const count =
@@ -94,6 +144,7 @@ export class VehicleListsService {
       description: input.description ?? null,
     });
     await this.vehicle_list_repository.save(list);
+    await this.invalidateFavoritesCache(input.profile_id);
     return list.toPrimitives();
   }
 
@@ -148,6 +199,7 @@ export class VehicleListsService {
       is_default: input.is_default,
     });
     await this.vehicle_list_repository.update(updated);
+    await this.invalidateFavoritesCache(input.profile_id);
     return updated.toPrimitives();
   }
 
@@ -165,6 +217,7 @@ export class VehicleListsService {
       input.list_id,
     );
     await this.vehicle_list_repository.delete(input.list_id);
+    await this.invalidateFavoritesCache(input.profile_id);
   }
 
   async addItem(input: AddVehicleListItemInput): Promise<PrimitiveListItem> {
@@ -194,6 +247,7 @@ export class VehicleListsService {
       vehicle_id: input.vehicle_id,
     });
     await this.vehicle_list_item_repository.add(item);
+    await this.invalidateFavoritesCache(input.profile_id);
     return item.toPrimitives();
   }
 
@@ -210,6 +264,7 @@ export class VehicleListsService {
       input.list_id,
       input.vehicle_id,
     );
+    await this.invalidateFavoritesCache(input.profile_id);
   }
 
   async findItems(

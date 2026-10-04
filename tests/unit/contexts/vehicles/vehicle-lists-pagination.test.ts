@@ -72,6 +72,7 @@ describe("VehicleListsService.findItems", () => {
       listRepository as never,
       itemRepository as never,
       {} as never,
+      {} as never,
     );
 
     await expect(
@@ -90,6 +91,7 @@ describe("VehicleListsService.findItems", () => {
     const service = new VehicleListsService(
       { findOne: vi.fn().mockResolvedValue(null) } as never,
       itemRepository as never,
+      {} as never,
       {} as never,
     );
 
@@ -112,6 +114,7 @@ describe("VehicleListsService.findItems", () => {
     const service = new VehicleListsService(
       { findOne: vi.fn().mockResolvedValue(createList()) } as never,
       itemRepository as never,
+      {} as never,
       {} as never,
     );
 
@@ -151,6 +154,7 @@ describe("VehicleListsService.findAll", () => {
           .mockResolvedValue(new Map([["list-id", 7]])),
       } as never,
       {} as never,
+      {} as never,
     );
 
     const result = await service.findAll("profile-id");
@@ -182,6 +186,7 @@ describe("TypeOrmVehicleListItemRepository.findAllByListId", () => {
     queryBuilder.take.mockReturnValue(queryBuilder);
     const repository = new TypeOrmVehicleListItemRepository(
       { createQueryBuilder: vi.fn().mockReturnValue(queryBuilder) } as never,
+      {} as never,
       {} as never,
     );
 

@@ -15,4 +15,9 @@ export class FindAllVehicleListsController {
   run(@GetUserId() profile_id: string) {
     return this.vehicle_lists_service.findAll(profile_id);
   }
+
+  @Get("favorites")
+  favorites(@GetUserId() profile_id: string) {
+    return this.vehicle_lists_service.getFavoritesSnapshot(profile_id);
+  }
 }

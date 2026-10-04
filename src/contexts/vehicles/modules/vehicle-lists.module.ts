@@ -17,6 +17,7 @@ import { VehicleEntity } from "../entities/vehicle.entity";
 import { TypeOrmVehicleListItemRepository } from "../repositories/typeorm.vehicle-list-item-repository";
 import { TypeOrmVehicleListRepository } from "../repositories/typeorm.vehicle-list-repository";
 import { VehicleListsService } from "../services/vehicle-lists.service";
+import { VehicleListFavoritesCacheService } from "../services/vehicle-list-favorites-cache.service";
 import { VehiclesModule } from "../vehicles.module";
 
 @Module({
@@ -41,6 +42,7 @@ import { VehiclesModule } from "../vehicles.module";
   ],
   providers: [
     VehicleListsService,
+    VehicleListFavoritesCacheService,
     TypeOrmVehicleListRepository,
     TypeOrmVehicleListItemRepository,
   ],

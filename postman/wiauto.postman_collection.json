@@ -5304,6 +5304,21 @@
               "response": []
             },
             {
+              "name": "favoritos (listas + membresías)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": "{{base_url}}/v1/vehicle-lists/favorites",
+                "description": "JWT (`JwtGuard`). Devuelve `lists` (como listar mis listas) y `memberships` (`vehicle_id` + `list_ids[]`) en una sola lectura. Respuesta cacheada en Redis (`favorites:{profile_id}`, TTL 15 min); se invalida al crear/editar/borrar listas o al añadir/quitar vehículos."
+              },
+              "response": []
+            },
+            {
               "name": "crear lista",
               "request": {
                 "method": "POST",

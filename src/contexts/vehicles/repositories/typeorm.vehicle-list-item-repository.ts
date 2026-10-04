@@ -215,6 +215,19 @@ export class TypeOrmVehicleListItemRepository {
     });
   }
 
+  async findListVehiclePairsByProfileId(
+    profile_id: string,
+  ): Promise<Array<{ list_id: string; vehicle_id: string }>> {
+    return this.vehicle_list_item_repository
+      .createQueryBuilder("item")
+      .innerJoin("item.vehicle_list", "vehicle_list")
+      .innerJoin("item.vehicle", "vehicle")
+      .select("item.list_id", "list_id")
+      .addSelect("item.vehicle_id", "vehicle_id")
+      .where("vehicle_list.profile_id = :profile_id", { profile_id })
+      .getRawMany<{ list_id: string; vehicle_id: string }>();
+  }
+
   async findProfileIdsByVehicleId(vehicle_id: string): Promise<string[]> {
     const rows = await this.vehicle_list_item_repository
       .createQueryBuilder("item")
