@@ -20,17 +20,33 @@ const createService = () => {
       ),
     },
   };
+  const vehicle_repository = {
+    findOne: vi.fn().mockResolvedValue({
+      id: vehicle_id,
+      profile_id: "4d5e6f70-8192-4a3b-8c4d-5e6f708192a3",
+    }),
+  };
   const promotion_service = {
     execute: vi.fn().mockResolvedValue({
       pathnames: ["/vehicles-images/vehicle-gallery/a.webp"],
     }),
     rollback: vi.fn().mockResolvedValue(),
   };
+  const temp_upload_service = {
+    validateAndGetTempUpload: vi.fn(),
+    markAsConsumed: vi.fn(),
+  };
+  const image_queue = {
+    addBulk: vi.fn().mockResolvedValue([]),
+  };
 
   return {
     service: new AttachVehicleImagesFromTempService(
       promotion_service as never,
+      temp_upload_service as never,
+      image_queue as never,
       repository as never,
+      vehicle_repository as never,
     ),
     manager,
     repository,
