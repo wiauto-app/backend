@@ -3,6 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { STATUS_VEHICLE } from "../../types/vehicle";
 import { IndexVehicleSearchDocService } from "../services/index-vehicle-search-doc.service";
 import { OpenSearchHeroSearchRepository } from "@/src/contexts/vehicles/search/clients/opensearch/opensearch-hero-search.repository";
+import { VehicleDetailCacheService } from "@/src/contexts/vehicles/services/vehicle-detail-cache.service";
 
 @Injectable()
 export class VehicleSearchIndexer {
@@ -11,9 +12,11 @@ export class VehicleSearchIndexer {
   constructor(
     private readonly index_vehicle_search_doc_service: IndexVehicleSearchDocService,
     private readonly hero_search_repository: OpenSearchHeroSearchRepository,
+    private readonly vehicleDetailCache: VehicleDetailCacheService,
   ) {}
 
   async indexVehicle(vehicle_id: string): Promise<void> {
+    await this.invalidateDetailCache(vehicle_id);
     try {
       await this.index_vehicle_search_doc_service.execute(vehicle_id);
     } catch (error) {
@@ -25,6 +28,7 @@ export class VehicleSearchIndexer {
   }
 
   async deleteVehicle(vehicle_id: string): Promise<void> {
+    await this.invalidateDetailCache(vehicle_id);
     try {
       await this.hero_search_repository.deleteDocument(vehicle_id);
     } catch (error) {
@@ -52,5 +56,16 @@ export class VehicleSearchIndexer {
     }
 
     await this.indexVehicle(vehicle_id);
+  }
+
+  private async invalidateDetailCache(vehicleId: string): Promise<void> {
+    try {
+      await this.vehicleDetailCache.invalidate(vehicleId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to invalidate detail cache for vehicle ${vehicleId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 }

@@ -54,6 +54,7 @@ interface CreateVehicleServiceTestDeps {
   mail_enqueue?: object;
   image_queue?: object;
   temp_upload?: object;
+  detail_cache?: object;
 }
 
 const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
@@ -85,6 +86,9 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     (deps.temp_upload ?? {
       validateAndGetTempUpload: vi.fn(),
       markAsConsumed: vi.fn(),
+    }) as never,
+    (deps.detail_cache ?? {
+      refresh: vi.fn().mockResolvedValue(undefined),
     }) as never,
   );
 
@@ -237,14 +241,20 @@ describe("CreateVehicleService", () => {
       transaction: vi.fn(async callback => callback(manager)),
     };
     const search_indexer = { syncVehicle: vi.fn().mockResolvedValue(null) };
+    const detail_cache = { refresh: vi.fn().mockResolvedValue(undefined) };
     const service = buildCreateVehicleService({
       data_source,
       search_indexer,
+      detail_cache,
     });
 
     const result = await service.create(validDto(), "profile-id");
 
     expect(result.status).toBe(STATUS_VEHICLE.ACTIVE);
+    expect(detail_cache.refresh).toHaveBeenCalledWith(
+      "vehicle-id",
+      expect.any(Function),
+    );
     expect(search_indexer.syncVehicle).toHaveBeenCalledWith(
       "vehicle-id",
       STATUS_VEHICLE.ACTIVE,

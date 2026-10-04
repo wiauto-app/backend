@@ -38,6 +38,7 @@ import { TempUploadCleanupProcessor } from "./queues/temp-upload-cleanup.process
 import { TempUploadCleanupBootstrapService } from "./queues/temp-upload-cleanup-bootstrap.service";
 import { TEMP_UPLOAD_CLEANUP_QUEUE } from "./queues/temp-upload-cleanup.queue.constants";
 import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
+import { VehicleDetailCacheService } from "../../vehicles/services/vehicle-detail-cache.service";
 
 @Module({
   controllers: [
@@ -81,6 +82,7 @@ import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
     FileQueueAdapter,
     ImageProcessor,
     ProcessVehicleImageProcessor,
+    VehicleDetailCacheService,
     {
       provide: FileQueuePort,
       useExisting: FileQueueAdapter,

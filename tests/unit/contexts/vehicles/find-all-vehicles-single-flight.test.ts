@@ -13,7 +13,7 @@ vi.mock(
 import { FindAllVehiclesHttpDto } from "@/src/contexts/vehicles/api/v1/find-all-vehicles/find-all-vehicles.http-dto";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 
-const CONSTRUCTOR_ARGS = 26;
+const CONSTRUCTOR_ARGS = 27;
 const CACHE_MANAGER_INDEX = 25;
 
 const pageResult = { data: [], total: 0, page: 1, limit: 20 };

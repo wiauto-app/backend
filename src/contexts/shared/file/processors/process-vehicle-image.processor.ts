@@ -9,6 +9,7 @@ import { VehicleImagesEntity } from "@/src/contexts/vehicles/vehicle-images/enti
 import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { STORAGE_DIRECTORIES } from "../storage-directories";
 import { PROCESS_VEHICLE_IMAGE_QUEUE } from "../media.constants";
+import { VehicleDetailCacheService } from "@/src/contexts/vehicles/services/vehicle-detail-cache.service";
 
 export interface ProcessVehicleImageJob {
   image_id: string;
@@ -26,8 +27,19 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
     @InjectRepository(VehicleImagesEntity)
     private readonly vehicleImagesRepo: Repository<VehicleImagesEntity>,
     private readonly objectStorageService: ObjectStorageService,
+    private readonly vehicleDetailCache: VehicleDetailCacheService,
   ) {
     super();
+  }
+
+  private async invalidateVehicleDetail(vehicleId: string): Promise<void> {
+    try {
+      await this.vehicleDetailCache.invalidate(vehicleId);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo invalidar la caché del vehículo ${vehicleId}: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
+    }
   }
 
   async process(job: Job<ProcessVehicleImageJob>): Promise<void> {
@@ -94,6 +106,7 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
         status: "ready",
         url: finalUrl,
       });
+      await this.invalidateVehicleDetail(vehicle_id);
 
       // 6. Borrar archivo TEMP
       try {
@@ -126,6 +139,7 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
         status: "failed",
         failure_reason: errorMessage,
       });
+      await this.invalidateVehicleDetail(vehicle_id);
 
       throw error; // Re-lanzar para que BullMQ maneje los reintentos
     }

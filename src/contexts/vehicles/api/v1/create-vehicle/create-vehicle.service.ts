@@ -35,6 +35,7 @@ import { VideosEntity } from "../../../entities/videos.entity";
 import { WarrantyTypeEntity } from "../../../entities/warranty-type.entity";
 import { VehicleListingExpiryScheduler } from "../../../queues/vehicle-listing-expiry.scheduler";
 import { TypeOrmVehicleRepository } from "../../../repositories/typeorm.vehicle-repository";
+import { VehicleDetailCacheService } from "../../../services/vehicle-detail-cache.service";
 import { VehicleSearchIndexer } from "../../../search/indexing/vehicle-search-indexer.service";
 import { formatAddressText } from "../../../services/format-vehicle-address";
 import { ReverseGeocodingService } from "../../../services/reverse-geocoding.service";
@@ -109,6 +110,7 @@ export class CreateVehicleService {
     @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
     private readonly imageQueue: Queue<ProcessVehicleImageJob>,
     private readonly tempUploadService: TempUploadService,
+    private readonly vehicleDetailCache: VehicleDetailCacheService,
   ) { }
 
   async create(dto: CreateVehicleDto, publisher_profile_id: string) {
@@ -360,6 +362,11 @@ export class CreateVehicleService {
 
       throw error;
     }
+
+    const createdVehicleId = vehicle.id;
+    await this.vehicleDetailCache.refresh(createdVehicleId, () =>
+      this.vehicle_repository.findOne(createdVehicleId),
+    );
 
     return {
       id: vehicle.id,

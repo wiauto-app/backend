@@ -19,6 +19,7 @@ import {
 } from "./clients/opensearch/opensearch-client.factory";
 import { HeroSearchIndexBootstrapService } from "./clients/opensearch/hero-search-index-bootstrap.service";
 import { OpenSearchHeroSearchRepository } from "./clients/opensearch/opensearch-hero-search.repository";
+import { VehicleDetailCacheService } from "../services/vehicle-detail-cache.service";
 
 @Module({
   controllers: [
@@ -40,7 +41,12 @@ import { OpenSearchHeroSearchRepository } from "./clients/opensearch/opensearch-
     IndexVehicleSearchDocService,
     BulkReindexHeroSearchService,
     HeroSearchIndexBootstrapService,
+    VehicleDetailCacheService,
   ],
-  exports: [VehicleSearchIndexer, BulkReindexHeroSearchService],
+  exports: [
+    VehicleSearchIndexer,
+    BulkReindexHeroSearchService,
+    VehicleDetailCacheService,
+  ],
 })
 export class VehicleSearchModule {}

@@ -116,7 +116,10 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     execute: vi.fn().mockResolvedValue({
       pathnames: ["/vehicles-videos/gallery/video.mp4"],
     }),
-    rollback: vi.fn().mockResolvedValue(),
+      rollback: vi.fn().mockResolvedValue(),
+  };
+  const vehicle_detail_cache = {
+    refresh: vi.fn().mockResolvedValue(undefined),
   };
   const service = new VehicleService(
     vehicle_repository as never,
@@ -140,6 +143,12 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     {} as never,
     videos_repository as never,
     promote_temp_storage_paths_service as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    vehicle_detail_cache as never,
   );
 
   return {
@@ -151,6 +160,7 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     video_manager,
     videos_repository,
     promote_temp_storage_paths_service,
+    vehicle_detail_cache,
   };
 };
 
@@ -172,6 +182,25 @@ describe("vehicle update flow", () => {
     expect(vehicle_repository.patch.mock.calls[0][1]).not.toHaveProperty(
       "dealership_id",
     );
+  });
+
+  it("regenerates the detail cache after a successful update", async () => {
+    const { service, vehicle_detail_cache } = createService();
+
+    await service.update({ id: vehicle_id, mileage: 55_000 });
+
+    expect(vehicle_detail_cache.refresh).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.any(Function),
+    );
+  });
+
+  it("does not touch the detail cache for an empty patch", async () => {
+    const { service, vehicle_detail_cache } = createService();
+
+    await service.update({ id: vehicle_id });
+
+    expect(vehicle_detail_cache.refresh).not.toHaveBeenCalled();
   });
 
   it("only sends the changed fields to persistence", async () => {

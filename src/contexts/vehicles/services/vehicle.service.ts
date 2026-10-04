@@ -92,6 +92,7 @@ import { VehicleInsightsService } from "./vehicle-insights.service";
 import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/services/proactive-alert-event.service";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
+import { VehicleDetailCacheService } from "./vehicle-detail-cache.service";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -174,6 +175,7 @@ export class VehicleService {
     private readonly proactive_alert_event_service: ProactiveAlertEventService,
     @Inject(CACHE_MANAGER)
     private readonly cache_manager: Cache,
+    private readonly vehicle_detail_cache: VehicleDetailCacheService,
   ) { }
 
   private async resolvePublisherContext(
@@ -197,12 +199,25 @@ export class VehicleService {
     };
   }
 
-  async findOne(get_vehicle_dto: GetVehicleDto,profile_id?: string): Promise<VehicleDetail> {
-    const vehicle = await this.vehicle_repository.findOne(get_vehicle_dto.id,profile_id);
-    if (!vehicle) { 
-      throw new VehicleNotFoundException(get_vehicle_dto.id);
+  async findOne(get_vehicle_dto: GetVehicleDto, profile_id?: string): Promise<VehicleDetail> {
+    const vehicleId = get_vehicle_dto.id;
+    const publicVehicle = await this.vehicle_detail_cache.getOrLoad(vehicleId, () =>
+      this.vehicle_repository.findOne(vehicleId),
+    );
+    if (!publicVehicle) {
+      throw new VehicleNotFoundException(vehicleId);
     }
-    return vehicle;
+
+    const isOwner = Boolean(profile_id) && publicVehicle.profile_id === profile_id;
+    if (!isOwner) {
+      return publicVehicle;
+    }
+
+    const ownerVehicle = await this.vehicle_repository.findOne(vehicleId, profile_id);
+    if (!ownerVehicle) {
+      throw new VehicleNotFoundException(vehicleId);
+    }
+    return ownerVehicle;
   }
 
   async findActiveIdByRef(ref: string | number): Promise<{ id: string }> {
@@ -385,6 +400,9 @@ export class VehicleService {
       vehicle_price_id !== undefined;
     if (has_any_updates) {
       await this.vehicle_search_indexer.indexVehicle(id);
+      await this.vehicle_detail_cache.refresh(id, () =>
+        this.vehicle_repository.findOne(id),
+      );
     }
 
     return {
