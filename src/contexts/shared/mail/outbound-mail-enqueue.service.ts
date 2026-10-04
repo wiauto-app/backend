@@ -28,6 +28,7 @@ import {
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
   OUTBOUND_MAIL_JOB_USER_WELCOME,
+  OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED,
   OUTBOUND_MAIL_JOB_NEW_LOGIN,
   OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
   OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
@@ -69,6 +70,7 @@ import {
   OutboundMailFeaturedPurchasedJobData,
   OutboundMailFeaturedExpiredJobData,
   OutboundMailUserWelcomeJobData,
+  OutboundMailNewUserRegisteredJobData,
   OutboundMailNewLoginJobData,
   OutboundMailPasswordChangedJobData,
   OutboundMailAccountDeletedJobData,
@@ -234,6 +236,15 @@ export class OutboundMailEnqueueService {
     data: OutboundMailUserWelcomeJobData,
   ): Promise<void> {
     await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_USER_WELCOME, data);
+  }
+
+  async enqueue_new_user_registered(
+    data: OutboundMailNewUserRegisteredJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(
+      OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED,
+      data,
+    );
   }
 
   async enqueue_new_login(data: OutboundMailNewLoginJobData): Promise<void> {

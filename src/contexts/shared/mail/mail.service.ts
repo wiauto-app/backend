@@ -73,6 +73,41 @@ export class MailService {
     }
   }
 
+  async sendNewUserRegisteredEmail(payload: {
+    to: string;
+    user: {
+      email: string;
+      name: string;
+      last_name: string | null;
+      phone_code: string;
+      phone: string;
+    };
+    created_at: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderNewUserRegistered({
+      user: payload.user,
+      created_at: payload.created_at,
+    });
+    const full_name = [payload.user.name, payload.user.last_name]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: `Nuevo usuario registrado: ${full_name || payload.user.email}`,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el aviso de usuario nuevo a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendUserWelcomeEmail(payload: {
     to: string;
     name?: string;

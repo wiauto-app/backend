@@ -337,6 +337,20 @@ export interface OutboundMailUserWelcomeJobData {
   name?: string;
 }
 
+export const OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED = "new_user_registered";
+
+export interface OutboundMailNewUserRegisteredJobData {
+  to: string;
+  user: {
+    email: string;
+    name: string;
+    last_name: string | null;
+    phone_code: string;
+    phone: string;
+  };
+  created_at: string;
+}
+
 export type OutboundMailNewLoginAudience = "platform" | "admin";
 
 export const OUTBOUND_MAIL_JOB_NEW_LOGIN = "new_login";

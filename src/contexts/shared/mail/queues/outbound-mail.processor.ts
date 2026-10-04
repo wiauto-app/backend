@@ -30,6 +30,7 @@ import {
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
   OUTBOUND_MAIL_JOB_USER_WELCOME,
+  OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED,
   OUTBOUND_MAIL_JOB_NEW_LOGIN,
   OUTBOUND_MAIL_JOB_PASSWORD_CHANGED,
   OUTBOUND_MAIL_JOB_ACCOUNT_DELETED,
@@ -70,6 +71,7 @@ import {
   OutboundMailFeaturedPurchasedJobData,
   OutboundMailFeaturedExpiredJobData,
   OutboundMailUserWelcomeJobData,
+  OutboundMailNewUserRegisteredJobData,
   OutboundMailNewLoginJobData,
   OutboundMailPasswordChangedJobData,
   OutboundMailAccountDeletedJobData,
@@ -242,6 +244,12 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_USER_WELCOME) {
       const data = job.data as OutboundMailUserWelcomeJobData;
       await this.mail_service.sendUserWelcomeEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED) {
+      const data = job.data as OutboundMailNewUserRegisteredJobData;
+      await this.mail_service.sendNewUserRegisteredEmail(data);
       return;
     }
 

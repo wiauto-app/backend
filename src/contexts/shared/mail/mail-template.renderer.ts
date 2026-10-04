@@ -178,6 +178,46 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderNewUserRegistered(payload: {
+    user: {
+      email: string;
+      name: string;
+      last_name: string | null;
+      phone_code: string;
+      phone: string;
+    };
+    created_at: string;
+  }): string {
+    const full_name = [payload.user.name, payload.user.last_name]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ");
+    const phone = `${payload.user.phone_code} ${payload.user.phone}`.trim();
+    const created_at = this.escapeHtml(
+      new Date(payload.created_at).toLocaleString("es-ES", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    );
+
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Se ha registrado un usuario nuevo en WiAuto.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e5e7eb;border-radius:8px;">
+        ${this.buildInfoRow("Nombre", this.escapeHtml(full_name || "N/D"))}
+        ${this.buildInfoRow("Correo", this.escapeHtml(payload.user.email))}
+        ${this.buildInfoRow("Teléfono", this.escapeHtml(phone || "N/D"))}
+        ${this.buildInfoRow("Fecha", created_at, true)}
+      </table>`;
+
+    return this.renderBase({
+      preheader: "Nuevo usuario registrado en WiAuto.",
+      title: "Nuevo usuario registrado",
+      body,
+      footer_note: "Aviso interno de WiAuto. No respondas a este correo.",
+    });
+  }
+
   renderNewLogin(payload: {
     ip_address?: string | null;
     user_agent?: string | null;

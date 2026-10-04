@@ -1,5 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 
+import { envs } from "@/src/common/envs";
+
 import { OutboundMailEnqueueService } from "../../shared/mail/outbound-mail-enqueue.service";
 import type { OutboundMailNewLoginAudience } from "../../shared/mail/queues/outbound-mail.queue.constants";
 
@@ -24,6 +26,15 @@ export interface EnqueuePasswordChangedOptions {
 export interface EnqueueAccountDeletedOptions {
   to: string;
   occurred_at?: Date | string;
+}
+
+export interface EnqueueNewUserRegisteredOptions {
+  email: string;
+  name: string;
+  last_name?: string | null;
+  phone_code: string;
+  phone: string;
+  created_at?: Date | string;
 }
 
 @Injectable()
@@ -79,6 +90,35 @@ export class AuthSecurityMailService {
           error instanceof Error ? error.stack : String(error),
         );
       });
+  }
+
+  enqueueNewUserRegistered(options: EnqueueNewUserRegisteredOptions): void {
+    const recipients = envs.ADMIN_ALERTS_EMAILS;
+    if (recipients.length === 0) {
+      return;
+    }
+
+    const created_at = this.toIso(options.created_at);
+    void Promise.all(
+      recipients.map((to) =>
+        this.outbound_mail_enqueue_service.enqueue_new_user_registered({
+          to,
+          user: {
+            email: options.email,
+            name: options.name,
+            last_name: options.last_name?.trim() || null,
+            phone_code: options.phone_code,
+            phone: options.phone,
+          },
+          created_at,
+        }),
+      ),
+    ).catch((error: unknown) => {
+      this.logger.error(
+        `No se pudo encolar el aviso de usuario nuevo (${options.email})`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
   }
 
   enqueueAccountDeleted(options: EnqueueAccountDeletedOptions): void {
