@@ -5,6 +5,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
@@ -15,6 +16,9 @@ import { CatalogModelEntity } from "../../catalog/models/entities/catalog-model.
 import { CatalogYearEntity } from "../../catalog/years/entities/catalog-year.entity";
 import { VersionEntity } from "../../catalog/versions/entities/version.entity";
 import { TRANSMISSION_TYPE, TransmissionType } from "../../types/vehicle";
+import type { RecommendVehiclePriceSource } from "../../dto/recommend-vehicle-price.dto";
+import type { VehicleMarketConfidence } from "../../services/vehicle-market-stats.service";
+import { AppraisalOfferEntity } from "./appraisal-offer.entity";
 import {
   APPRAISAL_REQUEST_PRIORITY,
   APPRAISAL_REQUEST_STATUS,
@@ -25,6 +29,7 @@ import {
 @Entity({ name: "appraisal_requests" })
 @Index("IDX_appraisal_requests_status", ["status"])
 @Index("IDX_appraisal_requests_priority", ["priority"])
+@Index("IDX_appraisal_requests_profile", ["profile_id"])
 export class AppraisalRequestEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -69,11 +74,11 @@ export class AppraisalRequestEntity {
   @Column()
   mileage!: number;
 
-  @Column("numeric")
-  lat!: number;
+  @Column({ type: "numeric", nullable: true })
+  lat!: number | null;
 
-  @Column("numeric")
-  lng!: number;
+  @Column({ type: "numeric", nullable: true })
+  lng!: number | null;
 
   @Column({ type: "text", nullable: true })
   address!: string | null;
@@ -118,6 +123,36 @@ export class AppraisalRequestEntity {
 
   @Column({ type: "timestamp", nullable: true })
   answered_at!: Date | null;
+
+  @Column({ type: "numeric", nullable: true })
+  recommended_price!: number | null;
+
+  @Column({ type: "text", nullable: true })
+  ai_explanation!: string | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true })
+  ai_confidence!: VehicleMarketConfidence | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true })
+  ai_source!: RecommendVehiclePriceSource | null;
+
+  @Column({ type: "int", nullable: true })
+  power!: number | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true })
+  plate!: string | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  offers_requested_at!: Date | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  offers_expire_at!: Date | null;
+
+  @Column({ type: "uuid", nullable: true })
+  accepted_offer_id!: string | null;
+
+  @OneToMany(() => AppraisalOfferEntity, (offer) => offer.appraisal_request)
+  offers!: Relation<AppraisalOfferEntity[]>;
 
   @CreateDateColumn({ name: "created_at" })
   created_at!: Date;

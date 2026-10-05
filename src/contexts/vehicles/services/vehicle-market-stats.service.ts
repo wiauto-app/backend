@@ -53,8 +53,8 @@ interface ResolvedVehicleCatalog {
 
 interface SimilarVehicleReference {
   mileage: number;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
   condition: ConditionVehicle;
   transmission_type: TransmissionType;
 }
@@ -179,9 +179,7 @@ export class VehicleMarketStatsService {
         until_mileage: reference.mileage + mileage_delta,
         transmission_types: [reference.transmission_type],
         fuel_type_slugs: [catalog.fuel_type_slug],
-        lat: reference.lat,
-        lng: reference.lng,
-        radius: SIMILAR_RADIUS_METERS,
+        ...this.build_geo_filter(reference),
       });
     }
 
@@ -189,10 +187,21 @@ export class VehicleMarketStatsService {
       ...base,
       since_year: catalog.year - year_delta,
       until_year: catalog.year + year_delta,
+      ...this.build_geo_filter(reference),
+    });
+  }
+
+  /** Sin ubicación, la búsqueda de comparables es nacional. */
+  private build_geo_filter(reference: SimilarVehicleReference) {
+    if (reference.lat === undefined || reference.lng === undefined) {
+      return {};
+    }
+
+    return {
       lat: reference.lat,
       lng: reference.lng,
       radius: SIMILAR_RADIUS_METERS,
-    });
+    };
   }
 
   private build_stats(

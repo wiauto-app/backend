@@ -11,8 +11,9 @@ import {
   RecommendVehiclePriceResult,
 } from "../dto/recommend-vehicle-price.dto";
 
-/** Una recomendación por usuario + versión cada hora (también sirve el resultado cacheado). */
+/** Una recomendación por usuario y datos del vehículo cada hora (también sirve el resultado cacheado). */
 const PRICE_RECOMMENDATION_TTL_MS = 60 * 60 * 1000;
+const MILEAGE_CACHE_BUCKET_KM = 5000;
 
 @Injectable()
 export class RecommendVehiclePriceService {
@@ -27,7 +28,7 @@ export class RecommendVehiclePriceService {
     dto: RecommendVehiclePriceDto,
     userId: string,
   ): Promise<RecommendVehiclePriceResult> {
-    const cacheKey = this.cache_key(userId, dto.version_id);
+    const cacheKey = this.cache_key(userId, dto);
     const cached =
       await this.cache_manager.get<RecommendVehiclePriceResult>(cacheKey);
 
@@ -41,8 +42,24 @@ export class RecommendVehiclePriceService {
     return result;
   }
 
-  private cache_key(userId: string, versionId: number): string {
-    return `vehicle-price-recommendation:${userId}:${versionId}`;
+  /** Incluye los datos que cambian el precio: km por tramos de 5.000, estado, transmisión, potencia y zona. */
+  private cache_key(userId: string, dto: RecommendVehiclePriceDto): string {
+    const mileage_bucket = Math.round(dto.mileage / MILEAGE_CACHE_BUCKET_KM);
+    const zone =
+      dto.lat !== undefined && dto.lng !== undefined
+        ? `${dto.lat.toFixed(1)},${dto.lng.toFixed(1)}`
+        : "es";
+
+    return [
+      "vehicle-price-recommendation",
+      userId,
+      dto.version_id,
+      dto.condition,
+      dto.transmission_type,
+      mileage_bucket,
+      dto.power ?? "-",
+      zone,
+    ].join(":");
   }
 
   private async compute_recommendation(

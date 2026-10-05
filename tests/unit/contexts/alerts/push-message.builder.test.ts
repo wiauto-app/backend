@@ -185,3 +185,22 @@ describe("build_push_message", () => {
     );
   });
 });
+
+describe("push de tasaciones", () => {
+  it("usa el tipo appraisal y solo propaga appraisal_id", () => {
+    const message = build_push_message(
+      {
+        profile_id: "dealer-user",
+        category: "appraisal_opportunity",
+        title: "Nueva tasación disponible",
+        body: "SEAT Ateca (2020)",
+        push_type: "appraisal",
+        data: { appraisal_id: "appraisal-1", url: "/usuario/oportunidades-tasacion/appraisal-1" },
+      },
+      { now: NOW },
+    );
+
+    expect(message?.data).toMatchObject({ type: "appraisal", appraisal_id: "appraisal-1" });
+    expect(message?.data).not.toHaveProperty("url");
+  });
+});

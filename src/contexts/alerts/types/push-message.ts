@@ -16,6 +16,8 @@ export const PUSH_TYPE = {
   FAVORITE_CHANGE: "favorite_change",
   LEAD: "lead",
   SELLER_INSIGHT: "seller_insight",
+  /** Tasaciones: oportunidades para concesionarios y ofertas para el vendedor. */
+  APPRAISAL: "appraisal",
 } as const;
 
 export type PushType = (typeof PUSH_TYPE)[keyof typeof PUSH_TYPE];
@@ -36,6 +38,7 @@ export interface PushDataV1 {
   alert_id?: string;
   ticket_id?: string;
   notification_id?: string;
+  appraisal_id?: string;
 }
 
 /** Mensaje agnóstico del proveedor. Cada sender lo traduce a FCM o Expo. */

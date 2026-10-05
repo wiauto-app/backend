@@ -16,10 +16,12 @@ export interface VehicleAiContextDto {
   condition: ConditionVehicle;
   mileage: number;
   transmission_type: TransmissionType;
-  power: number;
+  /** Opcional: si falta, la IA estima sin potencia. */
+  power?: number;
   displacement?: number;
-  lat: number;
-  lng: number;
+  /** Opcional: sin ubicación, la comparación de mercado es nacional. */
+  lat?: number;
+  lng?: number;
   vehicle_type_id?: string | null;
   publisher_type?: PublisherType;
   color_id?: string | null;

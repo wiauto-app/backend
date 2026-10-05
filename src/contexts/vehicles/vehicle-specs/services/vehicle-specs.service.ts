@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import type { Cache } from "cache-manager";
 import { Repository } from "typeorm";
 import { generateText, Output, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
@@ -9,17 +11,61 @@ import { VersionEntity } from "../../catalog/versions/entities/version.entity";
 import { TractionEntity } from "../../entities/traction.entity";
 import { TRANSMISSION_TYPE } from "../../types/vehicle";
 
+/** Bump al cambiar schema o prompt para no reutilizar entradas antiguas. */
+const VEHICLE_SPECS_CACHE_VERSION = "v1";
+
+/**
+ * Las specs por versión de catálogo no cambian: TTL efectivamente indefinido
+ * (invalidación manual vía CACHE_VERSION o borrado en Redis).
+ */
+const VEHICLE_SPECS_CACHE_TTL_MS = 100 * 365 * 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class VehicleSpecsService {
+  private readonly inFlight = new Map<number, Promise<VehicleSpecs>>();
+
   constructor(
     @InjectRepository(VersionEntity)
     private readonly versionRepository: Repository<VersionEntity>,
 
     @InjectRepository(TractionEntity)
     private readonly tractionRepository: Repository<TractionEntity>,
-  ) { }
+
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+  ) {}
 
   async getVehicleSpecs(versionId: number): Promise<VehicleSpecs> {
+    const cacheKey = `vehicle-specs:${VEHICLE_SPECS_CACHE_VERSION}:${versionId}`;
+    const cached = await this.cacheManager.get<VehicleSpecs>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    let pending = this.inFlight.get(versionId);
+
+    if (!pending) {
+      pending = this.generateVehicleSpecs(versionId)
+        .then(async (specs) => {
+          await this.cacheManager.set(
+            cacheKey,
+            specs,
+            VEHICLE_SPECS_CACHE_TTL_MS,
+          );
+          return specs;
+        })
+        .finally(() => {
+          this.inFlight.delete(versionId);
+        });
+
+      this.inFlight.set(versionId, pending);
+    }
+
+    return pending;
+  }
+
+  private async generateVehicleSpecs(versionId: number): Promise<VehicleSpecs> {
     const version = await this.versionRepository.findOne({
       where: {
         id: versionId,

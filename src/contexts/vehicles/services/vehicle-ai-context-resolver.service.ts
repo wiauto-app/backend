@@ -21,7 +21,7 @@ export interface ResolvedVehicleAiLabels {
   condition: string;
   mileage: number;
   transmission_type: string;
-  power: number;
+  power?: number;
   displacement?: number;
   autonomy?: number;
   battery_capacity?: number;

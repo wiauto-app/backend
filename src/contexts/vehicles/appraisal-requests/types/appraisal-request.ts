@@ -1,9 +1,15 @@
 import { TransmissionType } from "../../types/vehicle";
 
 export const APPRAISAL_REQUEST_STATUS = {
+  /** Legacy: solicitud manual que responde un admin. */
   PENDING: "pending",
   ANSWERED: "answered",
   CLOSED: "closed",
+  /** Tasación IA instantánea. */
+  ESTIMATED: "estimated",
+  OPEN_FOR_OFFERS: "open_for_offers",
+  OFFER_ACCEPTED: "offer_accepted",
+  EXPIRED: "expired",
 } as const;
 
 export type AppraisalRequestStatus =
@@ -31,8 +37,8 @@ export interface AppraisalRequestListItem {
   body_type_id: number | null;
   transmission_type: TransmissionType;
   mileage: number;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   address: string | null;
   vehicle_label: string;
   name: string;

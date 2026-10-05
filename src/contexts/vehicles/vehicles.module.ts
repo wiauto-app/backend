@@ -271,6 +271,8 @@ import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive
     CatalogModule,
     VehiclePermissionsService,
     VehicleInsightsService,
+    RecommendVehiclePriceService,
+    VehicleAiContextResolverService,
   ],
 })
 export class VehiclesModule { }

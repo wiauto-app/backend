@@ -97,9 +97,11 @@ export class NotificationEmailChannelService {
     const data = input.data ?? {};
     const vehicle_id = data.vehicle_id;
     const vehicle_detail_url =
-      typeof vehicle_id === "string"
-        ? getVehicleDetailUrl(vehicle_id)
-        : envs.FRONTEND_URL;
+      typeof data.url === "string" && data.url.startsWith("/")
+        ? `${envs.FRONTEND_URL.replace(/\/$/, "")}${data.url}`
+        : typeof vehicle_id === "string"
+          ? getVehicleDetailUrl(vehicle_id)
+          : envs.FRONTEND_URL;
 
     await this.outbound_mail_enqueue_service.enqueue_alert_event_notification({
       to: input.to,

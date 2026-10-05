@@ -68,6 +68,9 @@ const applicable_id_keys = (type: PushType): readonly string[] => {
   if (LISTING_TYPES.has(type)) {
     return ["vehicle_id", "alert_id"];
   }
+  if (type === PUSH_TYPE.APPRAISAL) {
+    return ["appraisal_id"];
+  }
   return [];
 };
 

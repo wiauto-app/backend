@@ -49,7 +49,7 @@ Tu tarea es redactar una explicación breve y clara en español neutro para el v
 - Estado: ${labels.condition}
 - Kilometraje: ${labels.mileage} km
 - Transmisión: ${labels.transmission_type}
-- Potencia: ${labels.power} CV
+${labels.power ? `- Potencia: ${labels.power} CV` : ""}
 ${labels.traction_name ? `- Tracción: ${labels.traction_name}` : ""}
 ${labels.color_name ? `- Color: ${labels.color_name}` : ""}
 
@@ -134,7 +134,7 @@ Redacta la descripción de un anuncio atractiva, honesta y en español neutro, o
 - Estado: ${labels.condition === "new" ? "nuevo" : "usado"}
 - Kilometraje: ${labels.mileage} km
 - Transmisión: ${labels.transmission_type}
-- Potencia: ${labels.power} CV
+${labels.power ? `- Potencia: ${labels.power} CV` : ""}
 ${optional_lines}
 
 ${mapped_settings.preferences_block}
@@ -188,7 +188,7 @@ Estima un rango de precio de venta razonable en euros (EUR) para el siguiente ve
 - Estado: ${labels.condition === "new" ? "nuevo" : "usado"}
 - Kilometraje: ${labels.mileage} km
 - Transmisión: ${labels.transmission_type}
-- Potencia: ${labels.power} CV
+${labels.power ? `- Potencia: ${labels.power} CV` : ""}
 ${optional_lines}
 
 ## Instrucciones
