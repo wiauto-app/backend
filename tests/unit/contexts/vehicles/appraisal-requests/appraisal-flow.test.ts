@@ -76,12 +76,14 @@ describe("AppraisalOpportunitiesService", () => {
   const appraisal_repository = { findOne: vi.fn() };
   const offer_repository = { find: vi.fn(), findOne: vi.fn(), exists: vi.fn(), save: vi.fn(), create: vi.fn(), update: vi.fn() };
   const member_repository = { findOne: vi.fn() };
+  const user_repository = { findOne: vi.fn() };
   let notifications: ReturnType<typeof buildNotifications>;
   let service: AppraisalOpportunitiesService;
 
   beforeEach(() => {
     vi.clearAllMocks();
     notifications = buildNotifications();
+    user_repository.findOne.mockResolvedValue({ id: "dealer-user", is_admin: false });
     member_repository.findOne.mockResolvedValue({
       dealership_id: "dealer-a",
       role: "owner",
@@ -91,6 +93,7 @@ describe("AppraisalOpportunitiesService", () => {
       appraisal_repository as never,
       offer_repository as never,
       member_repository as never,
+      user_repository as never,
       notifications as never,
     );
   });
@@ -151,6 +154,42 @@ describe("AppraisalOpportunitiesService", () => {
     await expect(
       service.upsertOffer("dealer-user", "appraisal-1", { amount: 18_000 }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it("permite a un admin de plataforma ver sin membership", async () => {
+    user_repository.findOne.mockResolvedValue({ id: "admin-user", is_admin: true });
+    member_repository.findOne.mockResolvedValue(null);
+    appraisal_repository.findOne.mockResolvedValue(buildAppraisal());
+    offer_repository.find.mockResolvedValue([buildOffer()]);
+
+    const result = await service.findOne("admin-user", "appraisal-1");
+
+    expect(result.seller_contact).toBeNull();
+    expect(result.my_offer).toBeNull();
+    expect(result.offers_count).toBe(1);
+  });
+
+  it("permite a un admin de plataforma ver una tasación cerrada aunque no haya ofertado", async () => {
+    user_repository.findOne.mockResolvedValue({ id: "admin-user", is_admin: true });
+    member_repository.findOne.mockResolvedValue(null);
+    appraisal_repository.findOne.mockResolvedValue(
+      buildAppraisal({ status: "offer_accepted", accepted_offer_id: "offer-a" }),
+    );
+    offer_repository.find.mockResolvedValue([buildOffer({ status: "accepted" })]);
+
+    const result = await service.findOne("admin-user", "appraisal-1");
+
+    expect(result.seller_contact).toBeNull();
+    expect(offer_repository.exists).not.toHaveBeenCalled();
+  });
+
+  it("no deja ofertar a un admin de plataforma sin concesionario", async () => {
+    user_repository.findOne.mockResolvedValue({ id: "admin-user", is_admin: true });
+    member_repository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.upsertOffer("admin-user", "appraisal-1", { amount: 18_000 }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });
 

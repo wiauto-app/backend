@@ -6,6 +6,7 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
+import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { AppraisalOfferEntity } from "../entities/appraisal-offer.entity";
 import { AppraisalRequestEntity } from "../entities/appraisal-request.entity";
@@ -44,7 +45,13 @@ export interface UpsertAppraisalOfferPayload {
   message?: string;
 }
 
-/** Tasaciones del lado del concesionario (owner/admin). El vendedor es anónimo hasta aceptar. */
+interface AppraisalOpportunityActor {
+  profile_id: string;
+  is_platform_admin: boolean;
+  membership: DealershipMembersEntity | null;
+}
+
+/** Tasaciones del lado del concesionario (owner/admin) o de un admin de plataforma. El vendedor es anónimo hasta aceptar. */
 @Injectable()
 export class AppraisalOpportunitiesService {
   constructor(
@@ -54,6 +61,8 @@ export class AppraisalOpportunitiesService {
     private readonly offer_repository: Repository<AppraisalOfferEntity>,
     @InjectRepository(DealershipMembersEntity)
     private readonly member_repository: Repository<DealershipMembersEntity>,
+    @InjectRepository(User)
+    private readonly user_repository: Repository<User>,
     private readonly notification_service: AppraisalNotificationService,
   ) {}
 
@@ -61,7 +70,13 @@ export class AppraisalOpportunitiesService {
     profile_id: string,
     payload: FindAppraisalOpportunitiesPayload,
   ): Promise<PaginatedResult<AppraisalOpportunity>> {
-    const membership = await this.findManagerMembershipOrFail(profile_id);
+    const actor = await this.resolveActorOrFail(profile_id);
+    const dealership_id = actor.membership?.dealership_id ?? null;
+
+    if (payload.scope === APPRAISAL_OPPORTUNITY_SCOPE.MINE && !dealership_id) {
+      return new PaginatedResult([], 0, payload.page, payload.limit);
+    }
+
     const query = this.appraisal_repository
       .createQueryBuilder("appraisal")
       .leftJoinAndSelect("appraisal.make", "make")
@@ -78,7 +93,7 @@ export class AppraisalOpportunitiesService {
         `EXISTS (SELECT 1 FROM appraisal_offers offer
           WHERE offer.appraisal_request_id = appraisal.id
             AND offer.dealership_id = :dealership_id)`,
-        { dealership_id: membership.dealership_id },
+        { dealership_id },
       );
     } else {
       query
@@ -90,18 +105,21 @@ export class AppraisalOpportunitiesService {
 
     const [rows, total] = await query.getManyAndCount();
     const offers = await this.findOffersFor(rows.map((row) => row.id));
-    const data = rows.map((row) =>
-      this.toOpportunity(row, offers, membership.dealership_id),
-    );
+    const data = rows.map((row) => this.toOpportunity(row, offers, dealership_id));
 
     return new PaginatedResult(data, total, payload.page, payload.limit);
   }
 
   async findOne(profile_id: string, id: string): Promise<AppraisalOpportunity> {
-    const membership = await this.findManagerMembershipOrFail(profile_id);
-    const row = await this.findVisibleOrFail(id, membership.dealership_id);
+    const actor = await this.resolveActorOrFail(profile_id);
+    const dealership_id = actor.membership?.dealership_id ?? null;
+    const row = await this.findVisibleOrFail(
+      id,
+      dealership_id,
+      actor.is_platform_admin,
+    );
     const offers = await this.findOffersFor([id]);
-    return this.toOpportunity(row, offers, membership.dealership_id);
+    return this.toOpportunity(row, offers, dealership_id);
   }
 
   /** Crea o actualiza la oferta del concesionario mientras la tasación esté abierta. */
@@ -110,7 +128,8 @@ export class AppraisalOpportunitiesService {
     id: string,
     payload: UpsertAppraisalOfferPayload,
   ): Promise<AppraisalOpportunity> {
-    const membership = await this.findManagerMembershipOrFail(profile_id);
+    const actor = await this.resolveActorOrFail(profile_id);
+    const membership = this.requireDealershipMembership(actor);
     const row = await this.findOpenOrFail(id);
     const message = trimToNull(payload.message);
 
@@ -151,7 +170,8 @@ export class AppraisalOpportunitiesService {
   }
 
   async withdrawOffer(profile_id: string, id: string): Promise<AppraisalOpportunity> {
-    const membership = await this.findManagerMembershipOrFail(profile_id);
+    const actor = await this.resolveActorOrFail(profile_id);
+    const membership = this.requireDealershipMembership(actor);
     await this.findOpenOrFail(id);
 
     const result = await this.offer_repository.update(
@@ -172,13 +192,15 @@ export class AppraisalOpportunitiesService {
   private toOpportunity(
     row: AppraisalRequestEntity,
     offers: AppraisalOfferEntity[],
-    dealership_id: string,
+    dealership_id: string | null,
   ): AppraisalOpportunity {
     const row_offers = offers.filter((offer) => offer.appraisal_request_id === row.id);
-    const mine = row_offers
-      .filter((offer) => offer.dealership_id === dealership_id)
-      .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
-      .at(0);
+    const mine = dealership_id
+      ? row_offers
+          .filter((offer) => offer.dealership_id === dealership_id)
+          .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
+          .at(0)
+      : undefined;
     const is_winner =
       mine !== undefined &&
       mine.status === APPRAISAL_OFFER_STATUS.ACCEPTED &&
@@ -215,10 +237,11 @@ export class AppraisalOpportunitiesService {
     });
   }
 
-  /** Abierta, o cualquiera en la que este concesionario ya ofertó. */
+  /** Abierta, cualquiera en la que este concesionario ya ofertó, o cualquier tasación si es admin de plataforma. */
   private async findVisibleOrFail(
     id: string,
-    dealership_id: string,
+    dealership_id: string | null,
+    is_platform_admin: boolean,
   ): Promise<AppraisalRequestEntity> {
     const row = await this.appraisal_repository.findOne({
       where: { id },
@@ -228,8 +251,12 @@ export class AppraisalOpportunitiesService {
       throw new AppraisalRequestNotFoundException(id);
     }
 
-    if (row.status === APPRAISAL_REQUEST_STATUS.OPEN_FOR_OFFERS) {
+    if (is_platform_admin || row.status === APPRAISAL_REQUEST_STATUS.OPEN_FOR_OFFERS) {
       return row;
+    }
+
+    if (!dealership_id) {
+      throw new AppraisalRequestNotFoundException(id);
     }
 
     const has_offer = await this.offer_repository.exists({
@@ -259,13 +286,29 @@ export class AppraisalOpportunitiesService {
     return row;
   }
 
-  private async findManagerMembershipOrFail(
+  /**
+   * Owner/admin del concesionario, o admin de plataforma (`users.is_admin`) aunque no tenga membership.
+   */
+  private async resolveActorOrFail(
     profile_id: string,
-  ): Promise<DealershipMembersEntity> {
+  ): Promise<AppraisalOpportunityActor> {
+    const user = await this.user_repository.findOne({
+      where: { id: profile_id },
+      select: ["id", "is_admin"],
+    });
+    if (!user) {
+      throw new ForbiddenException("Usuario no encontrado");
+    }
+
     const membership = await this.member_repository.findOne({
       where: { profile_id },
       relations: ["dealership"],
     });
+
+    if (user.is_admin) {
+      return { profile_id, is_platform_admin: true, membership };
+    }
+
     if (!membership) {
       throw new ForbiddenException("No perteneces a ningún concesionario");
     }
@@ -274,6 +317,18 @@ export class AppraisalOpportunitiesService {
         "Solo el propietario o un administrador del concesionario puede ofertar",
       );
     }
-    return membership;
+
+    return { profile_id, is_platform_admin: false, membership };
+  }
+
+  private requireDealershipMembership(
+    actor: AppraisalOpportunityActor,
+  ): DealershipMembersEntity {
+    if (actor.membership) {
+      return actor.membership;
+    }
+    throw new ForbiddenException(
+      "Necesitas pertenecer a un concesionario para ofertar",
+    );
   }
 }

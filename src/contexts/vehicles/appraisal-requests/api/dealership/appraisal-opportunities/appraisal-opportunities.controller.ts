@@ -18,7 +18,7 @@ import { UpsertAppraisalOfferHttpDto } from "../../../dto/upsert-appraisal-offer
 import { AppraisalOpportunitiesService } from "../../../services/appraisal-opportunities.service";
 import { V1_DEALERSHIP_APPRAISAL_OPPORTUNITIES } from "../../route.constants";
 
-/** Tasaciones para concesionarios. El rol owner/admin se valida en el servicio. */
+/** Tasaciones para concesionarios. Owner/admin del concesionario o admin de plataforma. */
 @Controller(V1_DEALERSHIP_APPRAISAL_OPPORTUNITIES)
 @UseGuards(JwtGuard)
 export class AppraisalOpportunitiesController {
