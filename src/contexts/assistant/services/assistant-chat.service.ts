@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { envs } from "@/src/common/envs";
 import {
   convertToModelMessages,
@@ -12,10 +12,16 @@ import {
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import type { Response } from "express";
 import { extractLastUserMessage } from "../helpers/extract-last-user-message";
-import { extractPreviousSearchFilters } from "../helpers/extract-previous-search-filters";
+import {
+  extractPreviousSearchFilters,
+  extractPreviousSearchMinPrice,
+} from "../helpers/extract-previous-search-filters";
+import { finalStepWithoutTools } from "../helpers/final-step-without-tools";
+import { withJsonSafeToolOutputs } from "../helpers/json-safe-tool-outputs";
 import { stripToolPartsForLlm } from "../helpers/strip-tool-parts-for-llm";
 import type { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
 import type { AssistantChatMode } from "../types/assistant-chat-mode";
+import { ASSISTANT_MAX_USER_MESSAGE_LENGTH } from "../types/assistant-chat-limits";
 import { AssistantSearchExecutorService } from "./assistant-search-executor.service";
 import { AssistantSearchFromMessageService } from "./assistant-search-from-message.service";
 import { AssistantSystemPromptService } from "./assistant-system-prompt.service";
@@ -27,6 +33,20 @@ import { AssistantFilterCatalogService } from "./assistant-filter-catalog.servic
 import type { AssistantPageContext } from "../types/assistant-page-context";
 import { AssistantContextToolsService } from "../tools/assistant-context-tools.service";
 import { AssistantContextSystemPromptService } from "./assistant-context-system-prompt.service";
+
+const assertValidUserMessage = (userMessage: string): void => {
+  if (!userMessage) {
+    throw new BadRequestException("Escribe un mensaje para el asistente");
+  }
+  if (userMessage.length > ASSISTANT_MAX_USER_MESSAGE_LENGTH) {
+    throw new BadRequestException(
+      `El mensaje no puede superar los ${ASSISTANT_MAX_USER_MESSAGE_LENGTH} caracteres`,
+    );
+  }
+};
+
+const CONTEXT_MAX_STEPS = 4;
+const BUY_ASSISTANT_MAX_STEPS = 6;
 
 interface StreamChatOptions {
   messages: UIMessage[];
@@ -64,6 +84,8 @@ export class AssistantChatService {
     initialFilters,
     pageContext = "vehicles",
   }: StreamChatOptions): Promise<void> {
+    // Se valida antes de consumir cuota o llamar a ningún LLM.
+    assertValidUserMessage(extractLastUserMessage(messages));
     await this.quotaService.assertCanConsume(userId);
 
     const resolvedConversationId =
@@ -118,7 +140,9 @@ export class AssistantChatService {
     pageContext: Exclude<AssistantPageContext, "vehicles">;
   }): Promise<void> {
     const deepseek = createDeepSeek({ apiKey: envs.DEEPSEEK_API_KEY });
-    const tools = this.contextToolsService.createTools(pageContext);
+    const tools = withJsonSafeToolOutputs(
+      this.contextToolsService.createTools(pageContext),
+    );
     const stream = createUIMessageStream({
       originalMessages: messages,
       onEnd: async ({ messages: updatedMessages }) => {
@@ -144,7 +168,8 @@ export class AssistantChatService {
           system: this.contextSystemPromptService.build(pageContext),
           messages: await convertToModelMessages(messages, { tools }),
           tools,
-          stopWhen: stepCountIs(4),
+          stopWhen: stepCountIs(CONTEXT_MAX_STEPS),
+          prepareStep: finalStepWithoutTools(CONTEXT_MAX_STEPS),
         });
 
         writer.merge(result.toUIMessageStream({ originalMessages: messages }));
@@ -175,10 +200,13 @@ export class AssistantChatService {
     const deepseek = createDeepSeek({
       apiKey: envs.DEEPSEEK_API_KEY,
     });
-    const tools = this.buyToolsService.createBuyAssistantTools({
-      initialFilters,
-      catalog,
-    });
+    const tools = withJsonSafeToolOutputs(
+      this.buyToolsService.createBuyAssistantTools({
+        initialFilters,
+        catalog,
+        userId,
+      }),
+    );
 
     const stream = createUIMessageStream({
       originalMessages: messages,
@@ -208,7 +236,8 @@ export class AssistantChatService {
           }),
           messages: await convertToModelMessages(messages, { tools }),
           tools,
-          stopWhen: stepCountIs(6),
+          stopWhen: stepCountIs(BUY_ASSISTANT_MAX_STEPS),
+          prepareStep: finalStepWithoutTools(BUY_ASSISTANT_MAX_STEPS),
         });
 
         writer.merge(
@@ -241,10 +270,12 @@ export class AssistantChatService {
   }): Promise<void> {
     const userMessage = extractLastUserMessage(messages);
     const previousFilters = extractPreviousSearchFilters(messages);
+    const previousMinPrice = extractPreviousSearchMinPrice(messages);
     const { filters, catalog, resolved } =
       await this.searchFromMessageService.resolveFromMessage({
         message: userMessage,
         previousFilters,
+        previousMinPrice,
       });
     const searchResult = await this.searchExecutor.execute(
       filters,

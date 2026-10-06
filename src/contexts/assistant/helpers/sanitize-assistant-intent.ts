@@ -74,5 +74,16 @@ export const sanitizeAssistantIntent = (
     delete next.vehicle_type;
   }
 
+  // Coordenadas solo si el usuario nombró el lugar: evita ubicaciones inventadas
+  // (p. ej. coordenadas de ejemplo copiadas del prompt).
+  const hasMentionedLocation =
+    next.location !== undefined &&
+    isEntityMentionedInMessage(next.location, userMessage);
+  if (!hasMentionedLocation) {
+    delete next.location;
+    delete next.lat;
+    delete next.lng;
+  }
+
   return next;
 };

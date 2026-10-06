@@ -11,6 +11,7 @@ const assistantIntentSchema = z.object({
   make: z.string().optional(),
   model: z.string().optional(),
   vehicle_type: z.string().optional(),
+  location: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
 });

@@ -2,6 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { generateId, UIMessage } from "ai";
 import { mergeSearchVehiclesInput } from "../helpers/merge-search-vehicles-input";
 import { normalizeTypeCategoryFilters } from "../helpers/normalize-type-category-filters";
+import {
+  isCheaperRequest,
+  isSearchResetRequest,
+  parsePriceFromMessage,
+} from "../helpers/parse-search-refinements";
 import { sanitizeAssistantIntent } from "../helpers/sanitize-assistant-intent";
 import { SearchVehiclesInput } from "../schemas/search-vehicles.schema";
 import type { AssistantFilterCatalog } from "../types/assistant-filter-catalog";
@@ -22,6 +27,8 @@ interface SearchFromMessageInput {
    * of replacing it outright. See the merge in `resolveFromMessage` below.
    */
   previousFilters?: SearchVehiclesInput;
+  /** Precio más bajo de la búsqueda anterior (para "algo más barato"). */
+  previousMinPrice?: number;
 }
 
 interface SearchFromMessageContext {
@@ -29,6 +36,52 @@ interface SearchFromMessageContext {
   catalog: AssistantFilterCatalog;
   resolved: AssistantResolvedEntities;
 }
+
+/**
+ * El precio lo decide el texto, no el LLM: un importe explícito ("menos de 25000",
+ * "tengo 10000 para gastar") reemplaza lo que haya extraído el modelo, y un
+ * presupuesto nunca se convierte en precio exacto. "Más barato" usa como tope el
+ * precio más bajo de la búsqueda anterior.
+ */
+const applyDeterministicPrice = (
+  filters: SearchVehiclesInput,
+  message: string,
+  previousMinPrice?: number,
+): SearchVehiclesInput => {
+  const explicit = parsePriceFromMessage(message);
+  const next: SearchVehiclesInput = { ...filters };
+
+  // "Más barato" no es "solo anuncios en oferta": price_offer solo si se pide.
+  if (next.price_offer && !mentionsPriceOffer(message)) {
+    delete next.price_offer;
+  }
+
+  if (explicit.since_price !== undefined || explicit.until_price !== undefined) {
+    next.since_price = explicit.since_price;
+    next.until_price = explicit.until_price;
+    return next;
+  }
+
+  if (isCheaperRequest(message) && previousMinPrice !== undefined) {
+    next.until_price = previousMinPrice - 1;
+    delete next.since_price;
+    return next;
+  }
+
+  if (
+    next.since_price !== undefined &&
+    next.until_price !== undefined &&
+    next.since_price === next.until_price
+  ) {
+    delete next.since_price;
+  }
+  return next;
+};
+
+const mentionsPriceOffer = (message: string): boolean =>
+  /\b(oferta|ofertas|rebajad[oa]s?|rebaja|negociable)\b/.test(
+    message.toLowerCase().normalize("NFD").replace(/\p{M}/gu, ""),
+  );
 
 const buildUIMessagesFromText = (message: string): UIMessage[] => [
   {
@@ -55,6 +108,7 @@ export class AssistantSearchFromMessageService {
   async resolveFromMessage({
     message,
     previousFilters,
+    previousMinPrice,
   }: SearchFromMessageInput): Promise<SearchFromMessageContext> {
     const messages = buildUIMessagesFromText(message);
     const rawIntent = await this.intentExtractor.extract(messages);
@@ -91,7 +145,11 @@ export class AssistantSearchFromMessageService {
     // re-specifies a field the user meant to ADD to (rather than replace)
     // will drop the earlier values for that field. Good enough for a first
     // correct-enough fix.
-    const filters = mergeSearchVehiclesInput(previousFilters, extractedFilters);
+    const baseFilters = isSearchResetRequest(message) ? undefined : previousFilters;
+    const filters = mergeSearchVehiclesInput(
+      baseFilters,
+      applyDeterministicPrice(extractedFilters, message, previousMinPrice),
+    );
     validateSearchVehiclesFilters(filters, catalog, resolved);
 
     return { filters, catalog, resolved };

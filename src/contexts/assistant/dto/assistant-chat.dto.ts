@@ -1,5 +1,7 @@
 import {
   Allow,
+  ArrayMaxSize,
+  ArrayNotEmpty,
   IsArray,
   IsIn,
   IsOptional,
@@ -9,6 +11,7 @@ import {
 import { Type } from "class-transformer";
 import { AssistantInitialFiltersHttpDto } from "./assistant-initial-filters.http-dto";
 import { ASSISTANT_CHAT_MODES } from "../types/assistant-chat-mode";
+import { ASSISTANT_MAX_MESSAGES } from "../types/assistant-chat-limits";
 import {
   ASSISTANT_PAGE_CONTEXTS,
   type AssistantPageContext,
@@ -55,6 +58,8 @@ class AssistantChatMessageDto {
 
 export class AssistantChatDto {
   @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(ASSISTANT_MAX_MESSAGES)
   @ValidateNested({ each: true })
   @Type(() => AssistantChatMessageDto)
   messages: AssistantChatMessageDto[];

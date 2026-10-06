@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 import { buildWhatsAppUrl } from "@/src/contexts/vehicles/helpers/build-whatsapp-url";
+import { STATUS_VEHICLE } from "@/src/contexts/vehicles/types/vehicle";
 import { buildAssistantVehicleSummary } from "../helpers/build-assistant-vehicle-summary";
 import {
   assistantVehicleTargetSchema,
@@ -25,10 +26,12 @@ export const RECOMMENDED_SELLER_QUESTIONS: string[] = [
 
 interface CreatePrepareSellerContactToolOptions {
   vehicleService: VehicleService;
+  userId?: string;
 }
 
 export const createPrepareSellerContactTool = ({
   vehicleService,
+  userId,
 }: CreatePrepareSellerContactToolOptions) =>
   tool({
     description:
@@ -51,7 +54,16 @@ export const createPrepareSellerContactTool = ({
 
       const channels: SellerContactChannel[] = [];
 
-      if (contact.profile_id) {
+      // Mismas reglas que el endpoint público de contact-clicks: el número solo se
+      // revela si el vendedor lo muestra, el anuncio está activo y no es del usuario.
+      const is_own_vehicle = Boolean(userId) && contact.profile_id === userId;
+      const can_reveal_phone =
+        contact.show_phone &&
+        detail.status === STATUS_VEHICLE.ACTIVE &&
+        !is_own_vehicle &&
+        Boolean(contact.phone_code && contact.phone);
+
+      if (contact.profile_id && !is_own_vehicle) {
         channels.push({
           type: "wiauto_chat",
           label: "Chat WiAuto",
@@ -62,7 +74,7 @@ export const createPrepareSellerContactTool = ({
         });
       }
 
-      if (contact.has_whatsapp && contact.phone_code && contact.phone) {
+      if (can_reveal_phone && contact.has_whatsapp) {
         channels.push({
           type: "whatsapp",
           label: "WhatsApp",
@@ -75,7 +87,7 @@ export const createPrepareSellerContactTool = ({
         });
       }
 
-      if (contact.show_phone && contact.phone_code && contact.phone) {
+      if (can_reveal_phone) {
         const phoneValue = `${contact.phone_code}${contact.phone}`;
         channels.push({
           type: "phone",
@@ -85,7 +97,7 @@ export const createPrepareSellerContactTool = ({
         });
       }
 
-      if (contact.email.trim()) {
+      if (contact.email.trim() && !is_own_vehicle) {
         channels.push({
           type: "email",
           label: "Email",

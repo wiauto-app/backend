@@ -53,3 +53,40 @@ export const extractPreviousSearchFilters = (
 
   return undefined;
 };
+
+interface SearchVehiclesToolOutputWithVehicles {
+  vehicles?: { price?: number | string | null }[];
+}
+
+/**
+ * Precio más bajo entre los vehículos de la última búsqueda, para resolver
+ * "algo más barato" sin que el LLM invente un tope.
+ */
+export const extractPreviousSearchMinPrice = (
+  messages: UIMessage[],
+): number | undefined => {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== "assistant") {
+      continue;
+    }
+
+    for (const part of [...message.parts].reverse()) {
+      if (!isToolUIPart(part) || getToolName(part) !== SEARCH_VEHICLES_TOOL_NAME) {
+        continue;
+      }
+      if (part.state !== "output-available") {
+        return undefined;
+      }
+
+      const prices = ((part.output as SearchVehiclesToolOutputWithVehicles | undefined)
+        ?.vehicles ?? [])
+        .map((vehicle) => Number(vehicle.price))
+        .filter((price) => Number.isFinite(price) && price > 0);
+
+      return prices.length > 0 ? Math.min(...prices) : undefined;
+    }
+  }
+
+  return undefined;
+};

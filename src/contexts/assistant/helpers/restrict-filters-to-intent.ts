@@ -39,6 +39,24 @@ const CATALOG_FILTER_KEYS = [
   "dealership_ids",
 ] as const satisfies ReadonlyArray<keyof SearchVehiclesInput>;
 
+/**
+ * El LLM a veces rellena todos los campos con valores "vacíos" (`0`, `false`,
+ * `[]`, `""`). No son filtros: `until_price: 0` o `since_year: 0` dejan la
+ * búsqueda en 0 resultados.
+ */
+const isMeaningfulFilterValue = (value: unknown): boolean => {
+  if (value === undefined || value === null || value === false || value === "") {
+    return false;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0;
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  return true;
+};
+
 export const restrictFiltersToExplicitIntent = (
   filters: SearchVehiclesInput,
   intent: AssistantIntent,
@@ -48,7 +66,7 @@ export const restrictFiltersToExplicitIntent = (
 
   for (const key of CATALOG_FILTER_KEYS) {
     const value = filters[key];
-    if (value !== undefined) {
+    if (isMeaningfulFilterValue(value)) {
       (next as Record<string, unknown>)[key] = value;
     }
   }
