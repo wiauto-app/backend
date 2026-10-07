@@ -1,4 +1,4 @@
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
+import { FindAllProvincesHttpDto } from "./dto/find-all-provinces.http-dto";
 import { Body, Controller, Get, Param, Patch, Query } from "@nestjs/common";
 
 import { ProvincesService } from "../../../services/provinces.service";
@@ -10,7 +10,7 @@ export class ProvincesController {
   constructor(private readonly provinces_service: ProvincesService) {}
 
   @Get()
-  findAll(@Query() query: PaginationHttpDto) {
+  findAll(@Query() query: FindAllProvincesHttpDto) {
     return this.provinces_service.findAll(query);
   }
 

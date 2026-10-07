@@ -16,6 +16,10 @@ const PROVINCE_SORT_KEYS = new Set([
   "cod_ccaa",
   "ogc_fid"]);
 
+interface FindAllProvincesOptions {
+  cod_ccaa?: string;
+}
+
 const mapRowToProvince = (row: Provinces): Province =>
   Province.fromPrimitives({
     id: row.id,
@@ -38,13 +42,16 @@ export class TypeormProvincesRepository {
 
   async find_all(
     filter: CatalogPaginationFilter,
+    options?: FindAllProvincesOptions,
   ): Promise<PaginatedResult<Province>> {
+    const cod_ccaa = options?.cod_ccaa?.trim();
     return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
       map_row: mapRowToProvince,
       allowed_sort_keys: PROVINCE_SORT_KEYS,
       default_sort_key: "name",
+      extra_filters: cod_ccaa ? { cod_ccaa } : undefined,
     });
   }
 

@@ -1,7 +1,7 @@
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pagination.filter";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
-import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
+import { FindAllProvincesHttpDto } from "../api/v1/provinces-v1/dto/find-all-provinces.http-dto";
 
 import { PrimitiveProvince } from "../types/province";
 import { ProvinceNotFoundException } from "../exceptions/province-not-found.exception";
@@ -42,10 +42,13 @@ export class ProvincesService {
   }
 
   async findAll(
-    query: PaginationHttpDto,
+    query: FindAllProvincesHttpDto,
   ): Promise<PaginatedResult<PrimitiveProvince>> {
     const filter = new CatalogPaginationFilter({ ...query });
-    const page = await this.provinces_repository.find_all(filter);
+    const cod_ccaa = query.cod_ccaa?.trim();
+    const page = await this.provinces_repository.find_all(filter, {
+      cod_ccaa: cod_ccaa || undefined,
+    });
     return page.map((province) => province.toPrimitives());
   }
 
