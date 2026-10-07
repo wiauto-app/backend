@@ -64,11 +64,6 @@ services:
     env_file:
       - .env
 
-    # Si no necesitas acceso externo a PostgreSQL,
-    # puedes eliminar completamente este bloque.
-    ports:
-      - "5434:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql
 
