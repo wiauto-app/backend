@@ -126,6 +126,16 @@ describe("VehicleService.findOne with detail cache", () => {
       findOne: vi.fn(async (_id: string, profileId?: string) =>
         buildDetail(profileId === ownerId ? "600000000" : null),
       ),
+      findSellerContactFields: vi.fn(async () => ({
+        id: vehicleId,
+        ref: null,
+        has_whatsapp: false,
+        show_phone: true,
+        phone_code: "+34",
+        phone: "600000000",
+        email: "seller@example.com",
+        profile_id: ownerId,
+      })),
     };
     const args: unknown[] = Array.from({ length: VEHICLE_SERVICE_ARGS }, () => ({}));
     args[0] = vehicleRepository;
@@ -144,6 +154,9 @@ describe("VehicleService.findOne with detail cache", () => {
 
     expect(vehicleRepository.findOne).toHaveBeenCalledTimes(1);
     expect(second.phone).toBeNull();
+    expect(second.show_phone).toBe(true);
+    expect(second.show_whatsapp).toBe(false);
+    expect(vehicleRepository.findSellerContactFields).toHaveBeenCalled();
   });
 
   it("returns a fresh detail with the phone to the owner", async () => {

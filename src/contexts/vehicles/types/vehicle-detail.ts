@@ -52,6 +52,8 @@ export interface VehicleDetail extends VehicleListItem {
   phone?: string | null;
   has_whatsapp: boolean;
   show_phone: boolean;
+  /** Teléfono y WhatsApp contactables (teléfono registrado + preferencias del anuncio). */
+  show_whatsapp: boolean;
   email: string;
   profile_id: string;
   suggestions: string[];

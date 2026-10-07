@@ -93,6 +93,7 @@ import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/serv
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { VehicleDetailCacheService } from "./vehicle-detail-cache.service";
+import { resolveVehicleContactVisibility } from "../helpers/public-vehicle-contact";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -209,15 +210,15 @@ export class VehicleService {
     }
 
     const isOwner = Boolean(profile_id) && publicVehicle.profile_id === profile_id;
-    if (!isOwner) {
-      return publicVehicle;
-    }
+    const vehicle = isOwner
+      ? await this.vehicle_repository.findOne(vehicleId, profile_id)
+      : publicVehicle;
 
-    const ownerVehicle = await this.vehicle_repository.findOne(vehicleId, profile_id);
-    if (!ownerVehicle) {
+    if (!vehicle) {
       throw new VehicleNotFoundException(vehicleId);
     }
-    return ownerVehicle;
+
+    return this.withResolvedContactVisibility(vehicle, isOwner);
   }
 
   async findActiveIdByRef(ref: string | number): Promise<{ id: string }> {
@@ -236,6 +237,28 @@ export class VehicleService {
       throw new VehicleNotFoundException(id);
     }
     return fields;
+  }
+
+  private async withResolvedContactVisibility(
+    vehicle: VehicleDetail,
+    isOwner: boolean,
+  ): Promise<VehicleDetail> {
+    const visibility = isOwner
+      ? resolveVehicleContactVisibility({
+          show_phone: vehicle.show_phone,
+          has_whatsapp: vehicle.has_whatsapp,
+          phone_code: vehicle.phone_code,
+          phone: vehicle.phone,
+        })
+      : resolveVehicleContactVisibility(
+          await this.findSellerContactFields(vehicle.id),
+        );
+
+    return {
+      ...vehicle,
+      show_phone: visibility.show_phone,
+      show_whatsapp: visibility.show_whatsapp,
+    };
   }
 
   async findAll(

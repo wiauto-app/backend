@@ -61,6 +61,7 @@ import { OwnerVehicleListItem } from "../types/owner-vehicle-list-item";
 import { LeadEntity } from "../entities/lead.entity";
 import { VehicleReport } from "../types/vehicle-report";
 import { CONTACT_CLICK_TYPE } from "../types/contact-click";
+import { resolveVehicleContactVisibility } from "../helpers/public-vehicle-contact";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import {
   buildStatTrend,
@@ -284,6 +285,12 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
   const dealership = dealership_members.find(
     (member) => member.profile_id === entity.profile.id,
   )?.dealership;
+  const contactVisibility = resolveVehicleContactVisibility({
+    show_phone: entity.show_phone,
+    has_whatsapp: entity.has_whatsapp,
+    phone_code: entity.phone_code,
+    phone: entity.phone,
+  });
 
   return {
     ...base,
@@ -319,6 +326,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     phone: entity.profile.id === profile_id ? entity.phone : null,
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
+    show_whatsapp: contactVisibility.show_whatsapp,
     email: entity.email,
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
