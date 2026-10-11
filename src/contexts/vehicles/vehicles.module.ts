@@ -109,6 +109,10 @@ import { VehicleFiltersService } from "./services/vehicle-filters.service";
 import { OwnerDashboardService } from "./services/owner-dashboard.service";
 import { VehicleCreatorModule } from "./vehicle-creator/vehicle-creator.module";
 import { VehicleEngagementModule } from "./vehicle-engagement/vehicle-engagement.module";
+import { VehicleSearchHistoryModule } from "./search-history/vehicle-search-history.module";
+import { FindVehicleSearchHistoryController } from "./search-history/api/v1/find-vehicle-search-history/find-vehicle-search-history.controller";
+import { RemoveVehicleSearchHistoryController } from "./search-history/api/v1/remove-vehicle-search-history/remove-vehicle-search-history.controller";
+import { ClearVehicleSearchHistoryController } from "./search-history/api/v1/clear-vehicle-search-history/clear-vehicle-search-history.controller";
 import { User } from "../users/entities/user.entity";
 import { VehicleImagesEntity } from "./vehicle-images/entities/vehicle-images.entity";
 import { VideosEntity } from "./entities/videos.entity";
@@ -124,6 +128,10 @@ import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive
 
 @Module({
   controllers: [
+    // Rutas estáticas de /v1/vehicles/search-history antes de /v1/vehicles/:id.
+    FindVehicleSearchHistoryController,
+    RemoveVehicleSearchHistoryController,
+    ClearVehicleSearchHistoryController,
     CreateVehicleController,
     FindOwnerVehiclesController,
     GetVehicleReportController,
@@ -254,6 +262,7 @@ import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive
     forwardRef(() => AlertsModule),
     forwardRef(() => ProactiveAlertsModule),
     VehicleEngagementModule,
+    VehicleSearchHistoryModule,
     VehicleSearchModule],
   exports: [
     VehicleService,

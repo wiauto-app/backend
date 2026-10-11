@@ -37,7 +37,7 @@ async function bootstrap() {
         callback(new Error(`Origen ${origin} no permitido por CORS`));
       }
     },
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Record-Search'],
     exposedHeaders: ['Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
