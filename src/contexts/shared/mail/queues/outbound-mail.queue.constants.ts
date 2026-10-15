@@ -322,6 +322,14 @@ export interface OutboundMailFeaturedPurchasedJobData {
   vehicle_edit_url: string;
 }
 
+export const OUTBOUND_MAIL_JOB_REFERRAL_REWARD = "referral_reward";
+
+export interface OutboundMailReferralRewardJobData {
+  to: string;
+  duration_days: number;
+  listings_url: string;
+}
+
 export const OUTBOUND_MAIL_JOB_FEATURED_EXPIRED = "featured_expired";
 
 export interface OutboundMailFeaturedExpiredJobData {

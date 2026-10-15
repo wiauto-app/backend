@@ -156,6 +156,27 @@ export class MailTemplateRenderer {
     });
   }
 
+  renderReferralReward(payload: {
+    duration_days: number;
+    listings_url: string;
+  }): string {
+    const body = `<p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ¡Buenas noticias! Un amigo al que invitaste ha publicado su primer anuncio en WiAuto.
+      </p>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Has ganado <strong>1 cupón de destacado gratis</strong> (${payload.duration_days} días) para uno de tus anuncios.
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Has ganado un destacado gratis por invitar a un amigo.",
+      title: "¡Destacado gratis desbloqueado!",
+      body,
+      cta_label: "Ir a mis anuncios",
+      cta_href: payload.listings_url,
+      footer_note: "Canjea el cupón en el anuncio que elijas desde Mis anuncios.",
+    });
+  }
+
   renderUserWelcome(payload: { name?: string; home_url: string }): string {
     const greeting = payload.name
       ? `Hola ${this.escapeHtml(payload.name)},`

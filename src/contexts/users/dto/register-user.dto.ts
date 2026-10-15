@@ -22,4 +22,8 @@ export class RegisterUserDto {
   @IsString()
   @IsNotEmpty()
   phone: string;
+
+  @IsOptional()
+  @IsString()
+  referral_code?: string;
 }

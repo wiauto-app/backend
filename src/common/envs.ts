@@ -106,6 +106,37 @@ const envsSchema = z.object({
   SUPPORT_TICKETS_THROTTLE_LIMIT: z.coerce.number().default(5),
   SUPPORT_TICKETS_THROTTLE_TTL_MS: z.coerce.number().default(60_000),
 
+  // Subidas temporales de fotos de invitados (sin sesión); 2 peticiones por foto
+  GUEST_TEMP_UPLOAD_THROTTLE_LIMIT: z.coerce.number().default(100),
+  GUEST_TEMP_UPLOAD_THROTTLE_TTL_MS: z.coerce.number().default(600_000),
+
+  // Formulario de publicación para invitados (sin sesión). Por IP y por endpoint.
+  /** Endpoints con coste LLM (precio recomendado, descripción IA). */
+  GUEST_PUBLISH_AI_THROTTLE_LIMIT: z.coerce.number().default(15),
+  GUEST_PUBLISH_AI_THROTTLE_TTL_MS: z.coerce.number().default(3_600_000),
+  /**
+   * Ficha técnica por versión: se dispara al cambiar de versión; cacheada en Redis
+   * pero en caché fría la infiere un LLM con búsqueda web, de ahí la ventana de 1 h.
+   */
+  GUEST_PUBLISH_LOOKUP_THROTTLE_LIMIT: z.coerce.number().default(30),
+  GUEST_PUBLISH_LOOKUP_THROTTLE_TTL_MS: z.coerce.number().default(3_600_000),
+
+  /**
+   * Valor de Express `trust proxy`. "false" desactiva; número = saltos de proxy;
+   * o lista de IPs/subredes/presets (loopback, linklocal, uniquelocal).
+   * Por defecto solo confía en proxies de red privada (Docker, LB interno): un
+   * cliente público directo no puede falsear X-Forwarded-For.
+   */
+  TRUST_PROXY: z.string().default("loopback, linklocal, uniquelocal"),
+  /**
+   * Cabecera opcional con la IP real del cliente (p. ej. "cf-connecting-ip" tras
+   * Cloudflare). Solo activarla si el origen únicamente acepta tráfico de ese proxy.
+   */
+  CLIENT_IP_HEADER: z
+    .string()
+    .default("")
+    .transform((val) => val.trim().toLowerCase()),
+
   APIVEHICULO_API_KEY: z.string(),
   APIVEHICULO_BASE_URL: z
     .string(),

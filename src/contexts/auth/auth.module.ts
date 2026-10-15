@@ -50,6 +50,7 @@ import { DealershipInvitationModule } from "../dealership/modules/dealership-inv
 import { BillingModule } from "../billing/billing.module";
 import { VehicleSearchModule } from "../vehicles/search/vehicle-search.module";
 import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
+import { ReferralsModule } from "../referrals/referrals.module";
 
 @Module({
   controllers: [
@@ -110,8 +111,9 @@ import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
       VehicleEntity,
     ]),
     BullModule.registerQueue({ name: EMAIL_VERIFICATION_QUEUE }),
-    BillingModule,
+    forwardRef(() => BillingModule),
     VehicleSearchModule,
+    forwardRef(() => ReferralsModule),
   ],
   exports: [
     JwtGuard,

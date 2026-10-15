@@ -1,6 +1,12 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { EntityManager, In, IsNull, MoreThan, Repository } from "typeorm";
 
 import { TemporaryUploadEntity } from "@/src/contexts/shared/file/entities/temporary-upload.entity";
 import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
@@ -13,6 +19,19 @@ import {
 } from "../api/v1/temp-upload/create-temp-upload.http-dto";
 import { ConfirmTempUploadResponseDto } from "../api/v1/temp-upload/confirm-temp-upload.http-dto";
 
+/**
+ * Dueño de un upload temporal: perfil autenticado o invitado (cookie `wiauto_guest_id`).
+ * Al crear se usa `profileId` si existe; si no, `guestId`.
+ */
+export interface TempUploadOwner {
+  profileId: string | null;
+  guestId: string | null;
+}
+
+const PENDING_UPLOAD_TTL_MS = 60 * 20 * 1000; // 20 minutos para subir el archivo
+const CONFIRMED_UPLOAD_TTL_SEC = 60 * 60 * 24; // 24h para reclamarlo al publicar
+const MAX_ACTIVE_GUEST_UPLOADS = 30;
+
 @Injectable()
 export class TempUploadService {
   constructor(
@@ -22,9 +41,15 @@ export class TempUploadService {
   ) {}
 
   async createTempUpload(
-    profileId: string,
+    owner: TempUploadOwner,
     dto: CreateTempUploadHttpDto,
   ): Promise<CreateTempUploadResponseDto> {
+    const profileId = owner.profileId;
+    const guestId = profileId ? null : owner.guestId;
+    if (!profileId && !guestId) {
+      throw new BadRequestException("No se pudo identificar al dueño del upload");
+    }
+
     // Validar MIME
     if (!ALLOWED_VEHICLE_IMAGE_MIMES.includes(dto.mime_type as never)) {
       throw new BadRequestException(
@@ -40,10 +65,16 @@ export class TempUploadService {
       );
     }
 
+    if (guestId) {
+      await this.assertGuestUploadCapacity(guestId);
+    }
+
     // Generar upload_id y storage_path
     const uploadId = uuidv4();
     const ext = this.getExtensionFromMime(dto.mime_type);
-    const fileKey = `temp/${profileId}/${uploadId}${ext}`;
+    const fileKey = profileId
+      ? `temp/${profileId}/${uploadId}${ext}`
+      : `temp/guest/${guestId}/${uploadId}${ext}`;
     const storagePath = `${STORAGE_DIRECTORIES.VEHICLES_IMAGES}/${fileKey}`;
 
     // Generar signed URL con 20 minutos de validez
@@ -55,10 +86,11 @@ export class TempUploadService {
     );
 
     // Crear registro en BD
-    const expiresAt = new Date(Date.now() + 60 * 20 * 1000); // 20 minutos
+    const expiresAt = new Date(Date.now() + PENDING_UPLOAD_TTL_MS);
     const tempUpload = this.tempUploadRepo.create({
       id: uploadId,
       profile_id: profileId,
+      guest_id: guestId,
       storage_path: storagePath,
       mime_type: dto.mime_type,
       size_bytes: dto.size_bytes,
@@ -78,14 +110,14 @@ export class TempUploadService {
 
   async confirmTempUpload(
     uploadId: string,
-    profileId: string,
+    owner: TempUploadOwner,
   ): Promise<ConfirmTempUploadResponseDto> {
     // Buscar el temporary upload
     const tempUpload = await this.tempUploadRepo.findOne({
-      where: { id: uploadId, profile_id: profileId },
+      where: { id: uploadId },
     });
 
-    if (!tempUpload) {
+    if (!tempUpload || !this.isOwnedBy(tempUpload, owner)) {
       throw new NotFoundException("Upload temporal no encontrado");
     }
 
@@ -109,26 +141,42 @@ export class TempUploadService {
       );
     }
 
-    // Actualizar estado a uploaded
+    // Actualizar estado a uploaded y extender la vida útil a 24h
+    // para que el borrador sobreviva a recargas y al login
+    const expiresAt = new Date(Date.now() + CONFIRMED_UPLOAD_TTL_SEC * 1000);
     await this.tempUploadRepo.update(uploadId, {
       status: "uploaded",
+      expires_at: expiresAt,
     });
+
+    const previewUrl = await this.objectStorageService.generateReadUrl(
+      STORAGE_DIRECTORIES.VEHICLES_IMAGES,
+      this.toRelativeFileKey(tempUpload.storage_path),
+      CONFIRMED_UPLOAD_TTL_SEC,
+    );
 
     return {
       success: true,
       upload_id: uploadId,
+      preview_url: previewUrl,
+      expires_at: expiresAt.toISOString(),
     };
   }
 
+  /**
+   * Valida un upload para usarlo en un vehículo. Se acepta si pertenece al perfil
+   * o si es de invitado (sin perfil) y su guest_id coincide con la cookie.
+   */
   async validateAndGetTempUpload(
     uploadId: string,
     profileId: string,
+    guestId: string | null = null,
   ): Promise<TemporaryUploadEntity> {
     const tempUpload = await this.tempUploadRepo.findOne({
-      where: { id: uploadId, profile_id: profileId },
+      where: { id: uploadId },
     });
 
-    if (!tempUpload) {
+    if (!tempUpload || !this.isOwnedBy(tempUpload, { profileId, guestId })) {
       throw new BadRequestException(
         `Upload temporal ${uploadId} no encontrado o no pertenece al usuario`,
       );
@@ -162,6 +210,64 @@ export class TempUploadService {
       { id: In(uploadIds) },
       { status: "consumed" },
     );
+  }
+
+  /**
+   * Asigna al perfil los uploads de invitado validados. Debe ejecutarse dentro
+   * de la transacción de creación del vehículo.
+   */
+  async claimGuestUploads(
+    manager: EntityManager,
+    uploadIds: string[],
+    profileId: string,
+    guestId: string,
+  ): Promise<void> {
+    if (uploadIds.length === 0) return;
+
+    await manager.update(
+      TemporaryUploadEntity,
+      { id: In(uploadIds), profile_id: IsNull(), guest_id: guestId },
+      { profile_id: profileId },
+    );
+  }
+
+  private isOwnedBy(
+    tempUpload: TemporaryUploadEntity,
+    owner: TempUploadOwner,
+  ): boolean {
+    if (owner.profileId && tempUpload.profile_id === owner.profileId) {
+      return true;
+    }
+    return (
+      tempUpload.profile_id === null &&
+      owner.guestId !== null &&
+      tempUpload.guest_id === owner.guestId
+    );
+  }
+
+  private async assertGuestUploadCapacity(guestId: string): Promise<void> {
+    const activeUploads = await this.tempUploadRepo.count({
+      where: {
+        guest_id: guestId,
+        profile_id: IsNull(),
+        status: In(["pending_upload", "uploaded"]),
+        expires_at: MoreThan(new Date()),
+      },
+    });
+
+    if (activeUploads >= MAX_ACTIVE_GUEST_UPLOADS) {
+      throw new HttpException(
+        `Has alcanzado el máximo de ${MAX_ACTIVE_GUEST_UPLOADS} fotos sin iniciar sesión. Inicia sesión para continuar`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private toRelativeFileKey(storagePath: string): string {
+    const prefix = `${STORAGE_DIRECTORIES.VEHICLES_IMAGES}/`;
+    return storagePath.startsWith(prefix)
+      ? storagePath.slice(prefix.length)
+      : storagePath;
   }
 
   private async checkFileExists(storagePath: string): Promise<boolean> {

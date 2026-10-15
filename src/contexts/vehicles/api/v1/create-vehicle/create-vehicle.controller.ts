@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Request } from "express";
+import { readGuestId } from "@/src/contexts/vehicles/vehicle-images/guest/guest-upload-identity";
 
 import { V1_VEHICLES } from "../../route.constants";
 import { CreateVehicleDto } from "./create-vehicle.http-dto";
@@ -26,6 +27,7 @@ export class CreateVehicleController {
     if (!user) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
-    return this.create_vehicle_service.create(dto, user.id);
+    // Permite reclamar las fotos subidas como invitado antes del login
+    return this.create_vehicle_service.create(dto, user.id, readGuestId(req));
   }
 }

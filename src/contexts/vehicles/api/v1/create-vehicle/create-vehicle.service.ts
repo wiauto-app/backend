@@ -51,6 +51,7 @@ import {
   VehicleMediaDto,
 } from "./create-vehicle.http-dto";
 import { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
+import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
 
 export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
 
@@ -111,9 +112,14 @@ export class CreateVehicleService {
     private readonly imageQueue: Queue<ProcessVehicleImageJob>,
     private readonly tempUploadService: TempUploadService,
     private readonly vehicleDetailCache: VehicleDetailCacheService,
+    private readonly referrals_service: ReferralsService,
   ) { }
 
-  async create(dto: CreateVehicleDto, publisher_profile_id: string) {
+  async create(
+    dto: CreateVehicleDto,
+    publisher_profile_id: string,
+    guest_id: string | null = null,
+  ) {
     const version_id = dto.version_id;
     if (!Number.isInteger(version_id) || version_id < 1) {
       throw new InvalidateVehicleVersionIdException();
@@ -175,6 +181,7 @@ export class CreateVehicleService {
             this.tempUploadService.validateAndGetTempUpload(
               img.upload_id,
               publisher_profile_id,
+              guest_id,
             ),
           ),
         );
@@ -270,6 +277,19 @@ export class CreateVehicleService {
             imageEntities,
           );
           enqueuedImageIds.push(...savedImages.map(img => img.id));
+
+          // Uploads subidos como invitado: pasan a ser del publicador
+          const guestUploadIds = validatedTempUploads
+            .filter(upload => upload.profile_id === null)
+            .map(upload => upload.id);
+          if (guest_id && guestUploadIds.length > 0) {
+            await this.tempUploadService.claimGuestUploads(
+              manager,
+              guestUploadIds,
+              publisher_profile_id,
+              guest_id,
+            );
+          }
 
           await this.tempUploadService.markAsConsumed(
             async_images.map(img => img.upload_id),
@@ -367,6 +387,13 @@ export class CreateVehicleService {
     await this.vehicleDetailCache.refresh(createdVehicleId, () =>
       this.vehicle_repository.findOne(createdVehicleId),
     );
+
+    void this.referrals_service
+      .rewardIfEligible(publisher_profile_id)
+      .catch((error: unknown) => {
+        // No bloquear la publicación si falla la recompensa por invitación.
+        console.error("referral reward failed", error);
+      });
 
     return {
       id: vehicle.id,

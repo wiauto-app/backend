@@ -125,6 +125,7 @@ import { VehicleSitemapListController } from "./api/v1/vehicle-sitemap-list/vehi
 import { VehicleSitemapListService } from "./api/v1/vehicle-sitemap-list/vehicle-sitemap-list.service";
 import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.service";
 import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive-alerts.module";
+import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
 
 @Module({
   controllers: [
@@ -263,7 +264,9 @@ import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive
     forwardRef(() => ProactiveAlertsModule),
     VehicleEngagementModule,
     VehicleSearchHistoryModule,
-    VehicleSearchModule],
+    VehicleSearchModule,
+    forwardRef(() => ReferralsModule),
+  ],
   exports: [
     VehicleService,
     TypeOrmVehicleRepository,

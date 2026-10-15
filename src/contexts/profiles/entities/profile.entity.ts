@@ -75,6 +75,9 @@ export class ProfileEntity {
   @Column({ nullable: true })
   image_url?: string;
 
+  @Column({ name: "referral_code", type: "varchar", nullable: true, unique: true })
+  referral_code: string | null;
+
   @Column({ type: "int", nullable: true })
   province_id:number | null;
 

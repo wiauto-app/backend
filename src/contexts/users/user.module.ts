@@ -18,6 +18,7 @@ import { AdminUsersController } from "./api/admin-v1/admin-users.controller";
 import { AdminUserService } from "./services/admin-user.service";
 import { AdminSuspensionController } from "./api/admin-v1/admin-suspension.controller";
 import { AdminSuspensionService } from "./services/admin-suspension.service";
+import { ReferralsModule } from "../referrals/referrals.module";
 
 @Module({
   controllers: [UsersController, UserSuspensionsController, AdminUsersController, AdminSuspensionController],
@@ -27,6 +28,7 @@ import { AdminSuspensionService } from "./services/admin-suspension.service";
     ProfileModule,
     forwardRef(() => AuthModule),
     forwardRef(() => BillingModule),
+    forwardRef(() => ReferralsModule),
   ],
   exports: [UserService, UserAuthProviderService, UserMailService, SuspensionService],
 })

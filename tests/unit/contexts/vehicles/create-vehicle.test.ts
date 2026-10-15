@@ -55,6 +55,7 @@ interface CreateVehicleServiceTestDeps {
   image_queue?: object;
   temp_upload?: object;
   detail_cache?: object;
+  referrals_service?: object;
 }
 
 const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
@@ -89,6 +90,9 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     }) as never,
     (deps.detail_cache ?? {
       refresh: vi.fn().mockResolvedValue(undefined),
+    }) as never,
+    (deps.referrals_service ?? {
+      rewardIfEligible: vi.fn().mockResolvedValue(undefined),
     }) as never,
   );
 
@@ -165,7 +169,21 @@ describe("CreateVehicleController", () => {
 
     await controller.run(dto, { user: { id: "profile-id" } } as never);
 
-    expect(create).toHaveBeenCalledWith(dto, "profile-id");
+    expect(create).toHaveBeenCalledWith(dto, "profile-id", null);
+  });
+
+  it("forwards a valid guest cookie so temp uploads can be claimed", async () => {
+    const create = vi.fn().mockResolvedValue({ vehicle: { id: "vehicle-id" } });
+    const controller = new CreateVehicleController({ create } as never);
+    const dto = validDto();
+    const guest_id = "3f2b8c1e-4d5a-4b6c-9e7f-1a2b3c4d5e6f";
+
+    await controller.run(dto, {
+      user: { id: "profile-id" },
+      cookies: { wiauto_guest_id: guest_id },
+    } as never);
+
+    expect(create).toHaveBeenCalledWith(dto, "profile-id", guest_id);
   });
 
   it("rejects a missing authenticated user", () => {

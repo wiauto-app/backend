@@ -23,7 +23,9 @@ import { PdfExportModule } from "../contexts/shared/pdf-export/pdf-export.module
 import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
+import { resolveClientIp } from "../common/client-ip";
 import { ThrottlerModule } from "@nestjs/throttler";
+import type { Request } from "express";
 import { FileModule } from "../contexts/shared/file/file.module";
 import { DealershipModule } from "../contexts/dealership/dealership.module";
 import { DealershipReviewsModule } from "../contexts/dealership/modules/dealership-reviews.module";
@@ -46,6 +48,7 @@ import { UserBlocksModule } from "../contexts/user-blocks/user-blocks.module";
 import { GenericLeadsModule } from "../contexts/leads/leads.module";
 import { LeadAssistantModule } from "../contexts/lead-assistant/lead-assistant.module";
 import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-alerts.module";
+import { ReferralsModule } from "../contexts/referrals/referrals.module";
 
 @Module({
   imports: [
@@ -89,7 +92,10 @@ import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-al
     GenericLeadsModule,
     LeadAssistantModule,
     ProactiveAlertsModule,
+    ReferralsModule,
     ThrottlerModule.forRoot({
+      // IP real (trust proxy / CLIENT_IP_HEADER) en vez de la del proxy o LB
+      getTracker: req => resolveClientIp(req as Request),
       throttlers: [
         {
           name: "vehicle-ai",
@@ -110,6 +116,30 @@ import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-al
           name: "vehicle-identification",
           ttl: envs.VEHICLE_IDENTIFICATION_THROTTLE_TTL_MS,
           limit: envs.VEHICLE_IDENTIFICATION_THROTTLE_LIMIT,
+        },
+        {
+          name: "guest-temp-upload",
+          ttl: envs.GUEST_TEMP_UPLOAD_THROTTLE_TTL_MS,
+          limit: envs.GUEST_TEMP_UPLOAD_THROTTLE_LIMIT,
+          // Solo limita a invitados: los usuarios autenticados no cuentan
+          skipIf: context =>
+            Boolean(context.switchToHttp().getRequest<Request>().user),
+        },
+        {
+          // Formulario de publicación de invitados: endpoints con coste LLM
+          name: "guest-publish-ai",
+          ttl: envs.GUEST_PUBLISH_AI_THROTTLE_TTL_MS,
+          limit: envs.GUEST_PUBLISH_AI_THROTTLE_LIMIT,
+          skipIf: context =>
+            Boolean(context.switchToHttp().getRequest<Request>().user),
+        },
+        {
+          // Formulario de publicación de invitados: ficha técnica por versión
+          name: "guest-publish-lookup",
+          ttl: envs.GUEST_PUBLISH_LOOKUP_THROTTLE_TTL_MS,
+          limit: envs.GUEST_PUBLISH_LOOKUP_THROTTLE_LIMIT,
+          skipIf: context =>
+            Boolean(context.switchToHttp().getRequest<Request>().user),
         },
       ],
     }),

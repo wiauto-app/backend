@@ -8,6 +8,8 @@ import passport from "passport";
 import compression from "compression";
 
 import { AppModule } from "@/app/app.module";
+import { parseTrustProxy } from "@/src/common/client-ip";
+import { envs } from "@/src/common/envs";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 
@@ -24,6 +26,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+
+  // 0. IP real del cliente detrás de proxy/LB (rate limiting por IP de invitados).
+  app.set("trust proxy", parseTrustProxy(envs.TRUST_PROXY));
 
   // 1. Fundamental para leer las cookies de Next.js
   app.use(cookieParser());

@@ -1,5 +1,5 @@
 import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { SkipThrottle, Throttle, ThrottlerGuard } from "@nestjs/throttler";
 
 import { envs } from "@/src/common/envs";
 import { GetOptionalUserId } from "@/src/contexts/auth/decorators/GetOptionalUserId.decorator";
@@ -11,6 +11,11 @@ import { CreateTicketHttpDto } from "./create-ticket.http-dto";
 
 @Controller(V1_TICKETS)
 @UseGuards(OptionalJwtGuard, ThrottlerGuard)
+@SkipThrottle({
+  "guest-temp-upload": true,
+  "guest-publish-ai": true,
+  "guest-publish-lookup": true,
+})
 @Throttle({
   "support-tickets": {
     limit: envs.SUPPORT_TICKETS_THROTTLE_LIMIT,

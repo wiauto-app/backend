@@ -27,6 +27,7 @@ import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/t
 import { UserAuthProviderService } from "./user-auth-provider.service";
 import { authResponseConfig } from "../../auth/response.config";
 import { comparePassword, hashPassword } from "../../auth/utils/passwordUtils";
+import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
 
 interface FindOrCreateOAuthUserProfile {
   provider: OAuthProvider;
@@ -51,6 +52,7 @@ export class UserService {
     @Inject(forwardRef(() => EmailVerificationService))
     private readonly emailVerificationService: EmailVerificationService,
     private readonly authSecurityMailService: AuthSecurityMailService,
+    private readonly referralsService: ReferralsService,
   ) { }
 
   async create(registerUserDto: RegisterUserDto): Promise<ApiResponse<User>> {
@@ -84,6 +86,13 @@ export class UserService {
       phone_code: registerUserDto.phone_code,
       phone,
     });
+
+    if (registerUserDto.referral_code) {
+      await this.referralsService.attributeOnRegister(
+        user.id,
+        registerUserDto.referral_code,
+      );
+    }
 
     void this.emailVerificationService
       .enqueueSendVerificationForUser(user.id, user.email)

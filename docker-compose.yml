@@ -58,9 +58,9 @@ services:
     ports:
       - "5434:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: wiautopassword
-      POSTGRES_DB: wiauto
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
     env_file:
       - .env
@@ -75,7 +75,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U postgres -d wiauto"
+          "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""
         ]
       interval: 5s
       timeout: 5s

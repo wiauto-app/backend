@@ -17,8 +17,12 @@ export class TemporaryUploadEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: "uuid" })
-  profile_id: string;
+  @Column({ type: "uuid", nullable: true })
+  profile_id: string | null;
+
+  /** Cookie `wiauto_guest_id` del invitado que subió el archivo sin sesión. */
+  @Column({ type: "uuid", nullable: true })
+  guest_id: string | null;
 
   @Column()
   storage_path: string;

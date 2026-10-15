@@ -19,6 +19,9 @@ import { AiSearchFiltersHttpDto } from "./ai-search-filters.http-dto";
   "vehicle-ai": true,
   "support-tickets": true,
   "vehicle-identification": true,
+  "guest-temp-upload": true,
+  "guest-publish-ai": true,
+  "guest-publish-lookup": true,
 })
 @Throttle({
   "ai-search-filters": {

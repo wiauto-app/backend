@@ -26,6 +26,7 @@ import {
   OUTBOUND_MAIL_JOB_SUBSCRIPTION_PLAN_CHANGED,
   OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
+  OUTBOUND_MAIL_JOB_REFERRAL_REWARD,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
   OUTBOUND_MAIL_JOB_USER_WELCOME,
   OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED,
@@ -68,6 +69,7 @@ import {
   OutboundMailSubscriptionPlanChangedJobData,
   OutboundMailListingLimitReachedJobData,
   OutboundMailFeaturedPurchasedJobData,
+  OutboundMailReferralRewardJobData,
   OutboundMailFeaturedExpiredJobData,
   OutboundMailUserWelcomeJobData,
   OutboundMailNewUserRegisteredJobData,
@@ -224,6 +226,12 @@ export class OutboundMailEnqueueService {
       OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
       data,
     );
+  }
+
+  async enqueue_referral_reward(
+    data: OutboundMailReferralRewardJobData,
+  ): Promise<void> {
+    await this.outbound_mail_queue.add(OUTBOUND_MAIL_JOB_REFERRAL_REWARD, data);
   }
 
   async enqueue_featured_expired(

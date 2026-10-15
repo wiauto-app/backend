@@ -652,6 +652,31 @@ export class MailService {
     }
   }
 
+  async sendReferralRewardEmail(payload: {
+    to: string;
+    duration_days: number;
+    listings_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderReferralReward({
+      duration_days: payload.duration_days,
+      listings_url: payload.listings_url,
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Has ganado un destacado gratis en WiAuto",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de recompensa por invitación a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendFeaturedPurchasedEmail(payload: {
     to: string;
     vehicle_title: string;
