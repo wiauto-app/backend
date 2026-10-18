@@ -49,6 +49,7 @@ import { GenericLeadsModule } from "../contexts/leads/leads.module";
 import { LeadAssistantModule } from "../contexts/lead-assistant/lead-assistant.module";
 import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-alerts.module";
 import { ReferralsModule } from "../contexts/referrals/referrals.module";
+import { AnalyticsModule } from "../contexts/analytics/analytics.module";
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { ReferralsModule } from "../contexts/referrals/referrals.module";
     LeadAssistantModule,
     ProactiveAlertsModule,
     ReferralsModule,
+    AnalyticsModule,
     ThrottlerModule.forRoot({
       // IP real (trust proxy / CLIENT_IP_HEADER) en vez de la del proxy o LB
       getTracker: req => resolveClientIp(req as Request),

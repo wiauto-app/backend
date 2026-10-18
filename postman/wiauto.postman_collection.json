@@ -231,6 +231,33 @@
   ],
   "item": [
     {
+      "name": "analytics",
+      "item": [
+        {
+          "name": "Registro analítico (CompleteRegistration)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"evt-registro-1\",\n  \"pageUrl\": \"https://wiauto.es/publicar\",\n  \"consent\": true,\n  \"method\": \"email\"\n}"
+            },
+            "url": "{{base_url}}/v1/analytics/registration",
+            "description": "JWT. 204. Solo envía CompleteRegistration a Meta CAPI si consent es true. No persiste el body."
+          }
+        }
+      ]
+    },
+    {
       "name": "auth",
       "item": [
         {
@@ -2673,7 +2700,7 @@
                   ]
                 },
                 "url": "{{base_url}}/v1/vehicles",
-                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes)."
+                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes). Opcional `tracking` (no se persiste): eventId, pageUrl, consent, fbp, fbc, vehicleDataEventId."
               },
               "response": [
                 {

@@ -115,6 +115,22 @@ describe("CreateVehicleDto", () => {
     const errors = await validate(dto);
     expect(errors.some(error => error.property === "price")).toBe(true);
   });
+
+  it("acepta tracking opcional y sigue valiendo sin él", async () => {
+    expect(await validate(validDto())).toHaveLength(0);
+
+    const dto = plainToInstance(CreateVehicleDto, {
+      ...plainToInstance(CreateVehicleDto, validDto()),
+      tracking: {
+        eventId: "evt-1",
+        pageUrl: "https://wiauto.es/publicar",
+        consent: true,
+        vehicleDataEventId: "evt-datos",
+      },
+    });
+
+    expect(await validate(dto)).toHaveLength(0);
+  });
 });
 
 describe("vehicle creation rules", () => {
@@ -161,20 +177,33 @@ describe("vehicle creation rules", () => {
   });
 });
 
+const buildCreateVehicleController = (
+  create: ReturnType<typeof vi.fn>,
+  capi?: { sendAfterVehicleCreated: ReturnType<typeof vi.fn> },
+) =>
+  new CreateVehicleController(
+    { create } as never,
+    (capi ?? { sendAfterVehicleCreated: vi.fn() }) as never,
+  );
+
 describe("CreateVehicleController", () => {
   it("delegates the validated dto and authenticated profile id", async () => {
-    const create = vi.fn().mockResolvedValue({ vehicle: { id: "vehicle-id" } });
-    const controller = new CreateVehicleController({ create } as never);
+    const create = vi.fn().mockResolvedValue({ id: "vehicle-id" });
+    const sendAfterVehicleCreated = vi.fn();
+    const controller = buildCreateVehicleController(create, {
+      sendAfterVehicleCreated,
+    });
     const dto = validDto();
 
     await controller.run(dto, { user: { id: "profile-id" } } as never);
 
     expect(create).toHaveBeenCalledWith(dto, "profile-id", null);
+    expect(sendAfterVehicleCreated).toHaveBeenCalledOnce();
   });
 
   it("forwards a valid guest cookie so temp uploads can be claimed", async () => {
-    const create = vi.fn().mockResolvedValue({ vehicle: { id: "vehicle-id" } });
-    const controller = new CreateVehicleController({ create } as never);
+    const create = vi.fn().mockResolvedValue({ id: "vehicle-id" });
+    const controller = buildCreateVehicleController(create);
     const dto = validDto();
     const guest_id = "3f2b8c1e-4d5a-4b6c-9e7f-1a2b3c4d5e6f";
 
@@ -186,12 +215,10 @@ describe("CreateVehicleController", () => {
     expect(create).toHaveBeenCalledWith(dto, "profile-id", guest_id);
   });
 
-  it("rejects a missing authenticated user", () => {
-    const controller = new CreateVehicleController({
-      create: vi.fn(),
-    } as never);
+  it("rejects a missing authenticated user", async () => {
+    const controller = buildCreateVehicleController(vi.fn());
 
-    expect(() => controller.run(validDto(), {} as never)).toThrow(
+    await expect(controller.run(validDto(), {} as never)).rejects.toThrow(
       UnauthorizedException,
     );
   });

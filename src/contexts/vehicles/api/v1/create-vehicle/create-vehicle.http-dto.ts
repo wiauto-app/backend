@@ -25,6 +25,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from "class-validator";
+import { VehiclePublishTrackingHttpDto } from "@/src/contexts/analytics/dto/vehicle-publish-tracking.http-dto";
 import { VehicleMediaHttpDto } from "./vehicleMedia.http-dto";
 import { VehicleImageHttpDto } from "./vehicleImageUploadId.http-dto";
 
@@ -226,4 +227,9 @@ export class CreateVehicleDto {
   @ValidateNested({ each: true })
   @Type(() => VehicleMediaHttpDto)
   videos?: VehicleMediaHttpDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => VehiclePublishTrackingHttpDto)
+  tracking?: VehiclePublishTrackingHttpDto;
 }

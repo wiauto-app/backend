@@ -450,6 +450,7 @@ const NON_PATCHABLE_VEHICLE_FIELDS = new Set<string>([
   "features_ids",
   "services_ids",
   "cuota_ids",
+  "tracking",
 ]);
 
 @Injectable()

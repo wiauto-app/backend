@@ -156,6 +156,11 @@ const envsSchema = z.object({
   STRAPI_API_URL: z.string().default(""),
   STRAPI_API_TOKEN: z.string().default(""),
 
+  META_PIXEL_ID: z.string().default(""),
+  META_CAPI_TOKEN: z.string().default(""),
+  META_API_VERSION: z.string().default("v21.0"),
+  META_TEST_EVENT_CODE: z.string().default(""),
+
   ADMIN_PASSWORD: z.string(),
 
   //firebase credentials

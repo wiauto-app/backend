@@ -5,7 +5,7 @@ import { IsArray, IsOptional, IsUUID, ValidateNested } from "class-validator";
 import { UpdateImageHttpDto } from "./update-image.http-dto";
 
 export class UpdateVehicleHttpDto extends PartialType(
-  OmitType(CreateVehicleDto, ["images"] as const),
+  OmitType(CreateVehicleDto, ["images", "tracking"] as const),
 ) {
   @IsOptional()
   @IsUUID("4")

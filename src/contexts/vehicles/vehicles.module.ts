@@ -1,3 +1,4 @@
+import { AnalyticsModule } from "@/src/contexts/analytics/analytics.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
@@ -254,6 +255,7 @@ import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
     CategoriesModule,
     FeaturesModule,
     CatalogModule,
+    AnalyticsModule,
     ProfileModule,
     forwardRef(() => BillingModule),
     DealershipModule,
