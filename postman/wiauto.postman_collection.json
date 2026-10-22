@@ -8098,6 +8098,64 @@
       ]
     },
     {
+      "name": "vehicle-drafts",
+      "item": [
+        {
+          "name": "obtener borrador (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/vehicle-drafts/me",
+            "description": "JWT. Devuelve el borrador de anuncio del usuario o null. Si updated_at tiene más de 7 días, lo borra y devuelve null."
+          },
+          "response": []
+        },
+        {
+          "name": "guardar borrador (me)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"values\": {\n    \"title\": \"Seat Ibiza FR\",\n    \"price\": 12500\n  },\n  \"step\": 2,\n  \"appraisal_id\": null\n}"
+            },
+            "url": "{{base_url}}/v1/vehicle-drafts/me",
+            "description": "JWT. Upsert (una fila por perfil). values: objeto JSON de hasta 200 KB (400 si lo supera). step y appraisal_id opcionales; si se omiten se conservan."
+          },
+          "response": []
+        },
+        {
+          "name": "descartar borrador (me)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/vehicle-drafts/me",
+            "description": "JWT. Borra el borrador del usuario. 204 aunque no exista."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "assistant",
       "item": [
         {

@@ -8,12 +8,12 @@ export class UpdateVehicleHttpDto extends PartialType(
   OmitType(CreateVehicleDto, ["images", "tracking"] as const),
 ) {
   @IsOptional()
-  @IsUUID("4")
+  @IsUUID("4", { message: "El precio del vehículo no es válido." })
   vehicle_price_id?: string;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsArray({ message: "Las fotos no son válidas." })
+  @ValidateNested({ each: true, message: "Alguna foto no es válida." })
   @Type(() => UpdateImageHttpDto)
   images?: UpdateImageHttpDto[];
 }

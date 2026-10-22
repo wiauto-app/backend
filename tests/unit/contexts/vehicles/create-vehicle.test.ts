@@ -19,6 +19,7 @@ import {
   CreateVehicleService,
   validateVehicleCreationRules,
 } from "@/src/contexts/vehicles/api/v1/create-vehicle/create-vehicle.service";
+import { InvalidVehicleCatalogIdException } from "@/src/contexts/vehicles/exceptions/invalid-vehicle-catalog-id.exception";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { VehiclePriceEntity } from "@/src/contexts/vehicles/vehicle-prices/entities/vehicle-price.entity";
 import {
@@ -116,6 +117,50 @@ describe("CreateVehicleDto", () => {
     expect(errors.some(error => error.property === "price")).toBe(true);
   });
 
+  it("rechaza potencia 0 con mensaje en español", async () => {
+    const dto = plainToInstance(CreateVehicleDto, {
+      ...validDto(),
+      power: 0,
+    });
+
+    const errors = await validate(dto);
+    const powerError = errors.find(error => error.property === "power");
+    expect(powerError?.constraints?.min).toBe(
+      "La potencia debe ser de al menos 1 CV.",
+    );
+  });
+
+  it("devuelve el mensaje en español cuando power es 0", async () => {
+    const dto = validDto();
+    dto.power = 0;
+
+    const errors = await validate(dto);
+    const power_error = errors.find(error => error.property === "power");
+
+    expect(power_error?.constraints).toEqual({
+      min: "La potencia debe ser de al menos 1 CV.",
+    });
+  });
+
+  it("devuelve mensajes en español para matrícula y VIN inválidos", async () => {
+    const dto = validDto();
+    dto.license_plate = "ABC1234";
+    dto.vin_code = "1HGCM82633A00435I";
+
+    const errors = await validate(dto);
+    const plate_error = errors.find(
+      error => error.property === "license_plate",
+    );
+    const vin_error = errors.find(error => error.property === "vin_code");
+
+    expect(plate_error?.constraints?.matches).toBe(
+      "La matrícula debe tener el formato 1234ABC.",
+    );
+    expect(vin_error?.constraints?.matches).toBe(
+      "El VIN debe tener exactamente 17 caracteres válidos.",
+    );
+  });
+
   it("acepta tracking opcional y sigue valiendo sin él", async () => {
     expect(await validate(validDto())).toHaveLength(0);
 
@@ -130,6 +175,20 @@ describe("CreateVehicleDto", () => {
     });
 
     expect(await validate(dto)).toHaveLength(0);
+  });
+});
+
+describe("InvalidVehicleCatalogIdException", () => {
+  it("responde 400 con la etiqueta legible del campo", () => {
+    const exception = new InvalidVehicleCatalogIdException(
+      "traction_id",
+      "56aa4e9f-19cc-49aa-bb01-50a23c410f46",
+    );
+
+    expect(exception.getStatus()).toBe(400);
+    expect(exception.message).toBe(
+      "La tracción no corresponde a ninguna opción disponible. Revisa la selección.",
+    );
   });
 });
 
