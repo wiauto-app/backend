@@ -1,7 +1,6 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
-import { NestExpressApplication } from "@nestjs/platform-express";
 
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -23,19 +22,25 @@ const FRONTEND_ORIGINS = new Set((
 
 async function bootstrap() {
   // Dejamos que Nest maneje los body parsers internamente
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+  const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
+  app.useSecurityHeaders({
+    contentSecurityPolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    strictTransportSecurity:
+      envs.ENVIRONMENT === "production"
+        ? { maxAge: 315_360_000, includeSubDomains: true }
+        : false,
+  });
 
-  // 0. IP real del cliente detrás de proxy/LB (rate limiting por IP de invitados).
-  app.set("trust proxy", parseTrustProxy(envs.TRUST_PROXY));
 
   // 1. Fundamental para leer las cookies de Next.js
   app.use(cookieParser());
 
   // 2. CORS Seguro y compatible con credentials: true
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin || FRONTEND_ORIGINS.has(origin)) {
         callback(null, true);
       } else {
@@ -58,11 +63,11 @@ async function bootstrap() {
       },
     }),
   );
-  
+
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new HttpErrorFilter());
   app.use(compression());
-  
+
   app.use(passport.initialize());
 
   const configService = app.get(ConfigService);
