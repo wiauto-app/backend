@@ -1,17 +1,9 @@
 {
-  "name": "nestjs-service-template",
+  "name": "wiauto-backend",
   "version": "1.0.0",
-  "description": "Template for new nestjs services",
-  "author": "alberthernandezdev@gmail.com",
+  "description": "Backend for Wiauto",
+  "author": "idairreyes@gmail.com",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/AlbertHernandez/nestjs-service-template/issues"
-  },
-  "homepage": "https://github.com/AlbertHernandez/nestjs-service-template#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AlbertHernandez/nestjs-service-template.git"
-  },
   "keywords": [
     "typescript",
     "nestjs",
