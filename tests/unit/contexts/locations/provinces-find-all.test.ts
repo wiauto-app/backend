@@ -2,15 +2,26 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ProvincesService } from "@/src/contexts/locations/provinces/services/provinces.service";
 import { Province } from "@/src/contexts/locations/provinces/types/province";
+import type { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
+
+const createPassthroughCatalogCache = (): CatalogReadCacheService =>
+  ({
+    getOrSet: async <T>(
+      _namespace: string,
+      _params: Record<string, unknown>,
+      factory: () => Promise<T>,
+    ) => factory(),
+  }) as CatalogReadCacheService;
 
 describe("ProvincesService.findAll", () => {
   it("pasa cod_ccaa al repositorio cuando viene en la query", async () => {
     const find_all = vi.fn().mockResolvedValue({
       map: (fn: (p: Province) => unknown) => [],
     });
-    const service = new ProvincesService({
-      find_all,
-    } as never);
+    const service = new ProvincesService(
+      { find_all } as never,
+      createPassthroughCatalogCache(),
+    );
 
     await service.findAll({
       page: 1,
@@ -28,9 +39,10 @@ describe("ProvincesService.findAll", () => {
     const find_all = vi.fn().mockResolvedValue({
       map: () => [],
     });
-    const service = new ProvincesService({
-      find_all,
-    } as never);
+    const service = new ProvincesService(
+      { find_all } as never,
+      createPassthroughCatalogCache(),
+    );
 
     await service.findAll({
       page: 1,
