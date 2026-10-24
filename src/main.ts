@@ -7,7 +7,6 @@ import passport from "passport";
 import compression from "compression";
 
 import { AppModule } from "@/app/app.module";
-import { parseTrustProxy } from "@/src/common/client-ip";
 import { envs } from "@/src/common/envs";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
