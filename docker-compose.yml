@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
     # Chromium (Puppeteer PDF) necesita más /dev/shm que el default de Docker (64MB).
-    shm_size: "256mb"
+    shm_size: "512mb"
 
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
@@ -35,11 +35,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 2G
+          cpus: "3"
+          memory: 4G
         reservations:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "1"
+          memory: 1G
 
     logging:
       driver: json-file
@@ -85,11 +85,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 4G
+          cpus: "3"
+          memory: 8G
         reservations:
           cpus: "1"
-          memory: 1G
+          memory: 2G
 
     logging:
       driver: json-file
@@ -110,9 +110,9 @@ services:
       - --appendonly
       - "yes"
       - --maxmemory
-      - "384mb"
+      - "1gb"
       - --maxmemory-policy
-      - allkeys-lru
+      - noeviction
 
     # Si no necesitas acceso externo a Redis,
     # puedes eliminar completamente este bloque.
@@ -140,11 +140,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "1"
+          memory: 1536M
         reservations:
-          cpus: "0.1"
-          memory: 128M
+          cpus: "0.25"
+          memory: 256M
 
     logging:
       driver: json-file
@@ -172,7 +172,7 @@ services:
       DISABLE_SECURITY_PLUGIN: "true"
       DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI: "true"
 
-      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=512m"
+      OPENSEARCH_JAVA_OPTS: "-Xms2g -Xmx2g -XX:MaxDirectMemorySize=1g"
 
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: "odP.L97brnxM%"
 
@@ -212,11 +212,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 3G
+          cpus: "4"
+          memory: 8G
         reservations:
-          cpus: "1"
-          memory: 2G
+          cpus: "2"
+          memory: 4G
 
     logging:
       driver: json-file
