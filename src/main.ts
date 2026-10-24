@@ -7,7 +7,7 @@ import passport from "passport";
 import compression from "compression";
 
 import { AppModule } from "@/app/app.module";
-import { envs } from "@/src/common/envs";
+// import { envs } from "@/src/common/envs";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 
@@ -24,14 +24,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
-  app.useSecurityHeaders({
-    contentSecurityPolicy: false,
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    strictTransportSecurity:
-      envs.ENVIRONMENT === "production"
-        ? { maxAge: 315_360_000, includeSubDomains: true }
-        : false,
-  });
+  // app.useSecurityHeaders({
+  //   contentSecurityPolicy: false,
+  //   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  //   strictTransportSecurity:
+  //     envs.ENVIRONMENT === "production"
+  //       ? { maxAge: 315_360_000, includeSubDomains: true }
+  //       : false,
+  // });
 
 
   // 1. Fundamental para leer las cookies de Next.js
