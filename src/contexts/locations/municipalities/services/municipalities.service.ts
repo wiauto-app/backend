@@ -7,6 +7,7 @@ import { TypeormProvincesRepository } from "@/src/contexts/locations/provinces/r
 
 import { PrimitiveMunicipality } from "../types/municipality";
 import { MunicipalityNotFoundException } from "../exceptions/municipality-not-found.exception";
+import { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
 import { TypeormMunicipalitiesRepository } from "@/src/contexts/locations/municipalities/repositories/typeorm.municipalities-repository";
 import { UpdateMunicipalityDto } from "../dto/update-municipality.dto";
 import { FindAllMunicipalitiesHttpDto } from "../api/v1/municipalities-v1/dto/find-all-municipalities.http-dto";
@@ -24,6 +25,7 @@ export class MunicipalitiesService {
   constructor(
     private readonly municipalities_repository: TypeormMunicipalitiesRepository,
     private readonly provinces_repository: TypeormProvincesRepository,
+    private readonly catalog_read_cache: CatalogReadCacheService,
   ) {}
 
   async update(
@@ -54,24 +56,31 @@ export class MunicipalitiesService {
   async findAll(
     query: FindAllMunicipalitiesHttpDto,
   ): Promise<PaginatedResult<PrimitiveMunicipality>> {
-    const filter = new CatalogPaginationFilter({ ...query });
-    const provinceSlug = query.province_slug?.trim();
-    let ineCodePrefix: string | undefined;
+    return this.catalog_read_cache.getOrSet(
+      "municipalities:findAll",
+      { ...query },
+      async () => {
+        const filter = new CatalogPaginationFilter({ ...query });
+        const provinceSlug = query.province_slug?.trim();
+        let ineCodePrefix: string | undefined;
 
-    if (provinceSlug) {
-      const province = await this.provinces_repository.findBySlug(provinceSlug);
-      if (!province) {
-        throw new NotFoundException(
-          `Provincia con slug ${provinceSlug} no encontrada`,
-        );
-      }
-      ineCodePrefix = province.toPrimitives().cod_prov;
-    }
+        if (provinceSlug) {
+          const province =
+            await this.provinces_repository.findBySlug(provinceSlug);
+          if (!province) {
+            throw new NotFoundException(
+              `Provincia con slug ${provinceSlug} no encontrada`,
+            );
+          }
+          ineCodePrefix = province.toPrimitives().cod_prov;
+        }
 
-    const page = await this.municipalities_repository.find_all(filter, {
-      ineCodePrefix,
-    });
-    return page.map((municipality) => municipality.toPrimitives());
+        const page = await this.municipalities_repository.find_all(filter, {
+          ineCodePrefix,
+        });
+        return page.map((municipality) => municipality.toPrimitives());
+      },
+    );
   }
 
   async findOne(id: string): Promise<{ municipality: PrimitiveMunicipality }> {

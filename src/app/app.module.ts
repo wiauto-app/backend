@@ -51,10 +51,12 @@ import { ProactiveAlertsModule } from "../contexts/proactive-alerts/proactive-al
 import { ReferralsModule } from "../contexts/referrals/referrals.module";
 import { AnalyticsModule } from "../contexts/analytics/analytics.module";
 import { VehicleDraftsModule } from "../contexts/vehicle-drafts/vehicle-drafts.module";
+import { CatalogReadCacheModule } from "../contexts/shared/cache/catalog-read-cache.module";
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeOrmConfig),
+    CatalogReadCacheModule,
     ConfigModule.forRoot({ isGlobal: true, cache: true }),
     LoggerModule,
     HealthModule,

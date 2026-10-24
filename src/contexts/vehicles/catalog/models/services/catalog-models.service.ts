@@ -8,6 +8,7 @@ import {
 import { CatalogModelNotFoundException } from "../exceptions/catalog-model-not-found.exception";
 import { SearchModelsFilter } from "../types/searchModels.filter";
 import { CatalogModelSearchItem } from "../types/catalog-model-search-item";
+import { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
 import { TypeormCatalogModelRepository } from "../repositories/typeorm.catalog-model-repository";
 
 export interface CreateCatalogModelInput {
@@ -47,7 +48,10 @@ export interface FindSearchModelsInput {
 
 @Injectable()
 export class CatalogModelsService {
-  constructor(private readonly repository: TypeormCatalogModelRepository) {}
+  constructor(
+    private readonly repository: TypeormCatalogModelRepository,
+    private readonly catalog_read_cache: CatalogReadCacheService,
+  ) {}
 
   async create(
     dto: CreateCatalogModelInput,
@@ -78,9 +82,15 @@ export class CatalogModelsService {
   async findAll(
     dto: FindAllModelsInput,
   ): Promise<PaginatedResult<PrimitiveCatalogModel>> {
-    const filter = new CatalogPaginationFilter({ ...dto });
-    const page = await this.repository.find_all(filter);
-    return page.map((x) => x.toPrimitives());
+    return this.catalog_read_cache.getOrSet(
+      "models:findAll",
+      { ...dto },
+      async () => {
+        const filter = new CatalogPaginationFilter({ ...dto });
+        const page = await this.repository.find_all(filter);
+        return page.map((x) => x.toPrimitives());
+      },
+    );
   }
 
   async findOne(id: number): Promise<{ model: PrimitiveCatalogModel }> {
@@ -123,7 +133,16 @@ export class CatalogModelsService {
     search: string,
     limit = 15,
   ): Promise<{ models: CatalogModelSearchItem[] }> {
-    const models = await this.repository.findGlobalSearchModels(search, limit);
-    return { models };
+    return this.catalog_read_cache.getOrSet(
+      "models:globalSearch",
+      { search, limit },
+      async () => {
+        const models = await this.repository.findGlobalSearchModels(
+          search,
+          limit,
+        );
+        return { models };
+      },
+    );
   }
 }

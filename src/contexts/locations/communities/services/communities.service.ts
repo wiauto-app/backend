@@ -5,6 +5,7 @@ import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto
 
 import { PrimitiveCommunity } from "../types/community";
 import { CommunityNotFoundException } from "../exceptions/community-not-found.exception";
+import { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
 import { TypeormCommunitiesRepository } from "@/src/contexts/locations/communities/repositories/typeorm.communities-repository";
 import { UpdateCommunityDto } from "../dto/update-community.dto";
 
@@ -18,7 +19,10 @@ const parseCommunityId = (id: string): number => {
 
 @Injectable()
 export class CommunitiesService {
-  constructor(private readonly communities_repository: TypeormCommunitiesRepository) {}
+  constructor(
+    private readonly communities_repository: TypeormCommunitiesRepository,
+    private readonly catalog_read_cache: CatalogReadCacheService,
+  ) {}
 
   async update(
     id: string,
@@ -47,9 +51,15 @@ export class CommunitiesService {
   async findAll(
     query: PaginationHttpDto,
   ): Promise<PaginatedResult<PrimitiveCommunity>> {
-    const filter = new CatalogPaginationFilter({ ...query });
-    const page = await this.communities_repository.find_all(filter);
-    return page.map((community) => community.toPrimitives());
+    return this.catalog_read_cache.getOrSet(
+      "communities:findAll",
+      { ...query },
+      async () => {
+        const filter = new CatalogPaginationFilter({ ...query });
+        const page = await this.communities_repository.find_all(filter);
+        return page.map((community) => community.toPrimitives());
+      },
+    );
   }
 
   async findOne(id: string): Promise<{ community: PrimitiveCommunity }> {

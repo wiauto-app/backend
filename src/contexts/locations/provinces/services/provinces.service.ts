@@ -5,6 +5,7 @@ import { FindAllProvincesHttpDto } from "../api/v1/provinces-v1/dto/find-all-pro
 
 import { PrimitiveProvince } from "../types/province";
 import { ProvinceNotFoundException } from "../exceptions/province-not-found.exception";
+import { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
 import { TypeormProvincesRepository } from "@/src/contexts/locations/provinces/repositories/typeorm.provinces-repository";
 import { UpdateProvinceDto } from "../dto/update-province.dto";
 
@@ -18,7 +19,10 @@ const parseProvinceId = (id: string): number => {
 
 @Injectable()
 export class ProvincesService {
-  constructor(private readonly provinces_repository: TypeormProvincesRepository) {}
+  constructor(
+    private readonly provinces_repository: TypeormProvincesRepository,
+    private readonly catalog_read_cache: CatalogReadCacheService,
+  ) {}
 
   async update(
     id: string,
@@ -44,12 +48,18 @@ export class ProvincesService {
   async findAll(
     query: FindAllProvincesHttpDto,
   ): Promise<PaginatedResult<PrimitiveProvince>> {
-    const filter = new CatalogPaginationFilter({ ...query });
-    const cod_ccaa = query.cod_ccaa?.trim();
-    const page = await this.provinces_repository.find_all(filter, {
-      cod_ccaa: cod_ccaa || undefined,
-    });
-    return page.map((province) => province.toPrimitives());
+    return this.catalog_read_cache.getOrSet(
+      "provinces:findAll",
+      { ...query },
+      async () => {
+        const filter = new CatalogPaginationFilter({ ...query });
+        const cod_ccaa = query.cod_ccaa?.trim();
+        const page = await this.provinces_repository.find_all(filter, {
+          cod_ccaa: cod_ccaa || undefined,
+        });
+        return page.map((province) => province.toPrimitives());
+      },
+    );
   }
 
   async findOne(id: string): Promise<{ province: PrimitiveProvince }> {

@@ -5,6 +5,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { Make, PrimitiveMake } from "../types/make";
 import { MakeNotFoundException } from "../exceptions/make-not-found.exception";
 import { SearchMakesFilter } from "../types/searchMakes.filter";
+import { CatalogReadCacheService } from "@/src/contexts/shared/cache/catalog-read-cache.service";
 import { TypeormMakeRepository } from "../repositories/typeorm.make-repository";
 
 export interface CreateMakeInput {
@@ -31,7 +32,10 @@ export interface FindSearchMakesInput {
 
 @Injectable()
 export class MakesService {
-  constructor(private readonly makes_repository: TypeormMakeRepository) {}
+  constructor(
+    private readonly makes_repository: TypeormMakeRepository,
+    private readonly catalog_read_cache: CatalogReadCacheService,
+  ) {}
 
   async create(dto: CreateMakeInput): Promise<{ make: PrimitiveMake }> {
     const saved = await this.makes_repository.save(
@@ -62,9 +66,15 @@ export class MakesService {
   }
 
   async findAll(query: PaginationDto): Promise<PaginatedResult<PrimitiveMake>> {
-    const filter = new CatalogPaginationFilter({ ...query });
-    const page = await this.makes_repository.find_all(filter);
-    return page.map((m) => m.toPrimitives());
+    return this.catalog_read_cache.getOrSet(
+      "makes:findAll",
+      { ...query },
+      async () => {
+        const filter = new CatalogPaginationFilter({ ...query });
+        const page = await this.makes_repository.find_all(filter);
+        return page.map((m) => m.toPrimitives());
+      },
+    );
   }
 
   async findOne(id: number): Promise<{ make: PrimitiveMake }> {
