@@ -24,6 +24,8 @@ import { TwoFactorAuthModule } from "../contexts/2fa/2fa.module";
 import { BullModule } from "@nestjs/bullmq";
 import { envs } from "../common/envs";
 import { resolveClientIp } from "../common/client-ip";
+import { skipUnlessOptedIn } from "../common/antispam/opt-in-throttle.decorator";
+import { THROTTLER_NAME } from "../common/antispam/throttler-names";
 import { ThrottlerModule } from "@nestjs/throttler";
 import type { Request } from "express";
 import { FileModule } from "../contexts/shared/file/file.module";
@@ -146,6 +148,20 @@ import { CatalogReadCacheModule } from "../contexts/shared/cache/catalog-read-ca
           limit: envs.GUEST_PUBLISH_LOOKUP_THROTTLE_LIMIT,
           skipIf: context =>
             Boolean(context.switchToHttp().getRequest<Request>().user),
+        },
+        {
+          // Antispam formularios públicos de leads; opt-in con @OptInThrottle
+          name: THROTTLER_NAME.PUBLIC_LEADS,
+          ttl: envs.PUBLIC_LEADS_THROTTLE_TTL_MS,
+          limit: envs.PUBLIC_LEADS_THROTTLE_LIMIT,
+          skipIf: skipUnlessOptedIn(THROTTLER_NAME.PUBLIC_LEADS),
+        },
+        {
+          // Antispam alta en newsletter; opt-in con @OptInThrottle
+          name: THROTTLER_NAME.NEWSLETTER_SUBSCRIBE,
+          ttl: envs.NEWSLETTER_SUBSCRIBE_THROTTLE_TTL_MS,
+          limit: envs.NEWSLETTER_SUBSCRIBE_THROTTLE_LIMIT,
+          skipIf: skipUnlessOptedIn(THROTTLER_NAME.NEWSLETTER_SUBSCRIBE),
         },
       ],
     }),

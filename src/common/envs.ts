@@ -121,6 +121,14 @@ const envsSchema = z.object({
   GUEST_PUBLISH_LOOKUP_THROTTLE_LIMIT: z.coerce.number().default(30),
   GUEST_PUBLISH_LOOKUP_THROTTLE_TTL_MS: z.coerce.number().default(3_600_000),
 
+  // Antispam de formularios públicos (por IP y por endpoint)
+  /** Leads: /contacto, contacto y "llámame" de vehículo, contacto de planes. */
+  PUBLIC_LEADS_THROTTLE_LIMIT: z.coerce.number().default(5),
+  PUBLIC_LEADS_THROTTLE_TTL_MS: z.coerce.number().default(600_000),
+  /** Alta en la newsletter. */
+  NEWSLETTER_SUBSCRIBE_THROTTLE_LIMIT: z.coerce.number().default(3),
+  NEWSLETTER_SUBSCRIBE_THROTTLE_TTL_MS: z.coerce.number().default(3_600_000),
+
   /**
    * Valor de Express `trust proxy`. "false" desactiva; número = saltos de proxy;
    * o lista de IPs/subredes/presets (loopback, linklocal, uniquelocal).

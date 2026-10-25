@@ -1,7 +1,10 @@
-import { IsEmail, IsNotEmpty } from "class-validator";
+import { IsEmail, IsNotEmpty, MaxLength } from "class-validator";
 
-export class SubscribeNewsletterHttpDto {
+import { HoneypotHttpDto } from "@/src/common/antispam/honeypot";
+
+export class SubscribeNewsletterHttpDto extends HoneypotHttpDto {
   @IsEmail()
   @IsNotEmpty()
+  @MaxLength(254)
   email: string;
 }
