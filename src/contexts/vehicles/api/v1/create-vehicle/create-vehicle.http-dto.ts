@@ -89,8 +89,8 @@ export class CreateVehicleDto {
 
   @IsOptional()
   @IsString({ message: "La descripción debe ser un texto." })
-  @MaxLength(1000, {
-    message: "La descripción no puede tener más de 1000 caracteres.",
+  @MaxLength(3000, {
+    message: "La descripción no puede tener más de 3000 caracteres.",
   })
   description?: string;
 
