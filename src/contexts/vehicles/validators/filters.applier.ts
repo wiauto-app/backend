@@ -312,6 +312,12 @@ export const applyFilters = (
     });
   }
 
+  if (has_non_empty_string_array(filters.dgt_label_slugs)) {
+    qb.andWhere("dgt_label.slug IN (:...dgt_label_slugs)", {
+      dgt_label_slugs: trim_slug_array(filters.dgt_label_slugs),
+    });
+  }
+
   if (is_finite_number(filters.autonomy_since)) {
     qb.andWhere("vehicle.autonomy >= :autonomy_since", {
       autonomy_since: filters.autonomy_since,

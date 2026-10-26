@@ -49,6 +49,7 @@ const SEARCH_PARAM_KINDS: Record<VehicleSearchQueryKey, SearchParamKind> = {
   displacement_since: "number",
   displacement_until: "number",
   dgt_label_ids: "string_array",
+  dgt_label_slugs: "string_array",
   autonomy_since: "number",
   battery_capacity_since: "number",
   battery_capacity_until: "number",

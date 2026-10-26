@@ -45,9 +45,14 @@ export class HoneypotHttpDto {
   @IsString()
   @MaxLength(HONEYPOT_MAX_LENGTH)
   hp_website?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  turnstile_token?: string;
 }
 
-const isHoneypotFilled = (body: unknown): boolean => {
+export const isHoneypotBodyFilled = (body: unknown): boolean => {
   if (typeof body !== "object" || body === null) {
     return false;
   }
@@ -84,7 +89,7 @@ export class HoneypotInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const body: unknown = request.body;
 
-    if (!isHoneypotFilled(body)) {
+    if (!isHoneypotBodyFilled(body)) {
       return next.handle();
     }
 

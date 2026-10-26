@@ -2,6 +2,7 @@ import { forwardRef, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { BullModule } from "@nestjs/bullmq";
 
+import { TurnstileGuard } from "@/src/common/antispam/turnstile";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
 import { AuthModule } from "@/src/contexts/auth/auth.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
@@ -48,6 +49,7 @@ import { VehiclesModule } from "../vehicles.module";
     LeadScoringService,
     LeadScoringEnqueueService,
     LeadScoringProcessor,
+    TurnstileGuard,
   ],
   exports: [LeadsService, TypeOrmLeadRepository, LeadScoringService, LeadScoringEnqueueService],
 })

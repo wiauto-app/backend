@@ -73,6 +73,7 @@ export class FindAllVehiclesDto extends PickType(PaginationDto, [
 
   //dgt label filters
   dgt_label_ids: string[];
+  dgt_label_slugs?: string[];
 
   //electric filters
   autonomy_since: number;

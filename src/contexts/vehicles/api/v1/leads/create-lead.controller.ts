@@ -1,4 +1,5 @@
 import { Honeypot } from "@/src/common/antispam/honeypot";
+import { TurnstileGuard } from "@/src/common/antispam/turnstile";
 import { OptInThrottle } from "@/src/common/antispam/opt-in-throttle.decorator";
 import { THROTTLER_NAME } from "@/src/common/antispam/throttler-names";
 import { envs } from "@/src/common/envs";
@@ -23,7 +24,7 @@ export class CreateLeadController {
   constructor(private readonly leads_service: LeadsService) {}
 
   @Post()
-  @UseGuards(OptionalJwtGuard)
+  @UseGuards(OptionalJwtGuard, TurnstileGuard)
   @OptInThrottle(THROTTLER_NAME.PUBLIC_LEADS, {
     limit: envs.PUBLIC_LEADS_THROTTLE_LIMIT,
     ttl: envs.PUBLIC_LEADS_THROTTLE_TTL_MS,

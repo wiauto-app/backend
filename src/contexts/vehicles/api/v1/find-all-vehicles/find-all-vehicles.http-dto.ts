@@ -137,6 +137,9 @@ export class FindAllVehiclesHttpDto extends PaginationHttpDto {
   @OptionalQueryStringArray()
   dgt_label_ids: string[] = [];
 
+  @OptionalQueryStringArray()
+  dgt_label_slugs: string[] = [];
+
   @OptionalPositiveInt()
   autonomy_since: number;
 

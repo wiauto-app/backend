@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
 
 import {
   Honeypot,
   type HoneypotRequestBody,
   honeypotBodyString,
 } from "@/src/common/antispam/honeypot";
+import { TurnstileGuard } from "@/src/common/antispam/turnstile";
 import { OptInThrottle } from "@/src/common/antispam/opt-in-throttle.decorator";
 import { THROTTLER_NAME } from "@/src/common/antispam/throttler-names";
 import { envs } from "@/src/common/envs";
@@ -41,6 +42,7 @@ export class CreateGenericLeadController {
   constructor(private readonly leads_service: GenericLeadsService) {}
 
   @Post()
+  @UseGuards(TurnstileGuard)
   @Honeypot(fakeGenericLeadResponse)
   create(@Body() body: CreateGenericLeadHttpDto) {
     return this.leads_service.create(body);

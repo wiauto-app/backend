@@ -192,6 +192,9 @@ const envsSchema = z.object({
     .string()
     .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean)),
 
+  /** Secret de Cloudflare Turnstile (siteverify). Vacío = no exigir captcha en formularios públicos. */
+  TURNSTILE_SECRET_KEY: z.string().default(""),
+
   /** Ruta al Chrome/Chromium del sistema (Docker prod: /usr/bin/chromium). Vacío = binario de Puppeteer. */
   PUPPETEER_EXECUTABLE_PATH: z.string().default(""),
 });

@@ -40,6 +40,7 @@ export interface VehicleFilterOptions extends PaginationDto {
   displacement_since?: number;
   displacement_until?: number;
   dgt_label_ids?: string[];
+  dgt_label_slugs?: string[];
   autonomy_since?: number;
   battery_capacity_since?: number;
   battery_capacity_until?: number;
@@ -84,6 +85,7 @@ export class VehicleFilter extends PaginationFilter implements Omit<VehicleFilte
   displacement_since?: number;
   displacement_until?: number;
   dgt_label_ids?: string[];
+  dgt_label_slugs?: string[];
   autonomy_since?: number;
   battery_capacity_since?: number;
   battery_capacity_until?: number;

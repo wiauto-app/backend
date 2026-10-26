@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
 
 import {
   Honeypot,
   type HoneypotRequestBody,
   honeypotBodyString,
 } from "@/src/common/antispam/honeypot";
+import { TurnstileGuard } from "@/src/common/antispam/turnstile";
 import { OptInThrottle } from "@/src/common/antispam/opt-in-throttle.decorator";
 import { THROTTLER_NAME } from "@/src/common/antispam/throttler-names";
 import { envs } from "@/src/common/envs";
@@ -38,6 +39,7 @@ export class SubscribeNewsletterController {
   constructor(private readonly newsletter_service: NewsletterService) {}
 
   @Post("subscribe")
+  @UseGuards(TurnstileGuard)
   @OptInThrottle(THROTTLER_NAME.NEWSLETTER_SUBSCRIBE, {
     limit: envs.NEWSLETTER_SUBSCRIBE_THROTTLE_LIMIT,
     ttl: envs.NEWSLETTER_SUBSCRIBE_THROTTLE_TTL_MS,

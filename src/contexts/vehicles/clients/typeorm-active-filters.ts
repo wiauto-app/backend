@@ -105,6 +105,15 @@ export class TypeOrmActiveFilters {
     )
       ? trim_slug_array(find_active_filters_dto.dgt_label_ids)
       : [];
+    const dgt_label_slugs = has_non_empty_slug_array(
+      find_active_filters_dto.dgt_label_slugs,
+    )
+      ? trim_slug_array(find_active_filters_dto.dgt_label_slugs)
+      : [];
+    const dgt_label_where = [
+      ...(dgt_label_ids.length > 0 ? [{ id: In(dgt_label_ids) }] : []),
+      ...(dgt_label_slugs.length > 0 ? [{ slug: In(dgt_label_slugs) }] : []),
+    ];
     const features_slugs = has_non_empty_slug_array(
       find_active_filters_dto.features_slugs,
     )
@@ -175,8 +184,8 @@ export class TypeOrmActiveFilters {
       color_slugs.length > 0
         ? this.color_repository.find({ where: { slug: In(color_slugs) } })
         : Promise.resolve([]),
-      dgt_label_ids.length > 0
-        ? this.dgt_label_repository.find({ where: { id: In(dgt_label_ids) } })
+      dgt_label_where.length > 0
+        ? this.dgt_label_repository.find({ where: dgt_label_where })
         : Promise.resolve([]),
       features_slugs.length > 0
         ? this.feature_repository.find({ where: { slug: In(features_slugs) } })
@@ -280,15 +289,20 @@ export class TypeOrmActiveFilters {
       color_slugs,
     );
 
-    const dgt_labels = order_active_filter_items_by_ids(
-      dgt_label_rows.map((row) => ({
-        id: row.id,
-        slug: row.slug,
-        name: row.name,
-        code: row.code,
-      })),
-      dgt_label_ids,
-    );
+    const dgt_label_items = dgt_label_rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      code: row.code,
+    }));
+    const dgt_labels = [
+      ...new Map(
+        [
+          ...order_active_filter_items_by_ids(dgt_label_items, dgt_label_ids),
+          ...order_active_filter_items_by_slugs(dgt_label_items, dgt_label_slugs),
+        ].map((item) => [item.id, item]),
+      ).values(),
+    ];
 
     const features = order_active_filter_items_by_slugs(
       feature_rows.map((row) => ({

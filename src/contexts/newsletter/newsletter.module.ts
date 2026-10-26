@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { TurnstileGuard } from "@/src/common/antispam/turnstile";
 import { User } from "@/src/contexts/users/entities/user.entity";
 
 import { MeNewsletterController } from "./api/v1/me-newsletter/me-newsletter.controller";
@@ -11,7 +12,7 @@ import { NewsletterService } from "./services/newsletter.service";
 @Module({
   imports: [TypeOrmModule.forFeature([NewsletterSubscriptionEntity, User])],
   controllers: [SubscribeNewsletterController, MeNewsletterController],
-  providers: [NewsletterService],
+  providers: [NewsletterService, TurnstileGuard],
   exports: [NewsletterService],
 })
 export class NewsletterModule {}
