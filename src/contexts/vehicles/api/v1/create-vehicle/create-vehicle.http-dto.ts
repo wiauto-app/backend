@@ -194,6 +194,10 @@ export class CreateVehicleDto {
   show_exact_location?: boolean;
 
   @IsOptional()
+  @IsBoolean({ message: "Indica si quieres ofrecer financiación." })
+  offer_financing?: boolean;
+
+  @IsOptional()
   @IsArray({ message: "El equipamiento seleccionado no es válido." })
   @IsUUID("4", {
     each: true,

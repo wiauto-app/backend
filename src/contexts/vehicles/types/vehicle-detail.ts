@@ -12,6 +12,7 @@ import {
   VehicleListItem,
   VehicleListItemCatalogRef,
 } from "./vehicle-list-item";
+import type { VehicleFinancingOffer } from "../../financing/types/vehicle-financing-offer";
 import { DealershipScheduleDayDto } from "../../dealership/types/dealership-schedule";
 export interface VehicleDetailPrice {
   id: string;
@@ -22,6 +23,7 @@ export interface VehicleDetailPrice {
 
 /** Detalle público de un anuncio con relaciones cargadas. */
 export interface VehicleDetail extends VehicleListItem {
+  financing_offer: VehicleFinancingOffer | null;
   show_review_collab: boolean;
   show_first_cuota: boolean;
   by_brand_warranty: boolean;
@@ -183,4 +185,5 @@ export const vehicleDetailToPrimitives = (
   by_brand_warranty: detail.by_brand_warranty,
   show_first_cuota: detail.show_first_cuota,
   show_review_collab: detail.show_review_collab,
+  offer_financing: detail.offer_financing,
 });

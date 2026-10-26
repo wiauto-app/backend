@@ -31,6 +31,9 @@ import { EntitlementsService } from "@/src/contexts/billing/services/entitlement
 import { ENTITLEMENT_FEATURE } from "@/src/contexts/billing/types/entitlement-features";
 import { getBooleanFromEntitlement } from "@/src/contexts/billing/types/entitlement-resolve";
 import { LeadScoringService } from "./lead-scoring.service";
+import { DealershipFinancingService } from "@/src/contexts/financing/services/dealership-financing.service";
+import type { CreateFinancingLeadHttpDto } from "../api/v1/leads/create-financing-lead.http-dto";
+import type { LeadFinancingSnapshot } from "@/src/contexts/financing/types/vehicle-financing-offer";
 import { LeadAssistantLeadHookService } from "@/src/contexts/lead-assistant/services/lead-assistant-lead-hook.service";
 import type { VehicleDetail } from "../types/vehicle-detail";
 
@@ -42,6 +45,16 @@ export interface CreateLeadInput {
   phone_code?: string;
   message: string;
   buyer_profile_id?: string;
+}
+
+export interface CreateFinancingLeadInput extends CreateFinancingLeadHttpDto {
+  vehicle_id: string;
+  buyer_profile_id?: string;
+}
+
+interface PersistContactLeadOptions {
+  type: typeof LEAD_TYPE.CONTACT | typeof LEAD_TYPE.FINANCING;
+  financing_snapshot?: LeadFinancingSnapshot | null;
 }
 
 export interface CreateCallMeLeadInput {
@@ -78,6 +91,7 @@ export class LeadsService {
     private readonly entitlements_service: EntitlementsService,
     private readonly lead_scoring_service: LeadScoringService,
     private readonly lead_assistant_lead_hook_service: LeadAssistantLeadHookService,
+    private readonly dealership_financing_service: DealershipFinancingService,
   ) {}
 
   async findForSeller(
@@ -136,6 +150,41 @@ export class LeadsService {
   async createContact(
     input: CreateLeadInput,
   ): Promise<{ lead: PrimitiveLead; chat_id: string | null }> {
+    return this.persistContactLead(input, { type: LEAD_TYPE.CONTACT });
+  }
+
+  async createFinancing(
+    input: CreateFinancingLeadInput,
+  ): Promise<{ lead: PrimitiveLead; chat_id: string | null }> {
+    const { quote, snapshot } =
+      await this.dealership_financing_service.resolveQuote(input.vehicle_id, {
+        down_payment_percent: input.down_payment_percent,
+        term_months: input.term_months,
+      });
+
+    const summary = `Solicitud de financiación: entrada del ${quote.down_payment_percent} % (${quote.down_payment} €), plazo de ${quote.term_months} meses, cuota orientativa de ${quote.monthly_payment} €/mes (TIN ${quote.tin} %).`;
+    const message = input.message?.trim()
+      ? `${summary}\n\n${input.message.trim()}`
+      : summary;
+
+    return this.persistContactLead(
+      {
+        vehicle_id: input.vehicle_id,
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        phone_code: input.phone_code,
+        message,
+        buyer_profile_id: input.buyer_profile_id,
+      },
+      { type: LEAD_TYPE.FINANCING, financing_snapshot: snapshot },
+    );
+  }
+
+  private async persistContactLead(
+    input: CreateLeadInput,
+    options: PersistContactLeadOptions,
+  ): Promise<{ lead: PrimitiveLead; chat_id: string | null }> {
     const vehicle = await this.vehicle_repository.findOne(input.vehicle_id);
     if (!vehicle) {
       throw new VehicleNotFoundException(input.vehicle_id);
@@ -172,12 +221,13 @@ export class LeadsService {
 
     const lead = Lead.create({
       vehicle_id: input.vehicle_id,
-      type: LEAD_TYPE.CONTACT,
+      type: options.type,
       name: input.name.trim(),
       email: input.email.trim(),
       phone,
       phone_code,
       message: input.message.trim(),
+      financing_snapshot: options.financing_snapshot ?? null,
       profile_id: buyer_profile_id,
       seller_profile_id,
       dealership_id,
@@ -307,13 +357,15 @@ export class LeadsService {
     vehicle_title: string;
     vehicle: VehicleDetail;
   }): Promise<void> {
-    const is_call_me = payload.lead.type === LEAD_TYPE.CALL_ME;
-    const title = is_call_me
-      ? `Solicitud de llamada: ${payload.vehicle_title}`
-      : `Nueva consulta: ${payload.vehicle_title}`;
-    const body = is_call_me
-      ? `${payload.lead.name} solicitó que lo llamen sobre ${payload.vehicle_title}`
-      : `${payload.lead.name} envió una consulta sobre ${payload.vehicle_title}`;
+    let title = `Nueva consulta: ${payload.vehicle_title}`;
+    let body = `${payload.lead.name} envió una consulta sobre ${payload.vehicle_title}`;
+    if (payload.lead.type === LEAD_TYPE.CALL_ME) {
+      title = `Solicitud de llamada: ${payload.vehicle_title}`;
+      body = `${payload.lead.name} solicitó que lo llamen sobre ${payload.vehicle_title}`;
+    } else if (payload.lead.type === LEAD_TYPE.FINANCING) {
+      title = `Solicitud de financiación: ${payload.vehicle_title}`;
+      body = `${payload.lead.name} solicitó financiación para ${payload.vehicle_title}`;
+    }
 
     const vehicle = payload.vehicle;
 
@@ -332,6 +384,7 @@ export class LeadsService {
         phone: payload.lead.phone,
         phone_code: payload.lead.phone_code,
         message: payload.lead.message,
+        financing_snapshot: payload.lead.financing_snapshot,
         callback_scheduled_at: payload.lead.callback_scheduled_at
           ? new Date(payload.lead.callback_scheduled_at)
               .toISOString()

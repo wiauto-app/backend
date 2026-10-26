@@ -110,6 +110,13 @@ export class VehicleEntity {
   })
   by_brand_warranty: boolean;
 
+  /** El anuncio ofrece la financiación configurada por el concesionario. */
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  offer_financing: boolean;
+
   @Column({
     type: "enum",
     enum: STATUS_VEHICLE,

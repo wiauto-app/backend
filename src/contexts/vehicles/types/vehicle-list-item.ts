@@ -1,4 +1,5 @@
 import { DealershipEntity } from "../../dealership/entities/dealership.entity";
+import type { VehicleFinancingOfferSummary } from "../../financing/types/vehicle-financing-offer";
 import { VersionEntity } from "../catalog/versions/entities/version.entity";
 import {
   PublisherType,
@@ -66,6 +67,10 @@ export interface VehicleListItem {
   show_exact_location: boolean;
   show_review_collab: boolean;
   finance_price: number | null;
+  /** El anuncio ofrece la financiación del concesionario. */
+  offer_financing: boolean;
+  /** Cuota «desde»; la rellena el servicio si hay condiciones activas. */
+  financing_offer: VehicleFinancingOfferSummary | null;
   dealership: DealershipEntity | null;
 }
 

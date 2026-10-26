@@ -109,6 +109,9 @@ export const computeLeadScore = (input: LeadScoreInput): LeadScoreResult => {
   if (input.type === LEAD_TYPE.CALL_ME) {
     signals.add(LEAD_SCORE_SIGNAL.CALL_REQUESTED);
   }
+  if (input.type === LEAD_TYPE.FINANCING) {
+    signals.add(LEAD_SCORE_SIGNAL.FINANCING);
+  }
   if (input.is_authenticated) {
     signals.add(LEAD_SCORE_SIGNAL.VERIFIED_ACCOUNT);
   }

@@ -363,6 +363,7 @@ export class MailTemplateRenderer {
     };
   }): string {
     const is_call_me = payload.lead.type === "call_me";
+    const is_financing = payload.lead.type === "financing";
     const escaped_title = this.escapeHtml(payload.vehicle_title);
     const escaped_name = this.escapeHtml(payload.lead.name);
     const escaped_message = payload.lead.message
@@ -397,6 +398,8 @@ export class MailTemplateRenderer {
 
     const intro_text = is_call_me
       ? `Recibiste una solicitud de llamada sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`
+      : is_financing
+      ? `Recibiste una solicitud de financiación sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`
       : `Recibiste una consulta sobre tu anuncio <strong style="color:#111827;">${escaped_title}</strong>.`;
 
     const vehicle_card = payload.vehicle
@@ -407,7 +410,7 @@ export class MailTemplateRenderer {
         <tr>
           <td style="background-color:#EFF6FF;padding:12px 16px;border-bottom:1px solid #e5e7eb;">
             <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">
-              ${is_call_me ? "Solicitud de llamada" : "Datos del interesado"}
+              ${is_call_me ? "Solicitud de llamada" : is_financing ? "Solicitud de financiación" : "Datos del interesado"}
             </p>
           </td>
         </tr>
@@ -427,8 +430,14 @@ export class MailTemplateRenderer {
     return this.renderBase({
       preheader: is_call_me
         ? `Solicitud de llamada sobre ${payload.vehicle_title}.`
+        : is_financing
+        ? `Solicitud de financiación sobre ${payload.vehicle_title}.`
         : `Nueva consulta sobre ${payload.vehicle_title}.`,
-      title: is_call_me ? "Nueva solicitud de llamada" : "Nueva consulta recibida",
+      title: is_call_me
+        ? "Nueva solicitud de llamada"
+        : is_financing
+        ? "Nueva solicitud de financiación"
+        : "Nueva consulta recibida",
       body,
       ...(payload.contacts_url
         ? { cta_label: "Responder", cta_href: payload.contacts_url }

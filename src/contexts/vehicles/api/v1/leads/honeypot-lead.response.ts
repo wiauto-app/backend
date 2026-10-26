@@ -46,6 +46,7 @@ const fakeLeadResponse = (
       tier: LEAD_TIER.COLD,
       score_signals: [],
       scored_at: null,
+      financing_snapshot: null,
     },
     chat_id: null,
   };
@@ -60,3 +61,8 @@ export const fakeCallMeLeadResponse = (
   body: HoneypotRequestBody,
   params: HoneypotRouteParams,
 ): HoneypotLeadResponse => fakeLeadResponse(LEAD_TYPE.CALL_ME, body, params);
+
+export const fakeFinancingLeadResponse = (
+  body: HoneypotRequestBody,
+  params: HoneypotRouteParams,
+): HoneypotLeadResponse => fakeLeadResponse(LEAD_TYPE.FINANCING, body, params);

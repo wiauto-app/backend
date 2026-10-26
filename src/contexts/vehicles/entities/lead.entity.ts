@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
+import type { LeadFinancingSnapshot } from "@/src/contexts/financing/types/vehicle-financing-offer";
 import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
 import {
@@ -87,6 +88,9 @@ export class LeadEntity implements PrimitiveLead {
 
   @Column({ type: "timestamptz", nullable: true })
   scored_at: Date | null;
+
+  @Column({ type: "jsonb", nullable: true })
+  financing_snapshot: LeadFinancingSnapshot | null;
 
   @CreateDateColumn()
   created_at: Date;

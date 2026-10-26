@@ -2700,7 +2700,7 @@
                   ]
                 },
                 "url": "{{base_url}}/v1/vehicles",
-                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes). Opcional `tracking` (no se persiste): eventId, pageUrl, consent, fbp, fbc, vehicleDataEventId."
+                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes). Opcional `offer_financing` (boolean; solo si el concesionario tiene la financiación activa). Opcional `tracking` (no se persiste): eventId, pageUrl, consent, fbp, fbc, vehicleDataEventId."
               },
               "response": [
                 {
@@ -5293,7 +5293,7 @@
                   }
                 ],
                 "url": "{{base_url}}/v1/leads?from=2026-01-01&to=2026-12-31&sort=desc&page=1&limit=20",
-                "description": "JWT (`JwtGuard`). Leads de vehículos propios o del mismo dealership (dealership_members). Query: `from`, `to`, `sort` (asc|desc), `page`, `limit`. Respuesta paginada con resumen de vehículo y `buyer_profile_id`."
+                "description": "JWT (`JwtGuard`). Leads de vehículos propios o del mismo concesionario. Query: `from`, `to`, `sort` (asc|desc), `sort_by` (date|score), `tier`, `page`, `limit`. Cada item incluye `type` (`contact` | `call_me` | `financing`), `message`, `callback_scheduled_at` y `financing_snapshot` (null salvo en financiación: price, down_payment_percent, down_payment, term_months, monthly_payment, total_interest, opening_fee, tin, declared_tae, financial_entity)."
               },
               "response": []
             },
@@ -5336,6 +5336,25 @@
                 },
                 "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/leads",
                 "description": "JWT opcional. Con sesión: `profile_id` desde token; teléfono opcional; crea o reutiliza chat y devuelve `{ lead, chat_id }`. `name`/`email` deben coincidir con el perfil."
+              },
+              "response": []
+            },
+            {
+              "name": "crear lead financiación",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@ejemplo.com\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"612345678\",\n  \"down_payment_percent\": 20,\n  \"term_months\": 60,\n  \"message\": \"Quisiera más información.\",\n  \"accepted_terms\": true\n}"
+                },
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/leads/financing",
+                "description": "Público (`OptionalJwtGuard` + honeypot + throttle, sin Turnstile como `call-me`). Solo si el anuncio ofrece financiación. Recalcula la cuota en servidor con las condiciones vigentes, crea un lead `type: financing` con `financing_snapshot` (entrada, plazo, cuota, TIN, TAE, entidad) en el vendedor/`dealership_id` del anuncio, notifica y suma la señal de scoring `financing`. `phone` y `phone_code` obligatorios. Respuesta: `{ lead, chat_id }`."
               },
               "response": []
             }
@@ -9593,6 +9612,135 @@
                 }
               ],
               "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"down_payment\": 5697,\n    \"financed_amount\": 13293,\n    \"monthly_payment\": 278.47,\n    \"monthly_insurance\": 55,\n    \"monthly_total\": 333.47,\n    \"total_interest\": 3415.2,\n    \"total_insurance\": 3300,\n    \"total_to_pay\": 25705.2,\n    \"credit_cost\": 6715.2,\n    \"effective_annual_rate\": 9.9163,\n    \"breakdown\": {\n      \"financed_percent\": 51.71,\n      \"interest_percent\": 13.29,\n      \"insurance_percent\": 12.84\n    },\n    \"schedule\": [\n      {\n        \"installment\": 1,\n        \"date\": \"2026-08-17\",\n        \"payment\": 278.47,\n        \"remaining_balance\": 13119.77\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mi financiación — estado (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/financing/status",
+            "description": "Solo JWT. Indica si el concesionario del usuario tiene la financiación activa (`enabled`). Lo usa el toggle «Ofrecer financiación» al publicar; `false` si no pertenece a ningún concesionario."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/financing/status"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"enabled\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mi financiación — condiciones (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/financing/settings",
+            "description": "JWT + `@RequireSubscription()` + owner/admin del concesionario (`DealershipTeamManagerGuard`). Devuelve las condiciones del concesionario del usuario (o los valores por defecto con `configured: false`)."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/v1/financing/settings"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"dealership_id\": \"00000000-0000-4000-8000-000000000000\",\n    \"configured\": true,\n    \"enabled\": true,\n    \"financial_entity\": \"Banco Ejemplo\",\n    \"tin\": 6.9,\n    \"declared_tae\": 8.2,\n    \"min_term_months\": 12,\n    \"max_term_months\": 84,\n    \"default_term_months\": 60,\n    \"default_down_payment_percent\": 20,\n    \"min_down_payment_percent\": 10,\n    \"max_down_payment_percent\": 50,\n    \"min_financeable_amount\": 3000,\n    \"opening_fee_percent\": 1,\n    \"opening_fee_fixed\": null,\n    \"other_conditions\": \"Sujeto a estudio de solvencia.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mi financiación — guardar condiciones (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"financial_entity\": \"Banco Ejemplo\",\n  \"tin\": 6.9,\n  \"declared_tae\": 8.2,\n  \"min_term_months\": 12,\n  \"max_term_months\": 84,\n  \"default_term_months\": 60,\n  \"default_down_payment_percent\": 20,\n  \"min_down_payment_percent\": 10,\n  \"max_down_payment_percent\": 50,\n  \"min_financeable_amount\": 3000,\n  \"opening_fee_percent\": 1,\n  \"opening_fee_fixed\": null,\n  \"other_conditions\": \"Sujeto a estudio de solvencia.\"\n}"
+            },
+            "url": "{{base_url}}/v1/financing/settings",
+            "description": "Mismas guardas que el GET. Todos los campos son opcionales (patch parcial). Validaciones: plazo mín ≤ por defecto ≤ máx; entrada mín ≤ por defecto ≤ máx; `financial_entity` obligatoria al activar. Respuesta idéntica al GET."
+          },
+          "response": []
+        },
+        {
+          "name": "cuota por anuncio (POST quote)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"down_payment_percent\": 20,\n  \"term_months\": 60\n}"
+            },
+            "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/financing/quote",
+            "description": "Público. Solo si el anuncio está activo, tiene `offer_financing` y su concesionario tiene la financiación activa. Sistema francés; la comisión de apertura se suma al capital. `down_payment_percent` y `term_months` deben estar dentro de los límites del concesionario. 400 si el importe a financiar es inferior al mínimo. Incluye TIN, TAE declarada, entidad y aviso legal."
+          },
+          "response": [
+            {
+              "name": "200 OK (ejemplo)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/v1/vehicles/{{vehicle_id}}/financing/quote"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"ok\": true,\n  \"status\": 200,\n  \"data\": {\n    \"vehicle_id\": \"00000000-0000-4000-8000-000000000000\",\n    \"price\": 20000,\n    \"down_payment_percent\": 20,\n    \"down_payment\": 4000,\n    \"term_months\": 60,\n    \"financeable_amount\": 16000,\n    \"opening_fee\": 160,\n    \"opening_fee_percent\": 1,\n    \"opening_fee_fixed\": null,\n    \"monthly_payment\": 312.4,\n    \"total_interest\": 2584,\n    \"total_payable\": 18744,\n    \"tin\": 6,\n    \"declared_tae\": 7.1,\n    \"financial_entity\": \"Banco Ejemplo\",\n    \"other_conditions\": null,\n    \"legal_notice\": \"Cuota orientativa, sujeta a la aprobación de la entidad financiera. WiAuto no concede financiación: solo pone en contacto al comprador con el concesionario.\"\n  }\n}"
             }
           ]
         }

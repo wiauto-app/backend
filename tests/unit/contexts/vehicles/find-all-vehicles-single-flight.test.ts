@@ -13,7 +13,8 @@ vi.mock(
 import { FindAllVehiclesHttpDto } from "@/src/contexts/vehicles/api/v1/find-all-vehicles/find-all-vehicles.http-dto";
 import { VehicleService } from "@/src/contexts/vehicles/services/vehicle.service";
 
-const CONSTRUCTOR_ARGS = 27;
+const CONSTRUCTOR_ARGS = 28;
+const FINANCING_SERVICE_INDEX = 27;
 const CACHE_MANAGER_INDEX = 25;
 
 const pageResult = { data: [], total: 0, page: 1, limit: 20 };
@@ -42,6 +43,9 @@ const createService = () => {
   const args: unknown[] = Array.from({ length: CONSTRUCTOR_ARGS }, () => ({}));
   args[0] = vehicleRepository;
   args[CACHE_MANAGER_INDEX] = cacheManager;
+  args[FINANCING_SERVICE_INDEX] = {
+    decorateWithSummary: vi.fn(async (items: unknown[]) => items),
+  };
   const service = new (VehicleService as unknown as new (
     ...params: unknown[]
   ) => VehicleService)(...args);
@@ -72,7 +76,9 @@ describe("VehicleService.findAll single-flight", () => {
 
     expect(vehicleRepository.findAll).toHaveBeenCalledTimes(1);
     expect(cacheManager.set).toHaveBeenCalledTimes(1);
-    expect(results.every((result) => result === results[0])).toBe(true);
+    for (const result of results) {
+      expect(result).toEqual(results[0]);
+    }
   });
 
   it("different keys query the database independently", async () => {

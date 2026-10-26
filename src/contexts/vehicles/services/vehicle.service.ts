@@ -1,6 +1,8 @@
 import { BadRequestException, forwardRef, Inject, NotFoundException } from "@nestjs/common";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
+import { DealershipFinancingService } from "@/src/contexts/financing/services/dealership-financing.service";
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-mail-enqueue.service";
 import { AlertProcessingEnqueueService } from "@/src/contexts/alerts/queues/alert-processing-enqueue.service";
 import { ALERT_EVENT_TYPE } from "@/src/contexts/alerts/types/alert-event-type.enum";
@@ -177,6 +179,7 @@ export class VehicleService {
     @Inject(CACHE_MANAGER)
     private readonly cache_manager: Cache,
     private readonly vehicle_detail_cache: VehicleDetailCacheService,
+    private readonly dealership_financing_service: DealershipFinancingService,
   ) { }
 
   private async resolvePublisherContext(
@@ -218,7 +221,9 @@ export class VehicleService {
       throw new VehicleNotFoundException(vehicleId);
     }
 
-    return this.withResolvedContactVisibility(vehicle, isOwner);
+    const with_contact = await this.withResolvedContactVisibility(vehicle, isOwner);
+    // La oferta se calcula fuera de la caché para reflejar cambios de condiciones.
+    return this.dealership_financing_service.decorateWithOffer(with_contact);
   }
 
   async findActiveIdByRef(ref: string | number): Promise<{ id: string }> {
@@ -262,6 +267,29 @@ export class VehicleService {
   }
 
   async findAll(
+    find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
+    profile_id?: string,
+    url?: string,
+  ): Promise<PaginatedResult<VehicleListItemDto>> {
+    const result = await this.findAllCached(
+      find_all_vehicles_dto,
+      profile_id,
+      url,
+    );
+    return this.withFinancingSummaries(result);
+  }
+
+  /** Añade `financing_offer` fuera de la caché para reflejar cambios de condiciones. */
+  private async withFinancingSummaries<T extends VehicleListItemDto>(
+    result: PaginatedResult<T>,
+  ): Promise<PaginatedResult<T>> {
+    const data = await this.dealership_financing_service.decorateWithSummary(
+      result.data,
+    );
+    return new PaginatedResult(data, result.total, result.page, result.limit);
+  }
+
+  private async findAllCached(
     find_all_vehicles_dto: FindAllVehiclesUseCaseDto,
     profile_id?: string,
     url?: string,
@@ -351,6 +379,17 @@ export class VehicleService {
     const publisher_context = await this.resolvePublisherContext(
       existing.profile_id,
     );
+    if (patch.offer_financing === true && !existing.offer_financing) {
+      const financing_enabled =
+        await this.dealership_financing_service.isEnabledForDealership(
+          publisher_context.dealership_id,
+        );
+      if (!financing_enabled) {
+        throw new ValidationException(
+          "Activa la financiación en Mi financiación antes de ofrecerla en un anuncio.",
+        );
+      }
+    }
     if (publisher_context.publisher_type !== existing.publisher_type) {
       patch.publisher_type = publisher_context.publisher_type;
     }
@@ -931,7 +970,9 @@ export class VehicleService {
       limit: dto.limit ?? 10,
     });
 
-    const tier1_result = await this.vehicle_repository.findAll(tier1_filter);
+    const tier1_result = await this.withFinancingSummaries(
+      await this.vehicle_repository.findAll(tier1_filter),
+    );
     if (tier1_result.total > 0) {
       return {
         ...tier1_result,
@@ -947,7 +988,9 @@ export class VehicleService {
       page: dto.page ?? 1,
       limit: dto.limit ?? 10,
     });
-    const tier2_result = await this.vehicle_repository.findAll(tier2_filter);
+    const tier2_result = await this.withFinancingSummaries(
+      await this.vehicle_repository.findAll(tier2_filter),
+    );
 
     return {
       ...tier2_result,

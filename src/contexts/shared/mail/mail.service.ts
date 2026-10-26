@@ -282,12 +282,15 @@ export class MailService {
     });
 
     const is_call_me = payload.lead.type === "call_me";
+    const is_financing = payload.lead.type === "financing";
 
     try {
       await this.mailerService.sendMail({
         to: payload.to,
         subject: is_call_me
           ? `Solicitud de llamada sobre ${payload.vehicle_title}`
+          : is_financing
+          ? `Solicitud de financiación sobre ${payload.vehicle_title}`
           : `Nueva consulta sobre ${payload.vehicle_title}`,
         html,
       });

@@ -6,6 +6,7 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { CHAT_MESSAGE_TYPE } from "@/src/contexts/chat/types/chatMessage";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import { Lead } from "../types/lead";
+import type { LeadFinancingSnapshot } from "@/src/contexts/financing/types/vehicle-financing-offer";
 import type { LeadType } from "../types/lead";
 import { LEAD_TIER, type LeadScoreSignal, type LeadSortBy, type LeadTier } from "../types/lead-scoring";
 import { LeadEntity } from "../entities/lead.entity";
@@ -42,6 +43,7 @@ export interface SellerLeadListItem {
   buyer_profile_id: string | null;
   chat_id: string | null;
   scoring: SellerLeadScoringView | null;
+  financing_snapshot: LeadFinancingSnapshot | null;
   vehicle: {
     id: string;
     title: string;
@@ -71,6 +73,7 @@ interface SellerLeadRawRow {
   lead_tier: LeadTier;
   lead_score_signals: LeadScoreSignal[];
   lead_scored_at: Date | null;
+  lead_financing_snapshot: LeadFinancingSnapshot | null;
   vehicle_id: string;
   make_name: string | null;
   model_name: string | null;
@@ -168,6 +171,7 @@ export class TypeOrmLeadRepository {
         "lead.tier AS lead_tier",
         "lead.score_signals AS lead_score_signals",
         "lead.scored_at AS lead_scored_at",
+        "lead.financing_snapshot AS lead_financing_snapshot",
         "vehicle.id AS vehicle_id",
         "mk.name AS make_name",
         "md.name AS model_name",
@@ -432,6 +436,7 @@ export class TypeOrmLeadRepository {
             scored_at: row.lead_scored_at,
           }
         : null,
+      financing_snapshot: row.lead_financing_snapshot ?? null,
       vehicle: {
         id: row.vehicle_id,
         title: formatVehicleDisplayName({

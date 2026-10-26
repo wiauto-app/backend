@@ -88,6 +88,7 @@ export interface PrimitiveVehicle {
   by_brand_warranty?: boolean;
   show_first_cuota?: boolean;
   show_review_collab?: boolean;
+  offer_financing?: boolean;
 }
 
 export type VehicleUpdateFields = Partial<PrimitiveVehicle>;

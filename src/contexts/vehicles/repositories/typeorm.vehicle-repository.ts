@@ -158,6 +158,8 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
     show_exact_location: entity.show_exact_location,
     show_review_collab: entity.show_review_collab,
     finance_price: entity.finance_price,
+    offer_financing: entity.offer_financing,
+    financing_offer: null,
     dealership: entity.dealership,
     images: map_vehicle_list_images(entity.images),
     features: entity.features && entity.features.length > 0 ? (entity.features).map((feature) => ({
@@ -338,8 +340,8 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
     first_cuota: entity.first_cuota,
-    dealership: dealership ?? null,
-
+    dealership: dealership ?? entity.dealership ?? null,
+    financing_offer: null,
   };
 }
 
@@ -434,6 +436,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     by_brand_warranty: entity.by_brand_warranty,
     show_first_cuota: entity.show_first_cuota,
     show_review_collab: entity.show_review_collab,
+    offer_financing: entity.offer_financing,
     address: entity.address ?? null,
     address_details: entity.address_details ?? null,
   };
@@ -672,6 +675,7 @@ export class TypeOrmVehicleRepository {
       by_brand_warranty: p.by_brand_warranty ?? false,
       show_first_cuota: p.show_first_cuota ?? false,
       show_review_collab: p.show_review_collab ?? false,
+      offer_financing: p.offer_financing ?? false,
     };
     if (p.status !== undefined) {
       payload.status = p.status;
@@ -767,6 +771,7 @@ export class TypeOrmVehicleRepository {
       relations: {
         ...vehicle_catalog_relations,
         profile: { user: true },
+        dealership: true,
         vehicle_prices: true,
         version: {
           make: true,

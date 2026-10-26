@@ -1,0 +1,16 @@
+export const DEALERSHIP_FINANCING_SETTINGS_DEFAULTS = {
+  enabled: false,
+  financial_entity: null,
+  tin: 0,
+  declared_tae: null,
+  min_term_months: 12,
+  max_term_months: 84,
+  default_term_months: 60,
+  default_down_payment_percent: 20,
+  min_down_payment_percent: 10,
+  max_down_payment_percent: 50,
+  min_financeable_amount: 3000,
+  opening_fee_percent: 0,
+  opening_fee_fixed: null,
+  other_conditions: null,
+} as const;

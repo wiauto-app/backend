@@ -21,4 +21,20 @@ describe("computeLeadScore", () => {
     expect(result.signals).toContain(LEAD_SCORE_SIGNAL.FINANCING);
     expect(result.signals).toContain(LEAD_SCORE_SIGNAL.PURCHASE_INTENT);
   });
+
+  it("suma la señal FINANCING en leads de tipo financing aunque el texto no la mencione", () => {
+    const result = computeLeadScore({
+      type: LEAD_TYPE.FINANCING,
+      is_authenticated: false,
+      has_phone: true,
+      buyer_texts: ["Hola"],
+      buyer_chat_messages_count: 0,
+      fastest_buyer_reply_minutes: null,
+      other_recent_leads_count: 0,
+      ai_hot: false,
+    });
+
+    expect(result.signals).toContain(LEAD_SCORE_SIGNAL.FINANCING);
+    expect(result.signals).not.toContain(LEAD_SCORE_SIGNAL.LOW_DETAIL);
+  });
 });

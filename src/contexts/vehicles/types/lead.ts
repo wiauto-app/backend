@@ -1,3 +1,4 @@
+import type { LeadFinancingSnapshot } from "@/src/contexts/financing/types/vehicle-financing-offer";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
 
 import { LEAD_TIER, type LeadScoreSignal, type LeadTier } from "./lead-scoring";
@@ -5,6 +6,7 @@ import { LEAD_TIER, type LeadScoreSignal, type LeadTier } from "./lead-scoring";
 export const LEAD_TYPE = {
   CONTACT: "contact",
   CALL_ME: "call_me",
+  FINANCING: "financing",
 } as const;
 
 export type LeadType = (typeof LEAD_TYPE)[keyof typeof LEAD_TYPE];
@@ -39,6 +41,8 @@ export interface PrimitiveLead {
   tier: LeadTier;
   score_signals: LeadScoreSignal[];
   scored_at: Date | null;
+  /** Simulación de financiación del momento de la solicitud. */
+  financing_snapshot: LeadFinancingSnapshot | null;
 }
 
 export class Lead {
@@ -57,6 +61,7 @@ export class Lead {
     seller_profile_id: string;
     dealership_id: string | null;
     chat_id?: string | null;
+    financing_snapshot?: LeadFinancingSnapshot | null;
   }): Lead {
     return new Lead({
       id: uuidv4(),
@@ -78,6 +83,7 @@ export class Lead {
       tier: LEAD_TIER.COLD,
       score_signals: [],
       scored_at: null,
+      financing_snapshot: payload.financing_snapshot ?? null,
       created_at: new Date(),
       updated_at: new Date(),
     });

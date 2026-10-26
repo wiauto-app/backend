@@ -51,6 +51,8 @@ import {
   VehicleMediaDto,
 } from "./create-vehicle.http-dto";
 import { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
+import { DealershipFinancingSettingsEntity } from "@/src/contexts/financing/entities/dealership-financing-settings.entity";
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
 
 export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
@@ -154,6 +156,22 @@ export class CreateVehicleService {
       }),
     ]);
 
+    if (dto.offer_financing) {
+      const financing_settings = membership
+        ? await this.data_source
+            .getRepository(DealershipFinancingSettingsEntity)
+            .findOne({
+              where: { dealership_id: membership.dealership_id, enabled: true },
+              select: { id: true },
+            })
+        : null;
+      if (!financing_settings) {
+        throw new ValidationException(
+          "Activa la financiación en Mi financiación antes de ofrecerla en un anuncio.",
+        );
+      }
+    }
+
     const now = new Date();
     const expires_at = new Date(now.getTime() + VEHICLE_LISTING_LIFETIME_MS);
     const publisher_type = membership
@@ -247,6 +265,7 @@ export class CreateVehicleService {
           by_brand_warranty: dto.by_brand_warranty ?? false,
           show_first_cuota: dto.show_first_cuota ?? false,
           show_review_collab: dto.show_review_collab ?? false,
+          offer_financing: dto.offer_financing ?? false,
         });
 
         const saved = await manager.save(VehicleEntity, entity);
@@ -451,6 +470,7 @@ export class CreateVehicleService {
       by_brand_warranty: vehicle.by_brand_warranty,
       show_first_cuota: vehicle.show_first_cuota,
       show_review_collab: vehicle.show_review_collab,
+      offer_financing: vehicle.offer_financing,
     };
   }
 

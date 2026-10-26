@@ -121,6 +121,9 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
   const vehicle_detail_cache = {
     refresh: vi.fn().mockResolvedValue(undefined),
   };
+  const dealership_financing_service = {
+    isEnabledForDealership: vi.fn().mockResolvedValue(false),
+  };
   const service = new VehicleService(
     vehicle_repository as never,
     { execute: vi.fn() } as never,
@@ -149,6 +152,7 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     {} as never,
     {} as never,
     vehicle_detail_cache as never,
+    dealership_financing_service as never,
   );
 
   return {
@@ -161,6 +165,7 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     videos_repository,
     promote_temp_storage_paths_service,
     vehicle_detail_cache,
+    dealership_financing_service,
   };
 };
 
@@ -181,6 +186,28 @@ describe("vehicle update flow", () => {
     );
     expect(vehicle_repository.patch.mock.calls[0][1]).not.toHaveProperty(
       "dealership_id",
+    );
+  });
+
+  it("rejects offer_financing when the dealership has no active financing", async () => {
+    const { service, vehicle_repository } = createService();
+
+    await expect(
+      service.update({ id: vehicle_id, offer_financing: true }),
+    ).rejects.toThrow("Mi financiación");
+    expect(vehicle_repository.patch).not.toHaveBeenCalled();
+  });
+
+  it("persists offer_financing when the dealership financing is active", async () => {
+    const { service, vehicle_repository, dealership_financing_service } =
+      createService();
+    dealership_financing_service.isEnabledForDealership.mockResolvedValue(true);
+
+    await service.update({ id: vehicle_id, offer_financing: true });
+
+    expect(vehicle_repository.patch).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.objectContaining({ offer_financing: true }),
     );
   });
 

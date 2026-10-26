@@ -1,6 +1,7 @@
 import { AnalyticsModule } from "@/src/contexts/analytics/analytics.module";
 import { ProfileModule } from "@/src/contexts/profiles/profile.module";
 import { AlertsModule } from "@/src/contexts/alerts/alerts.module";
+import { FinancingModule } from "@/src/contexts/financing/financing.module";
 import { BillingModule } from "@/src/contexts/billing/billing.module";
 import { VehicleCreationGuard } from "./guards/vehicleCreation.guard";
 import { VehicleOwnerGuard } from "./guards/vehicle-owner.guard";
@@ -259,6 +260,7 @@ import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
     ProfileModule,
     forwardRef(() => BillingModule),
     DealershipModule,
+    forwardRef(() => FinancingModule),
     VehicleCreatorModule,
     DealershipInvitationModule,
     forwardRef(() => ChatModule),
