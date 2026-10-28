@@ -14,6 +14,8 @@ export const TRANSMISSION_TYPE = {
 export const STATUS_VEHICLE = {
   ACTIVE: "active",
   PENDING: "pending",
+  /** Anuncio creado al registrarse; se publica al verificar el correo. */
+  DRAFT: "draft",
   INACTIVE: "inactive",
   SOLD: "sold",
   ARCHIVED: "archived",

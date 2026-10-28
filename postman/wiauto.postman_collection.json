@@ -686,10 +686,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Juan\",\n  \"last_name\": \"Pérez\"\n}"
+              "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password12\",\n  \"name\": \"Juan\",\n  \"last_name\": \"Pérez\",\n  \"phone_code\": \"+34\",\n  \"phone\": \"600000000\",\n  \"pending_vehicle\": null\n}"
             },
             "url": "{{base_url}}/auth/register",
-            "description": "Crea usuario local con el rol `is_default: true`. Envía correo de verificación; no devuelve JWT hasta verificar el email e iniciar sesión."
+            "description": "Crea usuario local con el rol `is_default: true`. Envía correo de verificación; no devuelve JWT hasta verificar el email e iniciar sesión.\n\nOpcional: `pending_vehicle` (mismo body que `POST /v1/vehicles`) crea un anuncio en estado `draft` ligado al nuevo perfil. Requiere cookie `wiauto_guest_id` si hay fotos de invitado. Respuesta puede incluir `pending_vehicle_id` o `pending_vehicle_error` (el registro no falla si el anuncio no se guarda)."
           },
           "response": []
         },

@@ -2,7 +2,7 @@ import { OutboundMailEnqueueService } from "@/src/contexts/shared/mail/outbound-
 import { TypeOrmProfileUserRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-user-repository";
 import { PromoteTempStoragePathsService } from "@/src/contexts/shared/file/services/promote-temp-storage-paths.service";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, EntityTarget, In } from "typeorm";
 import { InjectQueue } from "@nestjs/bullmq";
@@ -59,6 +59,17 @@ export { validateVehicleCreationRules } from "../../../services/validate-vehicle
 
 const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 
+export interface CreateVehicleOptions {
+  as_draft?: boolean;
+}
+
+export interface RunPublishSideEffectsInput {
+  vehicle_id: string;
+  publisher_profile_id: string;
+  expires_at: Date;
+  now: Date;
+}
+
 interface PromotedVehicleMedia {
   images: { path: string; order: number }[];
   videos: VehicleMediaDto[];
@@ -96,8 +107,33 @@ interface CreateVehicleRollbackContext {
   temp_media_paths: string[];
 }
 
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeout_ms: number,
+  label: string,
+): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label} superó ${timeout_ms}ms`)),
+          timeout_ms,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+};
+
 @Injectable()
 export class CreateVehicleService {
+  private readonly logger = new Logger(CreateVehicleService.name);
+
   constructor(
     @InjectDataSource()
     private readonly data_source: DataSource,
@@ -121,7 +157,9 @@ export class CreateVehicleService {
     dto: CreateVehicleDto,
     publisher_profile_id: string,
     guest_id: string | null = null,
+    options: CreateVehicleOptions = {},
   ) {
+    const as_draft = options.as_draft === true;
     const version_id = dto.version_id;
     if (!Number.isInteger(version_id) || version_id < 1) {
       throw new InvalidateVehicleVersionIdException();
@@ -222,7 +260,7 @@ export class CreateVehicleService {
           description: dto.description?.trim() ?? "",
           version_id,
           publisher_type,
-          status: STATUS_VEHICLE.ACTIVE,
+          status: as_draft ? STATUS_VEHICLE.DRAFT : STATUS_VEHICLE.ACTIVE,
           status_change_message: null,
           transmission_type: dto.transmission_type,
           traction_id: dto.traction_id,
@@ -312,6 +350,7 @@ export class CreateVehicleService {
 
           await this.tempUploadService.markAsConsumed(
             async_images.map(img => img.upload_id),
+            manager,
           );
         }
 
@@ -369,19 +408,28 @@ export class CreateVehicleService {
           };
         });
 
-        await this.imageQueue.addBulk(jobs);
+        try {
+          await withTimeout(
+            this.imageQueue.addBulk(jobs),
+            10_000,
+            "Encolar imágenes del vehículo",
+          );
+        } catch (error) {
+          this.logger.error(
+            `No se pudieron encolar las imágenes del vehículo ${vehicle.id}`,
+            error instanceof Error ? error.stack : String(error),
+          );
+        }
       }
 
-      await this.vehicle_search_indexer.syncVehicle(
-        vehicle.id,
-        vehicle.status,
-      );
-      await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
-        vehicle.id,
-        expires_at,
-        now,
-      );
-      await this.enqueuePublishedMail(vehicle.id, publisher_profile_id);
+      if (!as_draft) {
+        await this.runPublishSideEffects({
+          vehicle_id: vehicle.id,
+          publisher_profile_id,
+          expires_at,
+          now,
+        });
+      }
     } catch (error) {
       try {
         await this.rollback({
@@ -403,16 +451,20 @@ export class CreateVehicleService {
     }
 
     const createdVehicleId = vehicle.id;
-    await this.vehicleDetailCache.refresh(createdVehicleId, () =>
-      this.vehicle_repository.findOne(createdVehicleId),
-    );
-
-    void this.referrals_service
-      .rewardIfEligible(publisher_profile_id)
-      .catch((error: unknown) => {
-        // No bloquear la publicación si falla la recompensa por invitación.
-        console.error("referral reward failed", error);
-      });
+    try {
+      await withTimeout(
+        this.vehicleDetailCache.refresh(createdVehicleId, () =>
+          this.vehicle_repository.findOne(createdVehicleId),
+        ),
+        8_000,
+        "Refrescar caché del vehículo",
+      );
+    } catch (error) {
+      this.logger.error(
+        `No se pudo refrescar la caché del vehículo ${createdVehicleId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
 
     return {
       id: vehicle.id,
@@ -472,6 +524,47 @@ export class CreateVehicleService {
       show_review_collab: vehicle.show_review_collab,
       offer_financing: vehicle.offer_financing,
     };
+  }
+
+  /** Tras crear borrador en cola (registro): caducidad programada, sin indexar ni mail. */
+  async runDraftRegistrationSideEffects(
+    input: Pick<RunPublishSideEffectsInput, "vehicle_id" | "expires_at" | "now">,
+  ): Promise<void> {
+    const { vehicle_id, expires_at, now } = input;
+    await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
+      vehicle_id,
+      expires_at,
+      now,
+    );
+  }
+
+  /** Cuando el anuncio pasa a active: búsqueda, mail y referidos. */
+  async runLiveListingSideEffects(
+    input: RunPublishSideEffectsInput,
+  ): Promise<void> {
+    const { vehicle_id, publisher_profile_id, expires_at, now } = input;
+
+    await this.vehicle_listing_expiry_scheduler.scheduleForVehicle(
+      vehicle_id,
+      expires_at,
+      now,
+    );
+    await this.vehicle_search_indexer.syncVehicle(
+      vehicle_id,
+      STATUS_VEHICLE.ACTIVE,
+    );
+    await this.enqueuePublishedMail(vehicle_id, publisher_profile_id);
+
+    void this.referrals_service
+      .rewardIfEligible(publisher_profile_id)
+      .catch((error: unknown) => {
+        console.error("referral reward failed", error);
+      });
+  }
+
+  async runPublishSideEffects(input: RunPublishSideEffectsInput): Promise<void> {
+    await this.runDraftRegistrationSideEffects(input);
+    await this.runLiveListingSideEffects(input);
   }
 
   private async promoteMedia(

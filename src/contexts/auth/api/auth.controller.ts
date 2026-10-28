@@ -30,6 +30,7 @@ import { AppleTokenService } from "../services/apple-token.service";
 import { RegisterService } from "../services/register.service";
 import { RegisterDto } from "../dto/register.dto";
 import { buildOAuthFrontendRedirect } from "../utils/validate-redirect-url";
+import { readGuestId } from "@/src/contexts/vehicles/vehicle-images/guest/guest-upload-identity";
 import { consumeOAuthPopupCookie } from "../utils/oauth-popup.guard-helper";
 
 type RequestWithOAuthUser = Request & { user: OAuthProfile };
@@ -45,8 +46,8 @@ export class AuthController {
   ) {}
 
   @Post("register")
-  register(@Body() registerDto: RegisterDto) {
-    return this.registerService.register(registerDto);
+  register(@Body() registerDto: RegisterDto, @Req() req: Request) {
+    return this.registerService.register(registerDto, readGuestId(req));
   }
 
   private setPlatformSessionCookies(

@@ -1,4 +1,13 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from "class-validator";
+
+import { CreateVehicleDto } from "@/src/contexts/vehicles/api/v1/create-vehicle/create-vehicle.http-dto";
 
 export class RegisterDto {
   @IsEmail()
@@ -28,4 +37,9 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   referral_code?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateVehicleDto)
+  pending_vehicle?: CreateVehicleDto;
 }

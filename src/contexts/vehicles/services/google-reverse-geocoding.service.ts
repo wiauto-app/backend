@@ -59,7 +59,9 @@ export class GoogleReverseGeocodingService {
     url.searchParams.set("language", "es");
     url.searchParams.set("key", envs.GOOGLE_MAPS_API_KEY);
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(8_000),
+    });
     if (!response.ok) {
       this.logger.warn(
         `Google Geocoding HTTP error ${response.status} for lat=${lat}, lng=${lng}`,

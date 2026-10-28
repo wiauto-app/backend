@@ -47,14 +47,19 @@ export class EmailVerificationController {
 
       this.assertAllowedRedirectUrl(redirectUrl);
 
-      const { message, token, refresh_token, type } =
+      const { message, token, refresh_token, type, published_vehicle_id } =
         await this.emailVerificationService.confirm(dto.token, request);
 
-      const url =
+      let url =
         `${redirectUrl}?token=${encodeURIComponent(token)}` +
         `&refresh_token=${encodeURIComponent(refresh_token)}` +
         `&type=${encodeURIComponent(type)}` +
         `&message=${encodeURIComponent(message)}`;
+
+      if (published_vehicle_id) {
+        const nextPath = `/publicar/exito?id=${published_vehicle_id}`;
+        url += `&next=${encodeURIComponent(nextPath)}`;
+      }
 
       res.redirect(HttpStatus.FOUND, url);
       return;

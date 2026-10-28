@@ -3,10 +3,11 @@ import { EntitlementsService } from "@/src/contexts/billing/services/entitlement
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+
+import { VehicleCreationAssertionService } from "../services/vehicle-creation-assertion.service";
 
 /**
  * Valida la cuota de anuncios resuelta por plan del dealership /
@@ -16,8 +17,8 @@ import {
 export class VehicleCreationGuard implements CanActivate {
   constructor(
     private readonly entitlements_service: EntitlementsService,
-
-  ) { }
+    private readonly vehicle_creation_assertion_service: VehicleCreationAssertionService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const { request, user } = getGuardRequest(context);
@@ -33,46 +34,10 @@ export class VehicleCreationGuard implements CanActivate {
       return true;
     }
 
-    
-
-    const billingSummary =
-      await this.entitlements_service.getBillingMe(profile_id);
-    const vehicleSlotsUsed = billingSummary.usage.listings_used;
-    const entitlements = billingSummary.entitlements
-
-    const maxVehicles = entitlements.vehicles.limit;
-    const maxImages = entitlements.photos_per_vehicle.limit;
-    const maxVideos = entitlements.videos_per_vehicle.limit;
-    const canUploadVideos =
-      maxVideos == null || (typeof maxVideos === "number" && maxVideos > 0);
-
-    if (maxVehicles && vehicleSlotsUsed >= maxVehicles) {
-      throw new ForbiddenException("Has alcanzado el límite de vehículos");
-    }
-
-    if (!maxImages && maxImages !== 0) {
-      throw new ForbiddenException("No tienes permitido subir imágenes");
-    }
-    const imagesCount = body.images?.length;
-
-    if (imagesCount && imagesCount > maxImages) {
-      throw new ForbiddenException("Tienes más imágenes que las permitidas");
-    }
-
-    const videosCount = body.videos?.length;
-
-    if (!canUploadVideos && videosCount && videosCount > 0) {
-      throw new ForbiddenException("No tienes permitido subir vídeos");
-    }
-
-    if (
-      maxVideos != null &&
-      videosCount &&
-      videosCount > maxVideos
-    ) {
-      throw new ForbiddenException("Tienes más vídeos que las permitidas");
-    }
-
+    await this.vehicle_creation_assertion_service.assertCanCreateVehicle(
+      profile_id,
+      body,
+    );
 
     return true;
 

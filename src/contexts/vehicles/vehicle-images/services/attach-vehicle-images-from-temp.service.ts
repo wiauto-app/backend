@@ -178,6 +178,7 @@ export class AttachVehicleImagesFromTempService {
           if (async_images.length > 0) {
             await this.tempUploadService.markAsConsumed(
               async_images.map(image => image.upload_id!),
+              manager,
             );
           }
         },

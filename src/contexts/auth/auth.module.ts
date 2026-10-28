@@ -51,6 +51,7 @@ import { BillingModule } from "../billing/billing.module";
 import { VehicleSearchModule } from "../vehicles/search/vehicle-search.module";
 import { VehicleEntity } from "../vehicles/entities/vehicle.entity";
 import { ReferralsModule } from "../referrals/referrals.module";
+import { VehiclesModule } from "../vehicles/vehicles.module";
 
 @Module({
   controllers: [
@@ -114,6 +115,7 @@ import { ReferralsModule } from "../referrals/referrals.module";
     forwardRef(() => BillingModule),
     VehicleSearchModule,
     forwardRef(() => ReferralsModule),
+    forwardRef(() => VehiclesModule),
   ],
   exports: [
     JwtGuard,

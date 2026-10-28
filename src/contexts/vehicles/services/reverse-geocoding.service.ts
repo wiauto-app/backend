@@ -27,8 +27,16 @@ export class ReverseGeocodingService extends ReverseGeocodingPort {
         return null;
       }
 
-      const postgis_names = await this.postgis_location_resolver.resolve(lng, lat);
-      return buildVehicleAddressDetails(google_components, postgis_names);
+      const postgis_names = await Promise.race([
+        this.postgis_location_resolver.resolve(lng, lat),
+        new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), 8_000);
+        }),
+      ]);
+      return buildVehicleAddressDetails(
+        google_components,
+        postgis_names ?? { municipality: null, province: null },
+      );
     } catch (error) {
       this.logger.warn(
         `Reverse geocoding failed for lat=${lat}, lng=${lng}: ${String(error)}`,

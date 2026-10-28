@@ -61,6 +61,12 @@ import { FeaturedVehicleExpiryBootstrapService } from "./queues/featured-vehicle
 import { VEHICLE_LISTING_EXPIRY_QUEUE } from "./queues/vehicle-listing-expiry.queue.constants";
 import { VehicleListingExpiryProcessor } from "./queues/vehicle-listing-expiry.processor";
 import { VehicleListingExpiryScheduler } from "./queues/vehicle-listing-expiry.scheduler";
+import { PendingVehicleCreationProcessor } from "./queues/pending-vehicle-creation.processor";
+import { PENDING_VEHICLE_CREATION_QUEUE } from "./queues/pending-vehicle-creation.queue.constants";
+import { PendingVehicleCreationEnqueueService } from "./services/pending-vehicle-creation-enqueue.service";
+import { DraftPublicationOnVerifyEnqueueService } from "./services/draft-publication-on-verify-enqueue.service";
+import { DraftPublicationOnVerifyProcessor } from "./queues/draft-publication-on-verify.processor";
+import { DRAFT_PUBLICATION_ON_VERIFY_QUEUE } from "./queues/draft-publication-on-verify.queue.constants";
 import { PROCESS_VEHICLE_IMAGE_QUEUE } from "../shared/file/media.constants";
 import { VehiclePriceEntity } from "./vehicle-prices/entities/vehicle-price.entity";
 import { AdminFindAllVehiclesController } from "./api/admin-v1/admin-find-all-vehicles/admin-find-all-vehicles.controller";
@@ -128,6 +134,8 @@ import { VehicleSitemapListService } from "./api/v1/vehicle-sitemap-list/vehicle
 import { SitemapVehiclesListService } from "./services/sitemap-vehicles-list.service";
 import { ProactiveAlertsModule } from "@/src/contexts/proactive-alerts/proactive-alerts.module";
 import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
+import { VehicleCreationAssertionService } from "./services/vehicle-creation-assertion.service";
+import { DraftVehiclePublicationService } from "./services/draft-vehicle-publication.service";
 
 @Module({
   controllers: [
@@ -170,6 +178,12 @@ import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
     VehicleOwnerGuard,
     ImageValidationPipe,
     CreateVehicleService,
+    VehicleCreationAssertionService,
+    DraftVehiclePublicationService,
+    PendingVehicleCreationEnqueueService,
+    PendingVehicleCreationProcessor,
+    DraftPublicationOnVerifyEnqueueService,
+    DraftPublicationOnVerifyProcessor,
     VehicleService,
     VehicleFiltersService,
     OwnerDashboardService,
@@ -242,6 +256,8 @@ import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: VEHICLE_LISTING_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
+    BullModule.registerQueue({ name: PENDING_VEHICLE_CREATION_QUEUE }),
+    BullModule.registerQueue({ name: DRAFT_PUBLICATION_ON_VERIFY_QUEUE }),
     LocationsModule,
     VehicleImagesModule,
     VehiclePricesModule,
@@ -272,6 +288,11 @@ import { ReferralsModule } from "@/src/contexts/referrals/referrals.module";
     forwardRef(() => ReferralsModule),
   ],
   exports: [
+    CreateVehicleService,
+    VehicleCreationAssertionService,
+    DraftVehiclePublicationService,
+    PendingVehicleCreationEnqueueService,
+    DraftPublicationOnVerifyEnqueueService,
     VehicleService,
     TypeOrmVehicleRepository,
     PublishedVehicleSnapshotPort,

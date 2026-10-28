@@ -18,6 +18,9 @@ import {
 import { authResponseConfig } from "../response.config";
 import { SignInResult } from "../types/auth.types";
 import { resolveEmailVerificationRedirectUrl } from "../utils/validate-redirect-url";
+import { DraftVehiclePublicationService, VEHICLE_LISTING_LIFETIME_MS } from "@/src/contexts/vehicles/services/draft-vehicle-publication.service";
+import { DraftPublicationOnVerifyEnqueueService } from "@/src/contexts/vehicles/services/draft-publication-on-verify-enqueue.service";
+import { CreateVehicleService } from "@/src/contexts/vehicles/api/v1/create-vehicle/create-vehicle.service";
 import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthSessionService } from "./auth-session.service";
 
@@ -27,7 +30,10 @@ export interface EmailVerificationTokenPayload {
   scope: "email_verification";
 }
 
-export type EmailVerificationConfirmResult = SignInResult & { message: string };
+export type EmailVerificationConfirmResult = SignInResult & {
+  message: string;
+  published_vehicle_id?: string | null;
+};
 
 @Injectable()
 export class EmailVerificationService {
@@ -42,7 +48,10 @@ export class EmailVerificationService {
     private readonly authSecurityMailService: AuthSecurityMailService,
     @InjectQueue(EMAIL_VERIFICATION_QUEUE)
     private readonly emailVerificationQueue: Queue<EmailVerificationJobData>,
-  ) { }
+    private readonly draft_vehicle_publication_service: DraftVehiclePublicationService,
+    private readonly draft_publication_on_verify_enqueue_service: DraftPublicationOnVerifyEnqueueService,
+    private readonly create_vehicle_service: CreateVehicleService,
+  ) {}
 
   async enqueueSendVerificationForUser(userId: string, email: string): Promise<void> {
     await this.emailVerificationQueue.add(EMAIL_VERIFICATION_JOB_SEND, {
@@ -63,7 +72,7 @@ export class EmailVerificationService {
       .addSelect("user.password")
       .where("user.email = :email", { email })
       .getOne();
-    if (!user || !user.password || user.is_email_verified) {
+    if (!user?.password || user.is_email_verified) {
       this.logger.debug(
         user
           ? `Reenvío de verificación no aplicable (has_password=${Boolean(user.password)}, verificado=${user.is_email_verified})`
@@ -110,6 +119,9 @@ export class EmailVerificationService {
     }
 
     let message: string;
+    let published_vehicle_id: string | null = null;
+    const wasVerified = user.is_email_verified;
+
     if (user.is_email_verified) {
       message = authResponseConfig.messages.EMAIL_ALREADY_VERIFIED;
     } else {
@@ -127,8 +139,37 @@ export class EmailVerificationService {
       message = authResponseConfig.messages.EMAIL_VERIFIED;
       this.authSecurityMailService.enqueueUserWelcome({
         to: user.email,
-        name: user.profile?.name,
+        name: user.profile.name,
       });
+
+      published_vehicle_id =
+        await this.draft_vehicle_publication_service.publishDraftsForProfile(
+          user.id,
+        );
+
+      if (published_vehicle_id) {
+        const now = new Date();
+        const expires_at = new Date(
+          now.getTime() + Number(VEHICLE_LISTING_LIFETIME_MS),
+        );
+        void this.create_vehicle_service
+          .runLiveListingSideEffects({
+            vehicle_id: published_vehicle_id,
+            publisher_profile_id: user.id,
+            expires_at,
+            now,
+          })
+          .catch((error: unknown) => {
+            this.logger.error(
+              `No se pudieron aplicar efectos de publicación al vehículo ${published_vehicle_id}`,
+              error instanceof Error ? error.stack : String(error),
+            );
+          });
+      }
+
+      await this.draft_publication_on_verify_enqueue_service.scheduleAfterEmailVerification(
+        user.id,
+      );
     }
 
     const session: SignInResult = await this.authSessionService.establishSessionForUser(
@@ -141,6 +182,7 @@ export class EmailVerificationService {
       type: session.type,
       token: session.token,
       refresh_token: session.refresh_token,
+      published_vehicle_id: wasVerified ? null : published_vehicle_id,
     };
   }
 

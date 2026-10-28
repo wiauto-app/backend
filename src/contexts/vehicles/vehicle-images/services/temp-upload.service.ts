@@ -164,6 +164,47 @@ export class TempUploadService {
   }
 
   /**
+   * Obtiene el guest_id común de uploads de invitado referenciados en el anuncio.
+   * Sirve cuando el POST /auth/register no trae la cookie wiauto_guest_id.
+   */
+  async resolveGuestIdFromVehicleImages(
+    images: Array<{ upload_id?: string | null }> | undefined,
+  ): Promise<string | null> {
+    const upload_ids = (images ?? [])
+      .map((image) => image.upload_id?.trim())
+      .filter((id): id is string => Boolean(id));
+
+    if (upload_ids.length === 0) {
+      return null;
+    }
+
+    const uploads = await this.tempUploadRepo.find({
+      where: { id: In(upload_ids) },
+    });
+
+    if (uploads.length !== upload_ids.length) {
+      return null;
+    }
+
+    const guest_ids = new Set(
+      uploads
+        .map((upload) => upload.guest_id)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    if (guest_ids.size !== 1) {
+      return null;
+    }
+
+    const [guest_id] = [...guest_ids];
+    const all_guest_owned = uploads.every(
+      (upload) => upload.profile_id === null && upload.guest_id === guest_id,
+    );
+
+    return all_guest_owned ? guest_id : null;
+  }
+
+  /**
    * Valida un upload para usarlo en un vehículo. Se acepta si pertenece al perfil
    * o si es de invitado (sin perfil) y su guest_id coincide con la cookie.
    */
@@ -203,10 +244,17 @@ export class TempUploadService {
     return tempUpload;
   }
 
-  async markAsConsumed(uploadIds: string[]): Promise<void> {
+  async markAsConsumed(
+    uploadIds: string[],
+    manager?: EntityManager,
+  ): Promise<void> {
     if (uploadIds.length === 0) return;
 
-    await this.tempUploadRepo.update(
+    const repository = manager
+      ? manager.getRepository(TemporaryUploadEntity)
+      : this.tempUploadRepo;
+
+    await repository.update(
       { id: In(uploadIds) },
       { status: "consumed" },
     );
