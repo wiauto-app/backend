@@ -32,7 +32,7 @@ interface SnapshotRow {
   model_slug: string;
   year: number;
   fuel_type_slug: string;
-  traction_slug: string;
+  traction_slug: string | null;
   type_slug: string | null;
   color_slug: string | null;
   warranty_slug: string | null;
@@ -135,7 +135,7 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
       INNER JOIN model md ON md.id = ver.model_id
       INNER JOIN year yr ON yr.id = ver.year_id
       INNER JOIN fuel_type ft ON ft.id = ver.fuel_type_id
-      INNER JOIN tractions tr ON tr.id = v.traction_id
+      LEFT JOIN tractions tr ON tr.id = v.traction_id
       LEFT JOIN vehicle_types vt ON vt.id = v.vehicle_type_id
       LEFT JOIN colors col ON col.id = v.color_id
       LEFT JOIN warranty_types wt ON wt.id = v.warranty_type_id

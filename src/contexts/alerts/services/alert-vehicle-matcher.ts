@@ -119,7 +119,8 @@ export const vehicle_matches_alert_filters = (
 
   if (
     is_filter_active(filters, "traction_slugs") &&
-    !filters.traction_slugs!.includes(snapshot.traction_slug)
+    (!snapshot.traction_slug ||
+      !filters.traction_slugs!.includes(snapshot.traction_slug))
   ) {
     return false;
   }

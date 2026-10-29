@@ -134,9 +134,9 @@ export class CreateVehicleDto {
   @IsNotEmpty({ message: "Indica el tipo de transmisión." })
   transmission_type: TransmissionType;
 
+  @IsOptional()
   @IsUUID("4", { message: "El tipo de tracción no es válido." })
-  @IsNotEmpty({ message: "Selecciona un tipo de tracción." })
-  traction_id: string;
+  traction_id?: string;
 
   @IsOptional()
   @IsNumber({}, { message: "Introduce la potencia en CV." })

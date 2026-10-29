@@ -22,7 +22,7 @@ export interface PublishedVehicleSnapshot {
   model_slug: string;
   year: number;
   fuel_type_slug: string;
-  traction_slug: string;
+  traction_slug: string | null;
   type_slug: string | null;
   color_slug: string | null;
   warranty_slug: string | null;
