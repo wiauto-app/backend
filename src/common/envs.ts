@@ -92,7 +92,7 @@ const envsSchema = z.object({
   /** Modelo para generación de descripción de anuncio (vehicle AI). */
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
 
-  WIAUTO_SUPPORT_PHONE: z.string().default("+34 900 000 000"),
+  WIAUTO_SUPPORT_PHONE: z.string().default("+34 91 123 45 67"),
   WIAUTO_FAQ_URL: z.string().default(""),
 
   ASSISTANT_MONTHLY_FREE_QUOTA: z.coerce.number().default(30),

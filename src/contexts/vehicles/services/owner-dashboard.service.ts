@@ -191,7 +191,7 @@ export class OwnerDashboardService {
       await this.owner_dashboard_repository.countDealershipReviews(
         primitives.id,
       );
-    const should_hide_phone = primitives.show_phone === false;
+    const should_hide_phone = !primitives.show_phone;
 
     return {
       name: primitives.name,
