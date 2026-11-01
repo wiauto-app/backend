@@ -330,6 +330,15 @@ export interface OutboundMailReferralRewardJobData {
   listings_url: string;
 }
 
+export const OUTBOUND_MAIL_JOB_REFERRAL_INVITE = "referral_invite";
+
+export interface OutboundMailReferralInviteJobData {
+  to: string;
+  name: string;
+  referral_code: string;
+  share_url: string;
+}
+
 export const OUTBOUND_MAIL_JOB_FEATURED_EXPIRED = "featured_expired";
 
 export interface OutboundMailFeaturedExpiredJobData {

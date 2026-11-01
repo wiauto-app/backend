@@ -34,6 +34,8 @@ export interface RenderBaseOptions {
   cta_href?: string;
   footer_note?: string;
   share_url?: string;
+  /** Sustituye el bloque «Comparte WiAuto» del pie del correo. */
+  share_block_html?: string;
   doc_title?: string;
 }
 
@@ -70,6 +72,9 @@ export class MailTemplateRenderer {
       : "";
     const share_url = options.share_url ?? getFrontendUrl("HOME");
     const share_encoded = encodeURIComponent(share_url);
+    const share_block =
+      options.share_block_html ??
+      this.buildDefaultEmailShareBlock(share_url, share_encoded);
     const title_html =
       options.title_html ?? this.escapeHtml(options.title);
     const doc_title = this.escapeHtml(options.doc_title ?? options.title);
@@ -84,9 +89,7 @@ export class MailTemplateRenderer {
       YEAR: year,
       HOME_URL: getFrontendUrl("HOME"),
       LOGO_URL: getMailBrandLogoUrl(),
-      SHARE_URL: share_url,
-      SHARE_FACEBOOK_URL: `https://www.facebook.com/sharer/sharer.php?u=${share_encoded}`,
-      SHARE_WHATSAPP_URL: `https://wa.me/?text=${share_encoded}`,
+      SHARE_BLOCK: share_block,
       FOOTER_VEHICLES_URL: getFrontendUrl("VEHICLES"),
       FOOTER_FEATURED_URL: getFrontendPath(
         `${FRONTEND_ROUTES.VEHICLES}?is_featured=true`,
@@ -174,6 +177,56 @@ export class MailTemplateRenderer {
       cta_label: "Ir a mis anuncios",
       cta_href: payload.listings_url,
       footer_note: "Canjea el cupón en el anuncio que elijas desde Mis anuncios.",
+    });
+  }
+
+  renderReferralInvite(payload: {
+    name: string;
+    referral_code: string;
+    share_url: string;
+  }): string {
+    const greeting = payload.name.trim()
+      ? `Hola ${this.escapeHtml(payload.name.trim())},`
+      : "Hola,";
+    const referral_code = this.escapeHtml(payload.referral_code);
+    const share_url_href = this.escapeHtml(payload.share_url);
+    const share_url_label = this.escapeHtml(payload.share_url);
+
+    const stepStyle =
+      "margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#374151;";
+    const stepTitleStyle =
+      "margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#111827;font-weight:600;";
+
+    const body = `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        ${greeting}
+      </p>
+      <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
+        Consigue más visibilidad para tu coche. <strong>1 destacado gratis</strong> por cada amigo que publique su anuncio.
+      </p>
+      <div style="margin:24px 0;padding:16px;background-color:#f9fafb;border-radius:12px;">
+        <p style="${stepTitleStyle}">1. Comparte tu enlace</p>
+        <p style="${stepStyle}">Invita a alguien que quiera vender su coche.</p>
+        <p style="${stepTitleStyle}">2. Tu amigo publica su coche</p>
+        <p style="${stepStyle}">Se registra y publica un anuncio válido.</p>
+        <p style="${stepTitleStyle}">3. ¡Ganas un destacado gratis!</p>
+        <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#374151;">
+          Para uno de tus anuncios durante 7 días.
+        </p>
+      </div>
+      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.5;color:#9ca3af;text-align:center;word-break:break-all;">
+        Código: ${referral_code}
+      </p>`;
+
+    return this.renderBase({
+      preheader: "Comparte tu enlace y gana un destacado gratis en WiAuto.",
+      title: "¡Invita a un amigo y gana!",
+      body,
+      share_block_html: this.buildReferralInviteShareBlock(
+        share_url_href,
+        share_url_label,
+      ),
+      footer_note:
+        "Comparte el enlace con quien quiera vender su coche en WiAuto.",
     });
   }
 
@@ -1586,6 +1639,62 @@ export class MailTemplateRenderer {
         <p style="margin:4px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.5;color:#111827;">${value_html}</p>
       </td>
     </tr>`;
+  }
+
+  private buildDefaultEmailShareBlock(
+    share_url: string,
+    share_encoded: string,
+  ): string {
+    return `<tr>
+            <td style="background-color:#ffffff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;padding:0 28px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #e5e7eb;">
+                <tr>
+                  <td align="center" style="padding:20px 0 0;">
+                    <p style="margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b7280;">
+                      Comparte WiAuto
+                    </p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:0 8px;">
+                          <a href="https://www.facebook.com/sharer/sharer.php?u=${share_encoded}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">Facebook</a>
+                        </td>
+                        <td style="padding:0 8px;color:#d1d5db;">|</td>
+                        <td style="padding:0 8px;">
+                          <a href="https://wa.me/?text=${share_encoded}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">WhatsApp</a>
+                        </td>
+                        <td style="padding:0 8px;color:#d1d5db;">|</td>
+                        <td style="padding:0 8px;">
+                          <a href="${share_url}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">Copiar enlace</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
+  }
+
+  private buildReferralInviteShareBlock(
+    share_url_href: string,
+    share_url_label: string,
+  ): string {
+    return `<tr>
+            <td style="background-color:#ffffff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;padding:0 28px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #e5e7eb;">
+                <tr>
+                  <td align="center" style="padding:20px 0 0;">
+                    <p style="margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#111827;">
+                      Tu enlace de invitación
+                    </p>
+                    <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.55;word-break:break-all;">
+                      <a href="${share_url_href}" style="color:#0153E8;text-decoration:none;font-weight:600;">${share_url_label}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
   }
 
   private buildCtaBlock(label?: string, href?: string): string {

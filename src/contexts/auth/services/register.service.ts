@@ -7,7 +7,6 @@ import { User } from "../../users/entities/user.entity";
 import { UserService } from "../../users/services/user.service";
 import { RegisterDto } from "../dto/register.dto";
 import { AuthSecurityMailService } from "./auth-security-mail.service";
-import { CreateVehicleDto } from "../../vehicles/api/v1/create-vehicle/create-vehicle.http-dto";
 
 export interface RegisterApiResponse extends ApiResponse<User> {
   referral_code?: string;
@@ -58,12 +57,21 @@ export class RegisterService {
         user_id,
       );
 
+      if (referral_code) {
+        this.authSecurityMailService.enqueueReferralInvite({
+          to: registerDto.email,
+          name: registerDto.name,
+          referral_code,
+          share_url: this.referrals_service.buildShareUrl(referral_code),
+        });
+      }
+
       if (registerDto.pending_vehicle) {
         try {
           await this.pending_vehicle_creation_enqueue_service.enqueueForProfile(
             user_id,
             guest_id,
-            registerDto.pending_vehicle as CreateVehicleDto,
+            registerDto.pending_vehicle,
           );
           pending_vehicle_queued = true;
         } catch (error: unknown) {

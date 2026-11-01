@@ -680,6 +680,33 @@ export class MailService {
     }
   }
 
+  async sendReferralInviteEmail(payload: {
+    to: string;
+    name: string;
+    referral_code: string;
+    share_url: string;
+  }): Promise<void> {
+    const html = this.mail_template_renderer.renderReferralInvite({
+      name: payload.name,
+      referral_code: payload.referral_code,
+      share_url: payload.share_url,
+    });
+
+    try {
+      await this.mailerService.sendMail({
+        to: payload.to,
+        subject: "Invita a un amigo y gana un destacado",
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de invitación a ${payload.to}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+
   async sendFeaturedPurchasedEmail(payload: {
     to: string;
     vehicle_title: string;

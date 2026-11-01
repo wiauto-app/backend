@@ -38,6 +38,10 @@ describe("RegisterService", () => {
     };
     const referrals_service = {
       ensureReferralCodeForProfile: vi.fn().mockResolvedValue("ref-code"),
+      buildShareUrl: vi
+        .fn()
+        .mockReturnValue("https://wiauto.test/registro?ref=ref-code"),
+      ...(overrides.referrals_service as object),
     };
     const pending_vehicle_creation_enqueue_service = {
       enqueueForProfile: vi.fn().mockResolvedValue(undefined),
@@ -45,6 +49,8 @@ describe("RegisterService", () => {
     };
     const authSecurityMailService = {
       enqueueNewUserRegistered: vi.fn(),
+      enqueueReferralInvite: vi.fn(),
+      ...(overrides.authSecurityMailService as object),
     };
 
     const service = new RegisterService(
@@ -56,9 +62,29 @@ describe("RegisterService", () => {
 
     return {
       service,
+      authSecurityMailService,
+      referrals_service,
       pending_vehicle_creation_enqueue_service,
     };
   };
+
+  it("encola el correo de invitación con el código de referido", async () => {
+    const { service, authSecurityMailService, referrals_service } =
+      buildService();
+
+    await service.register(baseDto, null);
+
+    expect(referrals_service.ensureReferralCodeForProfile).toHaveBeenCalledWith(
+      "user-1",
+    );
+    expect(referrals_service.buildShareUrl).toHaveBeenCalledWith("ref-code");
+    expect(authSecurityMailService.enqueueReferralInvite).toHaveBeenCalledWith({
+      to: baseDto.email,
+      name: baseDto.name,
+      referral_code: "ref-code",
+      share_url: "https://wiauto.test/registro?ref=ref-code",
+    });
+  });
 
   it("encola el borrador cuando pending_vehicle está presente", async () => {
     const { service, pending_vehicle_creation_enqueue_service } =

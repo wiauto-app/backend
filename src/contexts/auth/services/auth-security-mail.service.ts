@@ -10,6 +10,13 @@ export interface EnqueueUserWelcomeOptions {
   name?: string;
 }
 
+export interface EnqueueReferralInviteOptions {
+  to: string;
+  name: string;
+  referral_code: string;
+  share_url: string;
+}
+
 export interface EnqueueNewLoginOptions {
   to: string;
   ip_address?: string | null;
@@ -54,6 +61,22 @@ export class AuthSecurityMailService {
       .catch((error: unknown) => {
         this.logger.error(
           `No se pudo encolar el correo de bienvenida a ${options.to}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
+  }
+
+  enqueueReferralInvite(options: EnqueueReferralInviteOptions): void {
+    void this.outbound_mail_enqueue_service
+      .enqueue_referral_invite({
+        to: options.to,
+        name: options.name,
+        referral_code: options.referral_code,
+        share_url: options.share_url,
+      })
+      .catch((error: unknown) => {
+        this.logger.error(
+          `No se pudo encolar el correo de invitación de referidos a ${options.to}`,
           error instanceof Error ? error.stack : String(error),
         );
       });

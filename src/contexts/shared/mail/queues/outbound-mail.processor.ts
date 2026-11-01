@@ -29,6 +29,7 @@ import {
   OUTBOUND_MAIL_JOB_LISTING_LIMIT_REACHED,
   OUTBOUND_MAIL_JOB_FEATURED_PURCHASED,
   OUTBOUND_MAIL_JOB_REFERRAL_REWARD,
+  OUTBOUND_MAIL_JOB_REFERRAL_INVITE,
   OUTBOUND_MAIL_JOB_FEATURED_EXPIRED,
   OUTBOUND_MAIL_JOB_USER_WELCOME,
   OUTBOUND_MAIL_JOB_NEW_USER_REGISTERED,
@@ -71,6 +72,7 @@ import {
   OutboundMailListingLimitReachedJobData,
   OutboundMailFeaturedPurchasedJobData,
   OutboundMailReferralRewardJobData,
+  OutboundMailReferralInviteJobData,
   OutboundMailFeaturedExpiredJobData,
   OutboundMailUserWelcomeJobData,
   OutboundMailNewUserRegisteredJobData,
@@ -240,6 +242,12 @@ export class OutboundMailProcessor extends WorkerHost {
     if (job.name === OUTBOUND_MAIL_JOB_REFERRAL_REWARD) {
       const data = job.data as OutboundMailReferralRewardJobData;
       await this.mail_service.sendReferralRewardEmail(data);
+      return;
+    }
+
+    if (job.name === OUTBOUND_MAIL_JOB_REFERRAL_INVITE) {
+      const data = job.data as OutboundMailReferralInviteJobData;
+      await this.mail_service.sendReferralInviteEmail(data);
       return;
     }
 
