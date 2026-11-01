@@ -64,9 +64,9 @@ export class ReferralsService {
 
   buildShareUrl(referral_code: string): string {
     const base = envs.FRONTEND_URL.replace(/\/$/, "");
-    const register_path = FRONTEND_ROUTES.REGISTER;
+    const publish_path = FRONTEND_ROUTES.CREATE_VEHICLE;
     const params = new URLSearchParams({ ref: referral_code });
-    return `${base}${register_path}?${params.toString()}`;
+    return `${base}${publish_path}?${params.toString()}`;
   }
 
   async ensureReferralCodeForProfile(profile_id: string): Promise<string> {

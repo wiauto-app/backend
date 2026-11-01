@@ -191,31 +191,32 @@ export class MailTemplateRenderer {
     const referral_code = this.escapeHtml(payload.referral_code);
     const share_url_href = this.escapeHtml(payload.share_url);
     const share_url_label = this.escapeHtml(payload.share_url);
+    const share_encoded = encodeURIComponent(payload.share_url);
 
-    const stepStyle =
-      "margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#374151;";
-    const stepTitleStyle =
-      "margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#111827;font-weight:600;";
+    const steps_block = this.buildReferralInviteStepsBlock();
+    const link_box = this.buildReferralInviteLinkBox(
+      share_url_href,
+      share_url_label,
+      referral_code,
+    );
 
     const body = `<p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
         ${greeting}
       </p>
-      <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;">
-        Consigue más visibilidad para tu coche. <strong>1 destacado gratis</strong> por cada amigo que publique su anuncio.
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;">
+        <tr>
+          <td align="center">
+            <span style="display:inline-block;padding:6px 14px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;color:#0153E8;background-color:rgba(1,83,232,0.1);border:1px solid rgba(1,83,232,0.2);border-radius:999px;">
+              1 destacado gratis
+            </span>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0 0 20px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#374151;text-align:center;">
+        Consigue más visibilidad para tu coche cuando un amigo publique su anuncio con tu enlace.
       </p>
-      <div style="margin:24px 0;padding:16px;background-color:#f9fafb;border-radius:12px;">
-        <p style="${stepTitleStyle}">1. Comparte tu enlace</p>
-        <p style="${stepStyle}">Invita a alguien que quiera vender su coche.</p>
-        <p style="${stepTitleStyle}">2. Tu amigo publica su coche</p>
-        <p style="${stepStyle}">Se registra y publica un anuncio válido.</p>
-        <p style="${stepTitleStyle}">3. ¡Ganas un destacado gratis!</p>
-        <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.5;color:#374151;">
-          Para uno de tus anuncios durante 7 días.
-        </p>
-      </div>
-      <p style="margin:0 0 24px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.5;color:#9ca3af;text-align:center;word-break:break-all;">
-        Código: ${referral_code}
-      </p>`;
+      ${steps_block}
+      ${link_box}`;
 
     return this.renderBase({
       preheader: "Comparte tu enlace y gana un destacado gratis en WiAuto.",
@@ -224,6 +225,7 @@ export class MailTemplateRenderer {
       share_block_html: this.buildReferralInviteShareBlock(
         share_url_href,
         share_url_label,
+        share_encoded,
       ),
       footer_note:
         "Comparte el enlace con quien quiera vender su coche en WiAuto.",
@@ -1675,9 +1677,86 @@ export class MailTemplateRenderer {
           </tr>`;
   }
 
+  private buildReferralInviteStepsBlock(): string {
+    const steps: { num: string; title: string; desc: string }[] = [
+      {
+        num: "1",
+        title: "Comparte tu enlace",
+        desc: "Invita a alguien que quiera vender su coche.",
+      },
+      {
+        num: "2",
+        title: "Tu amigo publica su coche",
+        desc: "Entra con tu enlace, se registra si hace falta y publica un anuncio válido.",
+      },
+      {
+        num: "3",
+        title: "Ganas un destacado gratis",
+        desc: "Para uno de tus anuncios durante 7 días.",
+      },
+    ];
+
+    const rows = steps
+      .map(
+        (step, index) => `<tr>
+        <td style="padding:${index === 0 ? "16" : "12"}px 16px ${index === steps.length - 1 ? "16" : "0"}px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td width="36" valign="top" style="padding-right:12px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td width="32" height="32" align="center" valign="middle" style="width:32px;height:32px;border-radius:8px;background-color:rgba(1,83,232,0.1);font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:700;color:#0153E8;">
+                      ${step.num}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td valign="top">
+                <p style="margin:0 0 4px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.4;color:#111827;font-weight:600;">
+                  ${this.escapeHtml(step.title)}
+                </p>
+                <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.5;color:#4b5563;">
+                  ${this.escapeHtml(step.desc)}
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>`,
+      )
+      .join("");
+
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;border:1px solid #f3f4f6;border-radius:12px;background-color:#f9fafb;">
+      ${rows}
+    </table>`;
+  }
+
+  private buildReferralInviteLinkBox(
+    share_url_href: string,
+    share_url_label: string,
+    referral_code: string,
+  ): string {
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px;border:1px solid rgba(1,83,232,0.15);border-radius:12px;background-color:rgba(1,83,232,0.04);">
+      <tr>
+        <td style="padding:14px 16px;">
+          <p style="margin:0 0 8px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6b7280;">
+            Tu enlace de invitación
+          </p>
+          <p style="margin:0;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.55;color:#1f2937;word-break:break-all;">
+            <a href="${share_url_href}" style="color:#0153E8;text-decoration:none;font-weight:600;">${share_url_label}</a>
+          </p>
+          <p style="margin:12px 0 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.5;color:#6b7280;text-align:center;">
+            Código de referido: <strong style="color:#111827;">${referral_code}</strong>
+          </p>
+        </td>
+      </tr>
+    </table>`;
+  }
+
   private buildReferralInviteShareBlock(
     share_url_href: string,
     share_url_label: string,
+    share_encoded: string,
   ): string {
     return `<tr>
             <td style="background-color:#ffffff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;padding:0 28px 24px;">
@@ -1685,11 +1764,26 @@ export class MailTemplateRenderer {
                 <tr>
                   <td align="center" style="padding:20px 0 0;">
                     <p style="margin:0 0 12px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#111827;">
-                      Tu enlace de invitación
+                      Comparte tu invitación
                     </p>
-                    <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.55;word-break:break-all;">
+                    <p style="margin:0 0 16px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.55;word-break:break-all;">
                       <a href="${share_url_href}" style="color:#0153E8;text-decoration:none;font-weight:600;">${share_url_label}</a>
                     </p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:0 8px;">
+                          <a href="https://wa.me/?text=${share_encoded}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">WhatsApp</a>
+                        </td>
+                        <td style="padding:0 8px;color:#d1d5db;">|</td>
+                        <td style="padding:0 8px;">
+                          <a href="https://www.facebook.com/sharer/sharer.php?u=${share_encoded}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">Facebook</a>
+                        </td>
+                        <td style="padding:0 8px;color:#d1d5db;">|</td>
+                        <td style="padding:0 8px;">
+                          <a href="${share_url_href}" style="text-decoration:none;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:#0153E8;">Abrir enlace</a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>

@@ -3,6 +3,12 @@ import "reflect-metadata";
 import { BadRequestException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/src/common/envs", () => ({
+  envs: {
+    FRONTEND_URL: "https://wiauto.test",
+  },
+}));
+
 import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
 import { REFERRAL_STATUS } from "@/src/contexts/referrals/types/referral-status";
 import { STATUS_VEHICLE } from "@/src/contexts/vehicles/types/vehicle";
@@ -51,6 +57,14 @@ describe("ReferralsService", () => {
     vi.clearAllMocks();
     referral_repository.create.mockImplementation((input: unknown) => input);
     referral_repository.save.mockImplementation(async (input: unknown) => input);
+  });
+
+  it("buildShareUrl apunta a /publicar con ref", () => {
+    const service = createService();
+
+    expect(service.buildShareUrl("ABC12345")).toBe(
+      "https://wiauto.test/publicar?ref=ABC12345",
+    );
   });
 
   it("rechaza auto-referral cuando throw_on_invalid", async () => {

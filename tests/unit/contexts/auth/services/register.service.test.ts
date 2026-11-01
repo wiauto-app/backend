@@ -40,7 +40,7 @@ describe("RegisterService", () => {
       ensureReferralCodeForProfile: vi.fn().mockResolvedValue("ref-code"),
       buildShareUrl: vi
         .fn()
-        .mockReturnValue("https://wiauto.test/registro?ref=ref-code"),
+        .mockReturnValue("https://wiauto.test/publicar?ref=ref-code"),
       ...(overrides.referrals_service as object),
     };
     const pending_vehicle_creation_enqueue_service = {
@@ -82,7 +82,7 @@ describe("RegisterService", () => {
       to: baseDto.email,
       name: baseDto.name,
       referral_code: "ref-code",
-      share_url: "https://wiauto.test/registro?ref=ref-code",
+      share_url: "https://wiauto.test/publicar?ref=ref-code",
     });
   });
 
