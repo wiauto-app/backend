@@ -1,4 +1,4 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -8,8 +8,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   ValidateNested,
 } from "class-validator";
+
+const emptyStringToUndefined = ({ value }: { value: unknown }) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
 
 import { DealershipMemberInputHttpDto } from "../dealership-member-input/dealership-member-input.http-dto";
 
@@ -26,13 +30,18 @@ export class CreateDealershipHttpDto {
   @IsNotEmpty()
   banner_url: string;
 
+  @IsOptional()
+  @Transform(emptyStringToUndefined)
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  description?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  website_url: string;
+  @IsOptional()
+  @Transform(emptyStringToUndefined)
+  @IsUrl(
+    { require_protocol: false },
+    { message: "Introduce una URL o dominio válido" },
+  )
+  website_url?: string;
 
   @IsEmail()
   @IsNotEmpty()

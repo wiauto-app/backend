@@ -24,6 +24,7 @@ import { RemoveDealershipDto } from "../dto/remove-dealership.dto";
 import { UpdateDealershipDto } from "../dto/update-dealership.dto";
 import { DealershipMembersService } from "./dealership-members.service";
 import { DealershipScheduleService } from "./dealership-schedule.service";
+import { normalizeDealershipWebsiteUrl } from "../utils/normalize-dealership-website-url";
 
 @Injectable()
 export class DealershipService {
@@ -138,6 +139,16 @@ export class DealershipService {
 
     const payload: UpdateDealershipPayload = { ...patch_fields };
 
+    if (patch_fields.description !== undefined) {
+      payload.description = patch_fields.description.trim();
+    }
+
+    if (patch_fields.website_url !== undefined) {
+      payload.website_url = normalizeDealershipWebsiteUrl(
+        patch_fields.website_url,
+      );
+    }
+
     if (patch_fields.name !== undefined) {
       payload.slug = await this.buildUniqueSlug(patch_fields.name, id);
     }
@@ -214,8 +225,8 @@ export class DealershipService {
     payload.slug = await this.buildUniqueSlug(dto.name);
     payload.avatar_url = dto.avatar_url;
     payload.banner_url = dto.banner_url;
-    payload.description = dto.description;
-    payload.website_url = dto.website_url;
+    payload.description = dto.description?.trim() ?? "";
+    payload.website_url = normalizeDealershipWebsiteUrl(dto.website_url);
     payload.email = dto.email;
     payload.phone_code = dto.phone_code;
     payload.phone = dto.phone;
