@@ -104,11 +104,11 @@ export class VehicleAiContextHttpDto {
   power: number;
 
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   lat: number;
 
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   lng: number;
 
   @IsOptional()
