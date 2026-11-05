@@ -44,7 +44,8 @@ async function bootstrap() {
       if (!origin || FRONTEND_ORIGINS.has(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`Origen ${origin} no permitido por CORS`));
+        console.log(`Origen ${origin} no permitido por CORS`);
+        callback(null,false);
       }
     },
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Record-Search'],
