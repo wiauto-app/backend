@@ -20,8 +20,6 @@ const REQUIRED_FIELDS = [
   "condition",
   "mileage",
   "transmission_type",
-  "power",
-  "traction_id",
 ] as const;
 
 /** Tiempo mínimo entre generaciones de descripción por usuario. */
@@ -118,10 +116,7 @@ export class GenerateVehicleDescriptionService {
   private validateRequiredFields(dto: GenerateVehicleDescriptionDto): void {
     const missing = REQUIRED_FIELDS.filter((field) => {
       const value = dto[field];
-      if (field === "mileage" || field === "power" || field === "version_id") {
-        return value === undefined || value === null;
-      }
-      return value === undefined || value === null || value === "";
+      return value;
     });
 
     if (missing.length > 0) {
