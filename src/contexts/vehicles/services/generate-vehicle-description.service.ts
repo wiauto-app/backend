@@ -114,15 +114,37 @@ export class GenerateVehicleDescriptionService {
   }
 
   private validateRequiredFields(dto: GenerateVehicleDescriptionDto): void {
-    const missing = REQUIRED_FIELDS.filter((field) => {
-      const value = dto[field];
-      return value;
-    });
+    const missing = REQUIRED_FIELDS.filter((field) =>
+      this.isRequiredFieldMissing(field, dto[field]),
+    );
 
     if (missing.length > 0) {
       throw new BadRequestException(
         `Faltan campos obligatorios para generar la descripción: ${missing.join(", ")}`,
       );
     }
+  }
+
+  private isRequiredFieldMissing(
+    field: (typeof REQUIRED_FIELDS)[number],
+    value: GenerateVehicleDescriptionDto[(typeof REQUIRED_FIELDS)[number]],
+  ): boolean {
+
+
+    if (typeof value === "number" && Number.isNaN(value)) {
+      return true;
+    }
+
+    // version_id=0 es el default vacío del formulario de publicación.
+    if (field === "version_id") {
+      return typeof value !== "number" || value <= 0;
+    }
+
+    // mileage=0 es válido (vehículo nuevo / sin km).
+    if (field === "mileage") {
+      return typeof value !== "number" || value < 0;
+    }
+
+    return false;
   }
 }

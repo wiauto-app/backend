@@ -98,18 +98,22 @@ export class VehicleAiContextHttpDto {
   @IsNotEmpty()
   transmission_type: TransmissionType;
 
+  /** Opcional: particulares a menudo no tienen ficha técnica aún; la IA estima sin potencia. */
+  @IsOptional()
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  power: number;
+  power?: number;
 
-  @IsNumber()
   @IsOptional()
-  lat: number;
+  @Type(() => Number)
+  @IsNumber()
+  lat?: number;
 
-  @IsNumber()
   @IsOptional()
-  lng: number;
+  @Type(() => Number)
+  @IsNumber()
+  lng?: number;
 
   @IsOptional()
   @IsNumber()
