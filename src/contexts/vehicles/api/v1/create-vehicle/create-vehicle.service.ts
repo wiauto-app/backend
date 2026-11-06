@@ -526,7 +526,7 @@ export class CreateVehicleService {
     };
   }
 
-  /** Tras crear borrador en cola (registro): caducidad programada, sin indexar ni mail. */
+  /** Tras crear borrador en cola (legacy): caducidad programada, sin indexar ni mail. */
   async runDraftRegistrationSideEffects(
     input: Pick<RunPublishSideEffectsInput, "vehicle_id" | "expires_at" | "now">,
   ): Promise<void> {

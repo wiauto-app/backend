@@ -289,6 +289,7 @@ import { DraftVehiclePublicationService } from "./services/draft-vehicle-publica
   ],
   exports: [
     CreateVehicleService,
+    VehicleImagesModule,
     VehicleCreationAssertionService,
     DraftVehiclePublicationService,
     PendingVehicleCreationEnqueueService,

@@ -46,8 +46,23 @@ export class AuthController {
   ) {}
 
   @Post("register")
-  register(@Body() registerDto: RegisterDto, @Req() req: Request) {
-    return this.registerService.register(registerDto, readGuestId(req));
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.registerService.register(
+      registerDto,
+      readGuestId(req),
+      req,
+    );
+
+    this.setPlatformSessionCookies(res, {
+      token: result.token,
+      refresh_token: result.refresh_token,
+    });
+
+    return result;
   }
 
   private setPlatformSessionCookies(

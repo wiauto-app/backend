@@ -51,12 +51,6 @@ export class AuthService {
       throw new UnauthorizedException(authResponseConfig.messages.INVALID_CREDENTIALS);
     }
 
-    if (!user.is_email_verified) {
-      throw new UnauthorizedException(
-        authResponseConfig.messages.EMAIL_NOT_VERIFIED,
-      );
-    }
-
     return this.authSessionService.establishSessionForUser(user, request);
   }
 
