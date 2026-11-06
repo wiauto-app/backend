@@ -24,6 +24,7 @@ export class MeResponseDto {
   email: string;
   providers: AuthProvider[];
   has_password: boolean;
+  is_email_verified: boolean;
   name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -48,6 +49,7 @@ export class MeResponseDto {
     dto.email = user.email;
     dto.providers = options.providers;
     dto.has_password = options.has_password;
+    dto.is_email_verified = user.is_email_verified;
     dto.last_sign_in = user.last_sign_in;
     dto.created_at = user.created_at;
     dto.name = profile.name;

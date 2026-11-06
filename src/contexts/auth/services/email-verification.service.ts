@@ -23,6 +23,7 @@ import { DraftPublicationOnVerifyEnqueueService } from "@/src/contexts/vehicles/
 import { CreateVehicleService } from "@/src/contexts/vehicles/api/v1/create-vehicle/create-vehicle.service";
 import { AuthSecurityMailService } from "./auth-security-mail.service";
 import { AuthSessionService } from "./auth-session.service";
+import { MeSessionCacheService } from "./me-session-cache.service";
 
 export interface EmailVerificationTokenPayload {
   sub: string;
@@ -51,6 +52,7 @@ export class EmailVerificationService {
     private readonly draft_vehicle_publication_service: DraftVehiclePublicationService,
     private readonly draft_publication_on_verify_enqueue_service: DraftPublicationOnVerifyEnqueueService,
     private readonly create_vehicle_service: CreateVehicleService,
+    private readonly meSessionCacheService: MeSessionCacheService,
   ) {}
 
   async enqueueSendVerificationForUser(userId: string, email: string): Promise<void> {
@@ -136,6 +138,7 @@ export class EmailVerificationService {
       }
       await this.userRepository.save(updated);
       user.is_email_verified = true;
+      await this.meSessionCacheService.invalidate(user.id);
       message = authResponseConfig.messages.EMAIL_VERIFIED;
       this.authSecurityMailService.enqueueUserWelcome({
         to: user.email,
