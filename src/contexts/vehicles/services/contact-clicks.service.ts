@@ -8,10 +8,12 @@ import {
 } from "../types/contact-click";
 import { STATUS_VEHICLE } from "../types/vehicle";
 import { VehicleNotFoundException } from "../exceptions/vehicle-not-found.exception";
-import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/typeorm.vehicle-repository";
 import { formatVehicleDisplayName } from "../utils/format-vehicle-display-name";
 import { buildWhatsAppUrl } from "../helpers/build-whatsapp-url";
 import { TypeOrmContactClickRepository } from "../repositories/typeorm.contact-click-repository";
+import { InjectRepository } from "@nestjs/typeorm";
+import { VehicleEntity } from "../entities/vehicle.entity";
+import { Repository } from "typeorm";
 
 export interface RecordVehicleContactClickInput {
   vehicle_id: string;
@@ -35,14 +37,29 @@ export type RecordVehicleContactClickResult =
 @Injectable()
 export class ContactClicksService {
   constructor(
-    private readonly vehicle_repository: TypeOrmVehicleRepository,
+    @InjectRepository(VehicleEntity)
+    private readonly vehicle_repository: Repository<VehicleEntity>,
     private readonly contact_click_repository: TypeOrmContactClickRepository,
   ) {}
 
   async record(
     input: RecordVehicleContactClickInput,
   ): Promise<RecordVehicleContactClickResult> {
-    const vehicle = await this.vehicle_repository.findOne(input.vehicle_id);
+    const vehicle = await this.vehicle_repository.findOne({
+      where: {
+        id: input.vehicle_id,
+      },
+      relations: ["version.make", "version.model", "profile"],
+      select: [
+        "id",
+        "phone",
+        "phone_code",
+        "has_whatsapp",
+        "show_phone",
+        "profile_id",
+        "status",
+      ],
+    });
     if (!vehicle) {
       throw new VehicleNotFoundException(input.vehicle_id);
     }
@@ -59,14 +76,14 @@ export class ContactClicksService {
       throw new ValidationException("No puedes contactar tu propio anuncio");
     }
 
-    if (vehicle.show_phone === false) {
+    if (!vehicle.show_phone) {
       throw new ValidationException(
         "El teléfono no está disponible para este anuncio",
       );
     }
 
-    const phone = vehicle.phone?.trim() || "";
-    const phone_code = vehicle.phone_code?.trim() || "";
+    const phone = vehicle.phone;
+    const phone_code = vehicle.phone_code;
 
     if (!phone || !phone_code) {
       throw new ValidationException(
@@ -76,7 +93,7 @@ export class ContactClicksService {
 
     if (
       input.type === CONTACT_CLICK_TYPE.WHATSAPP &&
-      vehicle.has_whatsapp !== true
+      !vehicle.has_whatsapp
     ) {
       throw new ValidationException(
         "WhatsApp no está disponible para este anuncio",

@@ -293,6 +293,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     phone_code: entity.phone_code,
     phone: entity.phone,
   });
+  console.log("contactVisibility", contactVisibility);
 
   return {
     ...base,
@@ -340,7 +341,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
     first_cuota: entity.first_cuota,
-    dealership: dealership ?? entity.dealership ?? null,
+    dealership: dealership ?? entity.dealership,
     financing_offer: null,
   };
 }
