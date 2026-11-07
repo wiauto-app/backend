@@ -34,9 +34,6 @@ describe("RegisterService", () => {
     email: "test@example.com",
     password: "secret12",
     name: "Test",
-    last_name: "User",
-    phone_code: "+34",
-    phone: "600000000",
   };
 
   const request = { ip: "127.0.0.1", headers: {} } as Request;

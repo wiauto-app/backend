@@ -293,8 +293,9 @@ export class VehicleEntity {
   })
   show_phone: boolean;
 
-  @Column()
-  email: string;
+  /** @deprecated Usar profile.user.email; no escribir en create/update. */
+  @Column({ type: "varchar", nullable: true })
+  email: string | null;
 
   // ===========================================================================
   // AUDITORÍA

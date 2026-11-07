@@ -136,6 +136,9 @@ const resolve_listing_is_premium = (entity: VehicleEntity): boolean => {
   return entity.profile.user.is_admin;
 };
 
+const resolve_vehicle_publisher_email = (entity: VehicleEntity): string =>
+  entity.profile?.user?.email?.trim() ?? "";
+
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
     id: entity.id,
@@ -268,7 +271,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     phone: base.phone ?? "",
     has_whatsapp: base.has_whatsapp ?? false,
     show_phone: base.show_phone ?? true,
-    email: base.email,
+    email: resolve_vehicle_publisher_email(entity),
     features_ids: base.features_ids,
     services_ids: base.services_ids,
     color_id: base.color_id,
@@ -330,7 +333,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
     show_whatsapp: contactVisibility.show_whatsapp,
-    email: entity.email,
+    email: resolve_vehicle_publisher_email(entity),
     profile_id: entity.profile.id,
     suggestions: entity.suggestions,
     prices: map_vehicle_prices_history(entity.vehicle_prices),
@@ -367,7 +370,7 @@ function entity_to_admin_list_item(entity: VehicleEntity): AdminVehicleListItem 
     time_to_charge: entity.time_to_charge,
     phone_code: entity.phone_code,
     phone: entity.phone,
-    email: entity.email,
+    email: resolve_vehicle_publisher_email(entity),
     version_id: entity.version_id,
     traction: entity.traction
       ? {
@@ -408,7 +411,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     phone: entity.phone,
     has_whatsapp: entity.has_whatsapp,
     show_phone: entity.show_phone,
-    email: entity.email,
+    email: resolve_vehicle_publisher_email(entity) || null,
     traction_id: entity.traction?.id ?? entity.traction_id ?? null,
     power: entity.power,
     displacement: entity.displacement,
@@ -455,6 +458,7 @@ const NON_PATCHABLE_VEHICLE_FIELDS = new Set<string>([
   "services_ids",
   "cuota_ids",
   "tracking",
+  "email",
 ]);
 
 @Injectable()
@@ -645,7 +649,6 @@ export class TypeOrmVehicleRepository {
       phone: p.phone ?? "",
       has_whatsapp: p.has_whatsapp ?? false,
       show_phone: p.show_phone ?? true,
-      email: p.email,
       features: feature_ids.map((id) => this.features_repository.create({ id })),
       services: service_ids.map((id) => this.service_repository.create({ id })),
       vehicle_type: p.vehicle_type_id
@@ -1107,6 +1110,7 @@ export class TypeOrmVehicleRepository {
         ...vehicle_catalog_relations,
         version: true,
         vehicle_prices: true,
+        profile: { user: true },
       },
     });
     if (!row) {
@@ -1122,7 +1126,7 @@ export class TypeOrmVehicleRepository {
         features: true,
         services: true,
         cuotas: true,
-        profile: true,
+        profile: { user: true },
         traction: true,
       },
     });
@@ -1146,7 +1150,7 @@ export class TypeOrmVehicleRepository {
   ): Promise<SellerContactFields | null> {
     const row = await this.vehicle_repository.findOne({
       where: { id },
-      relations: { profile: true },
+      relations: { profile: { user: true } },
     });
     if (!row?.profile) {
       return null;
@@ -1159,7 +1163,7 @@ export class TypeOrmVehicleRepository {
       show_phone: row.show_phone,
       phone_code: row.phone_code,
       phone: row.phone,
-      email: row.email,
+      email: row.profile.user?.email?.trim() ?? "",
       profile_id: row.profile.id,
     };
   }
@@ -1411,7 +1415,7 @@ export class TypeOrmVehicleRepository {
         features: true,
         services: true,
         cuotas: true,
-        profile: true,
+        profile: { user: true },
         traction: true,
       },
     });
@@ -1435,6 +1439,7 @@ export class TypeOrmVehicleRepository {
       .leftJoinAndSelect("vehicle.services", "services")
       .leftJoinAndSelect("vehicle.cuotas", "cuotas")
       .leftJoinAndSelect("vehicle.profile", "profile")
+      .leftJoinAndSelect("profile.user", "profile_user")
       .leftJoinAndSelect("vehicle.traction", "traction")
       .getMany();
 
@@ -1499,7 +1504,6 @@ export class TypeOrmVehicleRepository {
       time_to_charge: source.time_to_charge,
       phone_code: source.phone_code,
       phone: source.phone,
-      email: source.email,
       category_id: source.category_id,
       version_id: source.version_id,
       traction: source.traction,

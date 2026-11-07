@@ -39,8 +39,8 @@ export interface EnqueueNewUserRegisteredOptions {
   email: string;
   name: string;
   last_name?: string | null;
-  phone_code: string;
-  phone: string;
+  phone_code?: string | null;
+  phone?: string | null;
   created_at?: Date | string;
 }
 
@@ -130,8 +130,8 @@ export class AuthSecurityMailService {
             email: options.email,
             name: options.name,
             last_name: options.last_name?.trim() || null,
-            phone_code: options.phone_code,
-            phone: options.phone,
+            phone_code: options.phone_code?.trim() || null,
+            phone: options.phone?.trim() || null,
           },
           created_at,
         }),

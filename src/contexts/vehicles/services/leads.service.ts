@@ -245,7 +245,6 @@ export class LeadsService {
 
     await this.notify_lead_created({
       publisher_profile_id: seller_profile_id,
-      email_override: vehicle.email,
       lead: lead_primitive,
       vehicle_title,
       vehicle,
@@ -330,7 +329,6 @@ export class LeadsService {
 
     await this.notify_lead_created({
       publisher_profile_id: seller_profile_id,
-      email_override: vehicle.email,
       lead: lead_primitive,
       vehicle_title,
       vehicle,
@@ -352,7 +350,6 @@ export class LeadsService {
 
   private async notify_lead_created(payload: {
     publisher_profile_id: string;
-    email_override: string;
     lead: PrimitiveLead;
     vehicle_title: string;
     vehicle: VehicleDetail;
@@ -374,7 +371,6 @@ export class LeadsService {
       category: "lead",
       title,
       body,
-      email_override: payload.email_override,
       data: {
         lead_id: payload.lead.id,
         vehicle_id: payload.lead.vehicle_id,
@@ -392,11 +388,11 @@ export class LeadsService {
           : null,
         vehicle_title: payload.vehicle_title,
         buyer_profile_id: payload.lead.profile_id,
-        vehicle_price: vehicle.price ?? null,
+        vehicle_price: vehicle.price,
         vehicle_image_url: vehicle.images[0]?.url ?? null,
-        vehicle_year: vehicle.version.year?.year ?? null,
-        vehicle_mileage: vehicle.mileage ?? null,
-        vehicle_fuel_label: vehicle.version.fuel_type?.slug
+        vehicle_year: vehicle.version.year.year,
+        vehicle_mileage: vehicle.mileage,
+        vehicle_fuel_label: vehicle.version.fuel_type.slug
           ? humanizeSlug(vehicle.version.fuel_type.slug)
           : null,
         vehicle_transmission_label: formatTransmissionLabel(
@@ -455,7 +451,7 @@ export class LeadsService {
 
     const profile_name =
       `${profile.name} ${profile.last_name ?? ""}`.trim();
-    const profile_email = profile.user?.email;
+    const profile_email = profile.user.email;
 
     if (input.name.trim() !== profile_name) {
       throw new ValidationException("El nombre no coincide con tu perfil");

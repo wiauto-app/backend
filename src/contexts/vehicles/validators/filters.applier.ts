@@ -452,10 +452,9 @@ export const applyAdminFilters = (
   }
 
   if (has_non_empty_string(filters.publisher_email)) {
-    qb.andWhere(
-      "vehicle.email = :publisher_email",
-      { publisher_email: filters.publisher_email.trim() },
-    );
+    qb.andWhere("profile_user.email = :publisher_email", {
+      publisher_email: filters.publisher_email.trim(),
+    });
   }
 
   if (filters.status) {

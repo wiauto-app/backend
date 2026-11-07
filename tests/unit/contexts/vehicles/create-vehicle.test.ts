@@ -39,7 +39,6 @@ const validDto = (): CreateVehicleDto =>
     version_id: 1,
     phone_code: "+593",
     phone: "999999999",
-    email: "seller@example.com",
     transmission_type: TRANSMISSION_TYPE.AUTOMATIC,
     traction_id: "56aa4e9f-19cc-49aa-bb01-50a23c410f46",
     show_exact_location: false,
@@ -100,6 +99,14 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
 describe("CreateVehicleDto", () => {
   it("accepts the canonical create contract", async () => {
     expect(await validate(validDto())).toHaveLength(0);
+  });
+
+  it("no exige email en el body de creación", async () => {
+    const dto = plainToInstance(CreateVehicleDto, {
+      ...validDto(),
+    });
+    expect(dto).not.toHaveProperty("email");
+    expect(await validate(dto)).toHaveLength(0);
   });
 
   it("accepts an optional ref string", async () => {
@@ -319,6 +326,44 @@ describe("CreateVehicleService", () => {
     expect(saved_targets).toContain(VehiclePriceEntity);
     expect(result.id).toBe("vehicle-id");
     expect(result.profile_id).toBe("profile-id");
+  });
+
+  it("no persiste email del vehículo en la transacción", async () => {
+    const created_payloads: Record<string, unknown>[] = [];
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => {
+        if (_target === VehicleEntity) {
+          created_payloads.push(payload as Record<string, unknown>);
+        }
+        return payload;
+      }),
+      save: vi.fn(async (target, payload) => {
+        if (target === VehicleEntity) {
+          return {
+            ...payload,
+            id: "vehicle-id",
+            ref: 42,
+            created_at: new Date("2026-08-16T00:00:00Z"),
+            updated_at: new Date("2026-08-16T00:00:00Z"),
+          };
+        }
+        return payload;
+      }),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async callback => callback(manager)),
+    };
+    const service = buildCreateVehicleService({ data_source });
+
+    await service.create(validDto(), "profile-id");
+
+    expect(created_payloads[0]).toBeDefined();
+    expect(created_payloads[0]).not.toHaveProperty("email");
   });
 
   it("syncs the search index with the persisted active status", async () => {

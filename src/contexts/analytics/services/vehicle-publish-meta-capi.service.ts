@@ -17,7 +17,6 @@ export interface VehiclePublishListingSnapshot {
   province?: string | null;
   city?: string | null;
   zip?: string | null;
-  email?: string | null;
   phone?: string | null;
 }
 
@@ -125,7 +124,7 @@ export class VehiclePublishMetaCapiService {
     const profile = context.user.profile;
     return {
       id: context.user.id,
-      email: context.user.email || context.listing.email || undefined,
+      email: context.user.email || undefined,
       phone: context.listing.phone || profile?.phone || undefined,
       firstName: profile?.name,
       lastName: profile?.last_name,

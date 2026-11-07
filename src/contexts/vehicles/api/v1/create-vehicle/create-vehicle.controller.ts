@@ -52,7 +52,6 @@ export class CreateVehicleController {
         province: address?.province ?? null,
         city: address?.municipality ?? null,
         zip: address?.postal_code ?? null,
-        email: dto.email,
         phone: dto.phone,
       },
     });

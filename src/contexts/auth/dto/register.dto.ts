@@ -26,13 +26,13 @@ export class RegisterDto {
   @IsString()
   last_name?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  phone_code: string;
+  phone_code?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  phone?: string;
 
   @IsOptional()
   @IsString()

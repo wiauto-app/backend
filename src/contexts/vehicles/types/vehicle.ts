@@ -69,7 +69,7 @@ export interface PrimitiveVehicle {
   phone?: string | null;
   has_whatsapp?: boolean;
   show_phone?: boolean;
-  email: string;
+  email: string | null;
   created_at?: Date;
   updated_at?: Date;
   features_ids: string[];

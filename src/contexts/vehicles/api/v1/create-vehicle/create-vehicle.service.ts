@@ -118,7 +118,7 @@ const withTimeout = async <T>(
       promise,
       new Promise<T>((_, reject) => {
         timer = setTimeout(
-          () => reject(new Error(`${label} superó ${timeout_ms}ms`)),
+          () => { reject(new Error(`${label} superó ${timeout_ms}ms`)); },
           timeout_ms,
         );
       }),
@@ -274,7 +274,6 @@ export class CreateVehicleService {
           phone: dto.phone,
           has_whatsapp: dto.has_whatsapp ?? false,
           show_phone: dto.show_phone ?? true,
-          email: dto.email,
           vehicle_type_id: dto.vehicle_type_id ?? null,
           category_id: dto.category_id ?? null,
           color_id: dto.color_id ?? null,
@@ -456,7 +455,7 @@ export class CreateVehicleService {
         this.vehicleDetailCache.refresh(createdVehicleId, () =>
           this.vehicle_repository.findOne(createdVehicleId),
         ),
-        8_000,
+        8000,
         "Refrescar caché del vehículo",
       );
     } catch (error) {
@@ -502,7 +501,6 @@ export class CreateVehicleService {
       phone: vehicle.phone,
       has_whatsapp: vehicle.has_whatsapp,
       show_phone: vehicle.show_phone,
-      email: vehicle.email,
       created_at: vehicle.created_at,
       updated_at: vehicle.updated_at,
       features_ids: relationsIds(vehicle.features),

@@ -292,7 +292,7 @@ export class LeadAssistantReplyJobService {
       version_name: vehicle.version_summary.version_name,
     });
 
-    const seller_email = seller_profile?.user.email ?? vehicle.email;
+    const seller_email = seller_profile?.user.email?.trim() ?? "";
     await this.outbound_mail_enqueue_service.enqueue_lead_assistant_reply({
       to: lead.email.trim(),
       reply_to: seller_email,

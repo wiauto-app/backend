@@ -10,7 +10,6 @@ import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
-  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -117,10 +116,6 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsBoolean({ message: "Indica si quieres mostrar el teléfono." })
   show_phone?: boolean;
-
-  @IsEmail({}, { message: "Introduce un correo electrónico válido." })
-  @IsNotEmpty({ message: "Introduce un correo electrónico." })
-  email: string;
 
   @IsOptional()
   @IsEnum(PUBLISHER_TYPE, {

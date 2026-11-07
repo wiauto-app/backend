@@ -79,8 +79,8 @@ export class MailService {
       email: string;
       name: string;
       last_name: string | null;
-      phone_code: string;
-      phone: string;
+      phone_code: string | null;
+      phone: string | null;
     };
     created_at: string;
   }): Promise<void> {

@@ -259,8 +259,8 @@ export class MailTemplateRenderer {
       email: string;
       name: string;
       last_name: string | null;
-      phone_code: string;
-      phone: string;
+      phone_code: string | null;
+      phone: string | null;
     };
     created_at: string;
   }): string {
@@ -268,7 +268,10 @@ export class MailTemplateRenderer {
       .map((part) => part?.trim())
       .filter(Boolean)
       .join(" ");
-    const phone = `${payload.user.phone_code} ${payload.user.phone}`.trim();
+    const phone = [payload.user.phone_code, payload.user.phone]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ");
     const created_at = this.escapeHtml(
       new Date(payload.created_at).toLocaleString("es-ES", {
         dateStyle: "medium",
