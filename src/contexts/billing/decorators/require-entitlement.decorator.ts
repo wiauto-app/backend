@@ -6,6 +6,6 @@ export const REQUIRE_ENTITLEMENT_KEY = "require_entitlement";
 
 /** Feature que EntitlementGuard debe comprobar (o admin bypass). */
 export const RequireEntitlement = (
-  feature: EntitlementFeature | string,
+  feature: EntitlementFeature,
 ): MethodDecorator & ClassDecorator =>
   SetMetadata(REQUIRE_ENTITLEMENT_KEY, feature);

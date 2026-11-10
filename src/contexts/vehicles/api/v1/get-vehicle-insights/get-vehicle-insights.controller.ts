@@ -14,8 +14,8 @@ export class GetVehicleInsightsController {
   constructor(private readonly vehicle_insights_service: VehicleInsightsService) {}
 
   @Get(`:id/${V1_VEHICLES_INSIGHTS}`)
-  @OwnerVehicleActionAuth()
   @UseGuards(EntitlementGuard)
+  @OwnerVehicleActionAuth()
   @RequireEntitlement(ENTITLEMENT_FEATURE.LISTING_INSIGHTS)
   run(@Param("id", ParseUUIDPipe) id: string): Promise<VehicleInsights> {
     return this.vehicle_insights_service.getInsights(id);

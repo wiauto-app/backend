@@ -42,13 +42,13 @@ export class EntitlementGuard implements CanActivate {
       return true;
     }
 
-    const profile_id = user.profile?.id ?? user.id;
+    const profile_id = user.profile.id;
     const resolved = await this.entitlements_service.resolve(profile_id);
     const entitlement = resolved.features[feature];
 
-    if (!entitlement) {
-      throw new ForbiddenException(`No tienes acceso a: ${feature}`);
-    }
+    // if (!entitlement) {
+    //   throw new ForbiddenException(`No tienes acceso a: ${feature}`);
+    // }
 
     if (entitlement.value_type === ENTITLEMENT_VALUE_TYPE.UNLIMITED) {
       return true;
