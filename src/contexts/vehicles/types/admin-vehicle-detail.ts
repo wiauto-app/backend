@@ -6,7 +6,11 @@ import {
 import { VehiclePriceStatus } from "../vehicle-prices/types/vehicle-price";
 
 export interface AdminVehicleFormImage {
+  id?: string;
+  /** Ruta compuesta `bucket/clave` para el API; vacía si solo hay URL pública. */
   path: string;
+  /** URL pública o firmada para la UI cuando `path` no es almacenamiento. */
+  preview_url?: string;
   order: number;
 }
 

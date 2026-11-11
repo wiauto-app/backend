@@ -233,9 +233,54 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
 const pathname_to_compound_path = (pathname: string): string =>
   pathname.trim().replace(/^\/+/, "");
 
+const is_public_http_url = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.startsWith("http://") || normalized.startsWith("https://")
+  );
+};
+
+const resolve_admin_form_image_storage_path = (
+  image: VehicleImagesEntity,
+): string => {
+  const source_path = image.source_path?.trim() ?? "";
+  if (source_path && !is_public_http_url(source_path)) {
+    return pathname_to_compound_path(source_path);
+  }
+
+  const url = image.url?.trim() ?? "";
+  if (url && !is_public_http_url(url)) {
+    return pathname_to_compound_path(url);
+  }
+
+  return "";
+};
+
+const resolve_admin_form_image_preview = (
+  image: VehicleImagesEntity,
+): string | undefined => {
+  const url = image.url?.trim();
+  if (url && is_public_http_url(url)) {
+    return url;
+  }
+  return undefined;
+};
+
+const map_admin_vehicle_form_images = (
+  images: VehicleImagesEntity[] | undefined,
+): AdminVehicleDetail["images"] =>
+  [...(images ?? [])]
+    .filter((image) => image.url !== null)
+    .sort((a, b) => a.order - b.order)
+    .map((image, index) => ({
+      id: image.id,
+      path: resolve_admin_form_image_storage_path(image),
+      preview_url: resolve_admin_form_image_preview(image),
+      order: index,
+    }));
+
 function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDetail {
   const base = entity_to_primitives(entity);
-  const sorted_images = map_vehicle_list_images(entity.images);
   const active_price = get_active_price(entity);
 
   return {
@@ -278,10 +323,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     dgt_label_id: base.dgt_label_id,
     warranty_type_id: base.warranty_type_id,
     cuota_ids: base.cuota_ids,
-    images: sorted_images.map((image, index) => ({
-      path: pathname_to_compound_path(image.url),
-      order: index,
-    })),
+    images: map_admin_vehicle_form_images(entity.images),
   };
 }
 
