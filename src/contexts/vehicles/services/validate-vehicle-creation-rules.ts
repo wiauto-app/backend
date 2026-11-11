@@ -1,3 +1,4 @@
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { FuelIncompatibilitiesException } from "../catalog/fuel_types/exceptions/fuel_incompatibilities.exception";
 import { ElectricDisplacementException } from "../exceptions/electric-displacement.exception";
 import { NewVehicleMileageException } from "../exceptions/newVehicleMilleage.exception";
@@ -5,6 +6,36 @@ import {
   CONDITION_VEHICLE,
   type ConditionVehicle,
 } from "../types/vehicle";
+
+interface VehicleCreateImageRef {
+  upload_id?: string;
+  path?: string;
+}
+
+export const countCreateVehicleImagePayload = (
+  images: VehicleCreateImageRef[] | undefined,
+): number =>
+  (images ?? []).filter(
+    (image) =>
+      (typeof image.upload_id === "string" && image.upload_id.trim() !== "") ||
+      (typeof image.path === "string" && image.path.trim() !== ""),
+  ).length;
+
+/** Publicación directa (no borrador): al menos una foto con `upload_id` o `path`. */
+export const assertCreateVehicleHasMinimumImages = (
+  images: VehicleCreateImageRef[] | undefined,
+  options: { as_draft?: boolean } = {},
+): void => {
+  if (options.as_draft === true) {
+    return;
+  }
+
+  if (countCreateVehicleImagePayload(images) < 1) {
+    throw new ValidationException(
+      "Sube al menos una fotografía del vehículo.",
+    );
+  }
+};
 
 const MAX_MILEAGE_FOR_NEW_VEHICLE = 1000;
 

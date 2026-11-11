@@ -50,12 +50,18 @@ import {
   VehicleImageDto,
   VehicleMediaDto,
 } from "./create-vehicle.http-dto";
-import { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
+import {
+  assertCreateVehicleHasMinimumImages,
+  validateVehicleCreationRules,
+} from "../../../services/validate-vehicle-creation-rules";
 import { DealershipFinancingSettingsEntity } from "@/src/contexts/financing/entities/dealership-financing-settings.entity";
 import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
 
-export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
+export {
+  assertCreateVehicleHasMinimumImages,
+  validateVehicleCreationRules,
+} from "../../../services/validate-vehicle-creation-rules";
 
 const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -160,6 +166,7 @@ export class CreateVehicleService {
     options: CreateVehicleOptions = {},
   ) {
     const as_draft = options.as_draft === true;
+    assertCreateVehicleHasMinimumImages(dto.images, { as_draft });
     const version_id = dto.version_id;
     if (!Number.isInteger(version_id) || version_id < 1) {
       throw new InvalidateVehicleVersionIdException();

@@ -2,6 +2,7 @@
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { UnauthorizedException } from "@nestjs/common";
+import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { vi } from "vitest";
 
 vi.mock(
@@ -44,6 +45,12 @@ const validDto = (): CreateVehicleDto =>
     show_exact_location: false,
     show_first_cuota: false,
     by_brand_warranty: false,
+    images: [
+      {
+        path: "vehicles-images/temp/vehicle-gallery/a.webp",
+        order: 0,
+      },
+    ],
   });
 
 interface CreateVehicleServiceTestDeps {
@@ -65,7 +72,9 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
     { resolve: vi.fn().mockResolvedValue(null) } as never,
     (deps.promote_media ?? {
-      execute: vi.fn().mockResolvedValue({ pathnames: [] }),
+      execute: vi.fn().mockResolvedValue({
+        pathnames: ["vehicles-images/vehicle-gallery/a.webp"],
+      }),
       rollback: vi.fn().mockResolvedValue(undefined),
     }) as never,
     (deps.search_indexer ?? {
@@ -596,5 +605,50 @@ describe("CreateVehicleService", () => {
     );
     expect(search_indexer.deleteVehicle).toHaveBeenCalledWith("vehicle-id");
     expect(mail_enqueue.enqueue_vehicle_published).not.toHaveBeenCalled();
+  });
+
+  it("rechaza la creación activa sin fotos", async () => {
+    const service = buildCreateVehicleService();
+    const dto = validDto();
+    dto.images = [];
+
+    await expect(service.create(dto, "profile-id")).rejects.toThrow(
+      ValidationException,
+    );
+  });
+
+  it("permite borrador sin fotos", async () => {
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => payload),
+      save: vi.fn(async (target, payload) =>
+        target === VehicleEntity
+          ? {
+              ...payload,
+              id: "vehicle-draft-id",
+              ref: null,
+              created_at: new Date("2026-08-16T00:00:00Z"),
+              updated_at: new Date("2026-08-16T00:00:00Z"),
+            }
+          : payload,
+      ),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async (callback) => callback(manager)),
+    };
+    const service = buildCreateVehicleService({ data_source });
+    const dto = validDto();
+    dto.images = [];
+
+    const result = await service.create(dto, "profile-id", null, {
+      as_draft: true,
+    });
+
+    expect(result.id).toBe("vehicle-draft-id");
+    expect(result.status).toBe(STATUS_VEHICLE.DRAFT);
   });
 });
