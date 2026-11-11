@@ -2,6 +2,7 @@ import { CreateVehicleAuth } from "@/src/contexts/vehicles/decorators/create-veh
 import {
   Body,
   Controller,
+  ForbiddenException,
   Post,
   Req,
   UnauthorizedException,
@@ -32,10 +33,17 @@ export class CreateVehicleController {
     if (!user) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
+    if (dto.profile_id && !user.is_admin) {
+      throw new ForbiddenException(
+        "No tienes permiso para publicar en nombre de otro perfil.",
+      );
+    }
+    const publisher_profile_id =
+      user.is_admin && dto.profile_id ? dto.profile_id : user.id;
     // Permite reclamar las fotos subidas como invitado antes del login
     const created = await this.create_vehicle_service.create(
       dto,
-      user.id,
+      publisher_profile_id,
       readGuestId(req),
     );
 

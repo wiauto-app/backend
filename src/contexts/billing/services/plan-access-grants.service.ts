@@ -1,13 +1,17 @@
 import {
   BadRequestException,
+  Inject,
   NotFoundException,
+  forwardRef,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, IsNull, MoreThan, Repository } from "typeorm";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { ProfileEntity } from "@/src/contexts/profiles/entities/profile.entity";
+import { DealershipService } from "@/src/contexts/dealership/services/dealership.service";
 import { PlanAccessGrantEntity } from "../entities/plan-access-grant.entity";
+import { PLAN_AUDIENCE } from "../types/billing.enums";
 import { PlanVersionsService } from "./plan-versions.service";
 
 export interface AssignPlanAccessGrantInput {
@@ -23,6 +27,8 @@ export class PlanAccessGrantsService {
   constructor(
     private readonly data_source: DataSource,
     private readonly plan_versions_service: PlanVersionsService,
+    @Inject(forwardRef(() => DealershipService))
+    private readonly dealershipService: DealershipService,
     @InjectRepository(ProfileEntity)
     private readonly profile_repository: Repository<ProfileEntity>,
     @InjectRepository(PlanAccessGrantEntity)
@@ -93,6 +99,15 @@ export class PlanAccessGrantsService {
       where: { id: grant_id },
       relations: { plan: true, plan_version: true },
     });
+
+    if (grant.plan.audience === PLAN_AUDIENCE.DEALERSHIP) {
+      await this.dealershipService.ensureStubForProfile(input.profile_id);
+      await this.dealershipService.linkBillingPlanForProfile(
+        input.profile_id,
+        input.plan_id,
+      );
+    }
+
     return this.serialize(grant);
   }
 

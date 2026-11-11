@@ -1,6 +1,7 @@
-import { ConflictException } from "@nestjs/common";
+import { ConflictException, NotFoundException } from "@nestjs/common";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { RemoveFilesService } from "@/src/contexts/shared/file/services/remove-files.service";
 import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
@@ -34,6 +35,7 @@ export class DealershipService {
     private readonly dealership_members_service: DealershipMembersService,
     private readonly dealership_schedule_service: DealershipScheduleService,
     private readonly remove_image_service: RemoveFilesService,
+    private readonly profileRepository: TypeOrmProfileRepository,
   ) {}
 
   async create(
@@ -66,6 +68,48 @@ export class DealershipService {
       ...create_my_dealership_dto,
       members: [{ profile_id, role: "owner" }],
     });
+  }
+
+  async ensureStubForProfile(profile_id: string): Promise<void> {
+    const existingMembership =
+      await this.dealership_member_repository.findOneByProfileId(profile_id);
+    if (existingMembership) {
+      return;
+    }
+
+    const profile = await this.profileRepository.findOne(profile_id);
+    if (!profile?.user) {
+      throw new NotFoundException("Perfil no encontrado");
+    }
+
+    const nameFromProfile = `${profile.name ?? ""} ${profile.last_name ?? ""}`.trim();
+    const name = nameFromProfile || profile.name || "Concesionaria";
+
+    await this.create({
+      name,
+      email: profile.user.email,
+      phone_code: profile.phone_code || "+34",
+      phone: profile.phone || "600000000",
+      address: "Pendiente de completar",
+      description: "",
+      ...(profile.avatar_url ? { avatar_url: profile.avatar_url } : {}),
+      members: [{ profile_id, role: "owner" }],
+    });
+  }
+
+  async linkBillingPlanForProfile(
+    profile_id: string,
+    plan_id: string,
+  ): Promise<void> {
+    const membership =
+      await this.dealership_member_repository.findOneByProfileId(profile_id);
+    if (!membership) {
+      return;
+    }
+    await this.dealership_repository.updateBillingPlanId(
+      membership.dealership_id,
+      plan_id,
+    );
   }
 
   async findAll(

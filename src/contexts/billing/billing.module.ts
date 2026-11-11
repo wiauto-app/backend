@@ -9,6 +9,7 @@ import { User } from "@/src/contexts/users/entities/user.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { DealershipEntity } from "@/src/contexts/dealership/entities/dealership.entity";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
+import { DealershipModule } from "@/src/contexts/dealership/dealership.module";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { VehicleSearchModule } from "@/src/contexts/vehicles/search/vehicle-search.module";
 
@@ -120,6 +121,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
       ProfessionalAccountEntity,
     ]),
     forwardRef(() => VehiclesModule),
+    forwardRef(() => DealershipModule),
     VehicleSearchModule,
   ],
   controllers: [

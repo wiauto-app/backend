@@ -274,6 +274,20 @@ export class TypeOrmDealershipRepository {
     await this.dealership_entity_repository.save(preloaded);
   }
 
+  async updateBillingPlanId(
+    dealership_id: string,
+    billing_plan_id: string,
+  ): Promise<void> {
+    const preloaded = await this.dealership_entity_repository.preload({
+      id: dealership_id,
+      billing_plan_id,
+    });
+    if (!preloaded) {
+      return;
+    }
+    await this.dealership_entity_repository.save(preloaded);
+  }
+
   async updateRating(dealership_id: string, rating: number | null): Promise<void> {
     const preloaded = await this.dealership_entity_repository.preload({
       id: dealership_id,

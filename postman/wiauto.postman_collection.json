@@ -101,7 +101,7 @@
     {
       "key": "profile_id",
       "value": "",
-      "description": "UUID de perfil/usuario (mismo id que users.id); opcional en POST /v1/vehicles/:vehicle_id/views y POST /v1/vehicles/:vehicle_id/shares."
+      "description": "UUID de perfil/usuario (mismo id que users.id); opcional en POST /v1/vehicles (solo admin, dueño del anuncio), POST /v1/vehicles/:vehicle_id/views y POST /v1/vehicles/:vehicle_id/shares."
     },
     {
       "key": "permission_id",
@@ -2619,6 +2619,12 @@
                       "type": "text"
                     },
                     {
+                      "key": "profile_id",
+                      "value": "{{profile_id}}",
+                      "type": "text",
+                      "description": "Opcional. Solo administrador: UUID del perfil publicador (propietario del anuncio). Si no se envía, se usa el perfil del JWT."
+                    },
+                    {
                       "key": "publisher_type",
                       "value": "dealership",
                       "type": "text",
@@ -2716,6 +2722,13 @@
                       "description": "Opcional. JSON array de UUIDs de planes (`v1/cuotas`); relación N:M `vehicle_cuotas`."
                     },
                     {
+                      "key": "profile_id",
+                      "value": "{{profile_id}}",
+                      "type": "text",
+                      "disabled": true,
+                      "description": "Opcional. Solo admin (`users.is_admin`): UUID del perfil dueño del anuncio. Si no se envía, se usa el JWT. Si un no-admin lo envía, 403."
+                    },
+                    {
                       "key": "files",
                       "type": "file",
                       "src": []
@@ -2723,7 +2736,7 @@
                   ]
                 },
                 "url": "{{base_url}}/v1/vehicles",
-                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs). Incluye `files` (imágenes). Opcional `offer_financing` (boolean; solo si el concesionario tiene la financiación activa). Opcional `tracking` (no se persiste): eventId, pageUrl, consent, fbp, fbc, vehicleDataEventId."
+                "description": "JWT `auth_token` + permiso `vehicles.create` + cuota: el `value` del permiso en BD es el máximo de anuncios activos del perfil (no admin). Multipart `form-data` snake_case (`CreateVehicleHttpDto`). Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (array JSON de UUIDs), profile_id (solo admin: dueño del anuncio; si no, se usa el JWT; no-admin → 403). Incluye `files` (imágenes). Opcional `offer_financing` (boolean; solo si el concesionario tiene la financiación activa). Opcional `tracking` (no se persiste): eventId, pageUrl, consent, fbp, fbc, vehicleDataEventId."
               },
               "response": [
                 {
@@ -2901,13 +2914,20 @@
                           "description": "Opcional. JSON array de UUIDs (`v1/cuotas`); tabla puente `vehicle_cuotas`."
                         },
                         {
+                          "key": "profile_id",
+                          "value": "{{profile_id}}",
+                          "type": "text",
+                          "disabled": true,
+                          "description": "Opcional. Solo admin (`users.is_admin`): UUID del perfil dueño del anuncio. Si no se envía, se usa el JWT. Si un no-admin lo envía, 403."
+                        },
+                        {
                           "key": "files",
                           "type": "file",
                           "src": []
                         }
                       ]
                     },
-                    "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (JSON array de UUIDs). Incluye `files` (imágenes)."
+                    "description": "Multipart `form-data`: campos en snake_case alineados con `CreateVehicleHttpDto`. Obligatorios: vehicle_type_id, price, mileage, lat, lng, condition (new|used), title, description (min 10), version_id, phone_code, phone, email, publisher_type, traction_id, power. Opcionales: transmission_type (default manual), displacement, autonomy, battery_capacity, time_to_charge, license_plate, features_ids, services_ids, color_id, dgt_label_id, warranty_type_id, cuota_ids (JSON array de UUIDs), profile_id (solo admin). Incluye `files` (imágenes)."
                   },
                   "status": "Created",
                   "code": 201,

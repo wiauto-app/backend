@@ -33,6 +33,10 @@ export type VehicleImageDto = VehicleImageHttpDto;
 
 export class CreateVehicleDto {
   @IsOptional()
+  @IsUUID("4", { message: "El perfil no es válido." })
+  profile_id?: string;
+
+  @IsOptional()
   @IsString({ message: "La referencia debe ser un texto." })
   @MaxLength(50, {
     message: "La referencia no puede tener más de 50 caracteres.",
