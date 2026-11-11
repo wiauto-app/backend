@@ -1709,8 +1709,31 @@
                     "value": "Bearer {{access_token}}"
                   }
                 ],
-                "url": "{{base_url}}/v1/profiles",
-                "description": "JWT. Incluye relación `role`."
+                "url": {
+                  "raw": "{{base_url}}/v1/profiles?page=1&limit=10&name=&last_name=&email=",
+                  "host": ["{{base_url}}"],
+                  "path": ["v1", "profiles"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "10" },
+                    {
+                      "key": "name",
+                      "value": "",
+                      "description": "Filtro parcial ILIKE sobre profiles.name"
+                    },
+                    {
+                      "key": "last_name",
+                      "value": "",
+                      "description": "Filtro parcial ILIKE sobre profiles.last_name"
+                    },
+                    {
+                      "key": "email",
+                      "value": "",
+                      "description": "Filtro parcial ILIKE sobre users.email"
+                    }
+                  ]
+                },
+                "description": "JWT. Paginación y filtros opcionales `name`, `last_name`, `email` (AND). Incluye relación `user`."
               },
               "response": []
             },

@@ -9,5 +9,9 @@ export class FindAllProfilesHttpDto extends PaginationHttpDto {
 
   @IsOptional()
   @IsString()
+  last_name?: string;
+
+  @IsOptional()
+  @IsString()
   email?: string;
 }

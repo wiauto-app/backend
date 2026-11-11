@@ -81,6 +81,12 @@ export class TypeOrmProfileRepository {
       qb.andWhere("p.name ILIKE :name", { name: `%${filter.name}%` });
     }
 
+    if (filter.last_name) {
+      qb.andWhere("p.last_name ILIKE :last_name", {
+        last_name: `%${filter.last_name}%`,
+      });
+    }
+
     if (filter.email) {
       qb.andWhere("user.email ILIKE :email", { email: `%${filter.email}%` });
     }

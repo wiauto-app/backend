@@ -49,6 +49,7 @@ export interface AdminUpdateProfileInput {
 
 export interface FindAllProfilesInput {
   name?: string;
+  last_name?: string;
   email?: string;
   page?: number;
   limit?: number;
@@ -191,6 +192,7 @@ export class ProfileService {
       order_by: input.order_by,
       order_direction: input.order_direction,
       name: input.name,
+      last_name: input.last_name,
       email: input.email,
     });
     const profiles = await this.profile_repository.findAll(filter);
