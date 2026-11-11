@@ -7,6 +7,16 @@ import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { ProfileFilter } from "../types/profile.filter";
 
+/** Claves que envía el dashboard (`accessorKey` de columnas sortable). */
+const PROFILE_LIST_ORDER_SQL: Record<string, string> = {
+  name: "p.name",
+  last_name: "p.last_name",
+  "user.created_at": "user.created_at",
+};
+
+const resolveProfileListOrderSql = (orderBy: string): string | undefined =>
+  PROFILE_LIST_ORDER_SQL[orderBy];
+
 export interface SaveProfileInput {
   id: string;
   name: string;
@@ -74,7 +84,10 @@ export class TypeOrmProfileRepository {
       });
     }
     if (filter.order_by) {
-      qb.orderBy(`p.${filter.order_by}`, filter.order_direction);
+      const order_sql = resolveProfileListOrderSql(filter.order_by);
+      if (order_sql) {
+        qb.orderBy(order_sql, filter.order_direction);
+      }
     }
 
     if (filter.name) {
