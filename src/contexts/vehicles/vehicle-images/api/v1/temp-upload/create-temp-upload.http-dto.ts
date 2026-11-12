@@ -1,20 +1,25 @@
 import { IsString, IsInt, IsEnum, Min, Max } from "class-validator";
 
-export const ALLOWED_VEHICLE_IMAGE_MIMES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-] as const;
+import {
+  ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES,
+  type AllowedVehicleTempUploadMime,
+} from "@/src/contexts/shared/file/media.constants";
 
-export type AllowedVehicleImageMime = (typeof ALLOWED_VEHICLE_IMAGE_MIMES)[number];
+export { ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES };
+
+/** @deprecated Usar ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES */
+export const ALLOWED_VEHICLE_IMAGE_MIMES = ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES;
+
+export type AllowedVehicleImageMime = AllowedVehicleTempUploadMime;
+
+const allowed_mimes_hint =
+  "JPEG, PNG, WebP, AVIF, HEIC/HEIF, GIF, BMP o TIFF";
 
 export class CreateTempUploadHttpDto {
-  @IsEnum(ALLOWED_VEHICLE_IMAGE_MIMES, {
-    message: "Tipo de archivo no permitido. Solo se aceptan JPEG, PNG, WebP y AVIF",
+  @IsEnum(ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES, {
+    message: `Tipo de archivo no permitido. Solo se aceptan ${allowed_mimes_hint}`,
   })
-  mime_type: AllowedVehicleImageMime;
+  mime_type: AllowedVehicleTempUploadMime;
 
   @IsInt()
   @Min(1)

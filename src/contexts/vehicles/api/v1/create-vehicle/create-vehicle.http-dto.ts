@@ -12,6 +12,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -63,12 +64,14 @@ export class CreateVehicleDto {
   category_id?: string | null;
 
   @IsNumber({}, { message: "El precio debe ser un número." })
+  @IsInt({ message: "El precio debe ser un número entero en euros (sin decimales)." })
   @IsNotEmpty({ message: "Introduce el precio." })
   @Min(0, { message: "El precio no puede ser negativo." })
   @Max(9_999_999, { message: "El precio no puede ser mayor a 9999999." })
   price: number;
 
   @IsNumber({}, { message: "El kilometraje debe ser un número." })
+  @IsInt({ message: "El kilometraje debe ser un número entero." })
   @IsNotEmpty({ message: "Introduce el kilometraje." })
   @Min(0, { message: "El kilometraje no puede ser negativo." })
   @Max(9_999_999, {
@@ -183,6 +186,9 @@ export class CreateVehicleDto {
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== undefined && v !== "")
   @IsNumber({}, { message: "El precio financiado debe ser un número." })
+  @IsInt({
+    message: "El precio financiado debe ser un número entero en euros.",
+  })
   @Min(0, { message: "El precio financiado no puede ser negativo." })
   @Max(9_999_999, {
     message: "El precio financiado no puede ser mayor a 9999999.",

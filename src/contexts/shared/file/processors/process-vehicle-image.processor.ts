@@ -3,18 +3,20 @@ import { Logger } from "@nestjs/common";
 import { Job } from "bullmq";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import sharp from "sharp";
 
 import { VehicleImagesEntity } from "@/src/contexts/vehicles/vehicle-images/entities/vehicle-images.entity";
 import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { STORAGE_DIRECTORIES } from "../storage-directories";
 import { PROCESS_VEHICLE_IMAGE_QUEUE } from "../media.constants";
 import { VehicleDetailCacheService } from "@/src/contexts/vehicles/services/vehicle-detail-cache.service";
+import { ImageOptimizationPipeline } from "../image-formats/image-optimization-pipeline.service";
+import { resolveMimeTypeFromObjectKey } from "../image-formats/utils/resolve-mime-type-from-object-key";
 
 export interface ProcessVehicleImageJob {
   image_id: string;
   vehicle_id: string;
   source_path: string;
+  output_key: string;
 }
 
 @Processor(PROCESS_VEHICLE_IMAGE_QUEUE, {
@@ -28,6 +30,7 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
     private readonly vehicleImagesRepo: Repository<VehicleImagesEntity>,
     private readonly objectStorageService: ObjectStorageService,
     private readonly vehicleDetailCache: VehicleDetailCacheService,
+    private readonly imageOptimizationPipeline: ImageOptimizationPipeline,
   ) {
     super();
   }
@@ -43,19 +46,18 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
   }
 
   async process(job: Job<ProcessVehicleImageJob>): Promise<void> {
-    const { image_id, vehicle_id, source_path } = job.data;
+    const { image_id, vehicle_id, source_path, output_key: outputKey } =
+      job.data;
 
     this.logger.log(
       `Procesando imagen ${image_id} del vehículo ${vehicle_id}`,
     );
 
     try {
-      // 1. Actualizar estado a processing
       await this.vehicleImagesRepo.update(image_id, {
         status: "processing",
       });
 
-      // 2. Descargar archivo TEMP desde R2
       const sourceBuffer = await this.objectStorageService.getObjectBufferByKey(
         source_path,
       );
@@ -70,55 +72,45 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
         `Archivo descargado: ${sourceBuffer.length} bytes`,
       );
 
-      // 3. Optimizar con Sharp → WebP
-      const webpBuffer = await sharp(sourceBuffer)
-        .rotate() // Auto-rotar según EXIF
-        .resize({
-          width: 1920,
-          withoutEnlargement: true,
-          fit: "inside",
-        })
-        .webp({ quality: 80, effort: 4 })
-        .toBuffer();
+      const mimeType = resolveMimeTypeFromObjectKey(source_path);
+      const optimized = await this.imageOptimizationPipeline.execute({
+        buffer: sourceBuffer,
+        mimeType,
+        objectKey: source_path,
+      });
 
       this.logger.log(
-        `Imagen optimizada: ${webpBuffer.length} bytes`,
+        `Imagen optimizada: ${optimized.buffer.length} bytes`,
       );
 
-      // 4. Subir a ruta definitiva
-      const finalKey = `${vehicle_id}/${image_id}.webp`;
       await this.objectStorageService.putObjectToBucket(
         STORAGE_DIRECTORIES.VEHICLES_IMAGES,
-        finalKey,
-        webpBuffer,
-        "image/webp",
+        outputKey,
+        optimized.buffer,
+        optimized.contentType,
       );
 
       const finalUrl = this.objectStorageService.buildPublicUrl(
         STORAGE_DIRECTORIES.VEHICLES_IMAGES,
-        finalKey,
+        outputKey,
       );
 
       this.logger.log(`Imagen subida a ${finalUrl}`);
 
-      // 5. Actualizar estado a ready con URL final
       await this.vehicleImagesRepo.update(image_id, {
         status: "ready",
         url: finalUrl,
+        failure_reason: null,
       });
       await this.invalidateVehicleDetail(vehicle_id);
 
-      // 6. Borrar archivo TEMP
       try {
-        await this.objectStorageService.deleteObjectByKey(
-          source_path,
-        );
-        this.logger.log(`Archivo temporal borrado: ${source_path}`);
+        await this.objectStorageService.deleteObjectByKey(source_path);
+        this.logger.log(`Archivo fuente borrado: ${source_path}`);
       } catch (deleteError) {
         this.logger.warn(
-          `No se pudo borrar el archivo temporal ${source_path}: ${deleteError instanceof Error ? deleteError.message : "Error desconocido"}`,
+          `No se pudo borrar el archivo fuente ${source_path}: ${deleteError instanceof Error ? deleteError.message : "Error desconocido"}`,
         );
-        // No fallar el job por esto
       }
 
       this.logger.log(
@@ -134,14 +126,13 @@ export class ProcessVehicleImageProcessor extends WorkerHost {
         `Error procesando imagen ${image_id}: ${errorMessage}`,
       );
 
-      // Actualizar estado a failed
       await this.vehicleImagesRepo.update(image_id, {
         status: "failed",
         failure_reason: errorMessage,
       });
       await this.invalidateVehicleDetail(vehicle_id);
 
-      throw error; // Re-lanzar para que BullMQ maneje los reintentos
+      throw error;
     }
   }
 }

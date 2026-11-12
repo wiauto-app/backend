@@ -9,8 +9,8 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { PROCESS_VEHICLE_IMAGE_QUEUE } from "@/src/contexts/shared/file/media.constants";
 import { TempUploadService } from "@/src/contexts/vehicles/vehicle-images/services/temp-upload.service";
+import { RelocateVehicleImageSourceService } from "@/src/contexts/vehicles/vehicle-images/services/relocate-vehicle-image-source.service";
 import type { ProcessVehicleImageJob } from "@/src/contexts/shared/file/processors/process-vehicle-image.processor";
-
 import { CatalogFuelTypeNotFoundException } from "../../../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
 import { CatalogFuelTypesService } from "../../../catalog/fuel_types/services/catalog-fuel-types.service";
 import { CatalogVersionsService } from "../../../catalog/versions/services/catalog-versions.service";
@@ -155,6 +155,7 @@ export class CreateVehicleService {
     @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
     private readonly imageQueue: Queue<ProcessVehicleImageJob>,
     private readonly tempUploadService: TempUploadService,
+    private readonly relocateVehicleImageSourceService: RelocateVehicleImageSourceService,
     private readonly vehicleDetailCache: VehicleDetailCacheService,
     private readonly referrals_service: ReferralsService,
   ) { }
@@ -330,8 +331,8 @@ export class CreateVehicleService {
               vehicle_id: saved.id,
               order: img.order,
               status: "uploaded",
-              source_path: tempUpload.storage_path,
-              url: tempUpload.storage_path,
+              source_path: null,
+              url: null,
             });
           });
 
@@ -395,36 +396,76 @@ export class CreateVehicleService {
       // Encolar procesamiento de imágenes FUERA de la transacción
       if (enqueuedImageIds.length > 0) {
         const vehicleId = vehicle.id;
-        const jobs = async_images.map((img, index) => {
-          const imageId = enqueuedImageIds[index];
-          const tempUpload = validatedTempUploads[index];
-
-          return {
-            name: `process-vehicle-image-${imageId}`,
-            data: {
-              image_id: imageId,
-              vehicle_id: vehicleId,
-              source_path: tempUpload.storage_path,
-            } as ProcessVehicleImageJob,
-            opts: {
-              priority: img.order === 0 ? 1 : 5,
-              attempts: 3,
-              backoff: { type: "exponential", delay: 2000 },
-            },
+        const imageRepository = this.data_source.getRepository(VehicleImagesEntity);
+        const jobs: Array<{
+          name: string;
+          data: ProcessVehicleImageJob;
+          opts: {
+            priority: number;
+            attempts: number;
+            backoff: { type: "exponential"; delay: number };
           };
-        });
+        }> = [];
 
-        try {
-          await withTimeout(
-            this.imageQueue.addBulk(jobs),
-            10_000,
-            "Encolar imágenes del vehículo",
-          );
-        } catch (error) {
-          this.logger.error(
-            `No se pudieron encolar las imágenes del vehículo ${vehicle.id}`,
-            error instanceof Error ? error.stack : String(error),
-          );
+        for (const [index, imageId] of enqueuedImageIds.entries()) {
+          const tempUpload = validatedTempUploads[index];
+          const img = async_images[index];
+
+          try {
+            const relocated =
+              await this.relocateVehicleImageSourceService.execute({
+                vehicleId,
+                imageId,
+                tempStoragePath: tempUpload.storage_path,
+                mimeType: tempUpload.mime_type,
+              });
+
+            await imageRepository.update(imageId, {
+              source_path: relocated.sourcePath,
+            });
+
+            jobs.push({
+              name: `process-vehicle-image-${imageId}`,
+              data: {
+                image_id: imageId,
+                vehicle_id: vehicleId,
+                source_path: relocated.sourcePath,
+                output_key: relocated.outputKey,
+              },
+              opts: {
+                priority: img.order === 0 ? 1 : 5,
+                attempts: 3,
+                backoff: { type: "exponential", delay: 2000 },
+              },
+            });
+          } catch (relocateError) {
+            const reason =
+              relocateError instanceof Error
+                ? relocateError.message
+                : "No se pudo reubicar la imagen temporal";
+            await imageRepository.update(imageId, {
+              status: "failed",
+              failure_reason: reason,
+            });
+            this.logger.error(
+              `No se pudo reubicar la imagen ${imageId} del vehículo ${vehicleId}: ${reason}`,
+            );
+          }
+        }
+
+        if (jobs.length > 0) {
+          try {
+            await withTimeout(
+              this.imageQueue.addBulk(jobs),
+              10_000,
+              "Encolar imágenes del vehículo",
+            );
+          } catch (error) {
+            this.logger.error(
+              `No se pudieron encolar las imágenes del vehículo ${vehicle.id}`,
+              error instanceof Error ? error.stack : String(error),
+            );
+          }
         }
       }
 

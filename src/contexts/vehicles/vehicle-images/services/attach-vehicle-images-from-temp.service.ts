@@ -13,12 +13,15 @@ import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { AttachVehicleImagesFromTempDto } from "../dto/attach-vehicle-images-from-temp.dto";
 import { VehicleImagesEntity } from "../entities/vehicle-images.entity";
 import { TempUploadService } from "./temp-upload.service";
+import { RelocateVehicleImageSourceService } from "./relocate-vehicle-image-source.service";
+import type { TemporaryUploadEntity } from "@/src/contexts/shared/file/entities/temporary-upload.entity";
 
 @Injectable()
 export class AttachVehicleImagesFromTempService {
   constructor(
     private readonly promote_temp_storage_paths_service: PromoteTempStoragePathsService,
     private readonly tempUploadService: TempUploadService,
+    private readonly relocateVehicleImageSourceService: RelocateVehicleImageSourceService,
     @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
     private readonly imageQueue: Queue<ProcessVehicleImageJob>,
 
@@ -120,7 +123,7 @@ export class AttachVehicleImagesFromTempService {
     const enqueued: Array<{
       image_id: string;
       order: number;
-      source_path: string;
+      tempUpload: TemporaryUploadEntity;
     }> = [];
 
     try {
@@ -151,8 +154,8 @@ export class AttachVehicleImagesFromTempService {
                 vehicle_id: dto.vehicle_id,
                 order: image.order,
                 status: "uploaded",
-                source_path: tempUpload.storage_path,
-                url: tempUpload.storage_path,
+                source_path: null,
+                url: null,
               }),
             );
           }
@@ -170,7 +173,7 @@ export class AttachVehicleImagesFromTempService {
               enqueued.push({
                 image_id: savedImage.id,
                 order: asyncInput.order,
-                source_path: tempUpload.storage_path,
+                tempUpload,
               });
             }
           }
@@ -202,21 +205,58 @@ export class AttachVehicleImagesFromTempService {
     }
 
     if (enqueued.length > 0) {
-      await this.imageQueue.addBulk(
-        enqueued.map(item => ({
-          name: `process-vehicle-image-${item.image_id}`,
-          data: {
-            image_id: item.image_id,
-            vehicle_id: dto.vehicle_id,
-            source_path: item.source_path,
-          } satisfies ProcessVehicleImageJob,
-          opts: {
-            priority: item.order === 0 ? 1 : 5,
-            attempts: 3,
-            backoff: { type: "exponential", delay: 2000 },
-          },
-        })),
-      );
+      const jobs: Array<{
+        name: string;
+        data: ProcessVehicleImageJob;
+        opts: {
+          priority: number;
+          attempts: number;
+          backoff: { type: "exponential"; delay: number };
+        };
+      }> = [];
+
+      for (const item of enqueued) {
+        try {
+          const relocated = await this.relocateVehicleImageSourceService.execute({
+            vehicleId: dto.vehicle_id,
+            imageId: item.image_id,
+            tempStoragePath: item.tempUpload.storage_path,
+            mimeType: item.tempUpload.mime_type,
+          });
+
+          await this.vehicle_images_repository.update(item.image_id, {
+            source_path: relocated.sourcePath,
+          });
+
+          jobs.push({
+            name: `process-vehicle-image-${item.image_id}`,
+            data: {
+              image_id: item.image_id,
+              vehicle_id: dto.vehicle_id,
+              source_path: relocated.sourcePath,
+              output_key: relocated.outputKey,
+            },
+            opts: {
+              priority: item.order === 0 ? 1 : 5,
+              attempts: 3,
+              backoff: { type: "exponential", delay: 2000 },
+            },
+          });
+        } catch (relocateError) {
+          const reason =
+            relocateError instanceof Error
+              ? relocateError.message
+              : "No se pudo reubicar la imagen temporal";
+          await this.vehicle_images_repository.update(item.image_id, {
+            status: "failed",
+            failure_reason: reason,
+          });
+        }
+      }
+
+      if (jobs.length > 0) {
+        await this.imageQueue.addBulk(jobs);
+      }
     }
 
     return { count: sorted_images.length };

@@ -27,8 +27,6 @@ export class UploadTempVehicleImageService {
       fileNameStrategy: "uuid",
       optimize: {
         enabled: true,
-        convertHeic: true,
-        convertAvif: true,
         multipleSizes: false,
       },
       returnPreviewUrl: true,

@@ -19,6 +19,8 @@ import { RemoveVehicleImageController } from "./api/v1/remove-vehicle-image/remo
 import { RemoveVehicleImageService } from "./services/remove-vehicle-image.service";
 import { TempUploadController } from "./api/v1/temp-upload/temp-upload.controller";
 import { TempUploadService } from "./services/temp-upload.service";
+import { RelocateVehicleImageSourceService } from "./services/relocate-vehicle-image-source.service";
+import { TempUploadPreviewService } from "./services/temp-upload-preview.service";
 import { TemporaryUploadEntity } from "../../shared/file/entities/temporary-upload.entity";
 
 @Module({
@@ -35,6 +37,8 @@ import { TemporaryUploadEntity } from "../../shared/file/entities/temporary-uplo
     AttachVehicleImagesFromTempService,
     UploadFileInterceptor,
     TempUploadService,
+    RelocateVehicleImageSourceService,
+    TempUploadPreviewService,
   ],
 
   exports: [
@@ -43,6 +47,8 @@ import { TemporaryUploadEntity } from "../../shared/file/entities/temporary-uplo
     BulkVehicleImagesService,
     AttachVehicleImagesFromTempService,
     TempUploadService,
+    RelocateVehicleImageSourceService,
+    TempUploadPreviewService,
   ],
 
   imports: [

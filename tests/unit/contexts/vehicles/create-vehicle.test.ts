@@ -61,6 +61,7 @@ interface CreateVehicleServiceTestDeps {
   mail_enqueue?: object;
   image_queue?: object;
   temp_upload?: object;
+  relocate_service?: object;
   detail_cache?: object;
   referrals_service?: object;
 }
@@ -96,6 +97,13 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     (deps.temp_upload ?? {
       validateAndGetTempUpload: vi.fn(),
       markAsConsumed: vi.fn(),
+    }) as never,
+    (deps.relocate_service ?? {
+      execute: vi.fn().mockResolvedValue({
+        sourcePath:
+          "vehicles-images/vehicle-gallery/a.source.webp",
+        outputKey: "vehicle-id/image-id.webp",
+      }),
     }) as never,
     (deps.detail_cache ?? {
       refresh: vi.fn().mockResolvedValue(undefined),
@@ -398,7 +406,10 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn(async callback => callback(manager)),
     };
-    const search_indexer = { syncVehicle: vi.fn().mockResolvedValue(null) };
+    const search_indexer = {
+      syncVehicle: vi.fn().mockResolvedValue(null),
+      deleteVehicle: vi.fn().mockResolvedValue(undefined),
+    };
     const detail_cache = { refresh: vi.fn().mockResolvedValue(undefined) };
     const service = buildCreateVehicleService({
       data_source,

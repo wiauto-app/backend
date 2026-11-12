@@ -23,6 +23,12 @@ export const ALLOWED_MIME_TYPES = [
 
 export type AllowedImageMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
+/** MIME admitidos en temp-upload async de vehículos (`/publicar`). */
+export const ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES = ALLOWED_MIME_TYPES;
+
+export type AllowedVehicleTempUploadMime =
+  (typeof ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES)[number];
+
 /**
  * Extensiones admitidas cuando el navegador envía MIME vacío
  * o `application/octet-stream` (frecuente con HEIC).

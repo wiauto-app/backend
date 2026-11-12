@@ -18,6 +18,7 @@ import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/vehicle-images-persistence.module";
 import { VehicleImagesEntity } from "../../vehicles/vehicle-images/entities/vehicle-images.entity";
 import { OptimizeImageService } from "./services/optimize-image.service";
+import { ImageOptimizationPipeline } from "./image-formats/image-optimization-pipeline.service";
 import { UploadImageService } from "./services/upload-image.service";
 import { UploadVideoService } from "./services/upload-video.service";
 import { UploadFileService } from "./services/upload-file.service";
@@ -39,6 +40,7 @@ import { TempUploadCleanupBootstrapService } from "./queues/temp-upload-cleanup-
 import { TEMP_UPLOAD_CLEANUP_QUEUE } from "./queues/temp-upload-cleanup.queue.constants";
 import { TemporaryUploadEntity } from "./entities/temporary-upload.entity";
 import { VehicleDetailCacheService } from "../../vehicles/services/vehicle-detail-cache.service";
+import { ImageFormatRegistry } from "./image-formats/image-format-registry.service";
 
 @Module({
   controllers: [
@@ -61,6 +63,8 @@ import { VehicleDetailCacheService } from "../../vehicles/services/vehicle-detai
     UploadFileService,
     ValidateImagesService,
     OptimizeImageService,
+    ImageOptimizationPipeline,
+    ImageFormatRegistry,
     GenerateSignedUrlService,
     ConfirmVideoUploadService,
     GenerateReadFileSignedUrlService,
@@ -112,6 +116,8 @@ import { VehicleDetailCacheService } from "../../vehicles/services/vehicle-detai
     ImageStorageFinalizationPort,
     PromoteTempStoragePathsService,
     FinalizeImageStoragePathService,
+    ImageOptimizationPipeline,
+    ImageFormatRegistry,
   ],
 })
 export class FileModule {}

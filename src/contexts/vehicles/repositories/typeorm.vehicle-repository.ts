@@ -118,7 +118,7 @@ const map_vehicle_list_images = (
   images: VehicleImagesEntity[] | undefined,
 ): VehicleListItemImage[] =>
   [...(images ?? [])]
-    .filter((image) => image.url !== null) // Solo imágenes con URL (ready o uploaded con source)
+    .filter((image) => image.status === "ready" && image.url !== null)
     .sort((a, b) => a.order - b.order)
     .map((image) => ({ id: image.id, url: image.url ?? "", order: image.order }));
 

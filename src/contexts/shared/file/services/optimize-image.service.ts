@@ -1,8 +1,14 @@
 import path from "node:path";
 
+import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import sharp from "sharp";
 
-import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
+import { ImageOptimizationPipeline } from "../image-formats/image-optimization-pipeline.service";
+import {
+  IMAGE_OPTIMIZATION_MAX_WIDTH,
+  IMAGE_OPTIMIZATION_WEBP_EFFORT,
+  IMAGE_OPTIMIZATION_WEBP_QUALITY,
+} from "../image-formats/image-optimization.constants";
 
 interface OptimizedImageSizes {
   large: Express.Multer.File;
@@ -40,50 +46,56 @@ function toWebpMulterFile(
 
 @Injectable()
 export class OptimizeImageService {
+  constructor(
+    private readonly imageOptimizationPipeline: ImageOptimizationPipeline,
+  ) {}
+
   async execute(
     files: Express.Multer.File[],
     {
       diferente_sizes = false,
-      maxWidth = 1920,
-      quality = 80,
+      maxWidth = IMAGE_OPTIMIZATION_MAX_WIDTH,
+      quality = IMAGE_OPTIMIZATION_WEBP_QUALITY,
     }: OptimizeImageOptions = {},
   ): Promise<OptimizedImage[]> {
     const out: OptimizedImage[] = [];
 
     for (const file of files) {
-      const base = sharp(file.buffer)
-        .rotate()
-        .resize({
-          width: maxWidth,
-          withoutEnlargement: true,
-          fit: "inside",
-        })
-        .webp({ quality, effort: 4 });
+      const optimized = await this.imageOptimizationPipeline.execute(
+        {
+          buffer: file.buffer,
+          mimeType: file.mimetype,
+          objectKey: file.originalname,
+        },
+        { maxWidth, quality, effort: IMAGE_OPTIMIZATION_WEBP_EFFORT },
+      );
 
       if (diferente_sizes) {
-        const [largeBuf, mediumBuf, thumbBuf] = await Promise.all([
-          base.clone().toBuffer(),
-          base
+        const sharpBase = sharp(optimized.buffer);
+        const [mediumBuf, thumbBuf] = await Promise.all([
+          sharpBase
             .clone()
             .resize(800, 800, { fit: "inside" })
-            .webp({ quality, effort: 4 })
+            .webp({ quality, effort: IMAGE_OPTIMIZATION_WEBP_EFFORT })
             .toBuffer(),
-          base
+          sharpBase
             .clone()
             .resize(300, 300, { fit: "inside" })
-            .webp({ quality: Math.min(quality, 75), effort: 4 })
+            .webp({
+              quality: Math.min(quality, 75),
+              effort: IMAGE_OPTIMIZATION_WEBP_EFFORT,
+            })
             .toBuffer(),
         ]);
 
         out.push({
-          large: toWebpMulterFile(file, largeBuf),
+          large: toWebpMulterFile(file, optimized.buffer),
           medium: toWebpMulterFile(file, mediumBuf),
           thumb: toWebpMulterFile(file, thumbBuf),
         });
       } else {
-        const largeBuf = await base.clone().toBuffer();
         out.push({
-          large: toWebpMulterFile(file, largeBuf),
+          large: toWebpMulterFile(file, optimized.buffer),
         });
       }
     }

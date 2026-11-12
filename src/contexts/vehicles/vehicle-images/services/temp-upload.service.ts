@@ -12,12 +12,14 @@ import { TemporaryUploadEntity } from "@/src/contexts/shared/file/entities/tempo
 import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
 import { uuidv4 } from "@/src/contexts/shared/uuid-generator/uuid-generator";
-import {
+import { ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES } from "../api/v1/temp-upload/create-temp-upload.http-dto";
+import type {
   CreateTempUploadHttpDto,
   CreateTempUploadResponseDto,
-  ALLOWED_VEHICLE_IMAGE_MIMES,
 } from "../api/v1/temp-upload/create-temp-upload.http-dto";
+import { mimetype_to_extension } from "@/src/contexts/shared/file/media.constants";
 import { ConfirmTempUploadResponseDto } from "../api/v1/temp-upload/confirm-temp-upload.http-dto";
+import { TempUploadPreviewService } from "./temp-upload-preview.service";
 
 /**
  * Dueño de un upload temporal: perfil autenticado o invitado (cookie `wiauto_guest_id`).
@@ -38,6 +40,7 @@ export class TempUploadService {
     @InjectRepository(TemporaryUploadEntity)
     private readonly tempUploadRepo: Repository<TemporaryUploadEntity>,
     private readonly objectStorageService: ObjectStorageService,
+    private readonly tempUploadPreviewService: TempUploadPreviewService,
   ) {}
 
   async createTempUpload(
@@ -51,9 +54,9 @@ export class TempUploadService {
     }
 
     // Validar MIME
-    if (!ALLOWED_VEHICLE_IMAGE_MIMES.includes(dto.mime_type as never)) {
+    if (!ALLOWED_VEHICLE_TEMP_UPLOAD_MIMES.includes(dto.mime_type as never)) {
       throw new BadRequestException(
-        "Tipo de archivo no permitido. Solo se aceptan JPEG, PNG, WebP y AVIF",
+        "Tipo de archivo no permitido. Se aceptan JPEG, PNG, WebP, AVIF, HEIC/HEIF, GIF, BMP y TIFF",
       );
     }
 
@@ -149,9 +152,21 @@ export class TempUploadService {
       expires_at: expiresAt,
     });
 
+    let previewReadKey = this.toRelativeFileKey(tempUpload.storage_path);
+
+    if (
+      this.tempUploadPreviewService.mimeNeedsWebPreview(tempUpload.mime_type)
+    ) {
+      previewReadKey =
+        await this.tempUploadPreviewService.ensureWebPreviewForTempUpload({
+          storagePath: tempUpload.storage_path,
+          mimeType: tempUpload.mime_type,
+        });
+    }
+
     const previewUrl = await this.objectStorageService.generateReadUrl(
       STORAGE_DIRECTORIES.VEHICLES_IMAGES,
-      this.toRelativeFileKey(tempUpload.storage_path),
+      previewReadKey,
       CONFIRMED_UPLOAD_TTL_SEC,
     );
 
@@ -330,13 +345,7 @@ export class TempUploadService {
   }
 
   private getExtensionFromMime(mimeType: string): string {
-    const mimeToExt: Record<string, string> = {
-      "image/jpeg": ".jpg",
-      "image/jpg": ".jpg",
-      "image/png": ".png",
-      "image/webp": ".webp",
-      "image/avif": ".avif",
-    };
-    return mimeToExt[mimeType] || ".jpg";
+    const normalized = mimeType.trim().toLowerCase();
+    return mimetype_to_extension[normalized] ?? ".jpg";
   }
 }

@@ -24,6 +24,13 @@ export const guess_image_mimetype_from_object_key = (
       return CONTENT_TYPES.IMAGE_HEIC;
     case ".heif":
       return CONTENT_TYPES.IMAGE_HEIF;
+    case ".gif":
+      return CONTENT_TYPES.IMAGE_GIF;
+    case ".bmp":
+      return CONTENT_TYPES.IMAGE_BMP;
+    case ".tif":
+    case ".tiff":
+      return CONTENT_TYPES.IMAGE_TIFF;
     default:
       return CONTENT_TYPES.IMAGE_JPEG;
   }
