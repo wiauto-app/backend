@@ -205,11 +205,11 @@ export class CreateVehicleService {
     if (dto.offer_financing) {
       const financing_settings = membership
         ? await this.data_source
-            .getRepository(DealershipFinancingSettingsEntity)
-            .findOne({
-              where: { dealership_id: membership.dealership_id, enabled: true },
-              select: { id: true },
-            })
+          .getRepository(DealershipFinancingSettingsEntity)
+          .findOne({
+            where: { dealership_id: membership.dealership_id, enabled: true },
+            select: { id: true },
+          })
         : null;
       if (!financing_settings) {
         throw new ValidationException(
@@ -325,8 +325,7 @@ export class CreateVehicleService {
 
         // Flujo async: crear VehicleImages con status=uploaded
         if (useAsyncFlow) {
-          const imageEntities = async_images.map((img, index) => {
-            const tempUpload = validatedTempUploads[index];
+          const imageEntities = async_images.map((img) => {
             return manager.create(VehicleImagesEntity, {
               vehicle_id: saved.id,
               order: img.order,
@@ -397,7 +396,7 @@ export class CreateVehicleService {
       if (enqueuedImageIds.length > 0) {
         const vehicleId = vehicle.id;
         const imageRepository = this.data_source.getRepository(VehicleImagesEntity);
-        const jobs: Array<{
+        const jobs: {
           name: string;
           data: ProcessVehicleImageJob;
           opts: {
@@ -405,7 +404,7 @@ export class CreateVehicleService {
             attempts: number;
             backoff: { type: "exponential"; delay: number };
           };
-        }> = [];
+        }[] = [];
 
         for (const [index, imageId] of enqueuedImageIds.entries()) {
           const tempUpload = validatedTempUploads[index];
