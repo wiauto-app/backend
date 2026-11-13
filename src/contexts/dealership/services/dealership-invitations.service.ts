@@ -28,6 +28,7 @@ import { DealershipInvitationMailService } from "../services/dealership-invitati
 import { CreateDealershipInvitationHttpDto } from "../api/invitations-v1/create-dealership-invitation/create-dealership-invitation.http-dto";
 import { ProfileNotFoundException } from "../../profiles/exceptions/profile-not-found.exception";
 import { DealershipInvitationJoinStatusResponse } from "../dto/dealership-invitation-join-status.response";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 
 const dealership_member_roles = new Set<DealershipMembersEntity["role"]>([
   "owner",
@@ -55,6 +56,7 @@ export class DealershipInvitationsService {
     private readonly profile_service: ProfileService,
     private readonly dealership_invitation_mail_service: DealershipInvitationMailService,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) { }
 
   async create(
@@ -189,6 +191,7 @@ export class DealershipInvitationsService {
           role: member_role,
         });
         added_to_team = true;
+        await this.vehicle_publisher_sync_service.syncForProfile(profile.id);
       }
     }
 

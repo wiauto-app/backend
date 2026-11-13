@@ -7,6 +7,7 @@ import { InvalidDealershipMembersException } from "../exceptions/invalid-dealers
 import { ProfileNotFoundForMemberException } from "../exceptions/profile-not-found-for-member.exception";
 import { DealershipMemberDetail } from "../types/dealership-detail";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 import { DealershipInvitationsService } from "./dealership-invitations.service";
 
 export interface CreateDealershipMemberInput {
@@ -42,10 +43,12 @@ export class DealershipMembersService {
     private readonly dealership_member_repository: TypeOrmDealershipMemberRepository,
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly dealershipInvitationsService: DealershipInvitationsService,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) {}
 
   async create(input: CreateDealershipMemberInput): Promise<void> {
     await this.dealership_member_repository.save(input);
+    await this.vehicle_publisher_sync_service.syncForProfile(input.profile_id);
   }
 
   async findTeam(dealership_id: string): Promise<DealershipMemberDetail[]> {
@@ -121,6 +124,7 @@ export class DealershipMembersService {
 
     await this.dealershipInvitationsService.deleteInvitationsByEmail(member.profile.user.email);
     await this.dealership_member_repository.remove(input.member_id);
+    await this.vehicle_publisher_sync_service.syncForProfile(member.profile_id);
   }
 
   async leaveTeam(input: LeaveDealershipTeamInput): Promise<void> {
@@ -141,6 +145,7 @@ export class DealershipMembersService {
     }
 
     await this.dealership_member_repository.remove(member.id);
+    await this.vehicle_publisher_sync_service.syncForProfile(input.profile_id);
   }
 
   async sync(input: SyncDealershipMembersInput): Promise<void> {
@@ -159,11 +164,14 @@ export class DealershipMembersService {
       members.map(member => [member.profile_id, member]),
     );
 
+    const affected_profile_ids = new Set<string>();
+
     for (const existing_member of existing_members) {
       const incoming = incoming_by_profile_id.get(existing_member.profile_id);
 
       if (!incoming) {
         await this.dealership_member_repository.remove(existing_member.id);
+        affected_profile_ids.add(existing_member.profile_id);
         continue;
       }
 
@@ -189,6 +197,11 @@ export class DealershipMembersService {
         profile_id: incoming_member.profile_id,
         role: incoming_member.role,
       });
+      affected_profile_ids.add(incoming_member.profile_id);
+    }
+
+    for (const profile_id of affected_profile_ids) {
+      await this.vehicle_publisher_sync_service.syncForProfile(profile_id);
     }
   }
 

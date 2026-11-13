@@ -38,6 +38,7 @@ describe("StripeWebhookService one-time claim", () => {
   const vehicle_search_indexer = { syncVehicle: vi.fn() };
   const credits_service = { addCredit: vi.fn() };
   const me_session_cache_service = { invalidateByProfileId: vi.fn() };
+  const vehicle_publisher_sync_service = { syncForProfile: vi.fn() };
 
   const createService = () =>
     new StripeWebhookService(
@@ -57,6 +58,7 @@ describe("StripeWebhookService one-time claim", () => {
       {} as never,
       credits_service as never,
       me_session_cache_service as never,
+      vehicle_publisher_sync_service as never,
     );
 
   const dispatchPaymentIntent = (metadata: Record<string, string>) => {

@@ -40,6 +40,7 @@ describe("StripeWebhookService event ledger", () => {
     isActiveSubscriptionStatus: vi.fn(),
   };
   const me_session_cache_service = { invalidateByProfileId: vi.fn() };
+  const vehicle_publisher_sync_service = { syncForProfile: vi.fn() };
 
   const createService = () =>
     new StripeWebhookService(
@@ -59,6 +60,7 @@ describe("StripeWebhookService event ledger", () => {
       {} as never, // assistant_quota_service
       {} as never, // featured_listing_credits_service
       me_session_cache_service as never,
+      vehicle_publisher_sync_service as never,
     );
 
   const subscriptionEvent = (type = "customer.subscription.updated") => ({

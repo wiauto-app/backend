@@ -38,6 +38,7 @@ import { BillingSubscriptionProvisioningService } from "./billing-subscription-p
 import { AssistantCreditPackEntity } from "../entities/assistant-credit-pack.entity";
 import { FeaturedListingOfferEntity } from "../entities/featured-listing-offer.entity";
 import { FeaturedListingCreditsService } from "./featured-listing-credits.service";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 
 /**
  * A `processing` claim older than this is considered abandoned (process crash
@@ -77,6 +78,7 @@ export class StripeWebhookService {
     private readonly assistant_quota_service: AssistantQuotaService,
     private readonly featured_listing_credits_service: FeaturedListingCreditsService,
     private readonly me_session_cache_service: MeSessionCacheService,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) {}
 
   /**
@@ -192,6 +194,9 @@ export class StripeWebhookService {
         await this.me_session_cache_service.invalidateByProfileId(
           provisioned.profile_id,
         );
+        await this.vehicle_publisher_sync_service.syncForProfile(
+          provisioned.profile_id,
+        );
       }
       return;
     }
@@ -288,6 +293,7 @@ export class StripeWebhookService {
         plan_id,
         subscription.metadata.dealership_id,
       );
+      await this.vehicle_publisher_sync_service.syncForProfile(profile_id);
     }
 
     // Native PaymentSheet subscriptions are created `incomplete` (or `trialing`

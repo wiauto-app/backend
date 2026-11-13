@@ -6,6 +6,7 @@ import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeo
 import { NewsletterModule } from "@/src/contexts/newsletter/newsletter.module";
 import { MeSessionCacheModule } from "@/src/contexts/auth/me-session-cache.module";
 import { DealershipInvitationModule } from "../dealership/modules/dealership-invitation.module";
+import { VehiclePublisherSyncModule } from "../vehicles/vehicle-publisher-sync.module";
 import { User } from "../users/entities/user.entity";
 import { TypeOrmAdminProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.admin-profile-repository";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
@@ -48,6 +49,7 @@ import { ProfileService } from "./services/profile.service";
   imports: [
     TypeOrmModule.forFeature([ProfileEntity, User, AlertEntity]),
     forwardRef(() => DealershipInvitationModule),
+    VehiclePublisherSyncModule,
     NewsletterModule,
     MeSessionCacheModule,
   ],

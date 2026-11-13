@@ -6,6 +6,7 @@ import { DeepPartial, FindOptionsWhere, In, Repository } from "typeorm";
 import {
   normalizeNullableUuid,
   PrimitiveVehicle,
+  PUBLISHER_TYPE,
   VehicleUpdateFields,
 } from "../types/vehicle";
 import { InvalidVehicleFeatureIdsException } from "../exceptions/invalid-vehicle-feature-ids.exception";
@@ -361,9 +362,13 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
 
 function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: DealershipMembersEntity[], profile_id?: string): VehicleDetail {
   const base = entity_to_list_item(entity);
-  const dealership = dealership_members.find(
+  const membership = dealership_members.find(
     (member) => member.profile_id === entity.profile.id,
-  )?.dealership;
+  );
+  const resolved_publisher_type = membership
+    ? PUBLISHER_TYPE.DEALERSHIP
+    : PUBLISHER_TYPE.PARTICULAR;
+  const resolved_dealership = membership?.dealership ?? null;
   const contactVisibility = resolveVehicleContactVisibility({
     show_phone: entity.show_phone,
     has_whatsapp: entity.has_whatsapp,
@@ -375,7 +380,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     ...base,
     show_review_collab: entity.show_review_collab,
     description: entity.description ?? "",
-    publisher_type: entity.publisher_type,
+    publisher_type: resolved_publisher_type,
     status: entity.status,
     status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
@@ -417,7 +422,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     show_exact_location: entity.show_exact_location,
     finance_price: entity.finance_price,
     first_cuota: entity.first_cuota,
-    dealership: dealership ?? entity.dealership,
+    dealership: resolved_dealership,
     financing_offer: null,
     videos: map_vehicle_videos(entity.videos),
   };

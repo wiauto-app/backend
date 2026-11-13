@@ -27,6 +27,7 @@ import { UpdateDealershipDto } from "../dto/update-dealership.dto";
 import { DealershipMembersService } from "./dealership-members.service";
 import { DealershipScheduleService } from "./dealership-schedule.service";
 import { normalizeDealershipWebsiteUrl } from "../utils/normalize-dealership-website-url";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 
 @Injectable()
 export class DealershipService {
@@ -38,6 +39,7 @@ export class DealershipService {
     private readonly remove_image_service: RemoveFilesService,
     private readonly profileRepository: TypeOrmProfileRepository,
     private readonly meSessionCacheService: MeSessionCacheService,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) {}
 
   async create(
@@ -76,6 +78,7 @@ export class DealershipService {
     const existingMembership =
       await this.dealership_member_repository.findOneByProfileId(profile_id);
     if (existingMembership) {
+      await this.vehicle_publisher_sync_service.syncForProfile(profile_id);
       return;
     }
 

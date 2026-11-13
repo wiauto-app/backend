@@ -23,11 +23,13 @@ import { MeSessionCacheModule } from "@/src/contexts/auth/me-session-cache.modul
 import { FileModule } from "../shared/file/file.module";
 import { DealershipSchedule } from "./entities/dealership-schedule.entity";
 import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
+import { VehiclePublisherSyncModule } from "@/src/contexts/vehicles/vehicle-publisher-sync.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DealershipEntity, DealershipSchedule, DealershipOpenTime]),
     DealershipInvitationModule,
+    VehiclePublisherSyncModule,
     FileModule,
     forwardRef(() => ProfileModule),
     forwardRef(() => DealershipReviewsModule),

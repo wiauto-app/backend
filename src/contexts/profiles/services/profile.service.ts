@@ -10,6 +10,7 @@ import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/rep
 import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeorm.alert-repository";
 import { NewsletterService } from "@/src/contexts/newsletter/services/newsletter.service";
 import { MeSessionCacheService } from "@/src/contexts/auth/services/me-session-cache.service";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 
 import {
   mapProfileToResponse,
@@ -80,6 +81,7 @@ export class ProfileService {
     private readonly alert_repository: TypeOrmAlertRepository,
     private readonly newsletter_service: NewsletterService,
     private readonly me_session_cache_service: MeSessionCacheService,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) { }
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
@@ -131,6 +133,7 @@ export class ProfileService {
           profile_id: input.id,
           role: dealership_member_role,
         });
+        await this.vehicle_publisher_sync_service.syncForProfile(input.id);
       }
     }
 

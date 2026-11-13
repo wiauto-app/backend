@@ -13,6 +13,7 @@ import { DealershipService } from "@/src/contexts/dealership/services/dealership
 import { PlanAccessGrantEntity } from "../entities/plan-access-grant.entity";
 import { PLAN_AUDIENCE } from "../types/billing.enums";
 import { PlanVersionsService } from "./plan-versions.service";
+import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
 
 export interface AssignPlanAccessGrantInput {
   profile_id: string;
@@ -33,6 +34,7 @@ export class PlanAccessGrantsService {
     private readonly profile_repository: Repository<ProfileEntity>,
     @InjectRepository(PlanAccessGrantEntity)
     private readonly grant_repository: Repository<PlanAccessGrantEntity>,
+    private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
   ) {}
 
   async findActiveByProfileId(
@@ -106,6 +108,7 @@ export class PlanAccessGrantsService {
         input.profile_id,
         input.plan_id,
       );
+      await this.vehicle_publisher_sync_service.syncForProfile(input.profile_id);
     }
 
     return this.serialize(grant);

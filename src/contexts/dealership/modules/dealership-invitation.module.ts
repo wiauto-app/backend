@@ -19,13 +19,15 @@ import { DealershipMembersEntity } from "../entities/dealership-members.entity";
 import { DealershipInvitationMailService } from "../services/dealership-invitation-mail.service";
 import { DealershipInvitationsService } from "../services/dealership-invitations.service";
 import { DealershipMembersService } from "../services/dealership-members.service";
+import { VehiclePublisherSyncModule } from "@/src/contexts/vehicles/vehicle-publisher-sync.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       DealershipInvitationsEntity,
       DealershipMembersEntity]),
-    forwardRef(() => ProfileModule)],
+    forwardRef(() => ProfileModule),
+    VehiclePublisherSyncModule],
   controllers: [
     CreateDealershipInvitationController,
     FindAllDealershipInvitationsController,

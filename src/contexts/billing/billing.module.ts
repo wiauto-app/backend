@@ -12,6 +12,7 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { DealershipModule } from "@/src/contexts/dealership/dealership.module";
 import { VehiclesModule } from "@/src/contexts/vehicles/vehicles.module";
 import { VehicleSearchModule } from "@/src/contexts/vehicles/search/vehicle-search.module";
+import { VehiclePublisherSyncModule } from "@/src/contexts/vehicles/vehicle-publisher-sync.module";
 
 import {
   BillingPlansService,
@@ -123,6 +124,7 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     forwardRef(() => VehiclesModule),
     forwardRef(() => DealershipModule),
     VehicleSearchModule,
+    VehiclePublisherSyncModule,
   ],
   controllers: [
     FindPublicPlansCatalogController,
