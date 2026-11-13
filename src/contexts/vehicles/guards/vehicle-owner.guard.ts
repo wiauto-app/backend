@@ -11,7 +11,7 @@ import { TypeOrmVehicleRepository } from "@/src/contexts/vehicles/repositories/t
 
 @Injectable()
 export class VehicleOwnerGuard implements CanActivate {
-  constructor(private readonly vehicle_repository: TypeOrmVehicleRepository) {}
+  constructor(private readonly vehicle_repository: TypeOrmVehicleRepository) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const { request, user } = getGuardRequest(context);
@@ -29,8 +29,13 @@ export class VehicleOwnerGuard implements CanActivate {
       throw new NotFoundException("Vehículo no encontrado");
     }
 
+
     if (vehicle.profile_id !== user.id) {
+      if (user.is_admin) {
+        return true;
+      }
       throw new ForbiddenException("No tienes permiso para gestionar este anuncio");
+
     }
 
     request.vehicle_owner_vehicle_id = vehicle_id;

@@ -1,3 +1,4 @@
+import { BadRequestException } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Queue } from "bullmq";
@@ -15,6 +16,38 @@ import { VehicleImagesEntity } from "../entities/vehicle-images.entity";
 import { TempUploadService } from "./temp-upload.service";
 import { RelocateVehicleImageSourceService } from "./relocate-vehicle-image-source.service";
 import type { TemporaryUploadEntity } from "@/src/contexts/shared/file/entities/temporary-upload.entity";
+
+const has_ready_storage_url = (url: string | null | undefined): boolean => {
+  const stored = url?.trim() ?? "";
+  if (!stored || is_temp_storage_path(stored)) {
+    return false;
+  }
+  return !/^https?:\/\//i.test(stored);
+};
+
+const resolve_path_image_url = (
+  image: { id?: string; path?: string },
+  existing: VehicleImagesEntity | undefined,
+  promoted_paths_map: Map<string, string>,
+): string => {
+  const path = image.path!.trim();
+  if (
+    is_temp_storage_path(path) &&
+    image.id &&
+    has_ready_storage_url(existing?.url)
+  ) {
+    return existing!.url!.trim();
+  }
+  return promoted_paths_map.get(path) ?? path;
+};
+
+const is_storage_object_missing_error = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const record = error as { name?: string; Code?: string };
+  return record.name === "NoSuchKey" || record.Code === "NoSuchKey";
+};
 
 @Injectable()
 export class AttachVehicleImagesFromTempService {
@@ -49,11 +82,15 @@ export class AttachVehicleImagesFromTempService {
           `La imagen ${image.id} no pertenece al vehículo ${dto.vehicle_id}.`,
         );
       }
-      if (!image.upload_id && !image.path) {
-        throw new Error(
-          "Cada imagen debe incluir upload_id o path.",
-        );
+      if (image.upload_id || image.path) {
+        continue;
       }
+      if (image.id && existing_images_map.has(image.id)) {
+        continue;
+      }
+      throw new Error(
+        "Cada imagen debe incluir upload_id, path o un id de foto existente.",
+      );
     }
 
     const vehicle = await this.vehicle_repository.findOne({
@@ -64,6 +101,9 @@ export class AttachVehicleImagesFromTempService {
       throw new Error(`Vehículo ${dto.vehicle_id} no encontrado.`);
     }
 
+    const uploader_profile_id =
+      dto.uploader_profile_id?.trim() || vehicle.profile_id;
+
     const incoming_ids = new Set(
       sorted_images.map(image => image.id).filter(Boolean),
     );
@@ -72,6 +112,9 @@ export class AttachVehicleImagesFromTempService {
     );
 
     const async_images = sorted_images.filter(image => Boolean(image.upload_id));
+    const order_only_images = sorted_images.filter(
+      image => Boolean(image.id) && !image.upload_id && !image.path,
+    );
     const path_images = sorted_images.filter(image => !image.upload_id && image.path);
 
     const validatedTempUploads =
@@ -80,23 +123,41 @@ export class AttachVehicleImagesFromTempService {
             async_images.map(image =>
               this.tempUploadService.validateAndGetTempUpload(
                 image.upload_id!,
-                vehicle.profile_id!,
+                uploader_profile_id,
               ),
             ),
           )
         : [];
 
-    const temp_images = path_images.filter(image =>
-      is_temp_storage_path(image.path!),
-    );
+    const temp_images = path_images.filter(image => {
+      if (!is_temp_storage_path(image.path!)) {
+        return false;
+      }
+      if (image.id) {
+        const existing = existing_images_map.get(image.id);
+        if (has_ready_storage_url(existing?.url)) {
+          return false;
+        }
+      }
+      return true;
+    });
     const temp_paths = temp_images.map(image => image.path!);
     const promoted_paths_map = new Map<string, string>();
 
     if (temp_images.length > 0) {
-      const { pathnames } =
-        await this.promote_temp_storage_paths_service.execute({
+      let pathnames: string[];
+      try {
+        ({ pathnames } = await this.promote_temp_storage_paths_service.execute({
           paths: temp_paths,
-        });
+        }));
+      } catch (promoteError) {
+        if (is_storage_object_missing_error(promoteError)) {
+          throw new BadRequestException(
+            "Alguna foto temporal ya no está en el almacenamiento. Vuelve a subirla.",
+          );
+        }
+        throw promoteError;
+      }
 
       if (pathnames.length !== temp_images.length) {
         const promotion_error = new Error(
@@ -135,12 +196,37 @@ export class AttachVehicleImagesFromTempService {
 
           const entities_to_save: VehicleImagesEntity[] = [];
 
+          for (const image of order_only_images) {
+            const existing = existing_images_map.get(image.id!);
+            if (!existing) {
+              continue;
+            }
+            entities_to_save.push(
+              manager.create(VehicleImagesEntity, {
+                id: existing.id,
+                vehicle_id: dto.vehicle_id,
+                url: existing.url,
+                source_path: existing.source_path,
+                status: existing.status,
+                failure_reason: existing.failure_reason,
+                order: image.order,
+              }),
+            );
+          }
+
           for (const image of path_images) {
+            const existing = image.id
+              ? existing_images_map.get(image.id)
+              : undefined;
             entities_to_save.push(
               manager.create(VehicleImagesEntity, {
                 ...(image.id ? { id: image.id } : {}),
                 vehicle_id: dto.vehicle_id,
-                url: promoted_paths_map.get(image.path!) ?? image.path!,
+                url: resolve_path_image_url(
+                  image,
+                  existing,
+                  promoted_paths_map,
+                ),
                 order: image.order,
                 status: "ready",
               }),

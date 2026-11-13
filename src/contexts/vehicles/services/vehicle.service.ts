@@ -448,6 +448,7 @@ export class VehicleService {
         await this.attach_vehicle_images_from_temp_service.execute({
           vehicle_id: id,
           images: images,
+          uploader_profile_id: actor_profile_id,
         });
       }
 

@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 
 import { VehicleCreationAssertionService } from "../services/vehicle-creation-assertion.service";
+import { CreateVehicleDto } from "../api/v1/create-vehicle/create-vehicle.http-dto";
 
 /**
  * Valida la cuota de anuncios resuelta por plan del dealership /
@@ -25,7 +26,7 @@ export class VehicleCreationGuard implements CanActivate {
     if (!user?.profile) {
       throw new UnauthorizedException("Usuario no autenticado");
     }
-    const body = context.switchToHttp().getRequest().body;
+    const body = context.switchToHttp().getRequest().body as CreateVehicleDto;
     const profile_id = user.id;
     if (user.is_admin) {
       const entitlements = await this.entitlements_service.resolve(profile_id);
