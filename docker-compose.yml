@@ -21,6 +21,10 @@ services:
     env_file:
       - .env
 
+    environment:
+      # La API no ejecuta FFmpeg: lo hace wiauto-worker
+      APP_ROLE: api
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,6 +44,51 @@ services:
         reservations:
           cpus: "1"
           memory: 1G
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+
+  wiauto-worker:
+    container_name: wiauto-worker
+
+    build:
+      context: .
+      target: production
+
+    restart: unless-stopped
+
+    # Mismo build que la API; sin HTTP. Procesa vídeos (FFmpeg) desde BullMQ.
+    command: ["dumb-init", "node", "dist/worker.js"]
+
+    env_file:
+      - .env
+
+    environment:
+      APP_ROLE: worker
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
+    networks:
+      - wiauto-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 512M
 
     logging:
       driver: json-file

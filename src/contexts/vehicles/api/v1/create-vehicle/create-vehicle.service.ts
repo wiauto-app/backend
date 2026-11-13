@@ -31,7 +31,10 @@ import { ServiceEntity } from "../../../entities/service.entity";
 import { TractionEntity } from "../../../entities/traction.entity";
 import { VehicleTypeEntity } from "../../../entities/vehicle-type.entity";
 import { VehicleEntity } from "../../../entities/vehicle.entity";
-import { VideosEntity } from "../../../entities/videos.entity";
+import {
+  VEHICLE_VIDEO_STATUS,
+  VideosEntity,
+} from "../../../entities/videos.entity";
 import { WarrantyTypeEntity } from "../../../entities/warranty-type.entity";
 import { VehicleListingExpiryScheduler } from "../../../queues/vehicle-listing-expiry.scheduler";
 import { TypeOrmVehicleRepository } from "../../../repositories/typeorm.vehicle-repository";
@@ -54,6 +57,10 @@ import { validateVehicleCreationRules } from "../../../services/validate-vehicle
 import { DealershipFinancingSettingsEntity } from "@/src/contexts/financing/entities/dealership-financing-settings.entity";
 import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { ReferralsService } from "@/src/contexts/referrals/services/referrals.service";
+import { VideoUploadService } from "@/src/contexts/vehicles/vehicle-videos/services/video-upload.service";
+import { VehicleVideoAttachService } from "@/src/contexts/vehicles/vehicle-videos/services/vehicle-video-attach.service";
+import type { VideoUploadSessionEntity } from "@/src/contexts/vehicles/vehicle-videos/entities/video-upload-session.entity";
+import { classifyVehicleVideo } from "./vehicleMedia.http-dto";
 
 export { validateVehicleCreationRules } from "../../../services/validate-vehicle-creation-rules";
 
@@ -61,6 +68,11 @@ const VEHICLE_LISTING_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 
 export interface CreateVehicleOptions {
   as_draft?: boolean;
+  /**
+   * Perfil que subió los vídeos (multipart). Un admin que publica en nombre de
+   * otro perfil sube con su propia sesión; por defecto es el publicador.
+   */
+  uploader_profile_id?: string;
 }
 
 export interface RunPublishSideEffectsInput {
@@ -72,8 +84,39 @@ export interface RunPublishSideEffectsInput {
 
 interface PromotedVehicleMedia {
   images: { path: string; order: number }[];
-  videos: VehicleMediaDto[];
+  videos: { path: string; order: number }[];
 }
+
+interface PartitionedVehicleVideos {
+  upload_videos: { upload_id: string; order: number }[];
+  legacy_videos: { path: string; order: number }[];
+}
+
+/** En creación no existen vídeos previos: `id` no es válido. */
+const partitionCreateVehicleVideos = (
+  videos: VehicleMediaDto[] | undefined,
+): PartitionedVehicleVideos => {
+  const upload_videos: PartitionedVehicleVideos["upload_videos"] = [];
+  const legacy_videos: PartitionedVehicleVideos["legacy_videos"] = [];
+
+  for (const video of videos ?? []) {
+    const classified = classifyVehicleVideo(video);
+    if (classified.kind === "upload") {
+      upload_videos.push({
+        upload_id: classified.upload_id,
+        order: classified.order,
+      });
+    } else if (classified.kind === "legacy") {
+      legacy_videos.push({ path: classified.path, order: classified.order });
+    } else {
+      throw new ValidationException(
+        "Un anuncio nuevo no puede referenciar vídeos existentes.",
+      );
+    }
+  }
+
+  return { upload_videos, legacy_videos };
+};
 
 interface AsyncVehicleImageInput {
   upload_id: string;
@@ -152,6 +195,8 @@ export class CreateVehicleService {
     private readonly relocateVehicleImageSourceService: RelocateVehicleImageSourceService,
     private readonly vehicleDetailCache: VehicleDetailCacheService,
     private readonly referrals_service: ReferralsService,
+    private readonly video_upload_service: VideoUploadService,
+    private readonly vehicle_video_attach_service: VehicleVideoAttachService,
   ) { }
 
   async create(
@@ -219,9 +264,12 @@ export class CreateVehicleService {
 
     const { async_images, legacy_images } = partitionVehicleImages(dto.images);
     const useAsyncFlow = async_images.length > 0;
+    const { upload_videos, legacy_videos } = partitionCreateVehicleVideos(
+      dto.videos,
+    );
     const temp_media_paths = [
       ...legacy_images.toSorted((a, b) => a.order - b.order),
-      ...(dto.videos ?? []).toSorted((a, b) => a.order - b.order),
+      ...legacy_videos.toSorted((a, b) => a.order - b.order),
     ].map(item => item.path);
 
     let media_promoted = false;
@@ -230,6 +278,7 @@ export class CreateVehicleService {
     let validatedTempUploads: Awaited<
       ReturnType<typeof this.tempUploadService.validateAndGetTempUpload>
     >[] = [];
+    let createdVideos: VideosEntity[] = [];
 
     try {
       if (useAsyncFlow) {
@@ -244,7 +293,13 @@ export class CreateVehicleService {
         );
       }
 
-      const media = await this.promoteMedia(legacy_images, dto.videos ?? []);
+      const videoSessions: VideoUploadSessionEntity[] =
+        await this.video_upload_service.validateForVehicle(
+          upload_videos.map(video => video.upload_id),
+          options.uploader_profile_id ?? publisher_profile_id,
+        );
+
+      const media = await this.promoteMedia(legacy_images, legacy_videos);
       media_promoted = temp_media_paths.length > 0;
 
       vehicle = await this.data_source.transaction(async manager => {
@@ -376,9 +431,25 @@ export class CreateVehicleService {
                 vehicle_id: saved.id,
                 url: video.path,
                 order: video.order,
-                status: "active",
+                status: VEHICLE_VIDEO_STATUS.READY,
               }),
             ),
+          );
+        }
+
+        // Vídeos multipart: filas `uploaded` + sesiones consumidas
+        if (videoSessions.length > 0) {
+          createdVideos = await this.vehicle_video_attach_service.createRows(
+            manager,
+            saved.id,
+            videoSessions.map((session, index) => ({
+              session,
+              order: upload_videos[index].order,
+            })),
+          );
+          await this.video_upload_service.markConsumed(
+            videoSessions.map(session => session.id),
+            manager,
           );
         }
 
@@ -461,6 +532,13 @@ export class CreateVehicleService {
         }
       }
 
+      // Reubicar originales y encolar FFmpeg FUERA de la transacción
+      if (createdVideos.length > 0) {
+        await this.vehicle_video_attach_service.relocateAndEnqueue(
+          createdVideos,
+        );
+      }
+
       if (!as_draft) {
         await this.runPublishSideEffects({
           vehicle_id: vehicle.id,
@@ -470,6 +548,12 @@ export class CreateVehicleService {
         });
       }
     } catch (error) {
+      // El vehículo se borra en cascada con sus filas de vídeo: limpiar R2
+      if (createdVideos.length > 0) {
+        this.vehicle_video_attach_service.deleteObjectsInBackground(
+          createdVideos,
+        );
+      }
       try {
         await this.rollback({
           vehicle_id: vehicle?.id ?? null,
@@ -607,7 +691,7 @@ export class CreateVehicleService {
 
   private async promoteMedia(
     images: { path: string; order: number }[],
-    videos: VehicleMediaDto[],
+    videos: { path: string; order: number }[],
   ): Promise<PromotedVehicleMedia> {
     const ordered_images = [...images].sort((a, b) => a.order - b.order);
     const ordered_videos = [...videos].sort((a, b) => a.order - b.order);

@@ -55,6 +55,7 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Chromium + deps para Puppeteer (export PDF). dumb-init como PID 1.
+# ffmpeg/ffprobe: validación (API) y transcodificación de vídeos (worker).
 RUN apk add --no-cache \
     dumb-init=1.2.5-r3 \
     chromium \
@@ -63,7 +64,8 @@ RUN apk add --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-freefont \
-    font-noto
+    font-noto \
+    ffmpeg
 
 COPY --from=build $DIR/package.json .
 COPY --from=build $DIR/pnpm-lock.yaml .

@@ -84,12 +84,15 @@ import { getBooleanFromEntitlement } from "@/src/contexts/billing/types/entitlem
 import { FeaturedListingCreditsService } from "@/src/contexts/billing/services/featured-listing-credits.service";
 import { TypeOrmDealershipMemberRepository } from "@/src/contexts/dealership/repositories/typeorm.dealership-member-repository";
 import { DismissedVehiclesService } from "../vehicle-engagement/services/dismissed-vehicles.service";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { VehicleEntity } from "../entities/vehicle.entity";
 import { validateVehicleCreationRules } from "./validate-vehicle-creation-rules";
 import { PromoteTempStoragePathsService } from "../../shared/file/services/promote-temp-storage-paths.service";
-import { VideosEntity } from "../entities/videos.entity";
+import { VEHICLE_VIDEO_STATUS, VideosEntity } from "../entities/videos.entity";
+import { classifyVehicleVideo } from "../api/v1/create-vehicle/vehicleMedia.http-dto";
+import { VideoUploadService } from "../vehicle-videos/services/video-upload.service";
+import { VehicleVideoAttachService } from "../vehicle-videos/services/vehicle-video-attach.service";
 import { VehicleInsightsService } from "./vehicle-insights.service";
 import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/services/proactive-alert-event.service";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
@@ -180,6 +183,8 @@ export class VehicleService {
     private readonly cache_manager: Cache,
     private readonly vehicle_detail_cache: VehicleDetailCacheService,
     private readonly dealership_financing_service: DealershipFinancingService,
+    private readonly video_upload_service: VideoUploadService,
+    private readonly vehicle_video_attach_service: VehicleVideoAttachService,
   ) { }
 
   private async resolvePublisherContext(
@@ -357,7 +362,11 @@ export class VehicleService {
     return result;
   }
 
-  async update(update_vehicle_dto: UpdateVehicleDto) {
+  /**
+   * @param actor_profile_id perfil que hace la petición; dueño de los vídeos
+   * multipart nuevos (`upload_id`). Si falta, no se aceptan vídeos nuevos.
+   */
+  async update(update_vehicle_dto: UpdateVehicleDto, actor_profile_id?: string) {
     const existing = await this.vehicle_repository.findOne(update_vehicle_dto.id);
     if (!existing) {
       throw new VehicleNotFoundException(update_vehicle_dto.id);
@@ -413,58 +422,71 @@ export class VehicleService {
       patch.address_details = resolved;
     }
 
-    const has_vehicle_updates = Object.keys(patch).length > 0;
+    // Cualquier escritura (aunque falle a medias o falle un efecto posterior,
+    // p. ej. el indexado) invalida la caché del detalle: Redis + Next.
+    let wrote = false;
+    try {
+      const has_vehicle_updates = Object.keys(patch).length > 0;
 
-    if (has_vehicle_updates) {
-      patch.suggestions = await this.resolvePatchedSuggestions(existing, patch);
-      await this.vehicle_repository.patch(id, patch);
-    }
+      if (has_vehicle_updates) {
+        wrote = true;
+        patch.suggestions = await this.resolvePatchedSuggestions(existing, patch);
+        await this.vehicle_repository.patch(id, patch);
+      }
 
-    if (price !== undefined || vehicle_price_id !== undefined) {
-      await this.set_vehicle_price_service.execute({
-        vehicle_id: id,
-        price,
-        vehicle_price_id,
-      });
-    }
+      if (price !== undefined || vehicle_price_id !== undefined) {
+        wrote = true;
+        await this.set_vehicle_price_service.execute({
+          vehicle_id: id,
+          price,
+          vehicle_price_id,
+        });
+      }
 
-    if (images && images.length > 0) {
-      await this.attach_vehicle_images_from_temp_service.execute({
-        vehicle_id: id,
-        images: images,
-      });
-    }
+      if (images && images.length > 0) {
+        wrote = true;
+        await this.attach_vehicle_images_from_temp_service.execute({
+          vehicle_id: id,
+          images: images,
+        });
+      }
 
-    if (videos && videos.length > 0) {
-      await this.replaceVehicleVideosFromTemp(id, videos);
-    }
+      // `undefined` = no tocar; array = estado final (`[]` elimina todos)
+      if (videos !== undefined) {
+        wrote = true;
+        await this.syncVehicleVideos(id, videos, actor_profile_id);
+      }
 
-    const has_non_price_updates =
-      has_vehicle_updates ||
-      (images !== undefined && images.length > 0) ||
-      (videos !== undefined && videos.length > 0);
+      const has_non_price_updates =
+        has_vehicle_updates ||
+        (images !== undefined && images.length > 0) ||
+        videos !== undefined;
 
-    if (
-      has_non_price_updates &&
-      price === undefined &&
-      vehicle_price_id === undefined &&
-      existing.status === STATUS_VEHICLE.ACTIVE
-    ) {
-      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-        vehicle_id: id,
-        event_type: ALERT_EVENT_TYPE.RECENTLY_UPDATED,
-      });
-    }
+      if (
+        has_non_price_updates &&
+        price === undefined &&
+        vehicle_price_id === undefined &&
+        existing.status === STATUS_VEHICLE.ACTIVE
+      ) {
+        await this.alert_processing_enqueue_service.enqueue_vehicle_event({
+          vehicle_id: id,
+          event_type: ALERT_EVENT_TYPE.RECENTLY_UPDATED,
+        });
+      }
 
-    const has_any_updates =
-      has_non_price_updates ||
-      price !== undefined ||
-      vehicle_price_id !== undefined;
-    if (has_any_updates) {
-      await this.vehicle_search_indexer.indexVehicle(id);
-      await this.vehicle_detail_cache.refresh(id, () =>
-        this.vehicle_repository.findOne(id),
-      );
+      const has_any_updates =
+        has_non_price_updates ||
+        price !== undefined ||
+        vehicle_price_id !== undefined;
+      if (has_any_updates) {
+        await this.vehicle_search_indexer.indexVehicle(id);
+      }
+    } finally {
+      if (wrote) {
+        await this.vehicle_detail_cache.refresh(id, () =>
+          this.vehicle_repository.findOne(id),
+        );
+      }
     }
 
     return {
@@ -501,61 +523,141 @@ export class VehicleService {
     });
   }
 
-  private async replaceVehicleVideosFromTemp(
+  /**
+   * Sincroniza los vídeos del vehículo con el estado final enviado:
+   * `id` conserva (y reordena) un vídeo existente, `upload_id` añade uno subido
+   * por multipart, `path` (legacy) promueve una ruta temporal; el resto se borra.
+   */
+  private async syncVehicleVideos(
     vehicle_id: string,
     videos: NonNullable<UpdateVehicleDto["videos"]>,
+    actor_profile_id: string | undefined,
   ): Promise<void> {
-    const ordered_videos = [...videos].sort((a, b) => a.order - b.order);
-    const temp_paths = ordered_videos.map((video) => video.path);
-    const { pathnames } =
-      await this.promote_temp_storage_paths_service.execute({
-        paths: temp_paths,
-      });
+    const classified = videos.map((video) => classifyVehicleVideo(video));
+    const kept = classified.flatMap((video) =>
+      video.kind === "existing" ? [video] : [],
+    );
+    const uploads = classified.flatMap((video) =>
+      video.kind === "upload" ? [video] : [],
+    );
+    const legacy = classified
+      .flatMap((video) => (video.kind === "legacy" ? [video] : []))
+      .sort((a, b) => a.order - b.order);
 
-    if (pathnames.length !== ordered_videos.length) {
-      const promotion_error = new Error(
-        "No se pudieron promover todos los videos del vehículo",
+    const current = await this.videos_repository.find({
+      where: { vehicle_id },
+    });
+    const current_ids = new Set(current.map((video) => video.id));
+    const kept_ids = new Set(kept.map((video) => video.id));
+    if (kept_ids.size !== kept.length) {
+      throw new ValidationException("Hay vídeos repetidos en el anuncio.");
+    }
+    const foreign = kept.find((video) => !current_ids.has(video.id));
+    if (foreign) {
+      throw new ValidationException(
+        "Algún vídeo no pertenece a este anuncio. Recarga la página.",
       );
-      try {
-        await this.promote_temp_storage_paths_service.rollback({
-          paths: temp_paths,
+    }
+    const removed = current.filter((video) => !kept_ids.has(video.id));
+
+    if (uploads.length > 0 && !actor_profile_id) {
+      throw new ValidationException("No se pudo identificar quién subió los vídeos.");
+    }
+    const sessions = await this.video_upload_service.validateForVehicle(
+      uploads.map((video) => video.upload_id),
+      actor_profile_id ?? "",
+    );
+
+    const legacy_paths = legacy.map((video) => video.path);
+    let promoted_pathnames: string[] = [];
+    if (legacy_paths.length > 0) {
+      const { pathnames } =
+        await this.promote_temp_storage_paths_service.execute({
+          paths: legacy_paths,
         });
-      } catch (rollback_error) {
-        throw new AggregateError(
-          [promotion_error, rollback_error],
-          "La promoción de videos quedó incompleta y su rollback falló",
+      if (pathnames.length !== legacy_paths.length) {
+        const promotion_error = new Error(
+          "No se pudieron promover todos los videos del vehículo",
         );
+        try {
+          await this.promote_temp_storage_paths_service.rollback({
+            paths: legacy_paths,
+          });
+        } catch (rollback_error) {
+          throw new AggregateError(
+            [promotion_error, rollback_error],
+            "La promoción de videos quedó incompleta y su rollback falló",
+          );
+        }
+        throw promotion_error;
       }
-      throw promotion_error;
+      promoted_pathnames = pathnames;
     }
 
+    let created: VideosEntity[] = [];
     try {
       await this.videos_repository.manager.transaction(async (manager) => {
-        await manager.delete(VideosEntity, { vehicle_id });
-        await manager.save(
-          VideosEntity,
-          ordered_videos.map((video, index) =>
-            manager.create(VideosEntity, {
-              vehicle_id,
-              url: pathnames[index],
-              order: video.order,
-              status: "active",
-            }),
-          ),
-        );
+        if (removed.length > 0) {
+          await manager.delete(VideosEntity, {
+            id: In(removed.map((video) => video.id)),
+          });
+        }
+        for (const video of kept) {
+          await manager.update(
+            VideosEntity,
+            { id: video.id, vehicle_id },
+            { order: video.order },
+          );
+        }
+        if (legacy.length > 0) {
+          await manager.save(
+            VideosEntity,
+            legacy.map((video, index) =>
+              manager.create(VideosEntity, {
+                vehicle_id,
+                url: promoted_pathnames[index],
+                order: video.order,
+                status: VEHICLE_VIDEO_STATUS.READY,
+              }),
+            ),
+          );
+        }
+        if (sessions.length > 0) {
+          created = await this.vehicle_video_attach_service.createRows(
+            manager,
+            vehicle_id,
+            sessions.map((session, index) => ({
+              session,
+              order: uploads[index].order,
+            })),
+          );
+          await this.video_upload_service.markConsumed(
+            sessions.map((session) => session.id),
+            manager,
+          );
+        }
       });
     } catch (error) {
-      try {
-        await this.promote_temp_storage_paths_service.rollback({
-          paths: temp_paths,
-        });
-      } catch (rollback_error) {
-        throw new AggregateError(
-          [error, rollback_error],
-          "Falló la actualización de videos y también su rollback",
-        );
+      if (legacy_paths.length > 0) {
+        try {
+          await this.promote_temp_storage_paths_service.rollback({
+            paths: legacy_paths,
+          });
+        } catch (rollback_error) {
+          throw new AggregateError(
+            [error, rollback_error],
+            "Falló la actualización de videos y también su rollback",
+          );
+        }
       }
       throw error;
+    }
+
+    if (removed.length > 0) {
+      this.vehicle_video_attach_service.deleteObjectsInBackground(removed);
+    }
+    if (created.length > 0) {
+      await this.vehicle_video_attach_service.relocateAndEnqueue(created);
     }
   }
 

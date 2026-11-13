@@ -38,7 +38,38 @@ Lecturas CDN → `R2_PUBLIC_URL` (custom domain del bucket o Worker).
 
 Orígenes: Next, Dashboard, localhost.  
 Métodos: `GET`, `PUT`, `HEAD`, `DELETE`.  
-Headers: `Content-Type`.
+Headers permitidos: `*` (las partes multipart firmadas pueden llevar cabeceras de checksum).  
+Headers expuestos: `ETag` — **obligatorio** para la subida multipart de vídeos: el navegador
+lee el `ETag` de cada parte y lo envía a `POST /v1/vehicle-videos/uploads/:id/complete`.
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://wiauto.es",
+      "https://www.wiauto.es",
+      "https://<dashboard>",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD", "DELETE"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+La app móvil no necesita CORS (no es un navegador).
+
+## Vídeos de vehículos
+
+- Subida: multipart directo a R2 (`/v1/vehicle-videos/uploads`), partes de 10 MiB, máx. 300 MB / 120 s.
+- Temporal: `vehicles-videos/temp/{profileId}/{uploadId}/original.{ext}`.
+- Definitivo: `vehicles-videos/{vehicleId}/{videoId}/original.{ext}` + `optimized.mp4` + `thumbnail.webp`.
+- El worker (`APP_ROLE=worker`, `node dist/worker.js`) necesita `ffmpeg`/`ffprobe` con `libx264`, `libwebp` y `zscale` (zimg) para el tone mapping HDR.
+- R2 aborta multipart incompletos a los 7 días; además la limpieza horaria los aborta a las 6 h.
 
 ## Custom domain
 

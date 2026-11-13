@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Cache } from "cache-manager";
 
 import type { VehicleDetail } from "../types/vehicle-detail";
+import { requestFrontendVehicleRevalidation } from "./frontend-vehicle-revalidation";
 
 type VehicleDetailLoader = () => Promise<VehicleDetail | null>;
 
@@ -47,10 +48,12 @@ export class VehicleDetailCacheService {
     return loadPromise;
   }
 
+  /** Invalida la caché Redis del detalle y, en segundo plano, la de Next. */
   async invalidate(vehicleId: string): Promise<void> {
     const cacheKey = this.buildKey(vehicleId);
     this.inFlight.delete(cacheKey);
     await this.cacheManager.del(cacheKey);
+    void requestFrontendVehicleRevalidation(vehicleId);
   }
 
   /** Best-effort: never throws so it can't break the write that triggered it. */

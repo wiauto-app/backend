@@ -45,6 +45,8 @@ export class CreateVehicleController {
       dto,
       publisher_profile_id,
       readGuestId(req),
+      // Los vídeos multipart pertenecen a quien los subió (admin incluido)
+      { uploader_profile_id: user.id },
     );
 
     const address = created.address_details;

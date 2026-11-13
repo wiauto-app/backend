@@ -27,6 +27,7 @@ import { UpdateVehicleController } from "./api/v1/update-vehicle/update-vehicle.
 import { FileModule } from "../shared/file/file.module";
 import { ImageValidationPipe } from "../shared/file/pipes/image-validation.pipe";
 import { VehicleImagesModule } from "./vehicle-images/vehicle-images.module";
+import { VehicleVideosModule } from "./vehicle-videos/vehicle-videos.module";
 import { VehiclePricesModule } from "./vehicle-prices/vehicle-prices.module";
 import { FeaturesEntity } from "./entities/features.entity";
 import { FindAllVehiclesController } from "./api/v1/find-all-vehicles/find-all-vehicles.controller";
@@ -260,6 +261,7 @@ import { DraftVehiclePublicationService } from "./services/draft-vehicle-publica
     BullModule.registerQueue({ name: DRAFT_PUBLICATION_ON_VERIFY_QUEUE }),
     LocationsModule,
     VehicleImagesModule,
+    VehicleVideosModule,
     VehiclePricesModule,
     FileModule,
     VehicleTypesModule,

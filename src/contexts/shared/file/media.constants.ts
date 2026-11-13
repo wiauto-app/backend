@@ -73,3 +73,41 @@ export const CONFIRM_VIDEO_UPLOAD = "v1/confirm-video-upload";
 export const GENERATE_READ_FILE_SIGNED_URL = "v1/generate-read-file-signed-url";
 export const UPLOAD_TEMP_VEHICLE_IMAGE = "v1/upload-temp-vehicle-image";
 export const V1_FILES = "v1/files";
+
+// Vídeos de vehículos (subida multipart directa a R2 + FFmpeg)
+export const PROCESS_VEHICLE_VIDEO_QUEUE = "process-vehicle-video-queue";
+
+export const VEHICLE_VIDEO_MAX_SIZE_BYTES = 300 * ONE_MB;
+export const VEHICLE_VIDEO_MAX_DURATION_S = 120;
+/** Margen sobre la duración máxima (redondeos de contenedor). */
+export const VEHICLE_VIDEO_DURATION_TOLERANCE_S = 1;
+/** Lado largo máximo del MP4 optimizado (1080p). */
+export const VEHICLE_VIDEO_MAX_LONG_SIDE = 1920;
+/** Tamaño de parte multipart (R2 exige ≥ 5 MiB salvo la última). */
+export const VEHICLE_VIDEO_PART_SIZE = 10 * ONE_MB;
+export const VEHICLE_VIDEO_MAX_PART_URLS_PER_REQUEST = 20;
+
+/** MIME de vídeo admitidos → extensión del original en R2. */
+export const VEHICLE_VIDEO_MIME_TO_EXTENSION: Record<string, string> = {
+  "video/mp4": ".mp4",
+  "video/x-m4v": ".m4v",
+  "video/quicktime": ".mov",
+  "video/mov": ".mov",
+  "video/webm": ".webm",
+  "video/x-matroska": ".mkv",
+  "video/mkv": ".mkv",
+  "video/x-msvideo": ".avi",
+  "video/avi": ".avi",
+  "video/3gpp": ".3gp",
+};
+
+/** Alias no estándar (React Native, algunos navegadores) → MIME canónico. */
+export const VEHICLE_VIDEO_MIME_ALIASES: Record<string, string> = {
+  "video/mov": "video/quicktime",
+  "video/mkv": "video/x-matroska",
+  "video/avi": "video/x-msvideo",
+};
+
+export const ALLOWED_VEHICLE_VIDEO_MIMES = Object.keys(
+  VEHICLE_VIDEO_MIME_TO_EXTENSION,
+);

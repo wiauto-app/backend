@@ -103,8 +103,10 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     delete: vi.fn().mockResolvedValue({ affected: 0 }),
     create: vi.fn((_target: unknown, payload: unknown) => payload),
     save: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockResolvedValue({ affected: 1 }),
   };
   const videos_repository = {
+    find: vi.fn().mockResolvedValue([]),
     manager: {
       transaction: vi.fn(
         (callback: (manager: typeof video_manager) => Promise<void>) =>
@@ -119,10 +121,19 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
       rollback: vi.fn().mockResolvedValue(),
   };
   const vehicle_detail_cache = {
-    refresh: vi.fn().mockResolvedValue(undefined),
+    refresh: vi.fn().mockResolvedValue(),
   };
   const dealership_financing_service = {
     isEnabledForDealership: vi.fn().mockResolvedValue(false),
+  };
+  const video_upload_service = {
+    validateForVehicle: vi.fn().mockResolvedValue([]),
+    markConsumed: vi.fn().mockResolvedValue(),
+  };
+  const vehicle_video_attach_service = {
+    createRows: vi.fn().mockResolvedValue([]),
+    relocateAndEnqueue: vi.fn().mockResolvedValue(),
+    deleteObjectsInBackground: vi.fn(),
   };
   const service = new VehicleService(
     vehicle_repository as never,
@@ -153,10 +164,15 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     {} as never,
     vehicle_detail_cache as never,
     dealership_financing_service as never,
+    video_upload_service as never,
+    vehicle_video_attach_service as never,
   );
 
   return {
     service,
+    video_manager,
+    video_upload_service,
+    vehicle_video_attach_service,
     vehicle_repository,
     set_vehicle_price_service,
     vehicle_search_indexer,
@@ -339,6 +355,123 @@ describe("vehicle update flow", () => {
       paths: ["vehicles-videos/temp/gallery/video.mp4"],
     });
   });
+
+  it("refresca la caché del detalle tras actualizar", async () => {
+    const { service, vehicle_detail_cache } = createService();
+
+    await service.update({ id: vehicle_id, price: 9000 });
+
+    expect(vehicle_detail_cache.refresh).toHaveBeenCalledWith(
+      vehicle_id,
+      expect.any(Function),
+    );
+  });
+
+  it("refresca la caché aunque falle el indexado posterior a la escritura", async () => {
+    const { service, vehicle_detail_cache, vehicle_search_indexer } =
+      createService();
+    vehicle_search_indexer.indexVehicle.mockRejectedValueOnce(
+      new Error("opensearch caído"),
+    );
+
+    await expect(
+      service.update({ id: vehicle_id, price: 9000 }),
+    ).rejects.toThrow("opensearch caído");
+    expect(vehicle_detail_cache.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("no toca la caché si no hay cambios", async () => {
+    const { service, vehicle_detail_cache } = createService();
+    await service.update({ id: vehicle_id });
+    expect(vehicle_detail_cache.refresh).not.toHaveBeenCalled();
+  });
+
+  it("videos: [] borra todos los vídeos y sus objetos", async () => {
+    const existing = [
+      { id: "11111111-1111-4111-8111-111111111111", vehicle_id },
+    ];
+    const {
+      service,
+      videos_repository,
+      video_manager,
+      vehicle_video_attach_service,
+    } = createService();
+    videos_repository.find.mockResolvedValueOnce(existing);
+
+    await service.update({ id: vehicle_id, videos: [] });
+
+    expect(video_manager.delete).toHaveBeenCalledOnce();
+    expect(
+      vehicle_video_attach_service.deleteObjectsInBackground,
+    ).toHaveBeenCalledWith(existing);
+  });
+
+  it("conserva y reordena existentes y adjunta subidas multipart del actor", async () => {
+    const kept_id = "11111111-1111-4111-8111-111111111111";
+    const removed = { id: "22222222-2222-4222-8222-222222222222", vehicle_id };
+    const upload_id = "33333333-3333-4333-8333-333333333333";
+    const session = { id: upload_id };
+    const created = [{ id: "new-video", vehicle_id }];
+    const {
+      service,
+      videos_repository,
+      video_manager,
+      video_upload_service,
+      vehicle_video_attach_service,
+    } = createService();
+    videos_repository.find.mockResolvedValueOnce([
+      { id: kept_id, vehicle_id },
+      removed,
+    ]);
+    video_upload_service.validateForVehicle.mockResolvedValueOnce([session]);
+    vehicle_video_attach_service.createRows.mockResolvedValueOnce(created);
+
+    await service.update(
+      {
+        id: vehicle_id,
+        videos: [
+          { id: kept_id, order: 1 },
+          { upload_id, order: 0 },
+        ],
+      },
+      "actor-profile",
+    );
+
+    expect(video_upload_service.validateForVehicle).toHaveBeenCalledWith(
+      [upload_id],
+      "actor-profile",
+    );
+    expect(video_manager.update).toHaveBeenCalledWith(
+      expect.anything(),
+      { id: kept_id, vehicle_id },
+      { order: 1 },
+    );
+    expect(vehicle_video_attach_service.createRows).toHaveBeenCalledWith(
+      video_manager,
+      vehicle_id,
+      [{ session, order: 0 }],
+    );
+    expect(video_upload_service.markConsumed).toHaveBeenCalledWith(
+      [upload_id],
+      video_manager,
+    );
+    expect(
+      vehicle_video_attach_service.deleteObjectsInBackground,
+    ).toHaveBeenCalledWith([removed]);
+    expect(vehicle_video_attach_service.relocateAndEnqueue).toHaveBeenCalledWith(
+      created,
+    );
+  });
+
+  it("rechaza ids de vídeo que no son del vehículo", async () => {
+    const { service } = createService();
+    await expect(
+      service.update({
+        id: vehicle_id,
+        videos: [{ id: "44444444-4444-4444-8444-444444444444", order: 0 }],
+      }),
+    ).rejects.toThrow("no pertenece");
+  });
 });
 
 describe("owner vehicle status update", () => {
@@ -352,10 +485,10 @@ describe("owner vehicle status update", () => {
       update: vi.fn().mockResolvedValue({ affected: 1 }),
     };
     const vehicle_search_indexer = {
-      syncVehicle: vi.fn().mockResolvedValue(undefined),
+      syncVehicle: vi.fn().mockResolvedValue(),
     };
     const alert_processing_enqueue_service = {
-      enqueue_vehicle_event: vi.fn().mockResolvedValue(undefined),
+      enqueue_vehicle_event: vi.fn().mockResolvedValue(),
     };
     const service = new VehicleService(
       vehicle_repository as never,

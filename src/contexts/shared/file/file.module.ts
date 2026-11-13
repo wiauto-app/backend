@@ -11,9 +11,18 @@ import { R2ImageStorageFinalizationAdapter } from "./clients/r2-image-storage-fi
 import { FinalizeImageStoragePathService } from "./services/finalize-image-storage-path.service";
 import { ImageStorageFinalizationPort } from "./ports/image-storage-finalization.port";
 import { PromoteTempStoragePathsService } from "./services/promote-temp-storage-paths.service";
-import { UPLOAD_IMAGE_QUEUE, PROCESS_VEHICLE_IMAGE_QUEUE } from "./media.constants";
+import {
+  UPLOAD_IMAGE_QUEUE,
+  PROCESS_VEHICLE_IMAGE_QUEUE,
+  PROCESS_VEHICLE_VIDEO_QUEUE,
+} from "./media.constants";
+import { envs } from "@/src/common/envs";
 import { ImageProcessor } from "./processors/image.processor";
 import { ProcessVehicleImageProcessor } from "./processors/process-vehicle-image.processor";
+import { ProcessVehicleVideoProcessor } from "./processors/process-vehicle-video.processor";
+import { MultipartObjectStorageService } from "../object-storage/multipart-object-storage.service";
+import { VideosEntity } from "../../vehicles/entities/videos.entity";
+import { VideoUploadSessionEntity } from "../../vehicles/vehicle-videos/entities/video-upload-session.entity";
 import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { VehicleImagesPersistenceModule } from "../../vehicles/vehicle-images/vehicle-images-persistence.module";
 import { VehicleImagesEntity } from "../../vehicles/vehicle-images/entities/vehicle-images.entity";
@@ -35,6 +44,7 @@ import { UploadTempVehicleImageController } from "./api/upload-temp-vehicle-imag
 import { UploadTempVehicleImageService } from "./services/upload-temp-vehicle-image.service";
 import { ImageValidationPipe } from "./pipes/image-validation.pipe";
 import { CleanupAbandonedTempUploadsService } from "./services/cleanup-abandoned-temp-uploads.service";
+import { CleanupVideoUploadsService } from "./services/cleanup-video-uploads.service";
 import { TempUploadCleanupProcessor } from "./queues/temp-upload-cleanup.processor";
 import { TempUploadCleanupBootstrapService } from "./queues/temp-upload-cleanup-bootstrap.service";
 import { TEMP_UPLOAD_CLEANUP_QUEUE } from "./queues/temp-upload-cleanup.queue.constants";
@@ -52,6 +62,7 @@ import { ImageFormatRegistry } from "./image-formats/image-format-registry.servi
   ],
   providers: [
     ObjectStorageService,
+    MultipartObjectStorageService,
     R2StorageAdapter,
     {
       provide: FileStoragePort,
@@ -86,6 +97,11 @@ import { ImageFormatRegistry } from "./image-formats/image-format-registry.servi
     FileQueueAdapter,
     ImageProcessor,
     ProcessVehicleImageProcessor,
+    // FFmpeg solo en procesos worker (o `all` en local), nunca en la API
+    // Desactivable con VIDEO_PROCESSING_ENABLED=false (se sirve el original)
+    ...(envs.APP_ROLE === "api" || !envs.VIDEO_PROCESSING_ENABLED
+      ? []
+      : [ProcessVehicleVideoProcessor]),
     VehicleDetailCacheService,
     {
       provide: FileQueuePort,
@@ -93,6 +109,7 @@ import { ImageFormatRegistry } from "./image-formats/image-format-registry.servi
     },
 
     CleanupAbandonedTempUploadsService,
+    CleanupVideoUploadsService,
     TempUploadCleanupProcessor,
     TempUploadCleanupBootstrapService,
   ],
@@ -100,8 +117,14 @@ import { ImageFormatRegistry } from "./image-formats/image-format-registry.servi
     BullModule.registerQueue({ name: UPLOAD_IMAGE_QUEUE }),
     BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
     BullModule.registerQueue({ name: TEMP_UPLOAD_CLEANUP_QUEUE }),
+    BullModule.registerQueue({ name: PROCESS_VEHICLE_VIDEO_QUEUE }),
     VehicleImagesPersistenceModule,
-    TypeOrmModule.forFeature([VehicleImagesEntity, TemporaryUploadEntity]),
+    TypeOrmModule.forFeature([
+      VehicleImagesEntity,
+      TemporaryUploadEntity,
+      VideosEntity,
+      VideoUploadSessionEntity,
+    ]),
   ],
   exports: [
     FileStoragePort,
@@ -109,6 +132,7 @@ import { ImageFormatRegistry } from "./image-formats/image-format-registry.servi
     UploadVideoService,
     UploadFileService,
     ObjectStorageService,
+    MultipartObjectStorageService,
     RemoveFilesService,
     FileQueueAdapter,
     FileQueuePort,

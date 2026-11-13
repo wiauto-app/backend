@@ -111,6 +111,15 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     (deps.referrals_service ?? {
       rewardIfEligible: vi.fn().mockResolvedValue(undefined),
     }) as never,
+    {
+      validateForVehicle: vi.fn().mockResolvedValue([]),
+      markConsumed: vi.fn().mockResolvedValue(undefined),
+    } as never,
+    {
+      createRows: vi.fn().mockResolvedValue([]),
+      relocateAndEnqueue: vi.fn().mockResolvedValue(undefined),
+      deleteObjectsInBackground: vi.fn(),
+    } as never,
   );
 
 describe("CreateVehicleDto", () => {
@@ -280,7 +289,9 @@ describe("CreateVehicleController", () => {
 
     await controller.run(dto, { user: { id: "profile-id" } } as never);
 
-    expect(create).toHaveBeenCalledWith(dto, "profile-id", null);
+    expect(create).toHaveBeenCalledWith(dto, "profile-id", null, {
+      uploader_profile_id: "profile-id",
+    });
     expect(sendAfterVehicleCreated).toHaveBeenCalledOnce();
   });
 
@@ -295,7 +306,9 @@ describe("CreateVehicleController", () => {
       cookies: { wiauto_guest_id: guest_id },
     } as never);
 
-    expect(create).toHaveBeenCalledWith(dto, "profile-id", guest_id);
+    expect(create).toHaveBeenCalledWith(dto, "profile-id", guest_id, {
+      uploader_profile_id: "profile-id",
+    });
   });
 
   it("rejects a missing authenticated user", async () => {

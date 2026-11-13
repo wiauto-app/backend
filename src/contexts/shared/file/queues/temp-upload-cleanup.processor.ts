@@ -7,6 +7,7 @@ import {
   TEMP_UPLOAD_CLEANUP_QUEUE,
 } from "./temp-upload-cleanup.queue.constants";
 import { CleanupAbandonedTempUploadsService } from "../services/cleanup-abandoned-temp-uploads.service";
+import { CleanupVideoUploadsService } from "../services/cleanup-video-uploads.service";
 
 @Processor(TEMP_UPLOAD_CLEANUP_QUEUE)
 export class TempUploadCleanupProcessor extends WorkerHost {
@@ -14,6 +15,7 @@ export class TempUploadCleanupProcessor extends WorkerHost {
 
   constructor(
     private readonly cleanupService: CleanupAbandonedTempUploadsService,
+    private readonly cleanupVideoUploadsService: CleanupVideoUploadsService,
   ) {
     super();
   }
@@ -26,6 +28,7 @@ export class TempUploadCleanupProcessor extends WorkerHost {
         this.logger.log(
           `Job de limpieza completado. Candidatos: ${stats.candidatesFound}, Archivos eliminados: ${stats.filesDeleted}, Filas eliminadas: ${stats.rowsDeleted}, Errores R2: ${stats.r2Errors}`,
         );
+        await this.cleanupVideoUploadsService.execute();
       } catch (error) {
         this.logger.error(
           `Error en job de limpieza: ${(error as Error).message}`,

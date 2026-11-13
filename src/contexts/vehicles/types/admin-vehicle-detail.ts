@@ -1,3 +1,4 @@
+import type { VehicleDetailVideo } from "./vehicle-detail";
 import {
   ConditionVehicle,
   PublisherType,
@@ -66,4 +67,5 @@ export interface AdminVehicleDetail {
   warranty_type_id: string | null;
   cuota_ids: string[];
   images: AdminVehicleFormImage[];
+  videos: VehicleDetailVideo[];
 }

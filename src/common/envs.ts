@@ -57,6 +57,16 @@ const envsSchema = z.object({
    */
   FRONTEND_EMAIL_VERIFICATION_URL: z.string().default(""),
   FRONTEND_URL: z.string(),
+  /**
+   * Secreto compartido con Next (`REVALIDATE_SECRET`) para invalidar su caché
+   * del detalle de anuncios al editarlos. Vacío = desactivado.
+   */
+  FRONTEND_REVALIDATE_SECRET: z.string().default(""),
+  /**
+   * URL del endpoint de revalidación de Next. Vacío = `{FRONTEND_URL}/api/revalidate/vehicle`.
+   * En Docker local suele hacer falta `http://host.docker.internal:3000/...`.
+   */
+  FRONTEND_REVALIDATE_URL: z.string().default(""),
   /** Origen del dashboard admin (allowlist de redirect_url en password recovery) */
   DASHBOARD_URL: z.string(),
 
@@ -65,6 +75,17 @@ const envsSchema = z.object({
   EMAIL_VERIFICATION_TOKEN_EXPIRES_SEC: z.coerce.number().default(86_400),
 
   REDIS_URL: z.string().default("redis://redis:6379"),
+
+  /**
+   * Rol del proceso: `api` (HTTP, sin procesadores pesados), `worker`
+   * (FFmpeg de vídeos, sin HTTP) o `all` (ambos; desarrollo local).
+   */
+  APP_ROLE: z.enum(["api", "worker", "all"]).default("all"),
+  /**
+   * Transcodificación FFmpeg de vídeos de vehículos. Apagado: el original se
+   * sirve tal cual en cuanto se publica (sin MP4 optimizado ni miniatura).
+   */
+  VIDEO_PROCESSING_ENABLED: z.stringbool().default(false),
   
   /** Endpoint S3 de cuenta R2. Ej: https://<ACCOUNT_ID>.r2.cloudflarestorage.com */
   R2_S3_ENDPOINT: z.string(),

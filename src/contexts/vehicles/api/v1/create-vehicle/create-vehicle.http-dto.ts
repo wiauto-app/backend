@@ -26,10 +26,10 @@ import {
   ValidateNested,
 } from "class-validator";
 import { VehiclePublishTrackingHttpDto } from "@/src/contexts/analytics/dto/vehicle-publish-tracking.http-dto";
-import { VehicleMediaHttpDto } from "./vehicleMedia.http-dto";
+import { VehicleVideoHttpDto } from "./vehicleMedia.http-dto";
 import { VehicleImageHttpDto } from "./vehicleImageUploadId.http-dto";
 
-export type VehicleMediaDto = VehicleMediaHttpDto;
+export type VehicleMediaDto = VehicleVideoHttpDto;
 export type VehicleImageDto = VehicleImageHttpDto;
 
 export class CreateVehicleDto {
@@ -265,8 +265,8 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsArray({ message: "Los vídeos no son válidos." })
   @ValidateNested({ each: true, message: "Algún vídeo no es válido." })
-  @Type(() => VehicleMediaHttpDto)
-  videos?: VehicleMediaHttpDto[];
+  @Type(() => VehicleVideoHttpDto)
+  videos?: VehicleVideoHttpDto[];
 
   @IsOptional()
   @ValidateNested({ message: "Los datos de seguimiento no son válidos." })

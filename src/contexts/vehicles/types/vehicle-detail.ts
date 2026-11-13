@@ -21,6 +21,22 @@ export interface VehicleDetailPrice {
   created_at: Date;
 }
 
+/**
+ * Vídeo del anuncio. Solo los `ready` tienen `url` reproducible; el resto
+ * (`uploaded`/`processing`/`failed`) se devuelve para que el dueño vea el
+ * estado y no los pierda al editar.
+ */
+export interface VehicleDetailVideo {
+  id: string;
+  url: string | null;
+  thumbnail_url: string | null;
+  status: "uploaded" | "processing" | "ready" | "failed";
+  duration_s: number | null;
+  width: number | null;
+  height: number | null;
+  order: number;
+}
+
 /** Detalle público de un anuncio con relaciones cargadas. */
 export interface VehicleDetail extends VehicleListItem {
   financing_offer: VehicleFinancingOffer | null;
@@ -62,6 +78,7 @@ export interface VehicleDetail extends VehicleListItem {
   prices: VehicleDetailPrice[];
   address?: string | null;
   address_details?: VehicleAddressDetails | null;
+  videos: VehicleDetailVideo[];
 }
 
 export interface Version {

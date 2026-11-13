@@ -27,6 +27,9 @@ import {
 import type { VehicleImagesEntity } from "../vehicle-images/entities/vehicle-images.entity";
 import { get_vehicle_images_entity } from "../entities/vehicle-images-entity.relation-type";
 import { AdminVehicleDetail } from "../types/admin-vehicle-detail";
+import type { VehicleDetailVideo } from "../types/vehicle-detail";
+import type { VideosEntity } from "../entities/videos.entity";
+import { envs } from "@/src/common/envs";
 import {
   VehicleDetail,
 } from "../types/vehicle-detail";
@@ -122,6 +125,34 @@ const map_vehicle_list_images = (
     .sort((a, b) => a.order - b.order)
     .map((image) => ({ id: image.id, url: image.url ?? "", order: image.order }));
 
+/** URL absoluta: los vídeos legacy guardan el pathname del objeto en R2. */
+const to_public_media_url = (stored: string | null): string | null => {
+  const value = stored?.trim();
+  if (!value) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+  return `${envs.R2_PUBLIC_URL.replace(/\/$/, "")}/${value.replace(/^\/+/, "")}`;
+};
+
+const map_vehicle_videos = (
+  videos: VideosEntity[] | undefined,
+): VehicleDetailVideo[] =>
+  [...(videos ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .map((video) => ({
+      id: video.id,
+      url: video.status === "ready" ? to_public_media_url(video.url) : null,
+      thumbnail_url: to_public_media_url(video.thumbnail_url as string | null),
+      status: video.status,
+      duration_s: video.duration_s,
+      width: video.width,
+      height: video.height,
+      order: video.order,
+    }));
+
 const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   make_name: entity.version.make.name,
   model_name: entity.version.model.name,
@@ -137,7 +168,7 @@ const resolve_listing_is_premium = (entity: VehicleEntity): boolean => {
 };
 
 const resolve_vehicle_publisher_email = (entity: VehicleEntity): string =>
-  entity.profile?.user?.email?.trim() ?? "";
+  entity.profile.user.email;
 
 function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
   return {
@@ -324,6 +355,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
     warranty_type_id: base.warranty_type_id,
     cuota_ids: base.cuota_ids,
     images: map_admin_vehicle_form_images(entity.images),
+    videos: map_vehicle_videos(entity.videos),
   };
 }
 
@@ -338,7 +370,6 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     phone_code: entity.phone_code,
     phone: entity.phone,
   });
-  console.log("contactVisibility", contactVisibility);
 
   return {
     ...base,
@@ -388,6 +419,7 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     first_cuota: entity.first_cuota,
     dealership: dealership ?? entity.dealership,
     financing_offer: null,
+    videos: map_vehicle_videos(entity.videos),
   };
 }
 
@@ -816,6 +848,7 @@ export class TypeOrmVehicleRepository {
       where: { id },
       relations: {
         ...vehicle_catalog_relations,
+        videos: true,
         profile: { user: true },
         dealership: true,
         vehicle_prices: true,
@@ -1150,6 +1183,7 @@ export class TypeOrmVehicleRepository {
       where: { id },
       relations: {
         ...vehicle_catalog_relations,
+        videos: true,
         version: true,
         vehicle_prices: true,
         profile: { user: true },
@@ -1205,7 +1239,7 @@ export class TypeOrmVehicleRepository {
       show_phone: row.show_phone,
       phone_code: row.phone_code,
       phone: row.phone,
-      email: row.profile.user?.email?.trim() ?? "",
+      email: row.profile.user.email,
       profile_id: row.profile.id,
     };
   }
