@@ -2,7 +2,6 @@
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { UnauthorizedException } from "@nestjs/common";
-import { ValidationException } from "@/src/contexts/shared/exceptions/validation.exception";
 import { vi } from "vitest";
 
 vi.mock(
@@ -22,6 +21,7 @@ import {
 } from "@/src/contexts/vehicles/api/v1/create-vehicle/create-vehicle.service";
 import { InvalidVehicleCatalogIdException } from "@/src/contexts/vehicles/exceptions/invalid-vehicle-catalog-id.exception";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
+import { VehicleImagesEntity } from "@/src/contexts/vehicles/vehicle-images/entities/vehicle-images.entity";
 import { VehiclePriceEntity } from "@/src/contexts/vehicles/vehicle-prices/entities/vehicle-price.entity";
 import {
   CONDITION_VEHICLE,
@@ -618,13 +618,40 @@ describe("CreateVehicleService", () => {
     expect(mail_enqueue.enqueue_vehicle_published).not.toHaveBeenCalled();
   });
 
-  it("rechaza la creación activa sin fotos", async () => {
-    const service = buildCreateVehicleService();
+  it("permite la creación activa sin fotos", async () => {
+    const manager = {
+      findBy: vi.fn().mockResolvedValue([]),
+      exists: vi.fn().mockResolvedValue(true),
+      create: vi.fn((_target, payload) => payload),
+      save: vi.fn(async (target, payload) =>
+        target === VehicleEntity
+          ? {
+              ...payload,
+              id: "vehicle-id",
+              ref: 42,
+              created_at: new Date("2026-08-16T00:00:00Z"),
+              updated_at: new Date("2026-08-16T00:00:00Z"),
+            }
+          : payload,
+      ),
+    };
+    const data_source = {
+      getRepository: vi.fn(() => ({
+        findOne: vi.fn().mockResolvedValue(null),
+      })),
+      transaction: vi.fn(async (callback) => callback(manager)),
+    };
+    const service = buildCreateVehicleService({ data_source });
     const dto = validDto();
     dto.images = [];
 
-    await expect(service.create(dto, "profile-id")).rejects.toThrow(
-      ValidationException,
+    const result = await service.create(dto, "profile-id");
+
+    expect(result.id).toBe("vehicle-id");
+    expect(result.status).toBe(STATUS_VEHICLE.ACTIVE);
+    expect(manager.save).not.toHaveBeenCalledWith(
+      VehicleImagesEntity,
+      expect.anything(),
     );
   });
 
