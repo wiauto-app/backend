@@ -8,6 +8,10 @@ export class MeDealershipMembershipDto {
   dealership_name: string;
   member_id: string;
   role: "owner" | "admin" | "member";
+  phone_code: string;
+  phone: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 interface MeResponseFromUserOptions {
@@ -69,6 +73,10 @@ export class MeResponseDto {
         dealership_name: options.dealership_membership.dealership_name,
         member_id: options.dealership_membership.member_id,
         role: options.dealership_membership.role,
+        phone_code: options.dealership_membership.phone_code,
+        phone: options.dealership_membership.phone,
+        lat: options.dealership_membership.lat,
+        lng: options.dealership_membership.lng,
       }
       : null;
     return dto;

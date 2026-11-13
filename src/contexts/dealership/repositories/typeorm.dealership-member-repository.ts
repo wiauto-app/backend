@@ -120,11 +120,23 @@ export class TypeOrmDealershipMemberRepository {
       return null;
     }
 
+    const { dealership } = entity;
+
     return {
       dealership_id: entity.dealership_id,
-      dealership_name: entity.dealership.name,
+      dealership_name: dealership.name,
       member_id: entity.id,
       role: entity.role,
+      phone_code: dealership.phone_code,
+      phone: dealership.phone,
+      lat:
+        dealership.lat !== undefined && dealership.lat !== null
+          ? Number(dealership.lat)
+          : null,
+      lng:
+        dealership.lng !== undefined && dealership.lng !== null
+          ? Number(dealership.lng)
+          : null,
     };
   }
 }

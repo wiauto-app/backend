@@ -1,5 +1,6 @@
 import { ConflictException, NotFoundException } from "@nestjs/common";
 
+import { MeSessionCacheService } from "@/src/contexts/auth/services/me-session-cache.service";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { TypeOrmProfileRepository } from "@/src/contexts/profiles/repositories/typeorm.profile-repository";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
@@ -36,6 +37,7 @@ export class DealershipService {
     private readonly dealership_schedule_service: DealershipScheduleService,
     private readonly remove_image_service: RemoveFilesService,
     private readonly profileRepository: TypeOrmProfileRepository,
+    private readonly meSessionCacheService: MeSessionCacheService,
   ) {}
 
   async create(
@@ -207,7 +209,24 @@ export class DealershipService {
       });
     }
 
+    await this.invalidateMeCacheForDealershipMembers(id);
+
     return updated.toPrimitives();
+  }
+
+  private async invalidateMeCacheForDealershipMembers(
+    dealership_id: string,
+  ): Promise<void> {
+    const members =
+      await this.dealership_member_repository.findAllByDealershipId(
+        dealership_id,
+      );
+
+    await Promise.all(
+      members.map((member) =>
+        this.meSessionCacheService.invalidateByProfileId(member.profile_id),
+      ),
+    );
   }
 
   async remove(remove_dealership_dto: RemoveDealershipDto): Promise<void> {

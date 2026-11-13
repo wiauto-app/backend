@@ -9,6 +9,7 @@ import { AdminUpdateUserDto } from "../dto/admin/update-user.dto";
 import { ProfileEntity } from "../../profiles/entities/profile.entity";
 import { hashPassword } from "../../auth/utils/passwordUtils";
 import { BillingSubscriptionProvisioningService } from "../../billing/services/billing-subscription-provisioning.service";
+import { DealershipService } from "../../dealership/services/dealership.service";
 
 @Injectable()
 export class AdminUserService {
@@ -17,6 +18,7 @@ export class AdminUserService {
     private readonly userRepository: Repository<User>,
     private readonly authSecurityMailService: AuthSecurityMailService,
     private readonly billingSubscriptionProvisioningService: BillingSubscriptionProvisioningService,
+    private readonly dealershipService: DealershipService,
   ) { }
 
   async create(createUserDto: AdminCreateUserDto): Promise<User> {
@@ -65,8 +67,37 @@ export class AdminUserService {
       return hydrated_user;
     });
 
+    if (createUserDto.dealership) {
+      try {
+        await this.dealershipService.create({
+          name: createUserDto.dealership.name,
+          email: createUserDto.dealership.email,
+          phone_code: createUserDto.dealership.phone_code,
+          phone: createUserDto.dealership.phone,
+          address: createUserDto.dealership.address,
+          description: "",
+          show_phone: true,
+          members: [{ profile_id: user.id, role: "owner" }],
+        });
+      } catch (error) {
+        await this.rollbackCreatedUser(user.id);
+        throw error;
+      }
+    }
+
     user.password = null;
     return user
+  }
+
+  private async rollbackCreatedUser(user_id: string): Promise<void> {
+    try {
+      await this.userRepository.manager.transaction(async (entity_manager) => {
+        await entity_manager.getRepository(ProfileEntity).delete({ id: user_id });
+        await entity_manager.getRepository(User).delete({ id: user_id });
+      });
+    } catch {
+      // Se conserva el error del concesionario para devolverlo al cliente.
+    }
   }
 
   async update(updateUserDto: AdminUpdateUserDto): Promise<User> {

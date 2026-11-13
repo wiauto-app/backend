@@ -1,4 +1,14 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsBoolean,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from "class-validator";
+
+import { AdminCreateUserDealershipDto } from "./create-user-dealership.dto";
 
 export class AdminCreateUserDto {
   @IsEmail()
@@ -24,4 +34,9 @@ export class AdminCreateUserDto {
   @IsOptional()
   @IsString()
   avatar_url?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminCreateUserDealershipDto)
+  dealership?: AdminCreateUserDealershipDto;
 }

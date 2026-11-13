@@ -19,6 +19,7 @@ import { UpdateDealershipSchedulesController } from "./api/v1/update-dealership-
 import { DealershipEntity } from "./entities/dealership.entity";
 import { DealershipInvitationModule } from "./modules/dealership-invitation.module";
 import { DealershipReviewsModule } from "./modules/dealership-reviews.module";
+import { MeSessionCacheModule } from "@/src/contexts/auth/me-session-cache.module";
 import { FileModule } from "../shared/file/file.module";
 import { DealershipSchedule } from "./entities/dealership-schedule.entity";
 import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
@@ -29,7 +30,8 @@ import { DealershipOpenTime } from "./entities/dealership-open-time.entity";
     DealershipInvitationModule,
     FileModule,
     forwardRef(() => ProfileModule),
-    forwardRef(() => DealershipReviewsModule)],
+    forwardRef(() => DealershipReviewsModule),
+    MeSessionCacheModule],
   controllers: [
     CreateDealershipController,
     CreateMyDealershipController,
