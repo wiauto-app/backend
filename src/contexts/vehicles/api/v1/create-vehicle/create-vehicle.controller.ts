@@ -40,7 +40,8 @@ export class CreateVehicleController {
     }
     const publisher_profile_id =
       user.is_admin && dto.profile_id ? dto.profile_id : user.id;
-    // Permite reclamar las fotos subidas como invitado antes del login
+    // La respuesta devuelve el id de inmediato; reubicación de media, indexado y caché
+    // continúan en la cola `vehicle-post-commit`.
     const created = await this.create_vehicle_service.create(
       dto,
       publisher_profile_id,

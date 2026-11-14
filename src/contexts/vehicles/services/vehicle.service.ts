@@ -97,8 +97,10 @@ import { VehicleInsightsService } from "./vehicle-insights.service";
 import { ProactiveAlertEventService } from "@/src/contexts/proactive-alerts/services/proactive-alert-event.service";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
-import { VehicleDetailCacheService } from "./vehicle-detail-cache.service";
 import { resolveVehicleContactVisibility } from "../helpers/public-vehicle-contact";
+import { VehiclePostCommitEnqueueService } from "./vehicle-post-commit-enqueue.service";
+import type { VehiclePostCommitImageItem } from "../queues/vehicle-post-commit.queue.constants";
+import { VehicleDetailCacheService } from "./vehicle-detail-cache.service";
 
 const SIMILAR_RADIUS_METERS = 100_000;
 const TIER1_YEAR_DELTA = 1;
@@ -181,10 +183,11 @@ export class VehicleService {
     private readonly proactive_alert_event_service: ProactiveAlertEventService,
     @Inject(CACHE_MANAGER)
     private readonly cache_manager: Cache,
-    private readonly vehicle_detail_cache: VehicleDetailCacheService,
     private readonly dealership_financing_service: DealershipFinancingService,
     private readonly video_upload_service: VideoUploadService,
     private readonly vehicle_video_attach_service: VehicleVideoAttachService,
+    private readonly vehicle_post_commit_enqueue_service: VehiclePostCommitEnqueueService,
+    private readonly vehicle_detail_cache: VehicleDetailCacheService,
   ) { }
 
   private async resolvePublisherContext(
@@ -422,72 +425,84 @@ export class VehicleService {
       patch.address_details = resolved;
     }
 
-    // Cualquier escritura (aunque falle a medias o falle un efecto posterior,
-    // p. ej. el indexado) invalida la caché del detalle: Redis + Next.
     let wrote = false;
-    try {
-      const has_vehicle_updates = Object.keys(patch).length > 0;
+    const pending_post_commit_images: VehiclePostCommitImageItem[] = [];
+    let pending_post_commit_video_ids: string[] = [];
 
-      if (has_vehicle_updates) {
-        wrote = true;
-        patch.suggestions = await this.resolvePatchedSuggestions(existing, patch);
-        await this.vehicle_repository.patch(id, patch);
-      }
+    const has_vehicle_updates = Object.keys(patch).length > 0;
 
-      if (price !== undefined || vehicle_price_id !== undefined) {
-        wrote = true;
-        await this.set_vehicle_price_service.execute({
-          vehicle_id: id,
-          price,
-          vehicle_price_id,
-        });
-      }
+    if (has_vehicle_updates) {
+      wrote = true;
+      patch.suggestions = await this.resolvePatchedSuggestions(existing, patch);
+      await this.vehicle_repository.patch(id, patch);
+    }
 
-      if (images && images.length > 0) {
-        wrote = true;
+    if (price !== undefined || vehicle_price_id !== undefined) {
+      wrote = true;
+      await this.set_vehicle_price_service.execute({
+        vehicle_id: id,
+        price,
+        vehicle_price_id,
+      });
+    }
+
+    if (images && images.length > 0) {
+      wrote = true;
+      const attach_result =
         await this.attach_vehicle_images_from_temp_service.execute({
           vehicle_id: id,
           images: images,
           uploader_profile_id: actor_profile_id,
         });
-      }
+      pending_post_commit_images.push(...attach_result.pending_images);
+    }
 
-      // `undefined` = no tocar; array = estado final (`[]` elimina todos)
-      if (videos !== undefined) {
-        wrote = true;
-        await this.syncVehicleVideos(id, videos, actor_profile_id);
-      }
+    // `undefined` = no tocar; array = estado final (`[]` elimina todos)
+    if (videos !== undefined) {
+      wrote = true;
+      pending_post_commit_video_ids = await this.syncVehicleVideos(
+        id,
+        videos,
+        actor_profile_id,
+      );
+    }
 
-      const has_non_price_updates =
-        has_vehicle_updates ||
-        (images !== undefined && images.length > 0) ||
-        videos !== undefined;
+    const has_non_price_updates =
+      has_vehicle_updates ||
+      (images !== undefined && images.length > 0) ||
+      videos !== undefined;
 
-      if (
-        has_non_price_updates &&
-        price === undefined &&
-        vehicle_price_id === undefined &&
-        existing.status === STATUS_VEHICLE.ACTIVE
-      ) {
-        await this.alert_processing_enqueue_service.enqueue_vehicle_event({
-          vehicle_id: id,
-          event_type: ALERT_EVENT_TYPE.RECENTLY_UPDATED,
-        });
-      }
+    if (
+      has_non_price_updates &&
+      price === undefined &&
+      vehicle_price_id === undefined &&
+      existing.status === STATUS_VEHICLE.ACTIVE
+    ) {
+      await this.alert_processing_enqueue_service.enqueue_vehicle_event({
+        vehicle_id: id,
+        event_type: ALERT_EVENT_TYPE.RECENTLY_UPDATED,
+      });
+    }
 
-      const has_any_updates =
-        has_non_price_updates ||
-        price !== undefined ||
-        vehicle_price_id !== undefined;
-      if (has_any_updates) {
-        await this.vehicle_search_indexer.indexVehicle(id);
-      }
-    } finally {
-      if (wrote) {
-        await this.vehicle_detail_cache.refresh(id, () =>
-          this.vehicle_repository.findOne(id),
-        );
-      }
+    const has_any_updates =
+      has_non_price_updates ||
+      price !== undefined ||
+      vehicle_price_id !== undefined;
+
+    const needs_post_commit =
+      wrote ||
+      pending_post_commit_images.length > 0 ||
+      pending_post_commit_video_ids.length > 0;
+
+    if (needs_post_commit) {
+      await this.vehicle_post_commit_enqueue_service.enqueue({
+        vehicle_id: id,
+        kind: "update",
+        images: pending_post_commit_images,
+        video_ids: pending_post_commit_video_ids,
+        reindex: has_any_updates,
+        warm_cache: wrote,
+      });
     }
 
     return {
@@ -533,7 +548,7 @@ export class VehicleService {
     vehicle_id: string,
     videos: NonNullable<UpdateVehicleDto["videos"]>,
     actor_profile_id: string | undefined,
-  ): Promise<void> {
+  ): Promise<string[]> {
     const classified = videos.map((video) => classifyVehicleVideo(video));
     const kept = classified.flatMap((video) =>
       video.kind === "existing" ? [video] : [],
@@ -657,9 +672,8 @@ export class VehicleService {
     if (removed.length > 0) {
       this.vehicle_video_attach_service.deleteObjectsInBackground(removed);
     }
-    if (created.length > 0) {
-      await this.vehicle_video_attach_service.relocateAndEnqueue(created);
-    }
+
+    return created.map(video => video.id);
   }
 
   async remove(remove_vehicle_dto: RemoveVehicleDto): Promise<void> {

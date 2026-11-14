@@ -141,11 +141,17 @@ export class DealershipService {
       await this.dealership_schedule_service.findByDealershipId(
         find_one_dealership_dto.id,
       );
+    const aggregates =
+      await this.dealership_repository.findPublicAggregatesById(
+        find_one_dealership_dto.id,
+      );
 
     return {
       ...dealership.toPrimitives(),
       members,
       schedules,
+      reviews_count: aggregates.reviews_count,
+      vehicles_count: aggregates.vehicles_count,
     };
   }
 
@@ -167,6 +173,8 @@ export class DealershipService {
       await this.dealership_schedule_service.findByDealershipId(primitives.id);
 
     const should_hide_phone = primitives.show_phone === false;
+    const aggregates =
+      await this.dealership_repository.findPublicAggregatesById(primitives.id);
 
     return {
       ...primitives,
@@ -174,6 +182,8 @@ export class DealershipService {
       phone_code: should_hide_phone ? "" : primitives.phone_code,
       members,
       schedules,
+      reviews_count: aggregates.reviews_count,
+      vehicles_count: aggregates.vehicles_count,
     };
   }
 

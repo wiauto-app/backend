@@ -59,10 +59,8 @@ interface CreateVehicleServiceTestDeps {
   search_indexer?: object;
   expiry_scheduler?: object;
   mail_enqueue?: object;
-  image_queue?: object;
   temp_upload?: object;
-  relocate_service?: object;
-  detail_cache?: object;
+  post_commit_enqueue?: object;
   referrals_service?: object;
 }
 
@@ -91,22 +89,12 @@ const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
     (deps.mail_enqueue ?? {
       enqueue_vehicle_published: vi.fn().mockResolvedValue(undefined),
     }) as never,
-    (deps.image_queue ?? {
-      addBulk: vi.fn().mockResolvedValue(undefined),
-    }) as never,
     (deps.temp_upload ?? {
       validateAndGetTempUpload: vi.fn(),
       markAsConsumed: vi.fn(),
     }) as never,
-    (deps.relocate_service ?? {
-      execute: vi.fn().mockResolvedValue({
-        sourcePath:
-          "vehicles-images/vehicle-gallery/a.source.webp",
-        outputKey: "vehicle-id/image-id.webp",
-      }),
-    }) as never,
-    (deps.detail_cache ?? {
-      refresh: vi.fn().mockResolvedValue(undefined),
+    (deps.post_commit_enqueue ?? {
+      enqueue: vi.fn().mockResolvedValue(undefined),
     }) as never,
     (deps.referrals_service ?? {
       rewardIfEligible: vi.fn().mockResolvedValue(undefined),
@@ -396,7 +384,7 @@ describe("CreateVehicleService", () => {
     expect(created_payloads[0]).not.toHaveProperty("email");
   });
 
-  it("syncs the search index with the persisted active status", async () => {
+  it("encola post-commit al crear activo sin indexar en el request", async () => {
     const manager = {
       findBy: vi.fn().mockResolvedValue([]),
       exists: vi.fn().mockResolvedValue(true),
@@ -423,28 +411,28 @@ describe("CreateVehicleService", () => {
       syncVehicle: vi.fn().mockResolvedValue(null),
       deleteVehicle: vi.fn().mockResolvedValue(undefined),
     };
-    const detail_cache = { refresh: vi.fn().mockResolvedValue(undefined) };
+    const post_commit_enqueue = {
+      enqueue: vi.fn().mockResolvedValue(undefined),
+    };
     const service = buildCreateVehicleService({
       data_source,
       search_indexer,
-      detail_cache,
+      post_commit_enqueue,
     });
 
     const result = await service.create(validDto(), "profile-id");
 
     expect(result.status).toBe(STATUS_VEHICLE.ACTIVE);
-    expect(detail_cache.refresh).toHaveBeenCalledWith(
-      "vehicle-id",
-      expect.any(Function),
+    expect(post_commit_enqueue.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vehicle_id: "vehicle-id",
+        kind: "create_publish",
+        publisher_profile_id: "profile-id",
+        reindex: false,
+        warm_cache: true,
+      }),
     );
-    expect(search_indexer.syncVehicle).toHaveBeenCalledWith(
-      "vehicle-id",
-      STATUS_VEHICLE.ACTIVE,
-    );
-    expect(search_indexer.syncVehicle).not.toHaveBeenCalledWith(
-      "vehicle-id",
-      STATUS_VEHICLE.PENDING,
-    );
+    expect(search_indexer.syncVehicle).not.toHaveBeenCalled();
   });
 
   it("persists trimmed optional ref on create", async () => {
@@ -560,8 +548,8 @@ describe("CreateVehicleService", () => {
     });
   });
 
-  it("removes committed data and restores media when a later effect fails", async () => {
-    const scheduling_error = new Error("queue failure");
+  it("devuelve el vehículo creado aunque falle encolar post-commit", async () => {
+    const enqueue_error = new Error("queue failure");
     const manager = {
       findBy: vi.fn().mockResolvedValue([]),
       exists: vi.fn().mockResolvedValue(true),
@@ -585,50 +573,19 @@ describe("CreateVehicleService", () => {
       })),
       transaction: vi.fn(async callback => callback(manager)),
     };
-    const promote_media = {
-      execute: vi.fn().mockResolvedValue({
-        pathnames: ["/vehicles-images/vehicle-gallery/a.webp"],
-      }),
-      rollback: vi.fn().mockResolvedValue(),
+    const post_commit_enqueue = {
+      enqueue: vi.fn().mockRejectedValue(enqueue_error),
     };
-    const search_indexer = {
-      syncVehicle: vi.fn().mockResolvedValue(),
-      deleteVehicle: vi.fn().mockResolvedValue(),
-    };
-    const expiry_scheduler = {
-      scheduleForVehicle: vi.fn().mockRejectedValue(scheduling_error),
-      cancelForVehicle: vi.fn().mockResolvedValue(),
-    };
-    const mail_enqueue = { enqueue_vehicle_published: vi.fn() };
     const service = buildCreateVehicleService({
       data_source,
-      promote_media,
-      search_indexer,
-      expiry_scheduler,
-      mail_enqueue,
+      post_commit_enqueue,
     });
-    const dto = validDto();
-    dto.images = [
-      {
-        path: "vehicles-images/temp/vehicle-gallery/a.webp",
-        order: 0,
-      },
-    ];
 
-    await expect(service.create(dto, "profile-id")).rejects.toBe(
-      scheduling_error,
-    );
-    expect(manager.delete).toHaveBeenCalledWith(VehicleEntity, {
-      id: "vehicle-id",
-    });
-    expect(promote_media.rollback).toHaveBeenCalledWith({
-      paths: ["vehicles-images/temp/vehicle-gallery/a.webp"],
-    });
-    expect(expiry_scheduler.cancelForVehicle).toHaveBeenCalledWith(
-      "vehicle-id",
-    );
-    expect(search_indexer.deleteVehicle).toHaveBeenCalledWith("vehicle-id");
-    expect(mail_enqueue.enqueue_vehicle_published).not.toHaveBeenCalled();
+    const result = await service.create(validDto(), "profile-id");
+
+    expect(result.id).toBe("vehicle-id");
+    expect(manager.delete).not.toHaveBeenCalled();
+    expect(post_commit_enqueue.enqueue).toHaveBeenCalled();
   });
 
   it("permite la creación activa sin fotos", async () => {

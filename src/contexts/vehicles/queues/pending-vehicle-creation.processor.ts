@@ -48,19 +48,12 @@ export class PendingVehicleCreationProcessor extends WorkerHost {
         );
       const effective_guest_id = guest_id_from_uploads ?? guest_id;
 
-      const now = new Date();
-      const created = await this.create_vehicle_service.create(
+      await this.create_vehicle_service.create(
         vehicle,
         profile_id,
         effective_guest_id,
         { as_draft: true },
       );
-
-      await this.create_vehicle_service.runDraftRegistrationSideEffects({
-        vehicle_id: created.id,
-        expires_at: created.expires_at,
-        now,
-      });
 
       const user = await this.user_repository.findOne({
         where: { id: profile_id },

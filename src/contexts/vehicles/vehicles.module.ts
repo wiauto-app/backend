@@ -64,7 +64,12 @@ import { VehicleListingExpiryProcessor } from "./queues/vehicle-listing-expiry.p
 import { VehicleListingExpiryScheduler } from "./queues/vehicle-listing-expiry.scheduler";
 import { PendingVehicleCreationProcessor } from "./queues/pending-vehicle-creation.processor";
 import { PENDING_VEHICLE_CREATION_QUEUE } from "./queues/pending-vehicle-creation.queue.constants";
+import { VehiclePostCommitProcessor } from "./queues/vehicle-post-commit.processor";
+import { VEHICLE_POST_COMMIT_QUEUE } from "./queues/vehicle-post-commit.queue.constants";
 import { PendingVehicleCreationEnqueueService } from "./services/pending-vehicle-creation-enqueue.service";
+import { VehiclePostCommitEnqueueService } from "./services/vehicle-post-commit-enqueue.service";
+import { VehiclePostCommitService } from "./services/vehicle-post-commit.service";
+import { TemporaryUploadEntity } from "../shared/file/entities/temporary-upload.entity";
 import { DraftPublicationOnVerifyEnqueueService } from "./services/draft-publication-on-verify-enqueue.service";
 import { DraftPublicationOnVerifyProcessor } from "./queues/draft-publication-on-verify.processor";
 import { DRAFT_PUBLICATION_ON_VERIFY_QUEUE } from "./queues/draft-publication-on-verify.queue.constants";
@@ -183,6 +188,9 @@ import { DraftVehiclePublicationService } from "./services/draft-vehicle-publica
     DraftVehiclePublicationService,
     PendingVehicleCreationEnqueueService,
     PendingVehicleCreationProcessor,
+    VehiclePostCommitEnqueueService,
+    VehiclePostCommitService,
+    VehiclePostCommitProcessor,
     DraftPublicationOnVerifyEnqueueService,
     DraftPublicationOnVerifyProcessor,
     VehicleService,
@@ -252,12 +260,14 @@ import { DraftVehiclePublicationService } from "./services/draft-vehicle-publica
       User,
       VehicleImagesEntity,
       VideosEntity,
+      TemporaryUploadEntity,
     ]),
     BullModule.registerQueue({ name: SCHEDULED_VEHICLE_PUBLISH_QUEUE }),
     BullModule.registerQueue({ name: FEATURED_VEHICLE_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: VEHICLE_LISTING_EXPIRY_QUEUE }),
     BullModule.registerQueue({ name: PROCESS_VEHICLE_IMAGE_QUEUE }),
     BullModule.registerQueue({ name: PENDING_VEHICLE_CREATION_QUEUE }),
+    BullModule.registerQueue({ name: VEHICLE_POST_COMMIT_QUEUE }),
     BullModule.registerQueue({ name: DRAFT_PUBLICATION_ON_VERIFY_QUEUE }),
     LocationsModule,
     VehicleImagesModule,

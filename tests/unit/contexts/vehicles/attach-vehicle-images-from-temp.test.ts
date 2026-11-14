@@ -36,19 +36,10 @@ const createService = () => {
     validateAndGetTempUpload: vi.fn(),
     markAsConsumed: vi.fn(),
   };
-  const image_queue = {
-    addBulk: vi.fn().mockResolvedValue([]),
-  };
-  const relocate_service = {
-    execute: vi.fn(),
-  };
-
   return {
     service: new AttachVehicleImagesFromTempService(
       promotion_service as never,
       temp_upload_service as never,
-      relocate_service as never,
-      image_queue as never,
       repository as never,
       vehicle_repository as never,
     ),

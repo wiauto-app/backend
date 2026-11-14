@@ -22,6 +22,8 @@ export class TypeOrmVehicleImagesRepository {
     return this.vehicleImagesRepository.create({
       id: p.id,
       url: p.url,
+      order: p.order ?? 0,
+      vehicle_id: p.vehicle_id,
       created_at: p.created_at,
       updated_at: p.updated_at,
       vehicle: { id: p.vehicle_id } as VehicleEntity,

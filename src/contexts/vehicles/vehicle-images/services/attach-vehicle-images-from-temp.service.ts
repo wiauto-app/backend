@@ -1,12 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Queue } from "bullmq";
 import { Repository } from "typeorm";
 
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
-import { PROCESS_VEHICLE_IMAGE_QUEUE } from "@/src/contexts/shared/file/media.constants";
-import type { ProcessVehicleImageJob } from "@/src/contexts/shared/file/processors/process-vehicle-image.processor";
 import { PromoteTempStoragePathsService } from "@/src/contexts/shared/file/services/promote-temp-storage-paths.service";
 import { is_temp_storage_path } from "@/src/contexts/shared/file/types/temp-storage-path";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
@@ -14,8 +10,13 @@ import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import { AttachVehicleImagesFromTempDto } from "../dto/attach-vehicle-images-from-temp.dto";
 import { VehicleImagesEntity } from "../entities/vehicle-images.entity";
 import { TempUploadService } from "./temp-upload.service";
-import { RelocateVehicleImageSourceService } from "./relocate-vehicle-image-source.service";
 import type { TemporaryUploadEntity } from "@/src/contexts/shared/file/entities/temporary-upload.entity";
+import type { VehiclePostCommitImageItem } from "../../queues/vehicle-post-commit.queue.constants";
+
+export interface AttachVehicleImagesFromTempResult {
+  count: number;
+  pending_images: VehiclePostCommitImageItem[];
+}
 
 const has_ready_storage_url = (url: string | null | undefined): boolean => {
   const stored = url?.trim() ?? "";
@@ -54,10 +55,6 @@ export class AttachVehicleImagesFromTempService {
   constructor(
     private readonly promote_temp_storage_paths_service: PromoteTempStoragePathsService,
     private readonly tempUploadService: TempUploadService,
-    private readonly relocateVehicleImageSourceService: RelocateVehicleImageSourceService,
-    @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
-    private readonly imageQueue: Queue<ProcessVehicleImageJob>,
-
     @InjectRepository(VehicleImagesEntity)
     private readonly vehicle_images_repository: Repository<VehicleImagesEntity>,
 
@@ -67,7 +64,7 @@ export class AttachVehicleImagesFromTempService {
 
   async execute(
     dto: AttachVehicleImagesFromTempDto,
-  ): Promise<{ count: number }> {
+  ): Promise<AttachVehicleImagesFromTempResult> {
     const sorted_images = [...dto.images].sort((a, b) => a.order - b.order);
     const existing_images = await this.vehicle_images_repository.find({
       where: { vehicle_id: dto.vehicle_id },
@@ -290,61 +287,13 @@ export class AttachVehicleImagesFromTempService {
       throw error;
     }
 
-    if (enqueued.length > 0) {
-      const jobs: Array<{
-        name: string;
-        data: ProcessVehicleImageJob;
-        opts: {
-          priority: number;
-          attempts: number;
-          backoff: { type: "exponential"; delay: number };
-        };
-      }> = [];
-
-      for (const item of enqueued) {
-        try {
-          const relocated = await this.relocateVehicleImageSourceService.execute({
-            vehicleId: dto.vehicle_id,
-            imageId: item.image_id,
-            tempStoragePath: item.tempUpload.storage_path,
-            mimeType: item.tempUpload.mime_type,
-          });
-
-          await this.vehicle_images_repository.update(item.image_id, {
-            source_path: relocated.sourcePath,
-          });
-
-          jobs.push({
-            name: `process-vehicle-image-${item.image_id}`,
-            data: {
-              image_id: item.image_id,
-              vehicle_id: dto.vehicle_id,
-              source_path: relocated.sourcePath,
-              output_key: relocated.outputKey,
-            },
-            opts: {
-              priority: item.order === 0 ? 1 : 5,
-              attempts: 3,
-              backoff: { type: "exponential", delay: 2000 },
-            },
-          });
-        } catch (relocateError) {
-          const reason =
-            relocateError instanceof Error
-              ? relocateError.message
-              : "No se pudo reubicar la imagen temporal";
-          await this.vehicle_images_repository.update(item.image_id, {
-            status: "failed",
-            failure_reason: reason,
-          });
-        }
-      }
-
-      if (jobs.length > 0) {
-        await this.imageQueue.addBulk(jobs);
-      }
-    }
-
-    return { count: sorted_images.length };
+    return {
+      count: sorted_images.length,
+      pending_images: enqueued.map(item => ({
+        image_id: item.image_id,
+        upload_id: item.tempUpload.id,
+        order: item.order,
+      })),
+    };
   }
 }

@@ -5,12 +5,8 @@ import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/deal
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource, EntityManager, EntityTarget, In } from "typeorm";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
-import { PROCESS_VEHICLE_IMAGE_QUEUE } from "@/src/contexts/shared/file/media.constants";
 import { TempUploadService } from "@/src/contexts/vehicles/vehicle-images/services/temp-upload.service";
-import { RelocateVehicleImageSourceService } from "@/src/contexts/vehicles/vehicle-images/services/relocate-vehicle-image-source.service";
-import type { ProcessVehicleImageJob } from "@/src/contexts/shared/file/processors/process-vehicle-image.processor";
+import { VehiclePostCommitEnqueueService } from "@/src/contexts/vehicles/services/vehicle-post-commit-enqueue.service";
 import { CatalogFuelTypeNotFoundException } from "../../../catalog/fuel_types/exceptions/catalog-fuel-type-not-found.exception";
 import { CatalogFuelTypesService } from "../../../catalog/fuel_types/services/catalog-fuel-types.service";
 import { CatalogVersionsService } from "../../../catalog/versions/services/catalog-versions.service";
@@ -38,7 +34,6 @@ import {
 import { WarrantyTypeEntity } from "../../../entities/warranty-type.entity";
 import { VehicleListingExpiryScheduler } from "../../../queues/vehicle-listing-expiry.scheduler";
 import { TypeOrmVehicleRepository } from "../../../repositories/typeorm.vehicle-repository";
-import { VehicleDetailCacheService } from "../../../services/vehicle-detail-cache.service";
 import { VehicleSearchIndexer } from "../../../search/indexing/vehicle-search-indexer.service";
 import { formatAddressText } from "../../../services/format-vehicle-address";
 import { ReverseGeocodingService } from "../../../services/reverse-geocoding.service";
@@ -150,29 +145,6 @@ interface CreateVehicleRollbackContext {
   temp_media_paths: string[];
 }
 
-const withTimeout = async <T>(
-  promise: Promise<T>,
-  timeout_ms: number,
-  label: string,
-): Promise<T> => {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        timer = setTimeout(
-          () => { reject(new Error(`${label} superó ${timeout_ms}ms`)); },
-          timeout_ms,
-        );
-      }),
-    ]);
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
-    }
-  }
-};
-
 @Injectable()
 export class CreateVehicleService {
   private readonly logger = new Logger(CreateVehicleService.name);
@@ -189,11 +161,8 @@ export class CreateVehicleService {
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
     private readonly vehicle_repository: TypeOrmVehicleRepository,
     private readonly outbound_mail_enqueue_service: OutboundMailEnqueueService,
-    @InjectQueue(PROCESS_VEHICLE_IMAGE_QUEUE)
-    private readonly imageQueue: Queue<ProcessVehicleImageJob>,
     private readonly tempUploadService: TempUploadService,
-    private readonly relocateVehicleImageSourceService: RelocateVehicleImageSourceService,
-    private readonly vehicleDetailCache: VehicleDetailCacheService,
+    private readonly vehicle_post_commit_enqueue_service: VehiclePostCommitEnqueueService,
     private readonly referrals_service: ReferralsService,
     private readonly video_upload_service: VideoUploadService,
     private readonly vehicle_video_attach_service: VehicleVideoAttachService,
@@ -456,97 +425,6 @@ export class CreateVehicleService {
         return saved;
       });
 
-      // Encolar procesamiento de imágenes FUERA de la transacción
-      if (enqueuedImageIds.length > 0) {
-        const vehicleId = vehicle.id;
-        const imageRepository = this.data_source.getRepository(VehicleImagesEntity);
-        const jobs: {
-          name: string;
-          data: ProcessVehicleImageJob;
-          opts: {
-            priority: number;
-            attempts: number;
-            backoff: { type: "exponential"; delay: number };
-          };
-        }[] = [];
-
-        for (const [index, imageId] of enqueuedImageIds.entries()) {
-          const tempUpload = validatedTempUploads[index];
-          const img = async_images[index];
-
-          try {
-            const relocated =
-              await this.relocateVehicleImageSourceService.execute({
-                vehicleId,
-                imageId,
-                tempStoragePath: tempUpload.storage_path,
-                mimeType: tempUpload.mime_type,
-              });
-
-            await imageRepository.update(imageId, {
-              source_path: relocated.sourcePath,
-            });
-
-            jobs.push({
-              name: `process-vehicle-image-${imageId}`,
-              data: {
-                image_id: imageId,
-                vehicle_id: vehicleId,
-                source_path: relocated.sourcePath,
-                output_key: relocated.outputKey,
-              },
-              opts: {
-                priority: img.order === 0 ? 1 : 5,
-                attempts: 3,
-                backoff: { type: "exponential", delay: 2000 },
-              },
-            });
-          } catch (relocateError) {
-            const reason =
-              relocateError instanceof Error
-                ? relocateError.message
-                : "No se pudo reubicar la imagen temporal";
-            await imageRepository.update(imageId, {
-              status: "failed",
-              failure_reason: reason,
-            });
-            this.logger.error(
-              `No se pudo reubicar la imagen ${imageId} del vehículo ${vehicleId}: ${reason}`,
-            );
-          }
-        }
-
-        if (jobs.length > 0) {
-          try {
-            await withTimeout(
-              this.imageQueue.addBulk(jobs),
-              10_000,
-              "Encolar imágenes del vehículo",
-            );
-          } catch (error) {
-            this.logger.error(
-              `No se pudieron encolar las imágenes del vehículo ${vehicle.id}`,
-              error instanceof Error ? error.stack : String(error),
-            );
-          }
-        }
-      }
-
-      // Reubicar originales y encolar FFmpeg FUERA de la transacción
-      if (createdVideos.length > 0) {
-        await this.vehicle_video_attach_service.relocateAndEnqueue(
-          createdVideos,
-        );
-      }
-
-      if (!as_draft) {
-        await this.runPublishSideEffects({
-          vehicle_id: vehicle.id,
-          publisher_profile_id,
-          expires_at,
-          now,
-        });
-      }
     } catch (error) {
       // El vehículo se borra en cascada con sus filas de vídeo: limpiar R2
       if (createdVideos.length > 0) {
@@ -573,18 +451,25 @@ export class CreateVehicleService {
       throw error;
     }
 
-    const createdVehicleId = vehicle.id;
     try {
-      await withTimeout(
-        this.vehicleDetailCache.refresh(createdVehicleId, () =>
-          this.vehicle_repository.findOne(createdVehicleId),
-        ),
-        8000,
-        "Refrescar caché del vehículo",
-      );
+      await this.vehicle_post_commit_enqueue_service.enqueue({
+        vehicle_id: vehicle.id,
+        kind: as_draft ? "create_draft" : "create_publish",
+        publisher_profile_id,
+        expires_at: expires_at.toISOString(),
+        now: now.toISOString(),
+        images: enqueuedImageIds.map((image_id, index) => ({
+          image_id,
+          upload_id: async_images[index].upload_id,
+          order: async_images[index].order,
+        })),
+        video_ids: createdVideos.map(video => video.id),
+        reindex: false,
+        warm_cache: true,
+      });
     } catch (error) {
       this.logger.error(
-        `No se pudo refrescar la caché del vehículo ${createdVehicleId}`,
+        `No se pudo encolar el post-commit del vehículo ${vehicle.id}`,
         error instanceof Error ? error.stack : String(error),
       );
     }

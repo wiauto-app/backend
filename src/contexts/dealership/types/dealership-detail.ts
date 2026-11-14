@@ -22,4 +22,6 @@ export interface DealershipMemberDetail {
 export interface DealershipDetail extends PrimitiveDealership {
   members: DealershipMemberDetail[];
   schedules: DealershipScheduleDayDto[];
+  reviews_count: number;
+  vehicles_count: number;
 }

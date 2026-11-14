@@ -136,6 +136,30 @@ export class TypeOrmDealershipRepository {
     return Dealership.fromPrimitives(entity_to_primitives(entity));
   }
 
+  async findPublicAggregatesById(
+    dealership_id: string,
+  ): Promise<{ reviews_count: number; vehicles_count: number }> {
+    const reviews_subquery = this.dealership_entity_repository
+      .createQueryBuilder("d")
+      .subQuery()
+      .select("COUNT(r.id)")
+      .from(DealershipReviewEntity, "r")
+      .where("r.dealership_id = d.id")
+      .getQuery();
+
+    const row = await this.dealership_entity_repository
+      .createQueryBuilder("d")
+      .select(`(${reviews_subquery})`, "reviews_count")
+      .addSelect(sql_active_vehicles_count_subquery, "vehicles_count")
+      .where("d.id = :dealership_id", { dealership_id })
+      .getRawOne<{ reviews_count: string; vehicles_count: string }>();
+
+    return {
+      reviews_count: Number(row?.reviews_count ?? 0),
+      vehicles_count: Number(row?.vehicles_count ?? 0),
+    };
+  }
+
   async findAll(
     filter: DealershipsFilter,
   ): Promise<PaginatedResult<DealershipAdminList>> {

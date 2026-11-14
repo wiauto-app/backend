@@ -120,8 +120,13 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     }),
       rollback: vi.fn().mockResolvedValue(),
   };
+  const vehicle_post_commit_enqueue_service = {
+    enqueue: vi.fn().mockResolvedValue(undefined),
+  };
   const vehicle_detail_cache = {
-    refresh: vi.fn().mockResolvedValue(),
+    getOrLoad: vi.fn((_id: string, loader: () => Promise<unknown>) => loader()),
+    invalidate: vi.fn().mockResolvedValue(undefined),
+    refresh: vi.fn().mockResolvedValue(undefined),
   };
   const dealership_financing_service = {
     isEnabledForDealership: vi.fn().mockResolvedValue(false),
@@ -162,10 +167,11 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     {} as never,
     {} as never,
     {} as never,
-    vehicle_detail_cache as never,
     dealership_financing_service as never,
     video_upload_service as never,
     vehicle_video_attach_service as never,
+    vehicle_post_commit_enqueue_service as never,
+    vehicle_detail_cache as never,
   );
 
   return {
@@ -180,7 +186,7 @@ const createService = (status = STATUS_VEHICLE.PENDING) => {
     video_manager,
     videos_repository,
     promote_temp_storage_paths_service,
-    vehicle_detail_cache,
+    vehicle_post_commit_enqueue_service,
     dealership_financing_service,
   };
 };
@@ -227,23 +233,27 @@ describe("vehicle update flow", () => {
     );
   });
 
-  it("regenerates the detail cache after a successful update", async () => {
-    const { service, vehicle_detail_cache } = createService();
+  it("encola post-commit tras una actualización con cambios", async () => {
+    const { service, vehicle_post_commit_enqueue_service } = createService();
 
     await service.update({ id: vehicle_id, mileage: 55_000 });
 
-    expect(vehicle_detail_cache.refresh).toHaveBeenCalledWith(
-      vehicle_id,
-      expect.any(Function),
+    expect(vehicle_post_commit_enqueue_service.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vehicle_id,
+        kind: "update",
+        warm_cache: true,
+        reindex: true,
+      }),
     );
   });
 
-  it("does not touch the detail cache for an empty patch", async () => {
-    const { service, vehicle_detail_cache } = createService();
+  it("no encola post-commit si no hay cambios", async () => {
+    const { service, vehicle_post_commit_enqueue_service } = createService();
 
     await service.update({ id: vehicle_id });
 
-    expect(vehicle_detail_cache.refresh).not.toHaveBeenCalled();
+    expect(vehicle_post_commit_enqueue_service.enqueue).not.toHaveBeenCalled();
   });
 
   it("only sends the changed fields to persistence", async () => {
@@ -302,12 +312,14 @@ describe("vehicle update flow", () => {
       vehicle_repository,
       vehicle_search_indexer,
       alert_processing_enqueue_service,
+      vehicle_post_commit_enqueue_service,
     } = createService(STATUS_VEHICLE.ACTIVE);
 
     await service.update({ id: vehicle_id });
 
     expect(vehicle_repository.patch).not.toHaveBeenCalled();
     expect(vehicle_search_indexer.indexVehicle).not.toHaveBeenCalled();
+    expect(vehicle_post_commit_enqueue_service.enqueue).not.toHaveBeenCalled();
     expect(
       alert_processing_enqueue_service.enqueue_vehicle_event,
     ).not.toHaveBeenCalled();
@@ -356,34 +368,29 @@ describe("vehicle update flow", () => {
     });
   });
 
-  it("refresca la caché del detalle tras actualizar", async () => {
-    const { service, vehicle_detail_cache } = createService();
+  it("encola post-commit tras cambiar el precio", async () => {
+    const { service, vehicle_post_commit_enqueue_service } = createService();
 
     await service.update({ id: vehicle_id, price: 9000 });
 
-    expect(vehicle_detail_cache.refresh).toHaveBeenCalledWith(
-      vehicle_id,
-      expect.any(Function),
+    expect(vehicle_post_commit_enqueue_service.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vehicle_id,
+        kind: "update",
+        warm_cache: true,
+        reindex: true,
+      }),
     );
   });
 
-  it("refresca la caché aunque falle el indexado posterior a la escritura", async () => {
-    const { service, vehicle_detail_cache, vehicle_search_indexer } =
+  it("responde al cliente sin indexar en el request", async () => {
+    const { service, vehicle_search_indexer, vehicle_post_commit_enqueue_service } =
       createService();
-    vehicle_search_indexer.indexVehicle.mockRejectedValueOnce(
-      new Error("opensearch caído"),
-    );
 
-    await expect(
-      service.update({ id: vehicle_id, price: 9000 }),
-    ).rejects.toThrow("opensearch caído");
-    expect(vehicle_detail_cache.refresh).toHaveBeenCalledOnce();
-  });
+    await service.update({ id: vehicle_id, price: 9000 });
 
-  it("no toca la caché si no hay cambios", async () => {
-    const { service, vehicle_detail_cache } = createService();
-    await service.update({ id: vehicle_id });
-    expect(vehicle_detail_cache.refresh).not.toHaveBeenCalled();
+    expect(vehicle_search_indexer.indexVehicle).not.toHaveBeenCalled();
+    expect(vehicle_post_commit_enqueue_service.enqueue).toHaveBeenCalledOnce();
   });
 
   it("videos: [] borra todos los vídeos y sus objetos", async () => {
@@ -418,6 +425,7 @@ describe("vehicle update flow", () => {
       video_manager,
       video_upload_service,
       vehicle_video_attach_service,
+      vehicle_post_commit_enqueue_service,
     } = createService();
     videos_repository.find.mockResolvedValueOnce([
       { id: kept_id, vehicle_id },
@@ -458,8 +466,15 @@ describe("vehicle update flow", () => {
     expect(
       vehicle_video_attach_service.deleteObjectsInBackground,
     ).toHaveBeenCalledWith([removed]);
-    expect(vehicle_video_attach_service.relocateAndEnqueue).toHaveBeenCalledWith(
-      created,
+    expect(
+      vehicle_video_attach_service.relocateAndEnqueue,
+    ).not.toHaveBeenCalled();
+    expect(vehicle_post_commit_enqueue_service.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vehicle_id,
+        video_ids: ["new-video"],
+        kind: "update",
+      }),
     );
   });
 
@@ -512,6 +527,18 @@ describe("owner vehicle status update", () => {
       vehicle_orm_repository as never,
       {} as never,
       {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { enqueue: vi.fn().mockResolvedValue(undefined) } as never,
+      {
+        getOrLoad: vi.fn((_id: string, loader: () => Promise<unknown>) => loader()),
+        invalidate: vi.fn().mockResolvedValue(undefined),
+        refresh: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
 
     return { service, vehicle_orm_repository, vehicle_search_indexer };
