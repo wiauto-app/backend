@@ -19,9 +19,9 @@ const vehicleId = "797f4ef7-08d3-4408-8d22-f8bd985cc3ac";
 const ownerId = "14f04126-a751-4cc0-851a-dfc5c9bf98b0";
 const visitorId = "5b0f8c3e-2a4d-4f6b-9c1e-7d8a9b0c1d2e";
 
-const VEHICLE_SERVICE_ARGS = 28;
-const FINANCING_SERVICE_INDEX = 27;
-const DETAIL_CACHE_INDEX = 26;
+const VEHICLE_SERVICE_ARGS = 31;
+const FINANCING_SERVICE_INDEX = 26;
+const DETAIL_CACHE_INDEX = 30;
 
 const buildDetail = (phone: string | null): VehicleDetail =>
   ({ id: vehicleId, profile_id: ownerId, phone }) as unknown as VehicleDetail;
