@@ -19,12 +19,19 @@ export class VehiclePostCommitEnqueueService {
   ) {}
 
   async enqueue(data: VehiclePostCommitJobData): Promise<void> {
+    const base_job_id = vehiclePostCommitJobId(data.vehicle_id);
+    const has_media_work =
+      data.images.length > 0 || data.video_ids.length > 0;
+    const job_id = has_media_work
+      ? `${base_job_id}-${Date.now()}`
+      : base_job_id;
+
     try {
       await this.vehicle_post_commit_queue.add(
         VEHICLE_POST_COMMIT_JOB_PROCESS_MEDIA,
         data,
         {
-          jobId: vehiclePostCommitJobId(data.vehicle_id),
+          jobId: job_id,
           attempts: 3,
           backoff: { type: "exponential", delay: 3_000 },
         },

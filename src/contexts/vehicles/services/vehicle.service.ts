@@ -446,7 +446,8 @@ export class VehicleService {
       });
     }
 
-    if (images && images.length > 0) {
+    // `undefined` = no tocar; array = estado final (`[]` elimina todas).
+    if (images !== undefined) {
       wrote = true;
       const attach_result =
         await this.attach_vehicle_images_from_temp_service.execute({

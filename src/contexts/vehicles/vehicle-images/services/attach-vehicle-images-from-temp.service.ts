@@ -248,15 +248,23 @@ export class AttachVehicleImagesFromTempService {
               VehicleImagesEntity,
               entities_to_save,
             );
+            const saved_list = Array.isArray(saved) ? saved : [saved];
 
-            const async_saved = saved.filter(img => img.status === "uploaded");
-            for (const [index, savedImage] of async_saved.entries()) {
-              const tempUpload = validatedTempUploads[index];
-              const asyncInput = async_images[index];
+            for (let index = 0; index < async_images.length; index += 1) {
+              const async_input = async_images[index];
+              const temp_upload = validatedTempUploads[index];
+              const saved_image = saved_list.find(
+                (row) => row.order === async_input.order,
+              );
+              if (!saved_image?.id || !temp_upload) {
+                throw new Error(
+                  "No se pudo vincular la imagen subida con su registro en la galería.",
+                );
+              }
               enqueued.push({
-                image_id: savedImage.id,
-                order: asyncInput.order,
-                tempUpload,
+                image_id: saved_image.id,
+                order: async_input.order,
+                tempUpload: temp_upload,
               });
             }
           }

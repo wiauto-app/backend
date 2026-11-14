@@ -9,6 +9,7 @@ const temp_path = "vehicles-images/temp/vehicle-gallery/a.webp";
 const createService = () => {
   const manager = {
     remove: vi.fn().mockResolvedValue([]),
+    create: vi.fn((_entity, payload) => payload),
     save: vi.fn().mockResolvedValue([]),
   };
   const repository = {
@@ -37,6 +38,7 @@ const createService = () => {
     markAsConsumed: vi.fn(),
   };
   return {
+    temp_upload_service,
     service: new AttachVehicleImagesFromTempService(
       promotion_service as never,
       temp_upload_service as never,
@@ -62,6 +64,36 @@ describe("attach vehicle images from temp", () => {
 
     expect(promotion_service.execute).not.toHaveBeenCalled();
     expect(repository.manager.transaction).not.toHaveBeenCalled();
+  });
+
+  it("devuelve pending_images al adjuntar solo upload_id", async () => {
+    const upload_id = "33333333-3333-4333-8333-333333333333";
+    const saved_image_id = "44444444-4444-4444-8444-444444444444";
+    const temp_upload = { id: upload_id, storage_path: "vehicles-images/temp/x.webp" };
+    const { service, manager, temp_upload_service } = createService();
+
+    temp_upload_service.validateAndGetTempUpload.mockResolvedValue(temp_upload);
+    manager.save.mockResolvedValue({
+      id: saved_image_id,
+      order: 0,
+    });
+
+    const result = await service.execute({
+      vehicle_id,
+      images: [{ upload_id, order: 0 }],
+    });
+
+    expect(result.pending_images).toEqual([
+      {
+        image_id: saved_image_id,
+        upload_id,
+        order: 0,
+      },
+    ]);
+    expect(temp_upload_service.markAsConsumed).toHaveBeenCalledWith(
+      [upload_id],
+      expect.anything(),
+    );
   });
 
   it("restores promoted files when the image transaction fails", async () => {

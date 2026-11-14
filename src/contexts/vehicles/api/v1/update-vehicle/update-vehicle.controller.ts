@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe, Patch, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Param, ParseUUIDPipe, Patch, Req, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { Request } from "express";
 
 import { JwtGuard } from "@/src/contexts/auth/guards/auth.guard";
@@ -20,7 +20,14 @@ export class UpdateVehicleController {
     @Body() body: UpdateVehicleHttpDto,
     @Req() req: Request & { user?: User },
   ) {
-    // El usuario es dueño de los vídeos multipart nuevos que adjunta
-    return this.vehicle_service.update({ id, ...body }, req.user?.id);
+    if (!req.user) {
+      throw new UnauthorizedException("Usuario no autenticado");
+    }
+    const uploader_profile_id =
+      req.user.profile.id.trim();
+  return this.vehicle_service.update(
+      { id, ...body },
+      uploader_profile_id,
+    );
   }
 }
