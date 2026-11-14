@@ -29,6 +29,7 @@ export class CreateVehicleController {
     @Body() dto: CreateVehicleDto,
     @Req() req: Request & { user?: User },
   ) {
+    console.log("dto", dto);
     const user = req.user;
     if (!user) {
       throw new UnauthorizedException("Usuario no autenticado");
