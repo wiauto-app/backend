@@ -72,6 +72,10 @@ COPY --from=build $DIR/pnpm-lock.yaml .
 COPY --from=build $DIR/node_modules node_modules
 COPY --from=build $DIR/dist dist
 
+# Carpeta del log de errores fatales (volumen en docker-compose). Debe ser del
+# usuario `node`: el volumen nombrado hereda el dueño la primera vez que se crea.
+RUN mkdir -p $DIR/logs && chown node:node $DIR/logs
+
 USER $USER
 EXPOSE $PORT
 CMD ["dumb-init", "node", "dist/main.js"]

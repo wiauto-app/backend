@@ -43,6 +43,7 @@ import { AssistantModule } from "../contexts/assistant/assistant.module";
 import { FinancingModule } from "../contexts/financing/financing.module";
 import { AppraisalRequestsModule } from "../contexts/vehicles/appraisal-requests/appraisal-requests.module";
 import { AdminDashboardModule } from "../contexts/admin/dashboard/admin-dashboard.module";
+import { SystemLogsModule } from "../contexts/admin/system-logs/system-logs.module";
 import { NewsletterModule } from "../contexts/newsletter/newsletter.module";
 import { StrapiWebhookModule } from "../contexts/strapi/strapi-webhook.module";
 import { ProfileDevicesModule } from "../contexts/profile_devices/profile-devices.module";
@@ -91,6 +92,7 @@ import { CatalogReadCacheModule } from "../contexts/shared/cache/catalog-read-ca
     FinancingModule,
     AppraisalRequestsModule,
     AdminDashboardModule,
+    SystemLogsModule,
     NewsletterModule,
     StrapiWebhookModule,
     ProfileDevicesModule,

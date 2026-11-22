@@ -1,3 +1,5 @@
+// Debe ir primero: captura también errores al cargar módulos (p. ej. `envs`)
+import "./common/fatal-log/register";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
@@ -11,6 +13,7 @@ import { AppModule } from "@/app/app.module";
 import { ResponseInterceptor } from "./contexts/shared/interceptors/response.interceptor";
 import { HttpErrorFilter } from "./contexts/shared/exceptions/HttpErrorFilter";
 import { envs } from "./common/envs";
+import { writeFatalLog } from "./common/fatal-log/fatal-log";
 
 const FRONTEND_ORIGINS = new Set((
   process.env.FRONTEND_ORIGINS ??
@@ -71,6 +74,10 @@ async function bootstrap() {
 
   app.use(passport.initialize());
 
+  // SIGTERM (docker stop / redeploy): cierra el servidor HTTP y conexiones
+  // DB/Redis de forma ordenada en vez de cortar peticiones en vuelo.
+  app.enableShutdownHooks();
+
   const configService = app.get(ConfigService);
   const port = configService.get<string>("PORT", "3000");
 
@@ -80,11 +87,10 @@ async function bootstrap() {
   logger.log(`App is ready and listening on port ${port} 🚀`);
 }
 
-bootstrap().catch(handleError);
-
-function handleError(error: unknown) {
-  console.error(error);
-  throw error;
-}
-
-process.on("uncaughtException", handleError);
+bootstrap().catch((error: unknown) => {
+  writeFatalLog("bootstrapFailure", error);
+  // Salida explícita: conexiones a medio abrir (DB/Redis) mantendrían vivo el
+  // proceso y Docker nunca lo reiniciaría.
+  // eslint-disable-next-line unicorn/no-process-exit
+  process.exit(1);
+});

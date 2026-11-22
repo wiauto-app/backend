@@ -1,8 +1,11 @@
+// Debe ir primero: captura también errores al cargar módulos (p. ej. `envs`)
+import "./common/fatal-log/register";
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 
 import { AppModule } from "@/app/app.module";
 import { envs } from "./common/envs";
+import { writeFatalLog } from "./common/fatal-log/fatal-log";
 
 /**
  * Proceso worker: mismo AppModule sin servidor HTTP. Con `APP_ROLE=worker`
@@ -26,7 +29,9 @@ bootstrap().catch((error: unknown) => {
     "No se pudo arrancar el worker",
     error instanceof Error ? error.stack : String(error),
   );
-  // Sin manejadores vivos el proceso termina con código de error
-  process.exitCode = 1;
-  throw error;
+  writeFatalLog("bootstrapFailure", error);
+  // Salida explícita: conexiones a medio abrir (DB/Redis) mantendrían vivo el
+  // proceso y Docker nunca lo reiniciaría.
+  // eslint-disable-next-line unicorn/no-process-exit
+  process.exit(1);
 });

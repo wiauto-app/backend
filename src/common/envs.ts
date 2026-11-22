@@ -192,6 +192,19 @@ const envsSchema = z.object({
 
   ADMIN_PASSWORD: z.string(),
 
+  /**
+   * Token para endpoints de operación (p. ej. GET /v1/admin/system/fatal-logs),
+   * enviado en la cabecera `X-Ops-Token`. Vacío = endpoints desactivados (404).
+   * Generar con: openssl rand -hex 32
+   */
+  OPS_TOKEN: z
+    .string()
+    .default("")
+    .transform((val) => val.trim())
+    .refine((val) => val === "" || val.length >= 32, {
+      message: "OPS_TOKEN debe tener al menos 32 caracteres (o vacío para desactivar)",
+    }),
+
   //firebase credentials
   FIREBASE_PROJECT_ID: z.string(),
   FIREBASE_CLIENT_EMAIL: z.string(),
