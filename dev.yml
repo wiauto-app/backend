@@ -30,7 +30,7 @@ services:
       
   opensearch:
     image: opensearchproject/opensearch:2.19.0
-    container_name: wiauto-opensearch
+    container_name: wiauto-opensearch-dev
     restart: unless-stopped
     environment:
       - cluster.name=wiauto-opensearch
