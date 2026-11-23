@@ -20,9 +20,10 @@ export class UpdateMyProfileHttpDto {
   @IsString()
   phone?: string;
 
+  /** `null` (o "") elimina el avatar actual. */
   @IsOptional()
   @IsString()
-  avatar_url?: string;
+  avatar_url?: string | null;
 
   @IsOptional()
   @IsString()

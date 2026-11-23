@@ -75,7 +75,7 @@ export const mapProfileToResponse = (
   id: entity.id,
   name: entity.name,
   last_name: entity.last_name,
-  avatar_url: entity.avatar_url,
+  avatar_url: entity.avatar_url ?? undefined,
   image_url: entity.image_url,
   phone_code: entity.phone_code,
   phone: entity.phone,

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
@@ -11,6 +12,8 @@ import { TypeOrmAlertRepository } from "@/src/contexts/alerts/repositories/typeo
 import { NewsletterService } from "@/src/contexts/newsletter/services/newsletter.service";
 import { MeSessionCacheService } from "@/src/contexts/auth/services/me-session-cache.service";
 import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
+import { STORAGE_DIRECTORIES } from "@/src/contexts/shared/file/storage-directories";
 
 import {
   mapProfileToResponse,
@@ -70,8 +73,27 @@ export interface UpdateMyProfileInput {
   province_id?: number;
 }
 
+/**
+ * Devuelve la object key del avatar solo si es un archivo propio del perfil
+ * en R2 (`profile-images/avatars/<profile_id>/...`). URLs externas (p. ej.
+ * avatar de Google) u otras rutas devuelven `null` y nunca se borran.
+ */
+export const resolveOwnedAvatarObjectKey = (
+  profile_id: string,
+  avatar_url: string | null | undefined,
+): string | null => {
+  const key = avatar_url?.trim().replace(/^\/+/, "");
+  if (!key || /^[a-z][a-z0-9+.-]*:/i.test(key) || key.includes("..")) {
+    return null;
+  }
+  const owned_prefix = `${STORAGE_DIRECTORIES.PROFILE_IMAGES}/avatars/${profile_id}/`;
+  return key.startsWith(owned_prefix) ? key : null;
+};
+
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
+
   constructor(
     private readonly profile_repository: TypeOrmProfileRepository,
     private readonly profile_user_repository: TypeOrmProfileUserRepository,
@@ -82,6 +104,7 @@ export class ProfileService {
     private readonly newsletter_service: NewsletterService,
     private readonly me_session_cache_service: MeSessionCacheService,
     private readonly vehicle_publisher_sync_service: VehiclePublisherSyncService,
+    private readonly object_storage_service: ObjectStorageService,
   ) { }
 
   async createProfile(createProfileDto: CreateProfileDto): Promise<ProfileResponse> {
@@ -249,7 +272,36 @@ export class ProfileService {
       throw new ProfileNotFoundException(id);
     }
     await this.me_session_cache_service.invalidateByProfileId(id);
+    await this.removeReplacedAvatar(id, profile.avatar_url, reloaded.avatar_url);
     return mapProfileToResponse(reloaded);
+  }
+
+  /**
+   * Borra de R2 el avatar anterior cuando se eliminó o se reemplazó.
+   * Best-effort: el perfil ya quedó actualizado en DB, un fallo de storage
+   * solo deja un objeto huérfano y se registra en el log.
+   */
+  private async removeReplacedAvatar(
+    profile_id: string,
+    previous_avatar_url: string | null | undefined,
+    current_avatar_url: string | null | undefined,
+  ): Promise<void> {
+    if (!previous_avatar_url || previous_avatar_url === current_avatar_url) {
+      return;
+    }
+    const object_key = resolveOwnedAvatarObjectKey(profile_id, previous_avatar_url);
+    if (!object_key) {
+      return;
+    }
+    try {
+      await this.object_storage_service.deleteObjectByKey(object_key);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo borrar el avatar anterior ${object_key} del perfil ${profile_id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   async getMyProfile(user_id: string): Promise<ProfileResponse> {

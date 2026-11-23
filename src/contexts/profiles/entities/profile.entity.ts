@@ -69,8 +69,8 @@ export class ProfileEntity {
   })
   type: ProfileType;
 
-  @Column({ nullable: true })
-  avatar_url?: string;
+  @Column({ type: "varchar", nullable: true })
+  avatar_url?: string | null;
 
   @Column({ nullable: true })
   image_url?: string;

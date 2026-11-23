@@ -68,7 +68,7 @@ export class DealershipMembersService {
         id: member.profile.id,
         name: member.profile.name,
         last_name: member.profile.last_name,
-        avatar_url: member.profile.avatar_url,
+        avatar_url: member.profile.avatar_url ?? undefined,
         email: member.profile.user.email,
       },
     }));

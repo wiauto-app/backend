@@ -21,6 +21,7 @@ import { RemoveProfileController } from "./api/v1/remove-profile/remove-profile.
 import { UpdateProfileController } from "./api/v1/update-profile/update-profile.controller";
 import { ProfileEntity } from "./entities/profile.entity";
 import { ProfileService } from "./services/profile.service";
+import { ObjectStorageService } from "@/src/contexts/shared/object-storage/object-storage.service";
 
 @Module({
   controllers: [
@@ -39,6 +40,7 @@ import { ProfileService } from "./services/profile.service";
     TypeOrmProfileUserRepository,
     TypeOrmAdminProfileRepository,
     TypeOrmAlertRepository,
+    ObjectStorageService,
   ],
   exports: [
     ProfileService,

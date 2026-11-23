@@ -17,7 +17,7 @@ export class TypeOrmChatParticipantLookupAdapter  {
       id: profile.id,
       name: profile.name,
       last_name: profile.last_name,
-      avatar_url: profile.avatar_url,
+      avatar_url: profile.avatar_url ?? undefined,
       email: profile.user?.email,
     }));
   }

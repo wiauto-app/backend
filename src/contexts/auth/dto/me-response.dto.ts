@@ -58,7 +58,7 @@ export class MeResponseDto {
     dto.created_at = user.created_at;
     dto.name = profile.name;
     dto.last_name = profile.last_name;
-    dto.avatar_url = profile.avatar_url;
+    dto.avatar_url = profile.avatar_url ?? undefined;
     dto.image_url = profile.image_url;
     dto.phone_code = profile.phone_code ?? undefined;
     dto.phone = profile.phone ?? undefined;

@@ -147,7 +147,10 @@ export class TypeOrmProfileRepository {
       id,
       name: input.name ?? undefined,
       last_name: input.last_name ?? undefined,
-      avatar_url: input.avatar_url ?? undefined,
+      // `null` o "" borran el avatar; `undefined` lo deja como está.
+      ...(input.avatar_url !== undefined
+        ? { avatar_url: input.avatar_url || null }
+        : {}),
       image_url: input.image_url ?? undefined,
       phone_code: input.phone_code ?? undefined,
       phone: input.phone ?? undefined,
