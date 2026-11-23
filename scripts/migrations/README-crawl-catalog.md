@@ -1,5 +1,7 @@
 # Importación segura del catálogo (crawl → Wiauto)
 
+> **Flujo automático:** el crawler (`coches-net-crawl`) ahora escribe en el schema `crawl` de esta misma DB (migración `CrawlSchema1794700000000`) y ejecuta cada semana `coches-net-crawl/src/sync/merge-catalog.sql`, adaptado de `import-crawl-catalog.sql`. Este script manual queda como fallback. Si cambias la lógica de matching aquí, replica el cambio en `merge-catalog.sql`.
+
 ## Objetivo
 
 Copiar makes/models/body_types/fuel_types/years/versions desde la BD del crawl hacia Wiauto **sin truncar** el catálogo destino y **preservando** `vehicles.version_id`.

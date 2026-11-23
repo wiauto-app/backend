@@ -34,6 +34,7 @@ export class CatalogVersionsController {
 
   @Get()
   findAll(@Query() query: FindAllVersionsHttpDto) {
+    console.log("query", query);
     return this.catalog_versions_service.findAll(query);
   }
 
