@@ -6,6 +6,7 @@ export interface DealershipsFilterOptions {
   query?: string;
   order_by?: string;
   order_direction?: "ASC" | "DESC";
+  id?: string;
   name?: string;
   slug?: string;
   email?: string;
@@ -19,6 +20,7 @@ export interface DealershipsFilterOptions {
 }
 
 export class DealershipsFilter extends PaginationFilter {
+  id?: string;
   name?: string;
   slug?: string;
   email?: string;
@@ -37,6 +39,7 @@ export class DealershipsFilter extends PaginationFilter {
       query,
       order_by,
       order_direction,
+      id,
       name,
       slug,
       email,
@@ -49,6 +52,7 @@ export class DealershipsFilter extends PaginationFilter {
       vehicles_number,
     } = options;
     super(page, limit, order_direction, query, order_by);
+    this.id = id;
     this.name = name;
     this.slug = slug;
     this.email = email;

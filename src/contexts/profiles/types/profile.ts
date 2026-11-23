@@ -30,7 +30,69 @@ export interface ProfileResponse {
   phone_code?: string | null;
   phone?: string | null;
   province_id?: number | null;
+  /** Solo en el listado admin (requiere join de `dealership_members`). */
+  dealership?: ProfileDealershipResponse | null;
+  /** Solo en el listado admin: grant gratuito vigente. */
+  active_grant?: ProfileActiveGrantResponse | null;
 }
+
+export interface ProfileDealershipResponse {
+  id: string;
+  name: string;
+  slug: string;
+  role: "owner" | "admin" | "member";
+}
+
+export interface ProfileActiveGrantResponse {
+  plan_id: string;
+  plan_name: string;
+  expires_at: Date | null;
+}
+
+const mapProfileDealership = (
+  entity: ProfileEntity,
+): ProfileDealershipResponse | null | undefined => {
+  // Relación opcional en runtime: solo viene si la query la cargó.
+  const members = entity.dealership_members as
+    | ProfileEntity["dealership_members"]
+    | undefined;
+  if (members === undefined) {
+    return undefined;
+  }
+  for (const membership of members) {
+    const dealership = membership.dealership as
+      | (typeof membership)["dealership"]
+      | undefined;
+    if (dealership) {
+      return {
+        id: dealership.id,
+        name: dealership.name,
+        slug: dealership.slug,
+        role: membership.role,
+      };
+    }
+  }
+  return null;
+};
+
+const mapProfileActiveGrant = (
+  entity: ProfileEntity,
+): ProfileActiveGrantResponse | null | undefined => {
+  if (entity.active_grant === undefined) {
+    return undefined;
+  }
+  if (!entity.active_grant) {
+    return null;
+  }
+  return {
+    plan_id: entity.active_grant.plan_id,
+    plan_name:
+      (entity.active_grant.plan as
+        | NonNullable<ProfileEntity["active_grant"]>["plan"]
+        | undefined)?.name ?? "",
+    expires_at: entity.active_grant.expires_at,
+  };
+};
 
 const resolveUserProviders = (
   user: User,
@@ -69,6 +131,12 @@ export const mapUserToResponse = (user: User): ProfileUserResponse => {
   };
 };
 
+const withDefined = <K extends string, V>(
+  key: K,
+  value: V | undefined,
+): Partial<Record<K, V>> =>
+  value === undefined ? {} : ({ [key]: value } as Record<K, V>);
+
 export const mapProfileToResponse = (
   entity: ProfileEntity,
 ): ProfileResponse => ({
@@ -81,4 +149,6 @@ export const mapProfileToResponse = (
   phone: entity.phone,
   province_id: entity.province_id ?? null,
   user: mapUserToResponse(entity.user),
+  ...withDefined("dealership", mapProfileDealership(entity)),
+  ...withDefined("active_grant", mapProfileActiveGrant(entity)),
 });

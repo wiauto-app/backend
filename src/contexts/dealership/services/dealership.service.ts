@@ -28,6 +28,14 @@ import { DealershipMembersService } from "./dealership-members.service";
 import { DealershipScheduleService } from "./dealership-schedule.service";
 import { normalizeDealershipWebsiteUrl } from "../utils/normalize-dealership-website-url";
 import { VehiclePublisherSyncService } from "@/src/contexts/vehicles/services/vehicle-publisher-sync.service";
+import { AdminDealershipMinimalInput } from "../dto/admin-dealership-minimal.dto";
+
+export interface DealershipMembershipSummary {
+  dealership_id: string;
+  dealership_name: string;
+  billing_plan_id: string | null;
+  role: "owner" | "admin" | "member";
+}
 
 @Injectable()
 export class DealershipService {
@@ -74,11 +82,33 @@ export class DealershipService {
     });
   }
 
-  async ensureStubForProfile(profile_id: string): Promise<void> {
+  /**
+   * Garantiza que el perfil pertenezca a un concesionario. Si ya es miembro no
+   * crea nada (ignora `minimal_data`). Si no, crea uno con `minimal_data` o, sin
+   * datos, un stub a partir del perfil.
+   */
+  async ensureForProfile(
+    profile_id: string,
+    minimal_data?: AdminDealershipMinimalInput,
+  ): Promise<void> {
     const existingMembership =
       await this.dealership_member_repository.findOneByProfileId(profile_id);
     if (existingMembership) {
       await this.vehicle_publisher_sync_service.syncForProfile(profile_id);
+      return;
+    }
+
+    if (minimal_data) {
+      await this.create({
+        name: minimal_data.name.trim(),
+        email: minimal_data.email.trim(),
+        phone_code: minimal_data.phone_code,
+        phone: minimal_data.phone,
+        address: minimal_data.address.trim(),
+        description: "",
+        show_phone: true,
+        members: [{ profile_id, role: "owner" }],
+      });
       return;
     }
 
@@ -102,18 +132,59 @@ export class DealershipService {
     });
   }
 
+  async findMembershipSummaryByProfileId(
+    profile_id: string,
+  ): Promise<DealershipMembershipSummary | null> {
+    const membership =
+      await this.dealership_member_repository.findOneWithDealershipByProfileId(
+        profile_id,
+      );
+    if (!membership) {
+      return null;
+    }
+    return {
+      dealership_id: membership.dealership_id,
+      dealership_name: membership.dealership.name,
+      billing_plan_id: membership.dealership.billing_plan_id ?? null,
+      role: membership.role,
+    };
+  }
+
+  /** Solo el propietario vincula el plan de facturación al concesionario. */
   async linkBillingPlanForProfile(
     profile_id: string,
     plan_id: string,
   ): Promise<void> {
     const membership =
       await this.dealership_member_repository.findOneByProfileId(profile_id);
-    if (!membership) {
+    if (!membership || membership.role !== "owner") {
       return;
     }
     await this.dealership_repository.updateBillingPlanId(
       membership.dealership_id,
       plan_id,
+    );
+  }
+
+  /**
+   * Quita el plan del concesionario del propietario solo si sigue siendo
+   * `plan_id` (no pisa un plan distinto asignado después).
+   */
+  async unlinkBillingPlanForProfile(
+    profile_id: string,
+    plan_id: string,
+  ): Promise<void> {
+    const summary = await this.findMembershipSummaryByProfileId(profile_id);
+    if (
+      !summary ||
+      summary.role !== "owner" ||
+      summary.billing_plan_id !== plan_id
+    ) {
+      return;
+    }
+    await this.dealership_repository.updateBillingPlanId(
+      summary.dealership_id,
+      null,
     );
   }
 

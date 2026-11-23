@@ -45,6 +45,10 @@ export class PlanAccessGrantEntity {
   @Column({ name: "revoked_at", type: "timestamp", nullable: true })
   revoked_at!: Date | null;
 
+  /** Marcado por el job de vencimiento tras liberar el plan del concesionario. */
+  @Column({ name: "expired_processed_at", type: "timestamp", nullable: true })
+  expired_processed_at!: Date | null;
+
   @CreateDateColumn({ name: "created_at" })
   created_at!: Date;
 

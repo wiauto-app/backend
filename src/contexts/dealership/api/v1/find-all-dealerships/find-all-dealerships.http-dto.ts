@@ -1,8 +1,12 @@
 import { PaginationHttpDto } from "@/src/contexts/shared/dto/pagination.http-dto";
 import { Transform, Type } from "class-transformer";
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
 
 export class FindAllDealershipsHttpDto extends PaginationHttpDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
   @IsOptional()
   @IsString()
   name?: string;

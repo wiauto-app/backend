@@ -165,6 +165,9 @@ export class TypeOrmDealershipRepository {
   ): Promise<PaginatedResult<DealershipAdminList>> {
     const count_qb = this.dealership_entity_repository.createQueryBuilder("d");
 
+    if (filter.id) {
+      count_qb.andWhere("d.id = :id", { id: filter.id });
+    }
     if (filter.name) {
       count_qb.andWhere("d.name ILIKE :name", { name: `%${filter.name}%` });
     }
@@ -300,7 +303,7 @@ export class TypeOrmDealershipRepository {
 
   async updateBillingPlanId(
     dealership_id: string,
-    billing_plan_id: string,
+    billing_plan_id: string | null,
   ): Promise<void> {
     const preloaded = await this.dealership_entity_repository.preload({
       id: dealership_id,

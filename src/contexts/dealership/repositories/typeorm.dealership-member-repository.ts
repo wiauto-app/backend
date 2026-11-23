@@ -83,6 +83,15 @@ export class TypeOrmDealershipMemberRepository {
     });
   }
 
+  async findOneWithDealershipByProfileId(
+    profile_id: string,
+  ): Promise<DealershipMembersEntity | null> {
+    return this.dealership_member_entity_repository.findOne({
+      where: { profile_id },
+      relations: { dealership: true },
+    });
+  }
+
   async findOneByDealershipIdAndProfileId(
     dealership_id: string,
     profile_id: string,

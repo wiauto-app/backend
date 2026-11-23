@@ -11,6 +11,7 @@ import {
 } from "typeorm";
 
 import { DealershipInvitationsEntity } from "@/src/contexts/dealership/entities/dealership-invitations.entity";
+import type { PlanAccessGrantEntity } from "@/src/contexts/billing/entities/plan-access-grant.entity";
 import { DealershipMembersEntity } from "@/src/contexts/dealership/entities/dealership-members.entity";
 import { VehicleEntity } from "@/src/contexts/vehicles/entities/vehicle.entity";
 import type { User } from "@/src/contexts/users/entities/user.entity";
@@ -100,4 +101,7 @@ export class ProfileEntity {
 
   @OneToMany(() => VehicleListEntity, (vehicle_list) => vehicle_list.profile)
   vehicle_lists: Relation<VehicleListEntity[]>;
+
+  /** No es columna: lo rellena `leftJoinAndMapOne` en el listado admin. */
+  active_grant?: PlanAccessGrantEntity | null;
 }

@@ -38,6 +38,7 @@ export class PlanAccessGrantsAdminController {
       plan_id: body.plan_id,
       expires_at: body.expires_at,
       reason: body.reason,
+      dealership: body.dealership,
       granted_by_user_id: admin_user_id,
     });
   }

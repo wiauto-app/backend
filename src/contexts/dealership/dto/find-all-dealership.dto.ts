@@ -1,6 +1,7 @@
 import { PaginationDto } from "@/src/contexts/shared/dto/pagination.dto";
 
 export class FindAllDealershipDto extends PaginationDto {
+  id?: string;
   name?: string;
   slug?: string;
   email?: string;

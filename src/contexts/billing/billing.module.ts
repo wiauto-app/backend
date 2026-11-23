@@ -1,4 +1,5 @@
 import { Module, forwardRef } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AssistantModule } from "@/src/contexts/assistant/assistant.module";
@@ -88,12 +89,18 @@ import { PlanAccessGrantUsageEntity } from "./entities/plan-access-grant-usage.e
 import { ProfessionalAccountEntity } from "./entities/professional-account.entity";
 import { PlanAccessGrantsService } from "./services/plan-access-grants.service";
 import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/plan-access-grants-admin.controller";
+import {
+  PlanAccessGrantExpiryBootstrapService,
+  PlanAccessGrantExpiryProcessor,
+} from "./queues/plan-access-grant-expiry.processor";
+import { PLAN_ACCESS_GRANT_EXPIRY_QUEUE } from "./queues/plan-access-grant-expiry.queue.constants";
 
 @Module({
   imports: [
     forwardRef(() => AssistantModule),
     ProfileModule,
     MeSessionCacheModule,
+    BullModule.registerQueue({ name: PLAN_ACCESS_GRANT_EXPIRY_QUEUE }),
     TypeOrmModule.forFeature([
       SubscriptionPlanEntity,
       SubscriptionPlanPriceEntity,
@@ -168,6 +175,8 @@ import { PlanAccessGrantsAdminController } from "./api/admin/plan-access-grants/
     PlanLeadRequestsService,
     PlanContactLeadsService,
     PlanAccessGrantsService,
+    PlanAccessGrantExpiryProcessor,
+    PlanAccessGrantExpiryBootstrapService,
     PlanLeadRequestNotificationMailService,
     BillingNotificationMailService,
     StripeWebhookService,

@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { ProfileEntity } from "../entities/profile.entity";
+import { PlanAccessGrantEntity } from "@/src/contexts/billing/entities/plan-access-grant.entity";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { getSkip } from "@/src/contexts/shared/getSkip";
 import { ProfileFilter } from "../types/profile.filter";
@@ -74,6 +75,17 @@ export class TypeOrmProfileRepository {
       .createQueryBuilder("p")
       .leftJoinAndSelect("p.user", "user")
       .leftJoinAndSelect("user.auth_providers", "auth_providers")
+      .leftJoinAndSelect("p.dealership_members", "dealership_members")
+      .leftJoinAndSelect("dealership_members.dealership", "member_dealership")
+      .leftJoinAndMapOne(
+        "p.active_grant",
+        PlanAccessGrantEntity,
+        "active_grant",
+        `active_grant.profile_id = p.id
+          AND active_grant.revoked_at IS NULL
+          AND (active_grant.expires_at IS NULL OR active_grant.expires_at > now())`,
+      )
+      .leftJoinAndSelect("active_grant.plan", "active_grant_plan")
       .addSelect("user.password")
       .skip(skip)
       .take(filter.limit);
