@@ -66,6 +66,7 @@ describe("TypeormCatalogVersionRepository.findAll year filter", () => {
       "year",
       "years",
       "fuel_type",
+      "body_type",
     ]);
     expect(result.data[0].years.map((year) => year.year)).toEqual([
       2021, 2023,
