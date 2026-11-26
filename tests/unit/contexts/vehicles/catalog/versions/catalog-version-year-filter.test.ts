@@ -65,6 +65,7 @@ describe("TypeormCatalogVersionRepository.findAll year filter", () => {
     expect(orm.findAndCount.mock.calls[0][0].relations).toEqual([
       "year",
       "years",
+      "fuel_type",
     ]);
     expect(result.data[0].years.map((year) => year.year)).toEqual([
       2021, 2023,

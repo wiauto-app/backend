@@ -63,7 +63,7 @@ export class TypeormCatalogVersionRepository {
       ...(hasExtra ? { extra_filters: extraFilters } : {}),
       allowed_sort_keys: CATALOG_VERSION_SORT_KEYS,
       default_sort_key: "id",
-      relations: ["year", "years"],
+      relations: ["year", "years", "fuel_type"],
       map_row: (row) => {
         row.years = [...(row.years ?? [])].sort((a, b) => a.year - b.year);
         return row;
