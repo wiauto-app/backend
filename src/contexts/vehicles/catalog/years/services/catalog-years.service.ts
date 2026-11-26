@@ -19,6 +19,7 @@ export interface UpdateCatalogYearInput {
 export interface FindAllYearsInput {
   model_id?: number;
   body_type_id?: number;
+  fuel_type_id?: number;
   page?: number;
   limit?: number;
   skip?: number;

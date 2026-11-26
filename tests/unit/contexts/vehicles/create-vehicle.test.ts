@@ -67,7 +67,10 @@ interface CreateVehicleServiceTestDeps {
 const buildCreateVehicleService = (deps: CreateVehicleServiceTestDeps = {}) =>
   new CreateVehicleService(
     deps.data_source as never,
-    { findById: vi.fn().mockResolvedValue({ fuel_type_id: 10 }) } as never,
+    {
+      findById: vi.fn().mockResolvedValue({ id: 1, fuel_type_id: 10, year_id: 7 }),
+      resolveVehicleYearId: vi.fn().mockResolvedValue(7),
+    } as never,
     { findById: vi.fn().mockResolvedValue({ can_charge: false }) } as never,
     { resolve: vi.fn().mockResolvedValue(null) } as never,
     (deps.promote_media ?? {
@@ -121,6 +124,16 @@ describe("CreateVehicleDto", () => {
     });
     expect(dto).not.toHaveProperty("email");
     expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it("acepta year_id opcional y rechaza valores no positivos", async () => {
+    const dto = validDto();
+    dto.year_id = 5;
+    expect(await validate(dto)).toHaveLength(0);
+
+    dto.year_id = 0;
+    const errors = await validate(dto);
+    expect(errors.some(error => error.property === "year_id")).toBe(true);
   });
 
   it("accepts an optional ref string", async () => {

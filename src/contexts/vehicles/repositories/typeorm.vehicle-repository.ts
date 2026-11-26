@@ -54,6 +54,7 @@ import { getSkip } from "@/src/contexts/shared/getSkip";
 import { AdminVehicleFilter } from "../types/admin-vehicle.filter";
 import { MakeEntity } from "../catalog/makes/entities/make.entity";
 import { CatalogModelEntity } from "../catalog/models/entities/catalog-model.entity";
+import type { VersionEntity } from "../catalog/versions/entities/version.entity";
 import {
   MakeModelFilterMode,
   resolveMakeModelFilterMode,
@@ -161,6 +162,23 @@ const map_version_summary = (entity: VehicleEntity): VehicleVersionSummary => ({
   fuel_name: entity.version.fuel_type.name,
 });
 
+/**
+ * La versión puede existir en varios años: el año real es el del vehículo.
+ * Se sobreescribe `version.year_id`/`version.year` para no romper clientes
+ * que aún leen el año desde la versión.
+ */
+const map_vehicle_version = (entity: VehicleEntity): VersionEntity => {
+  const version = entity.version;
+  if (!version || entity.year_id == null) {
+    return version;
+  }
+  return {
+    ...version,
+    year_id: entity.year_id,
+    year: entity.year ?? version.year,
+  };
+};
+
 const resolve_listing_is_premium = (entity: VehicleEntity): boolean => {
   if (entity.dealership_id != null) {
     return true;
@@ -258,7 +276,7 @@ function entity_to_list_item(entity: VehicleEntity): VehicleListItem {
       name: entity.profile.name,
       avatar_url: entity.profile.avatar_url ?? "",
     },
-    version: entity.version,
+    version: map_vehicle_version(entity),
   };
 }
 
@@ -333,7 +351,7 @@ function entity_to_admin_vehicle_detail(entity: VehicleEntity): AdminVehicleDeta
       model_id: entity.version.model_id,
       body_type_id: entity.version.body_type_id,
       fuel_type_id: entity.version.fuel_type_id,
-      year_id: entity.version.year_id,
+      year_id: entity.year_id,
     },
     traction_id: base.traction_id,
     transmission_type: base.transmission_type,
@@ -398,7 +416,9 @@ function entity_to_vehicle_detail(entity: VehicleEntity, dealership_members: Dea
     license_plate: entity.license_plate,
     vin_code: entity.vin_code,
     version_id: entity.version_id,
-    version: entity.version,
+    version: map_vehicle_version(entity),
+    year_id: entity.year_id,
+    year: entity.year ?? entity.version.year ?? null,
     traction: entity.traction
       ? {
         id: entity.traction.id,
@@ -471,6 +491,7 @@ function entity_to_primitives(entity: VehicleEntity): PrimitiveVehicle {
     condition: entity.condition,
     description: entity.description ?? "",
     version_id: entity.version_id,
+    year_id: entity.year_id,
     status: entity.status,
     status_change_message: entity.status_change_message ?? null,
     is_featured: entity.is_featured,
@@ -857,6 +878,7 @@ export class TypeOrmVehicleRepository {
         profile: { user: true },
         dealership: true,
         vehicle_prices: true,
+        year: true,
         version: {
           make: true,
           model: true,
@@ -1587,6 +1609,7 @@ export class TypeOrmVehicleRepository {
       phone: source.phone,
       category_id: source.category_id,
       version_id: source.version_id,
+      year_id: source.year_id,
       traction: source.traction,
       vehicle_type: source.vehicle_type,
       color: source.color,

@@ -56,11 +56,15 @@ export class VehicleAiContextResolverService {
     if (!version) {
       throw new InvalidateVehicleVersionIdException();
     }
+    const year_id = await this.catalog_versions_service.resolveVehicleYearId({
+      version,
+      requested_year_id: context.year_id,
+    });
 
     const [make, model, year_row, fuel_type] = await Promise.all([
       this.makes_service.findById(version.make_id),
       this.catalog_models_service.findById(version.model_id),
-      this.catalog_years_service.findById(version.year_id),
+      this.catalog_years_service.findById(year_id),
       this.catalog_fuel_types_service.findById(version.fuel_type_id),
     ]);
 

@@ -1,6 +1,11 @@
 -- Importación segura del catálogo crawl → destino Wiauto.
 -- Requiere tablas staging ya pobladas (ver import-crawl-catalog.sh).
+-- Generado desde coches-net-crawl/src/sync/merge-catalog.sql (crawl.X → stg_crawl_X).
+-- Solo INSERT/UPDATE: nunca borra filas del catálogo.
 -- Preserva vehicles.version_id (PK interna de version.id).
+-- Versión ↔ año es N:M (stg_crawl_version_years → public.version_year).
+-- version.year_id queda como "año por defecto" = año más reciente de la versión.
+--
 -- Uso:
 --   psql ... -v ON_ERROR_STOP=1 -f scripts/migrations/import-crawl-catalog.sql
 
@@ -36,6 +41,7 @@ BEGIN
      OR to_regclass('public.stg_crawl_fuel_types') IS NULL
      OR to_regclass('public.stg_crawl_years') IS NULL
      OR to_regclass('public.stg_crawl_versions') IS NULL
+     OR to_regclass('public.stg_crawl_version_years') IS NULL
   THEN
     RAISE EXCEPTION
       'Faltan tablas staging stg_crawl_*. Ejecuta import-crawl-catalog.sh o crea/puebla el staging primero.';
@@ -359,6 +365,17 @@ SELECT
 FROM stg_crawl_years AS s
 INNER JOIN year AS dest ON dest.year = s.year;
 
+-- Pares versión–año del crawl resueltos al year.id destino
+CREATE TEMP TABLE resolved_version_years ON COMMIT DROP AS
+SELECT
+  svy.version_id AS external_version_id,
+  sy.year AS source_year,
+  my.target_year_id
+FROM stg_crawl_version_years AS svy
+LEFT JOIN stg_crawl_years AS sy ON sy.id = svy.year_id
+LEFT JOIN map_year AS my ON my.source_year_pk = svy.year_id;
+
+-- target_year_id = año por defecto (el más reciente de la versión)
 CREATE TEMP TABLE resolved_versions ON COMMIT DROP AS
 SELECT
   sv.version_id AS external_version_id,
@@ -368,18 +385,53 @@ SELECT
   mo.target_model_id,
   mb.target_body_type_id,
   mf.target_fuel_type_id,
-  my.target_year_id
+  dy.target_year_id
 FROM stg_crawl_versions AS sv
 LEFT JOIN map_make AS mm ON mm.source_make_pk = sv.make_id
 LEFT JOIN map_model AS mo ON mo.source_model_pk = sv.model_id
 LEFT JOIN map_body_type AS mb ON mb.source_body_type_pk = sv.body_type_id
 LEFT JOIN map_fuel_type AS mf ON mf.source_fuel_type_pk = sv.fuel_type_id
-LEFT JOIN map_year AS my ON my.source_year_pk = sv.year_id;
+LEFT JOIN LATERAL (
+  SELECT rvy.target_year_id
+  FROM resolved_version_years AS rvy
+  WHERE rvy.external_version_id = sv.version_id
+    AND rvy.target_year_id IS NOT NULL
+  ORDER BY rvy.source_year DESC
+  LIMIT 1
+) AS dy ON true;
 
 DO $$
 DECLARE
+  unmapped_pairs integer;
+  versions_without_years integer;
   unresolved_count integer;
 BEGIN
+  SELECT count(*)
+  INTO unmapped_pairs
+  FROM resolved_version_years
+  WHERE target_year_id IS NULL;
+
+  IF unmapped_pairs > 0 THEN
+    RAISE EXCEPTION
+      'Hay % pares versión–año del crawl sin mapeo de year. Revisa staging y claves externas.',
+      unmapped_pairs;
+  END IF;
+
+  SELECT count(*)
+  INTO versions_without_years
+  FROM stg_crawl_versions AS sv
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM stg_crawl_version_years AS svy
+    WHERE svy.version_id = sv.version_id
+  );
+
+  IF versions_without_years > 0 THEN
+    RAISE EXCEPTION
+      'Hay % versions del crawl sin ningún año en version_years. Se aborta la importación.',
+      versions_without_years;
+  END IF;
+
   SELECT count(*)
   INTO unresolved_count
   FROM resolved_versions
@@ -413,7 +465,8 @@ FROM resolved_versions AS rv
 WHERE v.version_id = rv.external_version_id;
 
 -- Vincular versions existentes sin version_id por clave compuesta + slug/name
--- eligiendo una sola fila destino (protege vehicles.version_id)
+-- eligiendo una sola fila destino (protege vehicles.version_id).
+-- El año legacy vale si es cualquiera de los años de la versión (N:M).
 WITH candidates AS (
   SELECT
     rv.external_version_id,
@@ -438,7 +491,12 @@ WITH candidates AS (
    AND v.model_id = rv.target_model_id
    AND v.body_type_id = rv.target_body_type_id
    AND v.fuel_type_id = rv.target_fuel_type_id
-   AND v.year_id = rv.target_year_id
+   AND EXISTS (
+     SELECT 1
+     FROM resolved_version_years AS rvy
+     WHERE rvy.external_version_id = rv.external_version_id
+       AND rvy.target_year_id = v.year_id
+   )
   WHERE v.version_id IS NULL
     AND NOT EXISTS (
       SELECT 1
@@ -501,6 +559,27 @@ FROM resolved_versions AS rv
 INNER JOIN version AS v ON v.version_id = rv.external_version_id;
 
 -- ---------------------------------------------------------------------------
+-- 6) version_year (N:M). Solo inserta pares; nunca borra.
+-- ---------------------------------------------------------------------------
+
+INSERT INTO version_year (version_id, year_id)
+SELECT
+  v.id,
+  rvy.target_year_id
+FROM resolved_version_years AS rvy
+INNER JOIN version AS v ON v.version_id = rvy.external_version_id
+ON CONFLICT DO NOTHING;
+
+INSERT INTO catalog_import_log (entity, action, source_key, target_id)
+SELECT
+  'version_year',
+  'upsert',
+  rvy.external_version_id::text || ':' || rvy.source_year::text,
+  v.id
+FROM resolved_version_years AS rvy
+INNER JOIN version AS v ON v.version_id = rvy.external_version_id;
+
+-- ---------------------------------------------------------------------------
 -- Validaciones finales
 -- ---------------------------------------------------------------------------
 
@@ -509,6 +588,7 @@ DECLARE
   orphan_vehicles integer;
   duplicate_external_versions integer;
   missing_import_versions integer;
+  missing_version_years integer;
 BEGIN
   SELECT count(*)
   INTO orphan_vehicles
@@ -549,6 +629,21 @@ BEGIN
       'Faltan % versions del crawl sin insertar/actualizar en destino.',
       missing_import_versions;
   END IF;
+
+  SELECT count(*)
+  INTO missing_version_years
+  FROM resolved_version_years AS rvy
+  INNER JOIN version AS v ON v.version_id = rvy.external_version_id
+  LEFT JOIN version_year AS vy
+    ON vy.version_id = v.id
+   AND vy.year_id = rvy.target_year_id
+  WHERE vy.version_id IS NULL;
+
+  IF missing_version_years > 0 THEN
+    RAISE EXCEPTION
+      'Faltan % pares versión–año del crawl en version_year.',
+      missing_version_years;
+  END IF;
 END $$;
 
 -- Ajustar secuencias
@@ -572,8 +667,10 @@ SELECT
   (SELECT count(*) FROM model) AS dest_models,
   (SELECT count(*) FROM stg_crawl_versions) AS src_versions,
   (SELECT count(*) FROM version WHERE version_id IS NOT NULL) AS dest_versions_mapped,
+  (SELECT count(*) FROM stg_crawl_version_years) AS src_version_years,
+  (SELECT count(*) FROM version_year) AS dest_version_years,
   (SELECT count(*) FROM vehicles) AS vehicles_count;
 
-DROP FUNCTION IF EXISTS tmp_catalog_slugify(text);
-
 COMMIT;
+
+DROP FUNCTION IF EXISTS tmp_catalog_slugify(text);

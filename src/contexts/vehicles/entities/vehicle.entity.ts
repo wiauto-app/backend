@@ -15,6 +15,7 @@ import {
 } from "typeorm";
 
 import { VersionEntity } from "../catalog/versions/entities/version.entity";
+import { CatalogYearEntity } from "../catalog/years/entities/catalog-year.entity";
 import type { VehicleImagesEntity } from "../vehicle-images/entities/vehicle-images.entity";
 import type { VehiclePriceEntity } from "../vehicle-prices/entities/vehicle-price.entity";
 import { get_vehicle_images_entity } from "./vehicle-images-entity.relation-type";
@@ -47,6 +48,7 @@ import { DealershipEntity } from "../../dealership/entities/dealership.entity";
 
 @Entity({ name: "vehicles" })
 @Index("IDX_vehicles_version_id", ["version_id"])
+@Index("IDX_vehicles_year_id", ["year_id"])
 export class VehicleEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -344,6 +346,19 @@ export class VehicleEntity {
     name: "version_id",
   })
   version: Relation<VersionEntity>;
+
+  // ===========================================================================
+  // YEAR (año propio del anuncio; debe ser un par válido en `version_year`)
+  // ===========================================================================
+
+  @Column()
+  year_id: number;
+
+  @ManyToOne(() => CatalogYearEntity)
+  @JoinColumn({
+    name: "year_id",
+  })
+  year: Relation<CatalogYearEntity>;
 
   // ===========================================================================
   // TRACTION

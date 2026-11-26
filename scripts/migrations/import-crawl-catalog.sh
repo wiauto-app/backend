@@ -91,6 +91,7 @@ if [[ "${SKIP_BACKUP}" != "yes" ]]; then
     -t fuel_type \
     -t year \
     -t version \
+    -t version_year \
     -t vehicles \
     -f "${BACKUP_FILE}"
   echo "OK"
@@ -111,6 +112,7 @@ fi
 
 echo "[4/6] Recreando tablas staging en destino..."
 dest_psql <<'SQL'
+DROP TABLE IF EXISTS stg_crawl_version_years CASCADE;
 DROP TABLE IF EXISTS stg_crawl_versions CASCADE;
 DROP TABLE IF EXISTS stg_crawl_models CASCADE;
 DROP TABLE IF EXISTS stg_crawl_makes CASCADE;
@@ -161,9 +163,16 @@ CREATE TABLE stg_crawl_versions (
   model_id integer NOT NULL,
   body_type_id integer NOT NULL,
   fuel_type_id integer NOT NULL,
-  year_id integer NOT NULL,
+  year_id integer NULL,
   name varchar(255) NOT NULL,
   created_at timestamp NULL
+);
+
+-- N:M versión ↔ año (version_id = ID externo, year_id = stg_crawl_years.id)
+CREATE TABLE stg_crawl_version_years (
+  version_id integer NOT NULL,
+  year_id integer NOT NULL,
+  PRIMARY KEY (version_id, year_id)
 );
 SQL
 echo "OK"
@@ -196,6 +205,7 @@ copy_table "body_types" "stg_crawl_body_types" "id, body_type_id, doors, name, c
 copy_table "fuel_types" "stg_crawl_fuel_types" "id, fuel_id, name, created_at"
 copy_table "years" "stg_crawl_years" "id, year, created_at"
 copy_table "versions" "stg_crawl_versions" "id, version_id, make_id, model_id, body_type_id, fuel_type_id, year_id, name, created_at"
+copy_table "version_years" "stg_crawl_version_years" "version_id, year_id"
 echo "OK"
 
 if [[ "${DRY_RUN}" == "yes" ]]; then
@@ -216,7 +226,8 @@ SELECT
   (SELECT count(*) FROM stg_crawl_body_types) AS stg_body_types,
   (SELECT count(*) FROM stg_crawl_fuel_types) AS stg_fuel_types,
   (SELECT count(*) FROM stg_crawl_years) AS stg_years,
-  (SELECT count(*) FROM stg_crawl_versions) AS stg_versions;
+  (SELECT count(*) FROM stg_crawl_versions) AS stg_versions,
+  (SELECT count(*) FROM stg_crawl_version_years) AS stg_version_years;
 "
 
 echo ""

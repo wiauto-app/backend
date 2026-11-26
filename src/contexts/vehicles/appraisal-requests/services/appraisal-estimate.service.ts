@@ -7,6 +7,8 @@ import { DataSource, Repository } from "typeorm";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 
 import { VersionEntity } from "../../catalog/versions/entities/version.entity";
+import { VersionYearEntity } from "../../catalog/versions/entities/version-year.entity";
+import { resolveVehicleYearId } from "../../catalog/versions/helpers/resolve-vehicle-year-id";
 import { InvalidateVehicleVersionIdException } from "../../exceptions/InvalidateVehicleVersionId.exception";
 import { RecommendVehiclePriceService } from "../../services/recommend-vehicle-price.service";
 import { CONDITION_VEHICLE, TransmissionType } from "../../types/vehicle";
@@ -40,6 +42,8 @@ import {
 
 export interface EstimateAppraisalPayload {
   version_id: number;
+  /** Año elegido; sin él se usa el año por defecto de la versión. */
+  year_id?: number;
   transmission_type: TransmissionType;
   mileage: number;
   power?: number;
@@ -84,6 +88,14 @@ export class AppraisalEstimateService {
       throw new InvalidateVehicleVersionIdException();
     }
 
+    const year_id = await resolveVehicleYearId(
+      { version, requested_year_id: payload.year_id },
+      (version_id, pair_year_id) =>
+        this.version_repository.manager.exists(VersionYearEntity, {
+          where: { version_id, year_id: pair_year_id },
+        }),
+    );
+
     const name = [payload.name, payload.last_name]
       .map((part) => part?.trim())
       .filter(Boolean)
@@ -95,6 +107,7 @@ export class AppraisalEstimateService {
     const recommendation = await this.recommend_vehicle_price_service.execute(
       {
         version_id: payload.version_id,
+        year_id,
         condition: CONDITION_VEHICLE.USED,
         mileage: payload.mileage,
         transmission_type: payload.transmission_type,
@@ -107,7 +120,7 @@ export class AppraisalEstimateService {
       this.appraisal_repository.create({
         make_id: version.make_id,
         model_id: version.model_id,
-        year_id: version.year_id,
+        year_id,
         version_id: version.id,
         fuel_type_id: version.fuel_type_id,
         body_type_id: version.body_type_id,

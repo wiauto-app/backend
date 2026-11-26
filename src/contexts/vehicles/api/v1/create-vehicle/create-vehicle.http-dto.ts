@@ -15,6 +15,7 @@ import {
   IsInt,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
   Length,
@@ -103,6 +104,16 @@ export class CreateVehicleDto {
   @IsNumber({}, { message: "La versión del catálogo no es válida." })
   @IsNotEmpty({ message: "Selecciona una versión del catálogo." })
   version_id: number;
+
+  /**
+   * Año del vehículo (debe existir en `version_year` para la versión). Opcional
+   * porque las apps viejas no lo envían: sin él se usa el año por defecto.
+   */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "El año del vehículo no es válido." })
+  @IsPositive({ message: "El año del vehículo no es válido." })
+  year_id?: number;
 
   @IsString({ message: "El prefijo telefónico no es válido." })
   @IsNotEmpty({ message: "Introduce el prefijo telefónico." })

@@ -145,7 +145,7 @@ export class VehicleListingExpiryProcessor extends WorkerHost {
       title,
       price: detail.price ?? null,
       image_url: detail.images[0]?.url ?? null,
-      year: detail.version.year?.year ?? null,
+      year: detail.year?.year ?? detail.version.year?.year ?? null,
       mileage: detail.mileage ?? null,
       fuel_type_slug: detail.version.fuel_type?.slug,
       transmission_type: detail.transmission_type,

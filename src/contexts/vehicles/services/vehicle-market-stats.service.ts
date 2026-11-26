@@ -36,7 +36,7 @@ export interface VehicleMarketStatsResult {
 /** Campos del contexto que usa el cálculo de comparables. */
 export type VehicleMarketStatsContext = Pick<
   VehicleAiContextDto,
-  "version_id" | "condition" | "mileage" | "transmission_type" | "lat" | "lng"
+  "version_id" | "year_id" | "condition" | "mileage" | "transmission_type" | "lat" | "lng"
 >;
 
 export interface VehicleMarketStatsOptions {
@@ -74,7 +74,10 @@ export class VehicleMarketStatsService {
     context: VehicleMarketStatsContext,
     options?: VehicleMarketStatsOptions,
   ): Promise<VehicleMarketStatsResult | null> {
-    const catalog = await this.resolve_catalog(context.version_id);
+    const catalog = await this.resolve_catalog(
+      context.version_id,
+      context.year_id,
+    );
     const reference: SimilarVehicleReference = {
       mileage: context.mileage,
       lat: context.lat,
@@ -110,16 +113,23 @@ export class VehicleMarketStatsService {
     return this.build_stats(tier2_prices, 2);
   }
 
-  private async resolve_catalog(version_id: number): Promise<ResolvedVehicleCatalog> {
+  private async resolve_catalog(
+    version_id: number,
+    requested_year_id?: number,
+  ): Promise<ResolvedVehicleCatalog> {
     const version = await this.catalog_versions_service.findById(version_id);
     if (!version) {
       throw new InvalidateVehicleVersionIdException();
     }
+    const year_id = await this.catalog_versions_service.resolveVehicleYearId({
+      version,
+      requested_year_id,
+    });
 
     const [make, model, year_row, fuel_type] = await Promise.all([
       this.makes_service.findById(version.make_id),
       this.catalog_models_service.findById(version.model_id),
-      this.catalog_years_service.findById(version.year_id),
+      this.catalog_years_service.findById(year_id),
       this.catalog_fuel_types_service.findById(version.fuel_type_id)]);
 
     if (!make || !model || !year_row || !fuel_type) {

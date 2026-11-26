@@ -110,7 +110,8 @@ export const applyFilters = (
   }
 
   if (is_finite_number(filters.since_year) || is_finite_number(filters.until_year)) {
-    qb.leftJoin("year", "cat_year", "cat_year.id = catalog_ver.year_id");
+    // Año propio del vehículo (una versión puede existir en varios años).
+    qb.leftJoin("year", "cat_year", "cat_year.id = vehicle.year_id");
     if (is_finite_number(filters.since_year)) {
       qb.andWhere("cat_year.year >= :since_year", {
         since_year: filters.since_year,

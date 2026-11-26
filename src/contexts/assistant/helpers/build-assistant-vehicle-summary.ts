@@ -70,7 +70,7 @@ export const buildAssistantVehicleSummary = (
     vehicle.version?.model?.name ?? vehicle.version_summary?.model_name ?? null;
   const versionName =
     vehicle.version?.name ?? vehicle.version_summary?.version_name ?? null;
-  const year = vehicle.version?.year?.year ?? null;
+  const year = vehicle.year?.year ?? vehicle.version?.year?.year ?? null;
   const title = [make, model, year].filter(Boolean).join(" ").trim() || vehicle.id;
 
   return {

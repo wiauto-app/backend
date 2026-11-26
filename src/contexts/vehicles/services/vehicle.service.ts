@@ -425,6 +425,10 @@ export class VehicleService {
       patch.address_details = resolved;
     }
 
+    if (patch.version_id !== undefined || patch.year_id !== undefined) {
+      patch.year_id = await this.resolvePatchedYearId(existing, patch);
+    }
+
     let wrote = false;
     const pending_post_commit_images: VehiclePostCommitImageItem[] = [];
     let pending_post_commit_video_ids: string[] = [];
@@ -509,6 +513,28 @@ export class VehicleService {
     return {
       vehicle: applyVehicleUpdates(vehicleDetailToPrimitives(existing), patch),
     };
+  }
+
+  /**
+   * Año del vehículo tras editar versión y/o año: el año enviado debe existir
+   * para la versión; sin año se conserva el actual si sigue siendo válido o se
+   * usa el año por defecto de la nueva versión.
+   */
+  private async resolvePatchedYearId(
+    existing: VehicleDetail,
+    patch: VehicleUpdateFields,
+  ): Promise<number> {
+    const version = await this.catalog_versions_service.findById(
+      patch.version_id ?? existing.version_id,
+    );
+    if (!version) {
+      throw new InvalidateVehicleVersionIdException();
+    }
+    return this.catalog_versions_service.resolveVehicleYearId({
+      version,
+      requested_year_id: patch.year_id,
+      current_year_id: existing.year_id,
+    });
   }
 
   private async resolvePatchedSuggestions(
@@ -1074,7 +1100,10 @@ export class VehicleService {
       throw new VehicleNotFoundException(dto.vehicle_id);
     }
 
-    const catalog = await this.resolveSimilarCatalog(reference.version_id);
+    const catalog = await this.resolveSimilarCatalog(
+      reference.version_id,
+      reference.year_id,
+    );
     const listing_href_slugs: FindSimilarVehiclesListingHrefSlugs = {
       make: catalog.make_slug,
       model: catalog.model_slug,
@@ -1212,6 +1241,7 @@ export class VehicleService {
 
   private async resolveSimilarCatalog(
     version_id: number,
+    year_id?: number,
   ): Promise<ResolvedVehicleCatalog> {
     const version = await this.catalog_versions_service.findById(version_id);
     if (!version) {
@@ -1221,7 +1251,7 @@ export class VehicleService {
     const [make, model, year_row, fuel_type] = await Promise.all([
       this.makes_service.findById(version.make_id),
       this.catalog_models_service.findById(version.model_id),
-      this.catalog_years_service.findById(version.year_id),
+      this.catalog_years_service.findById(year_id ?? version.year_id),
       this.catalog_fuel_types_service.findById(version.fuel_type_id)]);
 
     if (!make || !model || !year_row || !fuel_type) {
@@ -1346,7 +1376,7 @@ export class VehicleService {
       title,
       price: detail.price,
       image_url: detail.images[0]?.url ?? null,
-      year: detail.version.year.year,
+      year: detail.year?.year ?? detail.version.year.year,
       mileage: detail.mileage,
       fuel_type_slug: detail.version.fuel_type.slug,
       transmission_type: detail.transmission_type,

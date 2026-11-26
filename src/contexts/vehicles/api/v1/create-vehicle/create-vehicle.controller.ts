@@ -60,6 +60,7 @@ export class CreateVehicleController {
         id: created.id,
         price: dto.price,
         versionId: dto.version_id,
+        yearId: created.year_id,
         vehicleTypeId: dto.vehicle_type_id,
         province: address?.province ?? null,
         city: address?.municipality ?? null,

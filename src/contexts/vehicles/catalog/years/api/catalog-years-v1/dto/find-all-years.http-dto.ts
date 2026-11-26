@@ -9,4 +9,8 @@ export class FindAllYearsHttpDto extends PaginationHttpDto {
   @IsOptional()
   @IsNumber()
   body_type_id?: number;
+
+  @IsOptional()
+  @IsNumber()
+  fuel_type_id?: number;
 }

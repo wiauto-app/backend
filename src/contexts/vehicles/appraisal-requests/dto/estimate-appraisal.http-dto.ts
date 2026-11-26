@@ -21,6 +21,13 @@ export class EstimateAppraisalHttpDto {
   @IsPositive()
   version_id!: number;
 
+  /** Año elegido (par válido en `version_year`); opcional para apps viejas. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  year_id?: number;
+
   @IsEnum(TRANSMISSION_TYPE)
   transmission_type!: TransmissionType;
 

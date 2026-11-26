@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { SkipThrottle, Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { VehicleSpecs, VehicleSpecsService } from "../services/vehicle-specs.service";
 import { envs } from "@/src/common/envs";
@@ -33,7 +40,10 @@ export class VehicleSpecsController {
   ) {}
 
   @Get(":versionId")
-  async getVehicleSpecs(@Param("versionId", ParseIntPipe) versionId: number): Promise<VehicleSpecs> {
-    return await this.vehicleSpecsService.getVehicleSpecs(versionId);
+  async getVehicleSpecs(
+    @Param("versionId", ParseIntPipe) versionId: number,
+    @Query("year_id", new ParseIntPipe({ optional: true })) yearId?: number,
+  ): Promise<VehicleSpecs> {
+    return await this.vehicleSpecsService.getVehicleSpecs(versionId, yearId);
   }
 }

@@ -29,6 +29,7 @@ export interface VehicleInsightsSubject {
   category_id: string | null;
   dgt_label_id: string | null;
   version_id: number;
+  year_id: number | null;
   address_details: VehicleAddressDetails | null;
   is_featured: boolean;
   featured_expires_at: Date | null;
@@ -95,6 +96,7 @@ interface SubjectRow {
   category_id: string | null;
   dgt_label_id: string | null;
   version_id: string | number;
+  year_id: string | number | null;
   address_details: VehicleAddressDetails | null;
   is_featured: boolean;
   featured_expires_at: Date | null;
@@ -186,6 +188,7 @@ export class TypeOrmVehicleInsightsRepository {
           v.category_id,
           v.dgt_label_id,
           v.version_id,
+          v.year_id,
           v.address_details,
           v.is_featured,
           v.featured_expires_at,
@@ -215,7 +218,7 @@ export class TypeOrmVehicleInsightsRepository {
         INNER JOIN version ver ON ver.id = v.version_id
         INNER JOIN make ON make.id = ver.make_id
         INNER JOIN model ON model.id = ver.model_id
-        LEFT JOIN "year" yr ON yr.id = ver.year_id
+        LEFT JOIN "year" yr ON yr.id = v.year_id
         LEFT JOIN LATERAL (
           SELECT p.price
           FROM vehicle_prices p
@@ -250,6 +253,7 @@ export class TypeOrmVehicleInsightsRepository {
       category_id: row.category_id,
       dgt_label_id: row.dgt_label_id,
       version_id: to_number(row.version_id),
+      year_id: to_nullable_number(row.year_id),
       address_details: row.address_details,
       is_featured: Boolean(row.is_featured),
       featured_expires_at: row.featured_expires_at,

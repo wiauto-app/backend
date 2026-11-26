@@ -185,6 +185,11 @@ export class CreateVehicleService {
       throw new InvalidateVehicleVersionIdException();
     }
 
+    const year_id = await this.catalog_versions_service.resolveVehicleYearId({
+      version,
+      requested_year_id: dto.year_id,
+    });
+
     const fuel_type = await this.catalog_fuel_types_service.findById(
       version.fuel_type_id,
     );
@@ -284,6 +289,7 @@ export class CreateVehicleService {
           condition: dto.condition,
           description: dto.description?.trim() ?? "",
           version_id,
+          year_id,
           publisher_type,
           status: as_draft ? STATUS_VEHICLE.DRAFT : STATUS_VEHICLE.ACTIVE,
           status_change_message: null,
@@ -484,6 +490,7 @@ export class CreateVehicleService {
       description: vehicle.description ?? "",
       publisher_type: vehicle.publisher_type,
       version_id: vehicle.version_id,
+      year_id: vehicle.year_id,
       status: vehicle.status,
       status_change_message: vehicle.status_change_message ?? null,
       is_featured: vehicle.is_featured,
@@ -775,7 +782,7 @@ export class CreateVehicleService {
         title,
         price: detail.price,
         image_url: detail.images[0]?.url ?? null,
-        year: detail.version.year.year,
+        year: detail.year?.year ?? detail.version.year.year,
         mileage: detail.mileage,
         fuel_type_slug: detail.version.fuel_type.slug,
         transmission_type: detail.transmission_type,

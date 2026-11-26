@@ -128,10 +128,19 @@ export class CatalogIdentityLookupService {
     model_id: number,
     year_id: number,
   ): Promise<CatalogIdentityVersion[]> {
-    const rows = await this.version_repository.find({
-      where: { make_id, model_id, year_id },
-      order: { name: "ASC" },
-    });
+    // Una versión existe en varios años: el filtro va por `version_year`.
+    const rows = await this.version_repository
+      .createQueryBuilder("version")
+      .innerJoin(
+        "version_year",
+        "vy",
+        "vy.version_id = version.id AND vy.year_id = :year_id",
+        { year_id },
+      )
+      .where("version.make_id = :make_id", { make_id })
+      .andWhere("version.model_id = :model_id", { model_id })
+      .orderBy("version.name", "ASC")
+      .getMany();
     return rows.map((row) => ({
       id: row.id,
       name: row.name,

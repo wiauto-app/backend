@@ -5,6 +5,10 @@ import { Repository } from "typeorm";
 import { Injectable } from "@/src/contexts/shared/dependency-injectable/injectable";
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { User } from "@/src/contexts/users/entities/user.entity";
+import { VersionEntity } from "@/src/contexts/vehicles/catalog/versions/entities/version.entity";
+import { VersionYearEntity } from "@/src/contexts/vehicles/catalog/versions/entities/version-year.entity";
+import { resolveVehicleYearId } from "@/src/contexts/vehicles/catalog/versions/helpers/resolve-vehicle-year-id";
+import { InvalidateVehicleVersionIdException } from "@/src/contexts/vehicles/exceptions/InvalidateVehicleVersionId.exception";
 
 import { ReverseGeocodingPort } from "../../ports/reverse-geocoding.port";
 import { formatAddressText } from "../../services/format-vehicle-address";
@@ -62,6 +66,8 @@ export class AppraisalRequestsService {
     private readonly appraisal_request_notification_mail_service: AppraisalRequestNotificationMailService,
     @InjectRepository(User)
     private readonly user_repository: Repository<User>,
+    @InjectRepository(VersionEntity)
+    private readonly version_repository: Repository<VersionEntity>,
   ) {}
 
   create(payload: CreateAppraisalRequestPayload): Promise<AppraisalRequestListItem> {
@@ -152,6 +158,10 @@ export class AppraisalRequestsService {
       throw new BadRequestException("El teléfono es obligatorio");
     }
 
+    if (payload.version_id != null) {
+      await this.assertVersionYear(payload.version_id, payload.year_id);
+    }
+
     const resolved = await this.reverse_geocoding_port.resolve(payload.lat, payload.lng);
     const address = resolved ? formatAddressText(resolved.formatted_lines) : null;
 
@@ -193,6 +203,27 @@ export class AppraisalRequestsService {
     }
 
     return saved;
+  }
+
+  /** La versión elegida debe existir en el año elegido (`version_year`). */
+  private async assertVersionYear(
+    version_id: number,
+    year_id: number,
+  ): Promise<void> {
+    const version = await this.version_repository.findOne({
+      where: { id: version_id },
+      select: { id: true, year_id: true },
+    });
+    if (!version) {
+      throw new InvalidateVehicleVersionIdException();
+    }
+    await resolveVehicleYearId(
+      { version, requested_year_id: year_id },
+      (pair_version_id, pair_year_id) =>
+        this.version_repository.manager.exists(VersionYearEntity, {
+          where: { version_id: pair_version_id, year_id: pair_year_id },
+        }),
+    );
   }
 
   private async findStaffEmails(): Promise<string[]> {

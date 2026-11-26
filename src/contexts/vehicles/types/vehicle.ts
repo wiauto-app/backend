@@ -43,6 +43,8 @@ export interface PrimitiveVehicle {
   description: string;
   publisher_type: PublisherType;
   version_id: number;
+  /** Año del vehículo; debe ser un par válido en `version_year`. */
+  year_id?: number;
   status?: StatusVehicle;
   status_change_message?: string | null;
   is_featured?: boolean;

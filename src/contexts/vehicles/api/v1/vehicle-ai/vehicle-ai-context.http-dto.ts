@@ -10,9 +10,11 @@ import { Type } from "class-transformer";
 import {
   IsEnum,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsUUID,
   Min,
   ValidateIf,
@@ -84,6 +86,12 @@ export class VehicleAiContextHttpDto {
   @IsNumber()
   @IsNotEmpty()
   version_id: number;
+
+  /** Año elegido (par válido en `version_year`); opcional para apps viejas. */
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  year_id?: number;
 
   @IsEnum(CONDITION_VEHICLE)
   @IsNotEmpty()

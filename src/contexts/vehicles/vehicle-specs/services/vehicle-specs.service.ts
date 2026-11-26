@@ -8,6 +8,9 @@ import { openai } from "@ai-sdk/openai";
 import z from "zod";
 
 import { VersionEntity } from "../../catalog/versions/entities/version.entity";
+import { VersionYearEntity } from "../../catalog/versions/entities/version-year.entity";
+import { resolveVehicleYearId } from "../../catalog/versions/helpers/resolve-vehicle-year-id";
+import { CatalogYearEntity } from "../../catalog/years/entities/catalog-year.entity";
 import { TractionEntity } from "../../entities/traction.entity";
 import { TRANSMISSION_TYPE } from "../../types/vehicle";
 
@@ -22,7 +25,7 @@ const VEHICLE_SPECS_CACHE_TTL_MS = 100 * 365 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class VehicleSpecsService {
-  private readonly inFlight = new Map<number, Promise<VehicleSpecs>>();
+  private readonly inFlight = new Map<string, Promise<VehicleSpecs>>();
 
   constructor(
     @InjectRepository(VersionEntity)
@@ -35,18 +38,23 @@ export class VehicleSpecsService {
     private readonly cacheManager: Cache,
   ) {}
 
-  async getVehicleSpecs(versionId: number): Promise<VehicleSpecs> {
-    const cacheKey = `vehicle-specs:${VEHICLE_SPECS_CACHE_VERSION}:${versionId}`;
+  /**
+   * @param yearId año del vehículo (una versión existe en varios años); sin él
+   * se usa el año por defecto de la versión.
+   */
+  async getVehicleSpecs(versionId: number, yearId?: number): Promise<VehicleSpecs> {
+    const inFlightKey = yearId == null ? `${versionId}` : `${versionId}:${yearId}`;
+    const cacheKey = `vehicle-specs:${VEHICLE_SPECS_CACHE_VERSION}:${inFlightKey}`;
     const cached = await this.cacheManager.get<VehicleSpecs>(cacheKey);
 
     if (cached) {
       return cached;
     }
 
-    let pending = this.inFlight.get(versionId);
+    let pending = this.inFlight.get(inFlightKey);
 
     if (!pending) {
-      pending = this.generateVehicleSpecs(versionId)
+      pending = this.generateVehicleSpecs(versionId, yearId)
         .then(async (specs) => {
           await this.cacheManager.set(
             cacheKey,
@@ -56,16 +64,19 @@ export class VehicleSpecsService {
           return specs;
         })
         .finally(() => {
-          this.inFlight.delete(versionId);
+          this.inFlight.delete(inFlightKey);
         });
 
-      this.inFlight.set(versionId, pending);
+      this.inFlight.set(inFlightKey, pending);
     }
 
     return pending;
   }
 
-  private async generateVehicleSpecs(versionId: number): Promise<VehicleSpecs> {
+  private async generateVehicleSpecs(
+    versionId: number,
+    yearId?: number,
+  ): Promise<VehicleSpecs> {
     const version = await this.versionRepository.findOne({
       where: {
         id: versionId,
@@ -82,6 +93,20 @@ export class VehicleSpecsService {
     if (!version) {
       throw new NotFoundException("Version not found");
     }
+
+    const resolvedYearId = await resolveVehicleYearId(
+      { version, requested_year_id: yearId },
+      (version_id, year_id) =>
+        this.versionRepository.manager.exists(VersionYearEntity, {
+          where: { version_id, year_id },
+        }),
+    );
+    const year =
+      resolvedYearId === version.year_id
+        ? version.year
+        : await this.versionRepository.manager.findOne(CatalogYearEntity, {
+          where: { id: resolvedYearId },
+        });
 
     const tractions = await this.tractionRepository.find();
 
@@ -104,7 +129,7 @@ export class VehicleSpecsService {
       make: version.make.name,
       model: version.model.name,
       version: version.name,
-      year: version.year.year,
+      year: year?.year ?? version.year.year,
       body_type: version.body_type.name,
 
       fuel_type: {

@@ -133,7 +133,7 @@ export class PublishedVehicleSnapshotService extends PublishedVehicleSnapshotPor
       INNER JOIN version ver ON ver.id = v.version_id
       INNER JOIN make mk ON mk.id = ver.make_id
       INNER JOIN model md ON md.id = ver.model_id
-      INNER JOIN year yr ON yr.id = ver.year_id
+      INNER JOIN year yr ON yr.id = v.year_id
       INNER JOIN fuel_type ft ON ft.id = ver.fuel_type_id
       LEFT JOIN tractions tr ON tr.id = v.traction_id
       LEFT JOIN vehicle_types vt ON vt.id = v.vehicle_type_id

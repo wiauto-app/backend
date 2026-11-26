@@ -13,6 +13,8 @@ export interface GenerationSettingsDto {
 
 export interface VehicleAiContextDto {
   version_id: number;
+  /** Año elegido; sin él se usa el año por defecto de la versión. */
+  year_id?: number;
   condition: ConditionVehicle;
   mileage: number;
   transmission_type: TransmissionType;

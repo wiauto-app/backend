@@ -374,6 +374,7 @@ export class VehicleInsightsService {
       stats = await this.market_stats_service.compute(
         {
           version_id: subject.version_id,
+          year_id: subject.year_id ?? undefined,
           condition: subject.condition,
           mileage: subject.mileage,
           transmission_type: subject.transmission_type,

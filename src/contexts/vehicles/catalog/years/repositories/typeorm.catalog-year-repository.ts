@@ -3,12 +3,13 @@ import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pag
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { FindOptionsWhere, In, Repository } from "typeorm";
 
 import { CatalogYear } from "../types/catalog-year";
 import { CatalogYearNotFoundException } from "../exceptions/catalog-year-not-found.exception";
 import { CatalogYearEntity } from "../entities/catalog-year.entity";
 import { VersionEntity } from "../../versions/entities/version.entity";
+import { VersionYearEntity } from "../../versions/entities/version-year.entity";
 
 const CATALOG_YEAR_SORT_KEYS = new Set(["id", "year", "slug", "created_at"]);
 
@@ -17,30 +18,24 @@ export class TypeormCatalogYearRepository {
   constructor(
     @InjectRepository(CatalogYearEntity)
     private readonly repo: Repository<CatalogYearEntity>,
-    @InjectRepository(VersionEntity)
-    private readonly versionRepo: Repository<VersionEntity>,
+    @InjectRepository(VersionYearEntity)
+    private readonly versionYearRepo: Repository<VersionYearEntity>,
   ) {}
 
   async find_all(filter: CatalogPaginationFilter): Promise<PaginatedResult<CatalogYear>> {
-    const yearIds: number[] = [];
+    let extra_filters: FindOptionsWhere<CatalogYearEntity> | undefined;
     if (filter.model_id) {
-      const qb = this.versionRepo
-        .createQueryBuilder("version")
-        .distinctOn(["year_id"]);
-
-      qb.andWhere("version.model_id = :model_id", { model_id: filter.model_id });
-      if (filter.body_type_id != null) {
-        qb.andWhere("version.body_type_id = :body_type_id", {
-          body_type_id: filter.body_type_id,
-        });
+      const year_ids = await this.findYearIdsByVersionFilter(filter);
+      if (year_ids.length === 0) {
+        // Modelo sin versiones (o sin versiones con esa carrocería/combustible).
+        return new PaginatedResult<CatalogYear>([], 0, filter.page, filter.limit);
       }
-      const versions = await qb.getMany();
-      yearIds.push(...versions.map((v) => v.year_id));
+      extra_filters = { id: In(year_ids) };
     }
     return runPaginatedTypeormFind({
       repository: this.repo,
       filter,
-      ...(yearIds.length > 0 ? { extra_filters: { id: In(yearIds) } } : {}),
+      ...(extra_filters ? { extra_filters } : {}),
       map_row: (row) =>
         CatalogYear.fromPrimitives({
           id: row.id,
@@ -52,6 +47,31 @@ export class TypeormCatalogYearRepository {
       default_sort_key: "year",
       search_column: "slug",
     });
+  }
+
+  /** Años en los que existe alguna versión del modelo (`version_year`). */
+  private async findYearIdsByVersionFilter(
+    filter: CatalogPaginationFilter,
+  ): Promise<number[]> {
+    const qb = this.versionYearRepo
+      .createQueryBuilder("vy")
+      .innerJoin(VersionEntity, "version", "version.id = vy.version_id")
+      .select("DISTINCT vy.year_id", "year_id")
+      .where("version.model_id = :model_id", { model_id: filter.model_id });
+
+    if (filter.body_type_id != null) {
+      qb.andWhere("version.body_type_id = :body_type_id", {
+        body_type_id: filter.body_type_id,
+      });
+    }
+    if (filter.fuel_type_id != null) {
+      qb.andWhere("version.fuel_type_id = :fuel_type_id", {
+        fuel_type_id: filter.fuel_type_id,
+      });
+    }
+
+    const rows = await qb.getRawMany<{ year_id: number | string }>();
+    return rows.map((row) => Number(row.year_id));
   }
 
   async findOne(id: number): Promise<CatalogYear | null> {

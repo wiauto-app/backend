@@ -3,10 +3,11 @@ import { CatalogPaginationFilter } from "@/src/contexts/shared/types/catalog-pag
 import { PaginatedResult } from "@/src/contexts/shared/types/paginated-result.vo";
 import { runPaginatedTypeormFind } from "@/src/contexts/shared/typeorm/run-paginated-typeorm-find";
 import { InjectRepository } from "@nestjs/typeorm";
-import { FindOptionsWhere, Repository } from "typeorm";
+import { FindOptionsWhere, Raw, Repository } from "typeorm";
 
 import { CatalogVersionNotFoundException } from "../exceptions/catalog-version-not-found.exception";
 import { VersionEntity } from "../entities/version.entity";
+import { VersionYearEntity } from "../entities/version-year.entity";
 
 const CATALOG_VERSION_SORT_KEYS = new Set([
   "id",
@@ -45,7 +46,14 @@ export class TypeormCatalogVersionRepository {
       extraFilters.fuel_type_id = filter.fuel_type_id;
     }
     if (filter.year_id != null) {
-      extraFilters.year_id = filter.year_id;
+      // Una versión existe en varios años: el filtro va por `version_year`,
+      // no por el año por defecto (`version.year_id`).
+      const year_id = filter.year_id;
+      extraFilters.id = Raw(
+        (alias) =>
+          `EXISTS (SELECT 1 FROM version_year vy WHERE vy.version_id = ${alias} AND vy.year_id = :year_id)`,
+        { year_id },
+      );
     }
     const hasExtra = Object.keys(extraFilters).length > 0;
 
@@ -55,8 +63,33 @@ export class TypeormCatalogVersionRepository {
       ...(hasExtra ? { extra_filters: extraFilters } : {}),
       allowed_sort_keys: CATALOG_VERSION_SORT_KEYS,
       default_sort_key: "id",
-      relations: ["year"],
+      relations: ["year", "years"],
+      map_row: (row) => {
+        row.years = [...(row.years ?? [])].sort((a, b) => a.year - b.year);
+        return row;
+      },
     });
+  }
+
+  async hasYear(version_id: number, year_id: number): Promise<boolean> {
+    return this.repo.manager.exists(VersionYearEntity, {
+      where: { version_id, year_id },
+    });
+  }
+
+  /** Inserta los pares versión–año que falten (no borra los existentes). */
+  async addYears(version_id: number, year_ids: number[]): Promise<void> {
+    const unique_year_ids = [...new Set(year_ids)];
+    if (unique_year_ids.length === 0) {
+      return;
+    }
+    await this.repo.manager
+      .createQueryBuilder()
+      .insert()
+      .into(VersionYearEntity, ["version_id", "year_id"])
+      .values(unique_year_ids.map((year_id) => ({ version_id, year_id })))
+      .orIgnore()
+      .execute();
   }
 
   async findOne(id: number): Promise<VersionEntity | null> {

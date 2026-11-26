@@ -65,6 +65,9 @@ export interface VehicleDetail extends VehicleListItem {
   license_plate: string;
   vin_code?: string;
   version_id: number;
+  /** Año del vehículo (puede diferir del año por defecto de la versión). */
+  year_id: number;
+  year: Year | null;
   traction: VehicleListItemCatalogRef | null;
   phone_code?: string | null;
   phone?: string | null;
@@ -159,6 +162,7 @@ export const vehicleDetailToPrimitives = (
   condition: detail.condition as ConditionVehicle,
   description: detail.description,
   version_id: detail.version_id,
+  year_id: detail.year_id,
   publisher_type: detail.publisher_type,
   transmission_type: detail.transmission_type,
   traction_id: detail.traction?.id ?? null,

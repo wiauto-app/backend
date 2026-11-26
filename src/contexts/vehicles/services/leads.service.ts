@@ -390,7 +390,7 @@ export class LeadsService {
         buyer_profile_id: payload.lead.profile_id,
         vehicle_price: vehicle.price,
         vehicle_image_url: vehicle.images[0]?.url ?? null,
-        vehicle_year: vehicle.version.year.year,
+        vehicle_year: vehicle.year?.year ?? vehicle.version.year.year,
         vehicle_mileage: vehicle.mileage,
         vehicle_fuel_label: vehicle.version.fuel_type.slug
           ? humanizeSlug(vehicle.version.fuel_type.slug)

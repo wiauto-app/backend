@@ -99,7 +99,8 @@ export class CatalogReverseMatchService {
       version_id: version.id,
       catalog_make_id: version.make_id,
       catalog_model_id: version.model_id,
-      catalog_year_id: version.year_id,
+      // Año de matriculación encontrado en `version_year` (no el año por defecto).
+      catalog_year_id: version.years?.[0]?.id ?? version.year_id,
       power: power_hp,
       displacement: Number(api_data.engineCapacityLiters) * 1000,
       traction_id,
@@ -126,7 +127,8 @@ export class CatalogReverseMatchService {
     const base = () =>
       this.version_repository
         .createQueryBuilder("version")
-        .innerJoin("version.year", "year")
+        // Una versión existe en varios años: el match va por `version_year`.
+        .innerJoinAndSelect("version.years", "year")
         .where("version.make_id = :make_id", { make_id: params.make_id })
         .andWhere("version.model_id = :model_id", { model_id: params.model_id })
         .andWhere("version.fuel_type_id = :fuel_type_id", {

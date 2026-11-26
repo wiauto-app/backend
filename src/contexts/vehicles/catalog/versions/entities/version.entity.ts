@@ -4,6 +4,8 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -46,6 +48,10 @@ export class VersionEntity {
   @Column()
   fuel_type_id: number;
 
+  /**
+   * Año por defecto (el más reciente de la versión). Los años válidos están en
+   * `years` (`version_year`); los vehículos guardan su propio `year_id`.
+   */
   @Column()
   year_id: number;
 
@@ -77,7 +83,17 @@ export class VersionEntity {
   @JoinColumn({ name: "fuel_type_id" })
   fuel_type: Relation<CatalogFuelTypeEntity>;
 
+  /** Año por defecto; ver `year_id`. */
   @ManyToOne(() => CatalogYearEntity, (year) => year.versions)
   @JoinColumn({ name: "year_id" })
   year: Relation<CatalogYearEntity>;
+
+  /** Todos los años en los que existe la versión (`version_year`). */
+  @ManyToMany(() => CatalogYearEntity)
+  @JoinTable({
+    name: "version_year",
+    joinColumn: { name: "version_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "year_id", referencedColumnName: "id" },
+  })
+  years: Relation<CatalogYearEntity[]>;
 }

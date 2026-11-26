@@ -8,6 +8,10 @@ import { UpdateCatalogVersionHttpDto } from "../api/catalog-versions-v1/update-c
 import { VersionEntity } from "../entities/version.entity";
 import { CatalogVersionNotFoundException } from "../exceptions/catalog-version-not-found.exception";
 import { TypeormCatalogVersionRepository } from "../repositories/typeorm.catalog-version-repository";
+import {
+  resolveVehicleYearId,
+  ResolveVehicleYearIdInput,
+} from "../helpers/resolve-vehicle-year-id";
 
 @Injectable()
 export class CatalogVersionsService {
@@ -25,6 +29,10 @@ export class CatalogVersionsService {
     version.name = dto.name;
     version.slug = slugify(dto.name);
     const saved = await this.repository.save(version);
+    await this.repository.addYears(saved.id, [
+      saved.year_id,
+      ...(dto.year_ids ?? []),
+    ] as number[]);
     return { version: saved };
   }
 
@@ -58,6 +66,11 @@ export class CatalogVersionsService {
     }
 
     const saved = await this.repository.save(existing);
+    const added_year_ids = [
+      ...(dto.year_id !== undefined ? [dto.year_id] : []),
+      ...(dto.year_ids ?? []),
+    ];
+    await this.repository.addYears(saved.id, added_year_ids as number[]);
     return { version: saved };
   }
 
@@ -78,6 +91,18 @@ export class CatalogVersionsService {
 
   async findById(id: number): Promise<VersionEntity | null> {
     return this.repository.findOne(id);
+  }
+
+  /** Indica si la versión existe en ese año (`version_year`). */
+  async hasYear(version_id: number, year_id: number): Promise<boolean> {
+    return this.repository.hasYear(version_id, year_id);
+  }
+
+  /** Resuelve y valida el año de un vehículo; ver `resolveVehicleYearId`. */
+  async resolveVehicleYearId(input: ResolveVehicleYearIdInput): Promise<number> {
+    return resolveVehicleYearId(input, (version_id, year_id) =>
+      this.hasYear(version_id, year_id),
+    );
   }
 
   async remove(id: number): Promise<void> {

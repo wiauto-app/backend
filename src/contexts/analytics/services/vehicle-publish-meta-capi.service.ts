@@ -5,6 +5,7 @@ import { Repository } from "typeorm";
 
 import { User } from "@/src/contexts/users/entities/user.entity";
 import { VersionEntity } from "@/src/contexts/vehicles/catalog/versions/entities/version.entity";
+import { CatalogYearEntity } from "@/src/contexts/vehicles/catalog/years/entities/catalog-year.entity";
 import { VehicleTypeEntity } from "@/src/contexts/vehicles/entities/vehicle-type.entity";
 import { VehiclePublishTrackingHttpDto } from "../dto/vehicle-publish-tracking.http-dto";
 import { MetaCapiService, MetaCapiUserInput } from "./meta-capi.service";
@@ -13,6 +14,8 @@ export interface VehiclePublishListingSnapshot {
   id: string;
   price: number;
   versionId: number;
+  /** Año del vehículo; sin él se usa el año por defecto de la versión. */
+  yearId?: number | null;
   vehicleTypeId?: string | null;
   province?: string | null;
   city?: string | null;
@@ -137,7 +140,7 @@ export class VehiclePublishMetaCapiService {
     listing: VehiclePublishListingSnapshot,
   ): Promise<CatalogLabels> {
     try {
-      const [version, vehicleType] = await Promise.all([
+      const [version, vehicleType, vehicleYear] = await Promise.all([
         this.version_repository.findOne({
           where: { id: listing.versionId },
           relations: ["make", "model", "year"],
@@ -147,12 +150,17 @@ export class VehiclePublishMetaCapiService {
               where: { id: listing.vehicleTypeId },
             })
           : Promise.resolve(null),
+        listing.yearId
+          ? this.version_repository.manager.findOne(CatalogYearEntity, {
+              where: { id: listing.yearId },
+            })
+          : Promise.resolve(null),
       ]);
 
       return {
         brand: version?.make?.name,
         model: version?.model?.name,
-        year: version?.year?.year,
+        year: vehicleYear?.year ?? version?.year?.year,
         vehicleType: vehicleType?.name,
       };
     } catch {
