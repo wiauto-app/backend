@@ -19,7 +19,7 @@ import {
   evaluateLeadsPendingReply,
   evaluateListingHealthLow,
   evaluatePriceAboveMarket,
-  evaluateStaleLowViews,
+  // evaluateStaleLowViews, // desactivada temporalmente
   evaluateViewsNoLeads,
   evaluateWeeklySummary,
 } from "../utils/proactive-alert-rules";
@@ -95,22 +95,23 @@ export class ProactiveAlertEvaluatorService {
       });
     }
 
-    const stale_payload = evaluateStaleLowViews({
-      days_published: insights.funnel.listing_age_days,
-      daily_views: views_metric?.daily_rate ?? 0,
-      segment_daily_views: views_metric?.segment_daily_rate ?? 1,
-      suggested_price_drop_eur: 500,
-      vehicle_id,
-    });
-    if (stale_payload) {
-      await this.dispatch_service.tryDispatch({
-        profile_id,
-        type: PROACTIVE_ALERT_TYPE.STALE_LOW_VIEWS,
-        dedupe_key: `stale_low_views:${vehicle_id}`,
-        vehicle_id,
-        payload: stale_payload,
-      });
-    }
+    // TODO: alerta "pocas visitas" (stale_low_views) desactivada temporalmente; no se envía.
+    // const stale_payload = evaluateStaleLowViews({
+    //   days_published: insights.funnel.listing_age_days,
+    //   daily_views: views_metric?.daily_rate ?? 0,
+    //   segment_daily_views: views_metric?.segment_daily_rate ?? 1,
+    //   suggested_price_drop_eur: 500,
+    //   vehicle_id,
+    // });
+    // if (stale_payload) {
+    //   await this.dispatch_service.tryDispatch({
+    //     profile_id,
+    //     type: PROACTIVE_ALERT_TYPE.STALE_LOW_VIEWS,
+    //     dedupe_key: `stale_low_views:${vehicle_id}`,
+    //     vehicle_id,
+    //     payload: stale_payload,
+    //   });
+    // }
 
     const leads_14d = await this.lead_repository.countLeadsForVehicleSinceDays(
       vehicle_id,
